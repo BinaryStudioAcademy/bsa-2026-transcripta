@@ -1,0 +1,90 @@
+%% Database schema - 9 tables
+%% document sits in the centre. Pages, lexicon and exports grow out of it.
+%% Full DDL with comments: ../schema/schema.sql
+
+erDiagram
+    document ||--o{ page : "holds 1..500"
+    page ||--o{ transcription : "reading attempts"
+    document ||--o{ lexicon_entry : "document lexicon"
+    document ||--o{ document_export : "exports"
+    page ||--o{ page_event : "page events"
+    document ||--o{ page_event : "history"
+    preset ||--o{ document : "configures"
+    preset ||--o{ transcription : "which version was used"
+    users ||--o{ document : "owns"
+    users ||--o{ preset : "creates"
+    page_event }o--|| users : "who did it"
+
+
+    users {
+        int id PK "increments - NOT uuid, this is the template table"
+        text email UK "login"
+        text password_hash "paired with password_salt"
+        bool is_admin "access to other people documents"
+    }
+
+    preset {
+        int id PK "serial"
+        int family_id "= id of the first version of the preset"
+        int version "new version = NEW row, the old one is untouched"
+        text instructions "goes into the user message, NOT the system one"
+        jsonb output_schema "x-entity-kind: where lexicon words come from"
+        jsonb seed_glossary "saves the first 10-20 pages"
+        jsonb settings "model, dpi, limits"
+    }
+
+    document {
+        int id PK "serial"
+        text title "whatever the user called it"
+        enum status "draft/ingesting/ready/processing/paused/budget_stop/done/failed"
+        int page_count "from pdfinfo"
+        int cursor_page_no "where the verifier is right now"
+        numeric budget_usd "spending ceiling for the document"
+        numeric spent_usd "grows after every LLM call"
+    }
+
+    page {
+        int id PK "serial"
+        int page_no "unique within the document"
+        text image_key "image key in S3"
+        text image_sha256 "part of the cache key"
+        enum status "ONLY confirmed and corrected feed the context"
+        int verified_by "who checked it"
+    }
+
+    transcription {
+        int id PK "serial"
+        text text "what the model read"
+        text edited_text "what the human corrected"
+        jsonb context_used "WHICH context went in: pageIds, lexiconIds, hash"
+        numeric cost_usd "price of this very call"
+        bool is_current "exactly one current row per page"
+    }
+
+    lexicon_entry {
+        int id PK "serial, NOT bigserial - pg would return int8 as a string"
+        text value_display "as written in the document"
+        int freq "how many times it occurred"
+        int distinct_pages "threshold for entering the context = 2"
+        timestamptz invalidated_at "not NULL - the word was ruled wrong"
+    }
+
+    page_event {
+        int id PK "serial, NOT bigserial - pg would return int8 as a string"
+        int transcription_id "what the human acted against; makes a replay detectable"
+        text event "confirm - correct - skip - reopen"
+        int duration_ms "this is where seconds-per-page come from"
+        jsonb details "what exactly changed"
+    }
+
+    transcription_cache {
+        text cache_key PK "NO foreign keys - a standalone table"
+        text text "ready-made result"
+        int hit_count "how many times it saved us a call"
+    }
+
+    document_export {
+        int id PK "serial"
+        enum format "json - csv - txt"
+        text object_key "ready file in S3"
+    }

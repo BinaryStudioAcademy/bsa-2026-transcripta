@@ -1,0 +1,71 @@
+%% Processing a SINGLE page - who calls whom and in what order
+%% Reads top to bottom. Vertical lines are participants, arrows are calls.
+%% Solid arrow - request, dashed arrow - response.
+
+sequenceDiagram
+    autonumber
+
+    participant Q as QUEUE<br/>Redis + BullMQ
+    participant W as WORKER<br/>our code
+    participant DB as POSTGRES<br/>source of truth
+    participant S3 as S3 / MinIO<br/>images
+    participant LLM as VISION LLM<br/>external, paid
+
+    Note over Q,LLM: One job = one page. Everything below takes 20-40 seconds<br/>and repeats once per page in the document
+
+    Q->>W: job { documentId, pageId, pageNo, presetId }
+    Note over Q,W: The job carries identifiers only.<br/>No images or texts in the queue -<br/>Redis is not a data store
+
+    rect rgb(254, 226, 226)
+    Note over W,DB: SAFETY CHECKS - before spending a single cent
+    W->>DB: document not cancelled? budget not exhausted?
+    DB-->>W: ok, carry on
+    end
+
+    rect rgb(255, 247, 224)
+    Note over W,DB: BUILDING THE CONTEXT - the whole point of the project
+    W->>DB: give me the last 3 CONFIRMED pages
+    DB-->>W: texts of pages 44, 45, 46
+    W->>DB: give me the lexicon top-100 (distinct_pages >= 2)
+    DB-->>W: Ivanenko(4), Dykanka(7), ...
+    Note over W: trim to 6000 tokens<br/>by priority - preset, neighbours, lexicon
+    Note over W: contextHash = sha256(everything collected)<br/>this is what makes the cache honest
+    end
+
+    W->>DB: anything in the cache?<br/>key = imageSha + preset + model + contextHash
+
+    alt Cache hit - same scan with the same context
+        DB-->>W: ready-made text
+        Note over W,LLM: NO call to the LLM.<br/>0 seconds, 0 money
+    else Cache miss - the normal path
+        DB-->>W: empty
+        W->>S3: presigned URL for the page image
+        S3-->>W: URL valid for 1 hour
+        W->>LLM: system + preset + CONTEXT + image
+        Note over LLM: 20-40 seconds<br/>the only place where<br/>money is spent
+        LLM-->>W: JSON + usage (token counts)
+        Note over W: validate against the preset schema
+
+        opt JSON invalid - exactly one repair attempt
+            W->>LLM: repair - same request + the error text
+            LLM-->>W: corrected JSON
+            Note over W,LLM: if that fails too - page.status = failed,<br/>there is no third call
+        end
+
+        W->>DB: write the result into the cache
+    end
+
+    rect rgb(226, 240, 254)
+    Note over W,DB: ONE TRANSACTION - the result and the money together
+    W->>DB: INSERT transcription (text, cost, context_used)
+    Note over W,DB: context_used is a snapshot of THAT EXACT context.<br/>Without it you cannot prove the context helped
+    W->>DB: UPDATE document SET spent_usd = spent_usd + cost
+    Note over W,DB: the database adds it up itself.<br/>Read-modify-write would lose a charge<br/>when two jobs run at once
+    W->>DB: page.status = transcribed
+    end
+
+    W->>DB: budget crossed by THIS call? -> document.status = budget_stop
+    Note over W,DB: the check before the call cannot catch this:<br/>several jobs each pass it while the money<br/>still allows one of them
+    W->>Q: job done
+
+    Note over Q,LLM: Next the human sees the page. Their "confirmed" comes back<br/>into step 4 of the following pages - see diagram 4

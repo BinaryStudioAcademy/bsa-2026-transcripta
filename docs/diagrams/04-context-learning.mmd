@@ -1,0 +1,62 @@
+%% CONTEXT LEARNING - how confirmed pages improve the following ones
+%% This is a closed loop: the more pages the human confirms,
+%% the more accurately the model reads the next ones.
+
+%%{init: {"flowchart": {"wrappingWidth": 400}}}%%
+flowchart TB
+    L[("<b>C · DOCUMENT LEXICON</b><br/>top-100 words of the document<br/><i>surnames, place names, terms</i><br/><b>grows while you work</b>")]
+
+    subgraph src["STEP 1 · THREE SOURCES OF CONTEXT"]
+        P["<b>A · PRESET</b> · seed glossary<br/>10-30 words that are certain to appear<br/><i>saves the first 10-20 pages,<br/>while the lexicon is still empty</i>"]
+        N["<b>B · 3 NEIGHBOURING PAGES</b><br/>full text, CONFIRMED only<br/><i>same people, places and phrases -<br/>adjacency beats search here</i>"]
+        L
+    end
+
+    P --> BUILD
+    N --> BUILD
+    L --> BUILD
+
+    BUILD["<b>STEP 2 · ContextBuilder</b><br/>trims to 6000 tokens by priority A → B → C<br/><i>not proportionally: the lexicon is cut first,<br/>then neighbours, the preset is never touched</i>"]
+
+    BUILD --> USR
+
+    subgraph PR["STEP 3 · THE PROMPT"]
+        SYS["<b>system</b> - written by us only<br/><i>preset instructions never land here</i>"]
+        USR["<b>user</b><br/>&lt;preset&gt;…&lt;/preset&gt;<br/>&lt;context&gt;…&lt;/context&gt;<br/>[PAGE IMAGE]"]
+    end
+
+    SYS -.->|"glued into one request"| USR
+    USR --> MODEL["<b>STEP 4 · the model reads the image</b><br/><i>20-40 s per page</i>"]
+    MODEL --> TXT["<b>STEP 5 · page text</b><br/>context words highlighted in the UI:<br/><i>Petr ‹Ivanenko› - from the lexicon, 4 pages</i>"]
+    TXT --> HUMAN{"<b>STEP 6</b><br/>the human<br/>verifies"}
+
+    HUMAN -->|"confirmed<br/>corrected"| EXTRACT["<b>STEP 7 · extract words from the text</b><br/>capitals, dates, place names<br/><i>plain regex, NO second LLM call</i>"]
+    HUMAN -->|"skipped · rejected<br/>plain transcribed"| NOPE["<b>DOES NOT FEED THE CONTEXT</b><br/>a machine without a human is not evidence,<br/>and skipped means 'did not read closely'<br/><i>auto-confirming by model confidence<br/>is NEVER done</i>"]
+
+    EXTRACT --> GATE{"<b>STEP 8 · THRESHOLD</b><br/>word confirmed on<br/>2 DIFFERENT pages?"}
+    GATE -->|"no, only one so far"| WAIT["waits for a second confirmation<br/>as soon as the word appears on one more page -<br/>the threshold is passed<br/><i>filters out a one-off typo<br/>that slipped through verification</i>"]
+    GATE ==>|"yes → into the lexicon"| L
+
+    WAIT -.-> GATE
+
+    GUARD["<b>FOUR GUARDS AGAINST POISONING</b><br/>1 · only confirmed and corrected feed the context<br/>2 · threshold: 2 different pages (step 8)<br/>3 · context_used records exactly what went in<br/>4 · on an error re-read ONLY<br/>unconfirmed pages that saw that word"]
+
+    DANGER["<b>WHY THIS IS DANGEROUS</b><br/>The human got tired and confirmed<br/>'Ivanchenko' instead of 'Ivanenko'<br/>→ the word enters the lexicon<br/>→ the model writes it confidently from then on<br/><b>the text becomes more consistent,<br/>i.e. it looks BETTER</b><br/><i>a random error has become systematic</i>"]
+
+    GUARD ~~~ DANGER
+
+    classDef ctx fill:#dbeafe,stroke:#2563eb,color:#0f172a
+    classDef store fill:#e0e7ff,stroke:#4f46e5,stroke-width:3px,color:#0f172a
+    classDef guard fill:#fee2e2,stroke:#dc2626,color:#0f172a
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#0f172a
+    classDef model fill:#fef3c7,stroke:#d97706,color:#0f172a
+    classDef info fill:#ffffff,stroke:#94a3b8,color:#0f172a
+
+    class P,N,BUILD,SYS,USR ctx
+    class L store
+    class NOPE,GATE,WAIT,DANGER guard
+    class EXTRACT,TXT ok
+    class MODEL model
+    class GUARD info
+
+    linkStyle 12 stroke:#4f46e5,stroke-width:4px

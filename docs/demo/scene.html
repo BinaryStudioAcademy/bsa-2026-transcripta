@@ -1,0 +1,1856 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Transcripta — product demo</title>
+<style>
+	:root {
+		--bg: #f6f7f9;
+		--surface: #ffffff;
+		--line: #e6e8ec;
+		--line-strong: #d3d7de;
+		--ink: #10131a;
+		--ink-2: #4a5160;
+		--ink-3: #838b9a;
+		--brand: #4f46e5;
+		--brand-soft: #eef0fe;
+		--green: #0f9960;
+		--green-soft: #e7f6ee;
+		--amber: #b7791f;
+		--amber-soft: #fdf3e0;
+		--red: #d64545;
+		--red-soft: #fdeceb;
+		--violet: #7c3aed;
+		--violet-soft: #f2ecfe;
+		--shadow-sm: 0 1px 2px rgba(16, 19, 26, 0.06);
+		--shadow-md:
+			0 4px 12px rgba(16, 19, 26, 0.07), 0 1px 3px rgba(16, 19, 26, 0.05);
+		--shadow-lg: 0 24px 60px rgba(16, 19, 26, 0.18);
+		--r: 10px;
+		--ui:
+			-apple-system, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+		--mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+		--hand: "Snell Roundhand", "Apple Chancery", cursive;
+	}
+
+	* {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+	html,
+	body {
+		width: 1920px;
+		height: 1080px;
+		overflow: hidden;
+	}
+	body {
+		background: #0b0d12;
+		font-family: var(--ui);
+		color: var(--ink);
+		-webkit-font-smoothing: antialiased;
+	}
+	body.nofx * {
+		transition: none !important;
+		animation: none !important;
+	}
+
+	/* black head: build.js measures where it ends */
+	#cap {
+		position: fixed;
+		inset: 0;
+		background: #000;
+		z-index: 999;
+	}
+
+	/* ─────────── stage ─────────── */
+	#stage {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		grid-template-rows: 96px 1fr 108px;
+		background: radial-gradient(120% 100% at 50% -10%, #1b2130 0%, #0b0d12 60%);
+	}
+
+	#chapter {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 14px;
+		opacity: 0;
+		transform: translateY(8px);
+		transition:
+			opacity 0.45s,
+			transform 0.45s;
+	}
+	#chapter.on {
+		opacity: 1;
+		transform: none;
+	}
+	#chapterNo {
+		font-size: 15px;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: #8b93a7;
+		font-weight: 600;
+	}
+	#chapterTitle {
+		font-size: 30px;
+		font-weight: 650;
+		color: #fff;
+		letter-spacing: -0.02em;
+	}
+
+	/* ─────────── browser window ─────────── */
+	#window {
+		width: 1640px;
+		justify-self: center;
+		align-self: center;
+		height: 800px;
+		background: var(--surface);
+		border-radius: 14px;
+		box-shadow: var(--shadow-lg);
+		overflow: hidden;
+		display: grid;
+		grid-template-rows: 44px 1fr;
+		opacity: 0;
+		transform: translateY(20px) scale(0.99);
+		transition:
+			opacity 0.6s,
+			transform 0.6s;
+	}
+	#window.on {
+		opacity: 1;
+		transform: none;
+	}
+
+	.chrome {
+		background: #f1f2f5;
+		border-bottom: 1px solid var(--line);
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		padding: 0 16px;
+	}
+	.dots {
+		display: flex;
+		gap: 7px;
+	}
+	.dots i {
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		background: #d6d9df;
+	}
+	.urlbar {
+		flex: 1;
+		height: 26px;
+		background: #fff;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		display: flex;
+		align-items: center;
+		padding: 0 12px;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--ink-3);
+		max-width: 520px;
+		margin: 0 auto;
+	}
+	.urlbar b {
+		color: var(--ink-2);
+		font-weight: 500;
+	}
+
+	/* ─────────── app shell ─────────── */
+	.app {
+		display: grid;
+		grid-template-columns: 232px 1fr;
+		height: 100%;
+		min-height: 0;
+	}
+	.side {
+		background: #fbfbfc;
+		border-right: 1px solid var(--line);
+		padding: 20px 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 0 8px 18px;
+	}
+	.logo {
+		width: 26px;
+		height: 26px;
+		border-radius: 7px;
+		background: linear-gradient(135deg, var(--brand), #7c6cf5);
+		display: grid;
+		place-items: center;
+		color: #fff;
+		font-weight: 700;
+		font-size: 14px;
+	}
+	.brand span {
+		font-weight: 650;
+		font-size: 16px;
+		letter-spacing: -0.01em;
+	}
+	.nav {
+		padding: 8px 10px;
+		border-radius: 8px;
+		font-size: 14px;
+		color: var(--ink-2);
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		transition: background 0.25s;
+	}
+	.nav.sel {
+		background: var(--brand-soft);
+		color: var(--brand);
+		font-weight: 600;
+	}
+	.nav em {
+		margin-left: auto;
+		font-style: normal;
+		font-size: 12px;
+		color: var(--ink-3);
+	}
+	.side .spacer {
+		flex: 1;
+	}
+	.user {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 8px;
+		font-size: 13px;
+		color: var(--ink-2);
+		border-top: 1px solid var(--line);
+		padding-top: 14px;
+	}
+	.avatar {
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		background: #dfe3ea;
+		display: grid;
+		place-items: center;
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--ink-2);
+	}
+
+	.main {
+		min-width: 0;
+		position: relative;
+		background: var(--bg);
+	}
+	.view {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		visibility: hidden;
+		transition:
+			opacity 0.35s,
+			visibility 0s linear 0.35s;
+		display: flex;
+		flex-direction: column;
+	}
+	.view.on {
+		opacity: 1;
+		visibility: visible;
+		transition: opacity 0.35s;
+	}
+
+	.topbar {
+		height: 60px;
+		background: var(--surface);
+		border-bottom: 1px solid var(--line);
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		padding: 0 22px;
+		flex: none;
+	}
+	.topbar h2 {
+		font-size: 16px;
+		font-weight: 620;
+		letter-spacing: -0.01em;
+	}
+	.topbar .right {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 18px;
+	}
+	.chip {
+		font-size: 12px;
+		font-weight: 600;
+		padding: 4px 10px;
+		border-radius: 999px;
+		background: var(--brand-soft);
+		color: var(--brand);
+	}
+	.chip.g {
+		background: var(--green-soft);
+		color: var(--green);
+	}
+	.chip.a {
+		background: var(--amber-soft);
+		color: var(--amber);
+	}
+	.meter {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		font-size: 13px;
+		color: var(--ink-2);
+	}
+	.bar {
+		width: 130px;
+		height: 6px;
+		border-radius: 99px;
+		background: #e9ebef;
+		overflow: hidden;
+	}
+	.bar i {
+		display: block;
+		height: 100%;
+		width: 0;
+		border-radius: 99px;
+		background: var(--brand);
+		transition: width 0.4s;
+	}
+	.bar.g i {
+		background: var(--green);
+	}
+	.body {
+		flex: 1;
+		min-height: 0;
+		padding: 22px;
+	}
+
+	/* ─────────── upload ─────────── */
+	.drop {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 20px;
+	}
+	.dropzone {
+		width: 720px;
+		height: 230px;
+		border: 2px dashed var(--line-strong);
+		border-radius: 14px;
+		background: var(--surface);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		transition:
+			border-color 0.35s,
+			background 0.35s,
+			transform 0.35s;
+	}
+	.dropzone.hot {
+		border-color: var(--brand);
+		background: var(--brand-soft);
+		transform: scale(1.012);
+	}
+	.dropzone .ic {
+		font-size: 30px;
+	}
+	.dropzone .t {
+		font-size: 18px;
+		font-weight: 600;
+	}
+	.dropzone .s {
+		font-size: 13px;
+		color: var(--ink-3);
+	}
+
+	.filerow {
+		width: 720px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--r);
+		box-shadow: var(--shadow-sm);
+		padding: 14px 16px;
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		opacity: 0;
+		transform: translateY(6px);
+		transition:
+			opacity 0.4s,
+			transform 0.4s;
+	}
+	.filerow.on {
+		opacity: 1;
+		transform: none;
+	}
+	.pdf {
+		width: 34px;
+		height: 42px;
+		border-radius: 5px;
+		background: var(--red-soft);
+		border: 1px solid #f3c9c6;
+		color: var(--red);
+		font-size: 10px;
+		font-weight: 700;
+		display: grid;
+		place-items: center;
+	}
+	.filerow .nm {
+		font-size: 14px;
+		font-weight: 600;
+	}
+	.filerow .mt {
+		font-size: 12px;
+		color: var(--ink-3);
+		margin-top: 2px;
+	}
+	.filerow .pr {
+		margin-left: auto;
+		width: 190px;
+	}
+	.filerow .pct {
+		font-size: 12px;
+		color: var(--ink-3);
+		text-align: right;
+		margin-top: 5px;
+	}
+
+	.presets {
+		width: 720px;
+		display: flex;
+		gap: 10px;
+		opacity: 0;
+		transition: opacity 0.4s;
+	}
+	.presets.on {
+		opacity: 1;
+	}
+	.pcard {
+		flex: 1;
+		background: var(--surface);
+		border: 1.5px solid var(--line);
+		border-radius: var(--r);
+		padding: 12px 14px;
+		transition:
+			border-color 0.3s,
+			background 0.3s;
+	}
+	.pcard.sel {
+		border-color: var(--brand);
+		background: var(--brand-soft);
+	}
+	.pcard b {
+		font-size: 13px;
+		font-weight: 620;
+		display: block;
+	}
+	.pcard span {
+		font-size: 11.5px;
+		color: var(--ink-3);
+	}
+
+	.btn {
+		background: var(--brand);
+		color: #fff;
+		border-radius: 9px;
+		padding: 11px 22px;
+		font-size: 14px;
+		font-weight: 600;
+		box-shadow: var(--shadow-sm);
+		opacity: 0;
+		transform: translateY(6px);
+		transition:
+			opacity 0.35s,
+			transform 0.35s,
+			filter 0.15s;
+	}
+	.btn.on {
+		opacity: 1;
+		transform: none;
+	}
+	.btn.push {
+		filter: brightness(0.9);
+		transform: translateY(1px);
+	}
+	.btn.ghost {
+		background: var(--surface);
+		color: var(--ink-2);
+		border: 1px solid var(--line-strong);
+		box-shadow: none;
+	}
+
+	/* ─────────── processing ─────────── */
+	.proc {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 22px;
+	}
+	.proc h3 {
+		font-size: 19px;
+		font-weight: 620;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(25, 1fr);
+		gap: 6px;
+		width: 900px;
+	}
+	.grid i {
+		height: 22px;
+		border-radius: 3px;
+		background: #e9ebef;
+		opacity: 0;
+		transform: scale(0.7);
+		transition:
+			opacity 0.2s,
+			transform 0.2s,
+			background 0.2s;
+	}
+	.grid i.on {
+		opacity: 1;
+		transform: none;
+		background: #c9d0f7;
+	}
+	.grid i.blank {
+		background: #e3e6eb;
+		box-shadow: inset 0 0 0 1.5px var(--line-strong);
+	}
+	.proc .cnt {
+		font-size: 13px;
+		color: var(--ink-3);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ─────────── verify ─────────── */
+	.verify {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr auto;
+		gap: 18px;
+		height: 100%;
+	}
+	.pane {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--r);
+		box-shadow: var(--shadow-sm);
+		position: relative;
+		overflow: hidden;
+	}
+	.pane .lbl {
+		position: absolute;
+		top: 12px;
+		left: 14px;
+		font-size: 10.5px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		font-weight: 600;
+	}
+	.scan {
+		background:
+			repeating-linear-gradient(
+				0deg,
+				rgba(0, 0, 0, 0.022) 0 1px,
+				transparent 1px 40px
+			),
+			#fbf8f1;
+		padding: 44px 40px 0;
+	}
+	.scan .hd {
+		font-family: var(--hand);
+		font-size: 25px;
+		color: #4a3b2a;
+		margin-bottom: 14px;
+	}
+	.scan p {
+		font-family: var(--hand);
+		font-size: 24px;
+		line-height: 1.85;
+		color: #4a3b2a;
+	}
+	.out {
+		padding: 44px 34px 0;
+		font-size: 19px;
+		line-height: 1.8;
+		color: var(--ink);
+	}
+	.cursor {
+		display: inline-block;
+		width: 2px;
+		height: 20px;
+		background: var(--ink);
+		vertical-align: -3px;
+		animation: bl 1s steps(1) infinite;
+	}
+	@keyframes bl {
+		50% {
+			opacity: 0;
+		}
+	}
+	mark {
+		border-radius: 4px;
+		padding: 1px 4px;
+		background: var(--violet-soft);
+		box-shadow: inset 0 -2px 0 var(--violet);
+	}
+	mark.fix {
+		background: var(--red-soft);
+		box-shadow: inset 0 -2px 0 var(--red);
+	}
+	mark.ok {
+		background: var(--green-soft);
+		box-shadow: inset 0 -2px 0 var(--green);
+	}
+	.tip {
+		position: absolute;
+		font-size: 12px;
+		background: var(--ink);
+		color: #fff;
+		padding: 6px 11px;
+		border-radius: 7px;
+		opacity: 0;
+		transform: translateY(5px);
+		transition:
+			opacity 0.3s,
+			transform 0.3s;
+		white-space: nowrap;
+		box-shadow: var(--shadow-md);
+	}
+	.tip.on {
+		opacity: 1;
+		transform: none;
+	}
+	.tip:after {
+		content: "";
+		position: absolute;
+		top: -4px;
+		left: 22px;
+		width: 8px;
+		height: 8px;
+		background: var(--ink);
+		transform: rotate(45deg);
+	}
+
+	.acts {
+		grid-column: 1 / 3;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.key {
+		border: 1px solid var(--line-strong);
+		background: var(--surface);
+		border-radius: 8px;
+		padding: 8px 15px;
+		font-size: 13px;
+		color: var(--ink-2);
+		transition: all 0.15s;
+	}
+	.key b {
+		color: var(--ink);
+		font-family: var(--mono);
+		font-size: 12px;
+	}
+	.key.hit {
+		background: var(--green);
+		border-color: var(--green);
+		color: #fff;
+		transform: translateY(1px);
+	}
+	.key.hit b {
+		color: #fff;
+	}
+	.key.hitg {
+		background: #8b93a7;
+		border-color: #8b93a7;
+		color: #fff;
+		transform: translateY(1px);
+	}
+	.key.hitg b {
+		color: #fff;
+	}
+	.strip {
+		margin-left: auto;
+		display: flex;
+		gap: 5px;
+		align-items: center;
+	}
+	.strip i {
+		width: 34px;
+		height: 30px;
+		border-radius: 6px;
+		background: #eceef2;
+		border: 1px solid var(--line);
+		font-size: 11.5px;
+		color: var(--ink-3);
+		display: grid;
+		place-items: center;
+		font-variant-numeric: tabular-nums;
+		transition: all 0.3s;
+	}
+	.strip i.done {
+		background: var(--green-soft);
+		border-color: #b8e3cd;
+		color: var(--green);
+	}
+	.strip i.skip {
+		background: #eceef2;
+		color: #a8afbc;
+	}
+	.strip i.blank {
+		background: #f4f5f7;
+		color: #b6bcc7;
+		border-style: dashed;
+	}
+	.strip i.cur {
+		background: var(--brand);
+		border-color: var(--brand);
+		color: #fff;
+		font-weight: 700;
+		transform: scale(1.1);
+	}
+	.strip i.rdy {
+		background: var(--brand-soft);
+		border-color: #c9cdf8;
+		color: var(--brand);
+	}
+
+	/* lexicon panel */
+	.lex {
+		position: absolute;
+		right: 22px;
+		bottom: 78px;
+		width: 290px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--r);
+		box-shadow: var(--shadow-md);
+		padding: 13px 15px;
+		opacity: 0;
+		transform: translateY(10px);
+		transition:
+			opacity 0.4s,
+			transform 0.4s;
+	}
+	.lex.on {
+		opacity: 1;
+		transform: none;
+	}
+	.lex h4 {
+		font-size: 10.5px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		margin-bottom: 9px;
+	}
+	.lex li {
+		list-style: none;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 13.5px;
+		padding: 5px 0;
+		border-top: 1px solid #f2f3f5;
+	}
+	.lex li b {
+		font-weight: 600;
+	}
+	.lex li span {
+		font-size: 11.5px;
+		color: var(--ink-3);
+	}
+	.lex li em {
+		font-style: normal;
+		font-size: 10px;
+		font-weight: 700;
+		color: var(--green);
+		background: var(--green-soft);
+		padding: 2px 6px;
+		border-radius: 999px;
+	}
+
+	/* ─────────── preset editor ─────────── */
+	.form {
+		max-width: 780px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.card {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--r);
+		box-shadow: var(--shadow-sm);
+		padding: 18px 20px;
+	}
+	.card h5 {
+		font-size: 11px;
+		letter-spacing: 0.11em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		margin-bottom: 10px;
+	}
+	.input {
+		border: 1px solid var(--line-strong);
+		border-radius: 8px;
+		padding: 9px 12px;
+		font-size: 13.5px;
+		color: var(--ink);
+		background: #fff;
+	}
+	.ta {
+		min-height: 74px;
+		line-height: 1.6;
+		color: var(--ink-2);
+		font-size: 13px;
+	}
+	.row {
+		display: flex;
+		gap: 10px;
+		align-items: center;
+	}
+	.tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		background: #f4f5f7;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 5px 12px;
+		font-size: 12.5px;
+		opacity: 0;
+		transform: scale(0.9);
+		transition:
+			opacity 0.3s,
+			transform 0.3s;
+	}
+	.tag.on {
+		opacity: 1;
+		transform: none;
+	}
+	.tag i {
+		font-style: normal;
+		font-size: 10px;
+		color: var(--ink-3);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.locked {
+		font-size: 12.5px;
+		color: var(--ink-3);
+		background: #f7f8fa;
+		border: 1px dashed var(--line-strong);
+		border-radius: 8px;
+		padding: 10px 12px;
+		font-family: var(--mono);
+	}
+
+	/* ─────────── export ─────────── */
+	.modalwrap {
+		position: absolute;
+		inset: 0;
+		background: rgba(16, 19, 26, 0.32);
+		display: grid;
+		place-items: center;
+		opacity: 0;
+		visibility: hidden;
+		transition:
+			opacity 0.35s,
+			visibility 0s linear 0.35s;
+	}
+	.modalwrap.on {
+		opacity: 1;
+		visibility: visible;
+		transition: opacity 0.35s;
+	}
+	.modal {
+		width: 470px;
+		background: var(--surface);
+		border-radius: 13px;
+		box-shadow: var(--shadow-lg);
+		padding: 24px;
+		transform: translateY(10px) scale(0.98);
+		transition: transform 0.35s;
+	}
+	.modalwrap.on .modal {
+		transform: none;
+	}
+	.modal h4 {
+		font-size: 17px;
+		font-weight: 640;
+		margin-bottom: 16px;
+	}
+	.fmts {
+		display: flex;
+		gap: 9px;
+		margin-bottom: 16px;
+	}
+	.fmt {
+		flex: 1;
+		text-align: center;
+		border: 1.5px solid var(--line);
+		border-radius: 9px;
+		padding: 11px;
+		font-size: 13.5px;
+		font-weight: 600;
+		color: var(--ink-2);
+		transition: all 0.25s;
+	}
+	.fmt.sel {
+		border-color: var(--green);
+		background: var(--green-soft);
+		color: var(--green);
+	}
+	.warn {
+		background: var(--amber-soft);
+		border: 1px solid #f0dfc0;
+		border-radius: 9px;
+		padding: 11px 13px;
+		font-size: 12.5px;
+		color: #7a5a1c;
+		line-height: 1.5;
+		margin-bottom: 18px;
+	}
+	.modal .row.end {
+		justify-content: flex-end;
+	}
+
+	/* results table */
+	.tablecard {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--r);
+		box-shadow: var(--shadow-sm);
+		overflow: hidden;
+		opacity: 0;
+		transform: translateY(8px);
+		transition:
+			opacity 0.45s,
+			transform 0.45s;
+	}
+	.tablecard.on {
+		opacity: 1;
+		transform: none;
+	}
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 13.5px;
+	}
+	th {
+		background: #fafbfc;
+		text-align: left;
+		padding: 10px 16px;
+		font-size: 10.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		border-bottom: 1px solid var(--line);
+	}
+	td {
+		padding: 11px 16px;
+		border-bottom: 1px solid #f2f3f5;
+	}
+	tr:last-child td {
+		border-bottom: 0;
+	}
+	td.hl {
+		color: var(--green);
+		font-weight: 600;
+	}
+
+	.stats {
+		display: flex;
+		gap: 40px;
+		justify-content: center;
+		opacity: 0;
+		transition: opacity 0.5s;
+	}
+	.stats.on {
+		opacity: 1;
+	}
+	.stat {
+		text-align: center;
+	}
+	.stat b {
+		display: block;
+		font-size: 34px;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+	.stat span {
+		font-size: 12.5px;
+		color: var(--ink-3);
+	}
+
+	/* ─────────── caption ─────────── */
+	#note {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 200px;
+	}
+	#noteT {
+		font-size: 21px;
+		line-height: 1.45;
+		color: #aab2c3;
+		text-align: center;
+		opacity: 0;
+		transform: translateY(6px);
+		transition:
+			opacity 0.45s,
+			transform 0.45s;
+		max-width: 1300px;
+	}
+	#noteT.on {
+		opacity: 1;
+		transform: none;
+	}
+	#noteT em {
+		color: #fff;
+		font-style: normal;
+		font-weight: 600;
+	}
+
+	/* ─────────── cards ─────────── */
+	.card-full {
+		position: fixed;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 20px;
+		background: radial-gradient(120% 100% at 50% -10%, #1b2130 0%, #0b0d12 60%);
+		z-index: 50;
+		opacity: 0;
+		transition: opacity 0.6s;
+		pointer-events: none;
+	}
+	.card-full.on {
+		opacity: 1;
+	}
+	.card-full h1 {
+		font-size: 82px;
+		font-weight: 750;
+		letter-spacing: -0.04em;
+		color: #fff;
+	}
+	.card-full h2 {
+		font-size: 31px;
+		font-weight: 550;
+		color: #d7dbe4;
+		text-align: center;
+	}
+	.card-full p {
+		font-size: 20px;
+		color: #99a1b2;
+		text-align: center;
+		max-width: 900px;
+		line-height: 1.55;
+	}
+	.accent {
+		color: #a5b4fc;
+	}
+	.loop {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		font-size: 17px;
+		color: #c3c9d6;
+		margin-top: 10px;
+	}
+	.loop b {
+		background: rgba(124, 108, 245, 0.14);
+		border: 1px solid rgba(165, 180, 252, 0.32);
+		border-radius: 9px;
+		padding: 9px 16px;
+		color: #c7cffc;
+		font-weight: 600;
+	}
+</style>
+
+<div id="cap"></div>
+
+<div class="card-full" id="intro">
+	<h1>Transcripta</h1>
+	<h2>Turning scanned handwriting into structured text</h2>
+	<p>
+		A model reads the page, a human checks it in seconds, and
+		<span class="accent">every confirmation becomes a hint</span> for the pages
+		that follow.
+	</p>
+</div>
+
+<div class="card-full" id="outro">
+	<h2>The further into the document, the fewer corrections</h2>
+	<div class="loop">
+		<b>human confirms</b> → <b>word enters the lexicon</b> →
+		<b>model reads better</b>
+	</div>
+	<p style="margin-top: 12px">
+		No model training. The lexicon is a plain list of words — open it, fix it,
+		carry it to the next document.
+	</p>
+</div>
+
+<div id="stage">
+	<div id="chapter">
+		<div id="chapterNo"></div>
+		<div id="chapterTitle"></div>
+	</div>
+
+	<div id="window">
+		<div class="chrome">
+			<div class="dots"><i></i><i></i><i></i></div>
+			<div class="urlbar">
+				<span>🔒</span><b id="url">transcripta.app/documents</b>
+			</div>
+		</div>
+
+		<div class="app">
+			<aside class="side">
+				<div class="brand">
+					<div class="logo">T</div>
+					<span>Transcripta</span>
+				</div>
+				<div class="nav sel" id="navDocs">
+					▤ Documents <em id="navCount">3</em>
+				</div>
+				<div class="nav" id="navPresets">◈ Presets</div>
+				<div class="nav">◷ Exports</div>
+				<div class="spacer"></div>
+				<div class="user">
+					<div class="avatar">MK</div>
+					<div>maria@archive.org</div>
+				</div>
+			</aside>
+
+			<div class="main">
+				<!-- 1 · documents list -->
+				<section class="view" id="vList">
+					<div class="topbar">
+						<h2>Documents</h2>
+						<div class="right">
+							<div class="btn on" style="padding: 8px 16px">
+								＋ New document
+							</div>
+						</div>
+					</div>
+					<div class="body">
+						<div class="tablecard on">
+							<table>
+								<tr>
+									<th>Title</th>
+									<th>Status</th>
+									<th>Progress</th>
+									<th>Spent</th>
+								</tr>
+								<tr>
+									<td>Hospital records, 1912</td>
+									<td><span class="chip g">done</span></td>
+									<td>88 / 88</td>
+									<td>$2.14</td>
+								</tr>
+								<tr>
+									<td>Ledger, 1903</td>
+									<td><span class="chip a">budget stop</span></td>
+									<td>12 / 240</td>
+									<td>$10.00</td>
+								</tr>
+								<tr id="rowNew" style="opacity: 0.35">
+									<td>—</td>
+									<td></td>
+									<td></td>
+									<td></td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</section>
+
+				<!-- 2 · upload -->
+				<section class="view" id="vUpload">
+					<div class="topbar"><h2>New document</h2></div>
+					<div class="body">
+						<div class="drop">
+							<div class="dropzone" id="dz">
+								<div class="ic">📄</div>
+								<div class="t">Drop a PDF here, or choose a file</div>
+								<div class="s">up to 500 MB · up to 500 pages</div>
+							</div>
+							<div class="filerow" id="frow">
+								<div class="pdf">PDF</div>
+								<div>
+									<div class="nm">parish-register-1887.pdf</div>
+									<div class="mt" id="fmeta">
+										180 MB · uploading straight to storage
+									</div>
+								</div>
+								<div class="pr">
+									<div class="bar"><i id="upbar"></i></div>
+									<div class="pct" id="uppct">0%</div>
+								</div>
+							</div>
+							<div class="presets" id="presets">
+								<div class="pcard sel">
+									<b>Parish register</b><span>19th c. · cursive</span>
+								</div>
+								<div class="pcard">
+									<b>Medical record</b><span>diagnoses, drugs</span>
+								</div>
+								<div class="pcard">
+									<b>Diary</b><span>free-form prose</span>
+								</div>
+							</div>
+							<div class="btn" id="goBtn">Start processing</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- 3 · processing -->
+				<section class="view" id="vProc">
+					<div class="topbar">
+						<h2>Parish register, 1887</h2>
+						<div class="right">
+							<span class="chip" id="procChip">ingesting</span>
+						</div>
+					</div>
+					<div class="body">
+						<div class="proc">
+							<h3 id="procTitle">Splitting the PDF, one page at a time</h3>
+							<div class="grid" id="grid"></div>
+							<div class="cnt" id="procCnt">0 / 300 pages</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- 4 · verify -->
+				<section class="view" id="vVerify">
+					<div class="topbar">
+						<h2>Parish register, 1887</h2>
+						<div class="right">
+							<div class="meter">
+								<span id="vProgTxt">47 / 300</span>
+								<div class="bar g">
+									<i id="vProgBar" style="width: 16%"></i>
+								</div>
+							</div>
+							<div class="meter">
+								<span id="vBudget">$0.98 / $10.00</span>
+							</div>
+						</div>
+					</div>
+					<div class="body">
+						<div class="verify">
+							<div class="pane scan">
+								<div class="lbl" id="scanLbl">SCAN · PAGE 47</div>
+								<div class="hd" id="scanHd">Metrical book · sheet 47</div>
+								<p id="scanTxt"></p>
+							</div>
+							<div class="pane out">
+								<div class="lbl">TRANSCRIPTION</div>
+								<div id="outTxt"></div>
+								<div class="tip" id="tip"></div>
+							</div>
+							<div class="acts">
+								<div class="key" id="kEnter"><b>Enter</b> correct</div>
+								<div class="key" id="kEdit"><b>E</b> edit</div>
+								<div class="key" id="kSkip"><b>S</b> skip</div>
+								<div class="strip" id="strip"></div>
+							</div>
+						</div>
+						<div class="lex" id="lex">
+							<h4>Document lexicon</h4>
+							<ul id="lexList"></ul>
+						</div>
+					</div>
+				</section>
+
+				<!-- 5 · preset editor -->
+				<section class="view" id="vPreset">
+					<div class="topbar">
+						<h2>New preset</h2>
+						<div class="right">
+							<span class="chip">based on · Parish register</span>
+						</div>
+					</div>
+					<div class="body">
+						<div class="form">
+							<div class="card">
+								<h5>Instructions for the model</h5>
+								<div class="input ta" id="instr"></div>
+							</div>
+							<div class="card">
+								<h5>Seed glossary — saves the first pages</h5>
+								<div
+									class="row"
+									id="seedRow"
+									style="flex-wrap: wrap; gap: 8px"
+								></div>
+							</div>
+							<div class="card">
+								<h5>Output fields — come from the template</h5>
+								<div class="locked">
+									record_no · date · given_name · surname · place · notes
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- 6 · export -->
+				<section class="view" id="vExport">
+					<div class="topbar">
+						<h2>Parish register, 1887</h2>
+						<div class="right">
+							<span class="chip g">done</span>
+							<div class="meter">
+								<span>300 / 300</span>
+								<div class="bar g"><i style="width: 100%"></i></div>
+							</div>
+						</div>
+					</div>
+					<div class="body">
+						<div
+							style="
+								display: flex;
+								flex-direction: column;
+								gap: 26px;
+								height: 100%;
+								padding-top: 26px;
+							"
+						>
+							<div class="stats" id="stats">
+								<div class="stat"><b>300</b><span>pages</span></div>
+								<div class="stat">
+									<b>52 min</b><span>instead of 20 hours</span>
+								</div>
+								<div class="stat">
+									<b>128</b><span>words in the lexicon</span>
+								</div>
+								<div class="stat"><b>$2.06</b><span>total cost</span></div>
+							</div>
+							<div
+								class="tablecard"
+								id="csv"
+								style="max-width: 1000px; margin: 0 auto; width: 100%"
+							>
+								<table>
+									<tr>
+										<th>page</th>
+										<th>date</th>
+										<th>child</th>
+										<th>father</th>
+										<th>village</th>
+									</tr>
+									<tr>
+										<td>47</td>
+										<td>1887-01-11</td>
+										<td>Anna</td>
+										<td class="hl">Petr Ivanenko</td>
+										<td class="hl">Dykanka</td>
+									</tr>
+									<tr>
+										<td>48</td>
+										<td>1887-01-14</td>
+										<td>Ivan</td>
+										<td class="hl">Iosif Ivanenko</td>
+										<td class="hl">Dykanka</td>
+									</tr>
+									<tr>
+										<td>49</td>
+										<td>1887-01-19</td>
+										<td>Marfa</td>
+										<td class="hl">Grigorii Ivanenko</td>
+										<td class="hl">Dykanka</td>
+									</tr>
+								</table>
+							</div>
+						</div>
+					</div>
+					<div class="modalwrap" id="modal">
+						<div class="modal">
+							<h4>Export "Parish register, 1887"</h4>
+							<div class="fmts">
+								<div class="fmt" id="fJson">JSON</div>
+								<div class="fmt" id="fCsv">CSV</div>
+								<div class="fmt" id="fTxt">TXT</div>
+							</div>
+							<div class="warn" id="warn">
+								12 of 300 pages were never verified by a human. They will be
+								exported exactly as the model read them.
+							</div>
+							<div class="row end">
+								<div class="btn ghost on">Cancel</div>
+								<div class="btn on" id="expBtn">Export</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+		</div>
+	</div>
+
+	<div id="note"><div id="noteT"></div></div>
+</div>
+
+<script>
+	(function () {
+		const SLOW = window.__SLOW || 1;
+		const $ = (id) => document.getElementById(id);
+		const shots = () => !!window.__shotsMode;
+		const shot = async (n) => {
+			if (shots() && window.__shot) await window.__shot(n);
+		};
+		// PACE stretches the finished video; SLOW only affects how it is recorded.
+		// Captions have to be readable, so every dwell is multiplied here rather
+		// than tuned one by one.
+		const PACE = 1.9;
+		const wait = (ms) => new Promise((r) => setTimeout(r, ms * SLOW));
+		const pause = async (ms) => {
+			if (!shots()) await wait(ms * PACE);
+		};
+		/** Time for the caption to be read before anything moves. */
+		const read = () => pause(950);
+
+		function chapter(no, title) {
+			$("chapterNo").textContent = no;
+			$("chapterTitle").textContent = title;
+			$("chapter").classList.add("on");
+		}
+		function note(html) {
+			const el = $("noteT");
+			el.classList.remove("on");
+			const set = () => {
+				el.innerHTML = html;
+				el.classList.add("on");
+			};
+			if (shots()) set();
+			else setTimeout(set, 240 * SLOW);
+		}
+		function view(id) {
+			document
+				.querySelectorAll(".view")
+				.forEach((v) => v.classList.toggle("on", v.id === id));
+		}
+		function url(u) {
+			$("url").textContent = u;
+		}
+
+		/** Type markup character by character; tags are inserted whole. */
+		async function type(el, html, totalMs) {
+			const tokens = html.match(/<[^>]+>|&[a-z]+;|[\s\S]/g) || [];
+			const visible = tokens.filter((t) => t[0] !== "<").length || 1;
+			const per = totalMs / visible;
+			let acc = "";
+			el.innerHTML = "";
+			for (const t of tokens) {
+				acc += t;
+				el.innerHTML = acc + '<span class="cursor"></span>';
+				if (t[0] !== "<") await pause(per);
+			}
+			el.innerHTML = acc;
+		}
+
+		async function press(id, cls) {
+			const el = $(id);
+			el.classList.add(cls || "hit");
+			await pause(240);
+			el.classList.remove(cls || "hit");
+		}
+
+		// page strip -------------------------------------------------------
+		const STRIP = [44, 45, 46, 47, 48, 49, 50, 51];
+		function strip(state) {
+			$("strip").innerHTML = STRIP.map(
+				(n) => `<i class="${state[n] || ""}">${n}</i>`,
+			).join("");
+		}
+
+		// lexicon ----------------------------------------------------------
+		const LEX = [];
+		function drawLex() {
+			$("lexList").innerHTML = LEX.map(
+				(w) =>
+					`<li><b>${w.w}</b><span>${w.n} page${w.n > 1 ? "s" : ""}</span>` +
+					`${w.n >= 2 ? "<em>in prompt</em>" : ""}</li>`,
+			).join("");
+		}
+		async function addLex(w, n) {
+			LEX.unshift({ w, n });
+			drawLex();
+			await pause(110);
+		}
+
+		const line = (...rows) => rows.map((r) => `<span>${r}</span>`).join("<br>");
+		const SCAN = {
+			47: line(
+				"No. 15. On the 11th day of January",
+				"was born Anna. Parents: peasant",
+				"of Dykanka village Petr Ivanenko",
+				"and his lawful wife Maria.",
+			),
+			48: line(
+				"No. 16. On the 14th day of January",
+				"was born Ivan. Parents: peasant",
+				"of Dykanka village Iosif Ivanenko",
+				"and his lawful wife Paraskeva.",
+			),
+			49: line(
+				"No. 17. On the 19th day of January",
+				"was born Marfa. Parents: peasant",
+				"of Dykanka village Grigorii Ivanenko",
+				"and his lawful wife Evdokia.",
+			),
+			50: line(
+				"No. 18. On the 2nd of February ···",
+				"········ washed out ········",
+			),
+		};
+
+		/** In the real app the next page appears instantly on Enter, so the
+		 * header, the strip and the content must move together. */
+		function showPage(n) {
+			$("scanLbl").textContent = "SCAN · PAGE " + n;
+			$("scanHd").textContent = "Metrical book · sheet " + n;
+			$("scanTxt").innerHTML = SCAN[n] || "";
+			$("outTxt").innerHTML = "";
+		}
+
+		async function scene() {
+			// ── intro ──
+			// Hold the black cap briefly: build.js finds it with blackdetect and
+			// trims everything before it, so the video never starts mid-layout.
+			await pause(300);
+			$("cap").style.display = "none";
+			$("intro").classList.add("on");
+			await shot("01-intro");
+			await pause(2600);
+			$("intro").classList.remove("on");
+			await pause(600);
+
+			// ── 1 · documents ──
+			chapter("step 1", "A workspace of documents");
+			note(
+				"Every document keeps its own budget, its own progress and its own lexicon.",
+			);
+			url("transcripta.app/documents");
+			$("window").classList.add("on");
+			view("vList");
+			await read();
+			await pause(1500);
+			await shot("02-documents");
+			await pause(1300);
+
+			// ── 2 · upload ──
+			chapter("step 2", "Upload");
+			note(
+				"The file goes <em>straight to storage</em>, past our server — 500 MB will not fit through Node.",
+			);
+			url("transcripta.app/documents/new");
+			view("vUpload");
+			await read();
+			await pause(700);
+			$("dz").classList.add("hot");
+			await pause(450);
+			$("frow").classList.add("on");
+			await shot("03-upload");
+			for (let p = 0; p <= 100; p += 4) {
+				$("upbar").style.width = p + "%";
+				$("uppct").textContent = p + "%";
+				await pause(22);
+			}
+			$("fmeta").textContent = "180 MB · uploaded";
+			$("presets").classList.add("on");
+			await pause(600);
+			$("goBtn").classList.add("on");
+			await shot("04-preset-picked");
+			await pause(700);
+			$("goBtn").classList.add("push");
+			await pause(220);
+			$("goBtn").classList.remove("push");
+			await pause(350);
+
+			// ── 3 · processing ──
+			chapter("step 3", "Splitting into pages");
+			note(
+				"One page at a time, each in its own process: a broken page kills one page, <em>not the document</em>.",
+			);
+			url("transcripta.app/documents/12");
+			view("vProc");
+			await read();
+			$("grid").innerHTML = Array.from({ length: 100 }, () => "<i></i>").join(
+				"",
+			);
+			const cells = [...$("grid").children];
+			await pause(450);
+			for (let i = 0; i < cells.length; i++) {
+				cells[i].classList.add("on");
+				if (i === 37 || i === 71) cells[i].classList.add("blank");
+				$("procCnt").textContent = `${Math.round((i + 1) * 3)} / 300 pages`;
+				if (i === 45) await shot("05-splitting");
+				await pause(22);
+			}
+			$("procTitle").textContent = "Ready. The first 5 pages are queued";
+			$("procCnt").textContent =
+				"300 / 300 pages · 2 blank pages skipped, never sent to the model";
+			$("procChip").textContent = "ready";
+			$("procChip").className = "chip g";
+			await shot("06-blank-skipped");
+			await pause(1900);
+
+			// ── 4 · verify page 47 ──
+			chapter("step 4", "The human checks");
+			note(
+				"The human waits only for the <em>first</em> page. After that five are always ready ahead.",
+			);
+			url("transcripta.app/documents/12/verify");
+			view("vVerify");
+			strip({
+				44: "done",
+				45: "done",
+				46: "done",
+				47: "cur",
+				48: "rdy",
+				49: "rdy",
+				50: "rdy",
+			});
+			$("scanTxt").innerHTML = SCAN[47];
+			await read();
+			await pause(600);
+			await type(
+				$("outTxt"),
+				`No. 15. On the 11th day of January was born Anna.<br>Parents: peasant of <mark>Dykanka</mark> village<br>Petr <mark>Ivanenko</mark> and his lawful wife Maria.`,
+				2300,
+			);
+			await shot("07-verify");
+			await pause(1500);
+			await press("kEnter");
+			strip({
+				44: "done",
+				45: "done",
+				46: "done",
+				47: "done",
+				48: "cur",
+				49: "rdy",
+				50: "rdy",
+				51: "rdy",
+			});
+			$("vProgTxt").textContent = "48 / 300";
+			$("vBudget").textContent = "$1.01 / $10.00";
+			showPage(48);
+			await addLex("Dykanka", 1);
+			await addLex("Ivanenko", 1);
+			$("lex").classList.add("on");
+			await shot("08-lexicon");
+			await pause(1700);
+
+			// ── 5 · a mistake ──
+			chapter("step 5", "The model gets a name wrong");
+			note(
+				"One correction, and the word will never come back in that shape — <em>on any later page</em>.",
+			);
+			await pause(450);
+			await type(
+				$("outTxt"),
+				`No. 16. On the 14th day of January was born Ivan.<br>Parents: peasant of <mark>Dykanka</mark> village<br>Iosif <mark class="fix">Ivanchenko</mark> and his lawful wife Paraskeva.`,
+				2000,
+			);
+			const tip = $("tip");
+			tip.textContent = "the scan reads Ivanenko";
+			tip.style.left = "34px";
+			tip.style.top = "196px";
+			tip.classList.add("on");
+			await shot("09-mistake");
+			await pause(2000);
+			await press("kEdit");
+			$("outTxt").innerHTML = $("outTxt").innerHTML.replace(
+				'<mark class="fix">Ivanchenko</mark>',
+				'<mark class="ok">Ivanenko</mark><span class="cursor"></span>',
+			);
+			tip.classList.remove("on");
+			await pause(850);
+			$("outTxt").innerHTML = $("outTxt").innerHTML.replace(
+				'<span class="cursor"></span>',
+				"",
+			);
+			await press("kEnter");
+			strip({
+				44: "done",
+				45: "done",
+				46: "done",
+				47: "done",
+				48: "done",
+				49: "cur",
+				50: "rdy",
+				51: "rdy",
+			});
+			$("vProgTxt").textContent = "49 / 300";
+			$("vBudget").textContent = "$1.04 / $10.00";
+			showPage(49);
+			LEX[0].n = 2;
+			LEX[1].n = 2;
+			drawLex();
+			await shot("10-corrected");
+			await pause(1800);
+
+			// ── 6 · the payoff ──
+			chapter("step 6", "The next page already knows");
+			note(
+				"Purple marks what the <em>context suggested</em>, not what the model guessed from the ink.",
+			);
+			await pause(400);
+			await type(
+				$("outTxt"),
+				`No. 17. On the 19th day of January was born Marfa.<br>Parents: peasant of <mark>Dykanka</mark> village<br>Grigorii <mark>Ivanenko</mark> and his lawful wife Evdokia.`,
+				1400,
+			);
+			tip.textContent = "from the lexicon · confirmed on 2 pages";
+			tip.style.top = "196px";
+			tip.classList.add("on");
+			await shot("11-context-hit");
+			await pause(2300);
+			tip.classList.remove("on");
+			await press("kEnter");
+			strip({
+				44: "done",
+				45: "done",
+				46: "done",
+				47: "done",
+				48: "done",
+				49: "done",
+				50: "cur",
+				51: "rdy",
+			});
+			$("vProgTxt").textContent = "50 / 300";
+			showPage(50);
+			LEX[0].n = 3;
+			LEX[1].n = 3;
+			drawLex();
+			await pause(700);
+
+			// ── 7 · skip ──
+			chapter("step 7", "Skipping is not confirming");
+			note(
+				"A skipped page never feeds the prompt. <em>“I did not read it”</em> is not evidence.",
+			);
+			await pause(400);
+			await type(
+				$("outTxt"),
+				`No. 18. On the 2nd of February […]<br><span style="color:#838b9a">illegible</span>`,
+				800,
+			);
+			await pause(500);
+			await press("kSkip", "hitg");
+			strip({
+				44: "done",
+				45: "done",
+				46: "done",
+				47: "done",
+				48: "done",
+				49: "done",
+				50: "skip",
+				51: "cur",
+			});
+			await shot("12-skip");
+			await pause(1800);
+
+			// ── 8 · preset editor ──
+			chapter("step 8", "Presets carry knowledge over");
+			note(
+				"The schema comes from a template. The user writes only <em>instructions and a glossary</em>.",
+			);
+			url("transcripta.app/presets/new");
+			$("navDocs").classList.remove("sel");
+			$("navPresets").classList.add("sel");
+			view("vPreset");
+			await read();
+			await pause(600);
+			await type(
+				$("instr"),
+				"This is a page from a late 19th-century parish register. Cursive, faded ink. Preserve the original spelling — do not modernise it.",
+				1700,
+			);
+			const seeds = [
+				["surname", "Ivanenko"],
+				["place", "Dykanka"],
+				["formula", "born and baptised"],
+				["abbreviation", "peas. = peasant"],
+			];
+			$("seedRow").innerHTML = seeds
+				.map(([k, v]) => `<div class="tag"><i>${k}</i> ${v}</div>`)
+				.join("");
+			for (const t of [...$("seedRow").children]) {
+				t.classList.add("on");
+				await pause(200);
+			}
+			await shot("13-preset");
+			await pause(1900);
+
+			// ── 9 · export ──
+			chapter("step 9", "Export");
+			note(
+				"Unverified pages are exported too — and the dialog says so out loud.",
+			);
+			url("transcripta.app/documents/12");
+			$("navPresets").classList.remove("sel");
+			$("navDocs").classList.add("sel");
+			view("vExport");
+			await read();
+			await pause(500);
+			$("stats").classList.add("on");
+			await pause(800);
+			$("modal").classList.add("on");
+			await pause(700);
+			$("fCsv").classList.add("sel");
+			await shot("14-export-dialog");
+			await pause(1900);
+			$("expBtn").classList.add("push");
+			await pause(240);
+			$("modal").classList.remove("on");
+			await pause(500);
+			$("csv").classList.add("on");
+			await shot("15-result");
+			await pause(1800);
+
+			// ── outro ──
+			$("window").classList.remove("on");
+			$("chapter").classList.remove("on");
+			$("noteT").classList.remove("on");
+			await pause(700);
+			$("outro").classList.add("on");
+			await shot("16-outro");
+			await pause(3200);
+		}
+
+		window.__start = function () {
+			if (shots()) document.body.classList.add("nofx");
+			scene()
+				.then(() => {
+					window.__done = true;
+				})
+				.catch((e) => {
+					window.__sceneError = (e && e.message) || String(e);
+					window.__done = true;
+				});
+		};
+	})();
+</script>

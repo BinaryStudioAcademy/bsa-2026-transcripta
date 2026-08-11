@@ -1,0 +1,61 @@
+%% LIFE OF A SINGLE PAGE - the states it passes through
+%% These are the 9 values of page.status from ../schema/schema.sql.
+%% The happy path reads LEFT TO RIGHT; up and down are deviations from it.
+
+stateDiagram-v2
+    direction LR
+
+    [*] --> pending : ingest split the PDF
+
+    pending : 1 · pending<br/><i>image is already in S3,<br/>not queued yet</i>
+    queued : 2 · queued<br/><i>in the queue,<br/>waiting for a worker</i>
+    transcribing : 3 · transcribing<br/><i>worker picked the job up,<br/>model call in flight</i>
+    transcribed : 4 · transcribed<br/><i>the machine has read it,<br/>the human has not</i>
+    confirmed : 5a · confirmed<br/><i>human said "read correctly"</i>
+    corrected : 5b · corrected<br/><i>human fixed the text</i>
+    skipped : 5c · skipped<br/><i>human skipped it</i>
+    blank : blank<br/><i>empty scan -<br/>model never called</i>
+    failed : failed<br/><i>unreadable<br/>after 3 attempts</i>
+
+    pending --> queued : its turn came<br/>(window of 5 pages)
+    queued --> transcribing : worker took the job
+    transcribing --> transcribed : valid JSON arrived
+    transcribed --> confirmed : Enter
+    transcribed --> corrected : edits + Enter
+    transcribed --> skipped : S
+
+    confirmed --> [*]
+    corrected --> [*]
+    skipped --> [*]
+
+    pending --> blank : blank scan,<br/>detected during ingest
+    transcribing --> failed : error or timeout
+    blank --> [*]
+    failed --> queued : "retry", manual only
+
+    queued --> pending : pause or cancel
+    transcribed --> queued : "re-read"
+    confirmed --> transcribed : Ctrl+Z
+    corrected --> transcribed : Ctrl+Z
+    skipped --> transcribed : Ctrl+Z
+
+    note right of transcribed
+        THE MAIN BOUNDARY OF THE SYSTEM
+        To the left of it the machine works,
+        to the right the human does.
+        ONLY 5a and 5b feed the context
+        of the following pages.
+        5c and transcribed itself do not.
+    end note
+
+    classDef mach fill:#e0e7ff,stroke:#6366f1,color:#0f172a
+    classDef wait fill:#fef3c7,stroke:#d97706,stroke-width:3px,color:#0f172a
+    classDef okc fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a
+    classDef neutral fill:#f1f5f9,stroke:#94a3b8,color:#0f172a
+    classDef badc fill:#fee2e2,stroke:#dc2626,color:#0f172a
+
+    class pending,queued,transcribing mach
+    class transcribed wait
+    class confirmed,corrected okc
+    class skipped,blank neutral
+    class failed badc

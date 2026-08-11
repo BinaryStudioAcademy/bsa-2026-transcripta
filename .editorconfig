@@ -1,0 +1,25 @@
+root = true
+
+[*]
+indent_style = tab
+indent_size = 2
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+charset = utf-8
+
+[*.md]
+# Indentation in markdown is owned by prettier (useTabs: true), and it emits
+# tabs inside fenced code blocks. Two tools cannot contradict each other on the
+# same file, so prettier is the authority here.
+indent_size = unset
+indent_style = unset
+
+[*.yml]
+indent_style = space
+
+# Mermaid and SQL conventionally use spaces; tabs would break column alignment
+# in schema.sql and add noise to the diagrams.
+[*.{mmd,sql}]
+indent_style = space
+indent_size = unset

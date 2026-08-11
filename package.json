@@ -1,0 +1,66 @@
+{
+	"name": "transcripta",
+	"version": "1.0.0",
+	"type": "module",
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"engines": {
+		"node": "22.x.x",
+		"npm": "11.x.x"
+	},
+	"scripts": {
+		"git:hook:precommit": "lint-staged --cwd $PWD",
+		"git:hook:commit": "npx @commitlint/cli --edit",
+		"build:shared": "npm run build -w packages/shared",
+		"build:frontend": "npm run build -w apps/frontend",
+		"build:backend": "npm run build -w apps/backend",
+		"build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+		"lint:editor": "editorconfig-checker",
+		"lint:fs": "ls-lint",
+		"lint:type": "npx tsc --noEmit",
+		"lint:js": "npx eslint . --max-warnings=0 --no-warn-ignored",
+		"lint:format": "prettier --check \"**/*.{ts,tsx,json,md,css,html}\"",
+		"lint:trash": "knip",
+		"format": "prettier --write \"**/*.{ts,tsx,json,md,css,html}\"",
+		"lint": "concurrently \"npm:lint:*\" && npm run lint --workspaces",
+		"ci:prepare": "simple-git-hooks",
+		"demo": "node docs/demo/build.js",
+		"demo:shots": "node docs/demo/build.js --shots",
+		"demo:setup": "node docs/demo/build.js --setup"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "19.8.1",
+		"@commitlint/types": "19.8.1",
+		"@eslint/js": "9.30.1",
+		"@ls-lint/ls-lint": "2.3.1",
+		"@types/lint-staged": "13.3.0",
+		"@typescript-eslint/eslint-plugin": "8.36.0",
+		"@typescript-eslint/parser": "8.36.0",
+		"concurrently": "9.2.0",
+		"danger": "13.0.4",
+		"editorconfig-checker": "6.0.1",
+		"eslint": "9.30.1",
+		"eslint-import-resolver-typescript": "4.4.4",
+		"eslint-plugin-import": "2.32.0",
+		"eslint-plugin-jsdoc": "51.3.4",
+		"eslint-plugin-perfectionist": "4.15.0",
+		"eslint-plugin-sonarjs": "3.0.4",
+		"eslint-plugin-unicorn": "59.0.1",
+		"globals": "16.3.0",
+		"knip": "5.61.3",
+		"lint-staged": "16.1.2",
+		"prettier": "3.6.2",
+		"simple-git-hooks": "2.13.0",
+		"stylelint": "16.21.1",
+		"stylelint-config-recess-order": "7.1.0",
+		"stylelint-config-standard": "38.0.0",
+		"tsc-alias": "1.8.16",
+		"typescript": "5.8.3"
+	},
+	"simple-git-hooks": {
+		"pre-commit": "npm run lint:type && npm run git:hook:precommit",
+		"commit-msg": "npm run git:hook:commit"
+	}
+}

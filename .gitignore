@@ -1,0 +1,18 @@
+# editors
+.idea
+.vscode
+
+# dependencies
+node_modules
+
+# production
+build
+
+# misc
+.DS_Store
+.env
+
+# Demo: the render and the playwright install it needs. Both regenerable,
+# both hundreds of MB, neither belongs in the repo.
+docs/demo/out
+docs/demo/.cache

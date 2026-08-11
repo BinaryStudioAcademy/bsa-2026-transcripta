@@ -1,0 +1,55 @@
+%% System overview
+%% What Transcripta is made of and who talks to whom
+%% Arrow numbers match table 1.3 in diagrams/README.md
+
+flowchart TB
+    subgraph zuser["HUMAN"]
+        U["<b>Verifier</b><br/>uploads the PDF<br/>checks the pages"]
+    end
+
+    subgraph app["OUR CODE"]
+        WEB["<b>apps/frontend</b> · React + Vite<br/>Redux Toolkit: slices + async thunks<br/>2 screens: upload and verification<br/><i>NO business logic</i>"]
+        API["<b>apps/backend</b> · Node + Fastify + BullMQ<br/>API and worker in ONE process<br/><i>APP_MODE = all | api | worker</i>"]
+        SH["<b>packages/shared</b> · types, enums, zod<br/><i>one set of schemas for both sides</i>"]
+    end
+
+    subgraph infra["INFRASTRUCTURE"]
+        PG[("<b>postgres</b><br/>documents, pages,<br/>transcriptions, lexicon, cache<br/><i>source of truth</i>")]
+        RD[("<b>redis</b><br/>job queue only<br/><i>losing it = losing jobs,<br/>not data</i>")]
+        S3[("<b>minio / S3</b><br/>original PDFs<br/>and page images<br/><i>private buckets</i>")]
+    end
+
+    LLM["<b>Vision LLM API</b><br/>external service<br/>image → JSON<br/><i>20-40 s per page</i><br/><b>the only place money is spent</b>"]
+
+    U -->|"1 · HTTP"| WEB
+    WEB -->|"2 · REST /api/v1<br/>JWT in the header"| API
+    API -->|"4 · Objection<br/>+ knex.raw"| PG
+    API -->|"5 · queue.add<br/>/ worker"| RD
+    API -->|"6 · downloads original,<br/>uploads images"| S3
+    API ==>|"7 · image<br/>+ context"| LLM
+    WEB -.->|"3 · PUT file DIRECTLY,<br/>presigned URL, 1 hour<br/><i>bypassing our server</i>"| S3
+    SH -.->|"types, enums, zod schemas"| WEB
+    SH -.->|"the same types and schemas"| API
+
+    LEG["<b>LEGEND</b><br/>green - human<br/>blue - our code<br/>grey - state storage<br/>yellow - external and paid<br/>─── ordinary call<br/>┈┈┈ blue - bypasses our server<br/>┈┈┈ grey - shared code, not a call<br/>━━━ call that costs money"]
+
+    zuser ~~~ LEG
+
+    classDef ours fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a
+    classDef store fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef extc fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#0f172a
+    classDef user fill:#dcfce7,stroke:#16a34a,color:#0f172a
+    classDef info fill:#ffffff,stroke:#94a3b8,color:#0f172a
+
+    class WEB,API,SH ours
+    class PG,RD,S3 store
+    class LLM extc
+    class U user
+    class LEG info
+
+    linkStyle 6 stroke:#2563eb,stroke-width:2px
+    linkStyle 5 stroke:#d97706,stroke-width:3px
+    %% shared code is not a call, so it gets a colour of its own, distinct from
+    %% the dashed line that bypasses the server
+    linkStyle 7 stroke:#94a3b8,stroke-width:1.5px
+    linkStyle 8 stroke:#94a3b8,stroke-width:1.5px

@@ -1,0 +1,111 @@
+%% DATA PIPELINE - the main diagram
+%% The path of a single file from upload to a finished transcription
+%% Reads LEFT TO RIGHT across phases, DOWN through the steps inside a phase
+%% Step numbers 1-23 match the walkthrough in diagrams/README.md, section 2
+
+flowchart LR
+    LEG["<b>HOW TO READ THIS</b><br/>&nbsp;<br/>→ right: 4 phases,<br/>4 different executors<br/>↓ down: steps inside a phase<br/>&nbsp;<br/>([oval]) start / end<br/>[rectangle] action<br/>{diamond} branch<br/>&nbsp;<br/>─── step inside a phase<br/>━━━ transition between phases<br/>┈┈┈ logical link, not a call<br/>&nbsp;<br/>red - exit with an error<br/>green - free of charge<br/>orange - context,<br/>the heart of the system"]
+
+    subgraph upload["PHASE 1 · UPLOAD"]
+        direction TB
+        START(["User picked<br/>a PDF and a preset"])
+        START --> A1["<b>1</b> · POST /api/v1/documents<br/>check size and type<br/><i>before the upload, not after</i>"]
+        A1 --> A2["<b>2</b> · create document<br/>status: draft"]
+        A2 --> A3["<b>3</b> · hand back a presigned URL<br/><i>the signature lives 1 hour</i>"]
+        A3 --> A4["<b>4</b> · browser puts the file<br/>DIRECTLY into S3<br/><i>bypassing our server</i>"]
+        A4 --> A5["<b>5</b> · POST /api/v1/documents/:id/ingest<br/>enqueue the job"]
+    end
+
+    subgraph ingest["PHASE 2 · SPLITTING · job document.ingest"]
+        direction TB
+        B0["<b>6</b> · download the file from S3<br/><i>into a temp file, not into memory</i>"]
+        B0 --> B1["<b>7</b> · pdfinfo:<br/>how many pages?"]
+        B1 --> B2{"more than<br/>500?"}
+        B2 -->|"yes"| BERR["error:<br/>document too large<br/><i>a deliberate limit</i>"]
+        B2 -->|"no"| B3["<b>8</b> · LOOP one page at a time<br/><i>never render the whole PDF at once</i>"]
+        B3 --> B4["pdftoppm -f n -l n<br/><i>separate process, 60 s timeout</i>"]
+        B4 --> B5["sharp: greyscale, 2048 px, webp<br/>+ 256 px thumbnail for the strip<br/><i>~200 KB instead of 4 MB</i>"]
+        B5 --> B6["blank? sharp stats, stdev below threshold<br/>upload both images to S3<br/>+ sha256 of the NORMALISED one"]
+        B6 --> B7["INSERT page · status: pending<br/><i>or blank - never queued, never sent</i>"]
+        B7 -->|"more pages left"| B3
+        B7 --> B8["<b>9</b> · document.status = ready<br/>enqueue the first 5 pages<br/><i>why 5 - diagram 5</i>"]
+    end
+
+    subgraph transcribe["PHASE 3 · TRANSCRIPTION · job page.transcribe"]
+        direction TB
+        C0{"<b>10</b> · document<br/>not cancelled?"}
+        C0 -->|"cancelled"| CSTOP["exit,<br/>do not spend money"]
+        C0 -->|"ok"| C1{"<b>11</b> · budget<br/>not exhausted?"}
+        C1 -->|"exhausted"| CBUD["stop the WHOLE document,<br/>not just one page"]
+        C1 -->|"ok"| C2
+
+        FEEDIN[("WHERE THE CONTEXT COMES FROM<br/>document lexicon + texts of<br/>confirmed pages<br/><b>filled by PHASE 4, step 21</b>")]
+        FEEDIN -.->|"read"| C2
+
+        C2["<b>12</b> · BUILD THE CONTEXT<br/>1. seed glossary from the preset<br/>2. 3 confirmed neighbouring pages<br/>3. document lexicon top-100<br/><i>trim to 6000 tokens by priority</i>"]
+        C2 --> C3{"<b>13</b> · read this before?<br/><i>cache key = image sha + preset<br/>+ model + context hash</i>"}
+        C3 -->|"yes"| CHIT["take it from the cache<br/><b>0 seconds, 0 money</b>"]
+        C3 -->|"no"| C4["<b>14</b> · prompt: system + preset<br/>+ context + image"]
+        C4 --> C5["<b>15</b> · LLM call<br/><i>the only place money is spent</i>"]
+        C5 --> C6{"<b>16</b> · valid JSON<br/>against the schema?"}
+        C6 -->|"no · 1 attempt"| C7["repair request<br/>with the validator error text"]
+        C7 --> C6
+        C6 -->|"yes"| C8["<b>17</b> · ONE transaction:<br/>INSERT transcription + context_used<br/>spent_usd += cost (atomic UPDATE)<br/><i>record WHICH context went in</i>"]
+        CHIT --> C8
+        C8 --> C9["<b>18</b> · page.status = transcribed<br/>budget re-checked AFTER the charge<br/><i>crossed → budget_stop for the whole doc</i>"]
+    end
+
+    subgraph verify["PHASE 4 · HUMAN VERIFICATION"]
+        direction TB
+        D0["<b>19</b> · image and text side by side,<br/>context words highlighted<br/><i>you can see what the model was told</i>"]
+        D0 --> D1{"<b>20</b> · human<br/>decision"}
+        D1 -->|"Enter"| D2["confirmed<br/><i>read correctly</i>"]
+        D1 -->|"edits + Enter"| D3["corrected<br/><i>fixed by the human</i>"]
+        D1 -->|"S"| D4["skipped<br/><i>did not read closely</i>"]
+
+        D2 --> D5["<b>21</b> · EXTRACT WORDS into lexicon_entry<br/>surnames, place names, terms<br/><i>without a second LLM call</i>"]
+        D3 --> D5
+        D4 -.->|"does NOT feed the context"| D6
+
+        D5 -.->|"FEEDBACK"| FEEDOUT[("THE SAME LEXICON<br/>confirmed text returns<br/>into the prompt of later pages<br/><b>→ back to step 12</b><br/><i>the point of the project</i>")]
+        D5 --> D6["<b>22</b> · cursor moves to the next page<br/>+ enqueue one more page ahead"]
+        D6 ==>|"next page<br/>of the same document"| NEXT(["↺ back to PHASE 3, step 10,<br/>but with a new context"])
+    end
+
+    A5 ==>|"job in Redis"| B0
+    B8 ==>|"a job for EVERY page"| C0
+    C9 ==>|"page appeared in the UI"| D0
+
+    D6 --> E1["<b>23</b> · export<br/>JSON / CSV / TXT<br/><i>only once every page is closed</i>"]
+    E1 --> END(["Done"])
+
+    LEG ~~~ upload
+
+    classDef upl fill:#dbeafe,stroke:#2563eb,color:#0f172a
+    classDef work fill:#fef3c7,stroke:#d97706,color:#0f172a
+    classDef human fill:#dcfce7,stroke:#16a34a,color:#0f172a
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#0f172a
+    classDef good fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#0f172a
+    classDef star fill:#ffedd5,stroke:#ea580c,stroke-width:3px,color:#0f172a
+    classDef info fill:#ffffff,stroke:#94a3b8,color:#0f172a
+    classDef skip fill:#f1f5f9,stroke:#94a3b8,color:#0f172a
+
+    class A1,A2,A3,A4,A5 upl
+    class B0,B1,B3,B4,B5,B6,B7,B8,C4,C5,C7,C8,C9,E1 work
+    class D0,D2,D3,D6 human
+    class BERR,CSTOP,CBUD bad
+    class D4 skip
+    class CHIT good
+    class C2,D5 star
+    class FEEDIN,FEEDOUT feed
+    class NEXT loopc
+    class LEG info
+
+    classDef feed fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#0f172a
+    classDef loopc fill:#ccfbf1,stroke:#0f766e,stroke-width:2px,color:#0f172a
+
+    %% the two halves of the project's main link: 19 (read) and 37 (replenish)
+    linkStyle 19 stroke:#dc2626,stroke-width:4px
+    linkStyle 37 stroke:#dc2626,stroke-width:4px
+    %% transition to the next page of the same document
+    linkStyle 39 stroke:#0f766e,stroke-width:3px

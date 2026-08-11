@@ -1,0 +1,66 @@
+%% SLIDING WINDOW - why the human never waits for the model
+%% and why the window is 5 pages, not 1 and not 300
+
+%%{init: {"flowchart": {"wrappingWidth": 380}}}%%
+flowchart TB
+    PROB["<b>THE PROBLEM</b><br/>transcribing one page: <b>20-40 s</b><br/>human verification: <b>8-10 s</b><br/><i>done sequentially, the human waits ~25 s on EVERY page<br/>on a 300-page document that is 2 hours of pure idling</i>"]
+
+    PROB --> BAD1
+    PROB --> BAD2
+
+    BAD1["<b>OPTION A · transcribe EVERYTHING up front</b><br/>+ the human never waits<br/>− page 300 is processed BEFORE the human<br/>confirms page 1<br/><b>→ no context at all, the project loses its point</b>"]
+
+    BAD2["<b>OPTION B · one at a time, on arrival</b><br/>+ the context is always as fresh as possible<br/>− the human waits 25 s on every page<br/><b>→ the verifier abandons the work</b>"]
+
+    BAD1 ==> GOOD
+    BAD2 ==> GOOD
+
+    GOOD["<b>SOLUTION · A SLIDING WINDOW OF 5 PAGES</b><br/>keep exactly 5 pages ready ahead of the cursor<br/><i>5 × 25 s ≈ 2 min of worker time against 5 × 10 s ≈ 1 min of human time -<br/>the worker keeps up, and the context lags by only 5 pages</i>"]
+
+    GOOD --> strip
+
+    subgraph strip["PAGES 44-52"]
+        direction LR
+        G1["✓ 44"] --- G2["✓ 45"] --- G3["✓ 46"] --- G4["● 47"] --- G5["▓ 48"] --- G6["▓ 49"] --- G7["▓ 50"] --- G8["░ 51"] --- G9["· 52"]
+    end
+
+    strip --> LEGEND
+
+    LEGEND["<b>WHAT THE MARKS MEAN</b><br/>✓ confirmed by the human - <b>already in the context</b><br/>● cursor: the human is here right now<br/>▓ transcribed - text is ready, waiting for the human<br/>░ queued or being processed by the worker<br/>· pending - not even queued yet, image exists"]
+
+    LEGEND --> CYCLE
+
+    subgraph CYCLE["THE CYCLE BEHIND EVERY ENTER"]
+        direction TB
+        C1["human confirmed 47"]
+        C1 --> C2["cursor → 48<br/><i>text is already there, no waiting</i>"]
+        C2 --> C3["enqueue 53<br/><i>the window again holds 5 pages ahead</i>"]
+        C3 --> C4["text of 47 feeds the context<br/>of pages 48, 49, 50…<br/><i>and the document lexicon</i>"]
+        C4 -->|"next Enter"| C1
+    end
+
+    NOTE["<b>WHY EXACTLY 5</b><br/>1 - the human waits for the model<br/>20+ - the context lags and money burns on pages<br/>the human may never even see<br/>5 - the worker is always a step ahead,<br/>and the context lags by just 5 pages<br/><i>settings: lookahead = 5</i><br/>&nbsp;<br/><b>THE WINDOW IS NOT ENOUGH</b><br/>if the human is faster than the worker,<br/>the buffer drains. Second parameter:<br/>concurrent jobs C ≥ latency / human seconds<br/><i>30 s / 10 s -> C = 3, capped by the window</i>"]
+
+    CYCLE ~~~ NOTE
+
+    classDef prob fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#0f172a
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#0f172a
+    classDef good fill:#d1fae5,stroke:#059669,stroke-width:3px,color:#0f172a
+    classDef done fill:#dcfce7,stroke:#16a34a,color:#0f172a
+    classDef here fill:#fbbf24,stroke:#b45309,stroke-width:3px,color:#0f172a
+    classDef ready fill:#dbeafe,stroke:#2563eb,color:#0f172a
+    classDef work fill:#e0e7ff,stroke:#6366f1,color:#0f172a
+    classDef queue fill:#f1f5f9,stroke:#94a3b8,color:#0f172a
+    classDef info fill:#ffffff,stroke:#94a3b8,color:#0f172a
+    classDef cyc fill:#ede9fe,stroke:#7c3aed,color:#0f172a
+
+    class PROB prob
+    class BAD1,BAD2 bad
+    class GOOD good
+    class G1,G2,G3 done
+    class G4 here
+    class G5,G6,G7 ready
+    class G8 work
+    class G9 queue
+    class LEGEND,NOTE info
+    class C1,C2,C3,C4 cyc
