@@ -1,0 +1,39 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches: [main]
+
+# A new push to the same PR cancels the previous run — the old result is
+# already stale by then.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+            # package.json requires npm 11 and .npmrc sets engine-strict=true,
+            # so the npm bundled with Node 22 is rejected before install starts.
+            - run: npm i -g npm@11
+            - run: npm ci
+            - run: npm run lint
+
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+            - run: npm i -g npm@11
+            - run: npm ci
+            - run: npm run build
