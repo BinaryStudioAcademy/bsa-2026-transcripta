@@ -1,0 +1,108 @@
+# Local infrastructure for transcripta.
+#
+# Brings up the services the app depends on — Postgres, Redis and MinIO (an
+# S3-compatible store) — with one command:
+#
+#   docker compose up -d
+#
+# The backend and frontend are run natively for hot reload:
+#
+#   nvm use 22
+#   npm run migrate:dev -w apps/backend
+#   npm run start:dev   -w apps/backend    # :3001
+#   npm run start:dev   -w apps/frontend   # :3000
+#
+# See docs/01-architecture.md and docs/10-infra.md. In production MinIO is
+# replaced by real S3 (docs/10-infra.md), everything else is the same.
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: transcripta
+      POSTGRES_PASSWORD: transcripta
+      POSTGRES_DB: transcripta
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transcripta"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    # Queue state only. noeviction so BullMQ jobs are never silently dropped;
+    # appendonly so the queue survives a restart (see docs/02-data-pipeline.md).
+    command:
+      [
+        "redis-server",
+        "--maxmemory",
+        "2gb",
+        "--maxmemory-policy",
+        "noeviction",
+        "--appendonly",
+        "yes",
+      ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    volumes:
+      - miniodata:/data
+
+  # One-shot: creates the two buckets the app expects, then exits.
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do
+          echo "waiting for minio..."; sleep 1;
+        done
+        mc mb -p local/transcripta-uploads
+        mc mb -p local/transcripta-pages
+        echo "buckets ready"
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+# ---------------------------------------------------------------------------
+# Later, once the backend has a Dockerfile and the pipeline deps
+# (@aws-sdk/client-s3, bullmq, sharp) are added, the backend itself can run in
+# compose instead of natively — uncomment and point at a Dockerfile:
+#
+#   backend:
+#     build: ./apps/backend
+#     env_file: apps/backend/.env
+#     ports:
+#       - "3001:3001"
+#     depends_on:
+#       postgres:
+#         condition: service_healthy
+#       redis:
+#         condition: service_healthy
+#       minio:
+#         condition: service_started
+# ---------------------------------------------------------------------------

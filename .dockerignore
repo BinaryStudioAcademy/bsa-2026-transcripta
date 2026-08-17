@@ -1,0 +1,11 @@
+# Never copy host build artifacts or secrets into the image context.
+**/node_modules
+**/build
+**/.env
+**/.env.*
+.git
+.github
+docs
+infra
+*.log
+.DS_Store
