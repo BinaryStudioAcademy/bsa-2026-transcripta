@@ -18,3 +18,4 @@ ignore:
   - apps/backend/build
   - apps/backend/node_modules
   - docs/demo/.cache
+  - infra/terraform/.terraform

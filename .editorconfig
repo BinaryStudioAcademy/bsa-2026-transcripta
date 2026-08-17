@@ -23,3 +23,13 @@ indent_style = space
 [*.{mmd,sql}]
 indent_style = space
 indent_size = unset
+
+# Terraform/HCL, shell and Dockerfiles conventionally use spaces; `terraform fmt`
+# even enforces it. Tabs here would fight the standard tooling.
+[*.{tf,hcl,sh}]
+indent_style = space
+indent_size = unset
+
+[Dockerfile]
+indent_style = space
+indent_size = unset
