@@ -27,7 +27,10 @@ COPY . .
 # zod is moved to dependencies.
 RUN npm ci --include=dev \
   && npm run build:shared \
-  && npm run build:backend
+  && npm run build:backend \
+  && npm run build:frontend \
+  && mkdir -p apps/backend/build/public \
+  && cp -r apps/frontend/build/. apps/backend/build/public/
 
 # Production-only: point @transcripta/shared at its built JS. In the repo `main`
 # stays src/index.ts (so dev/tsx, typechecks and knip are untouched); plain node

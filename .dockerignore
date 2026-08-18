@@ -2,7 +2,8 @@
 **/node_modules
 **/build
 **/.env
-**/.env.*
+**/.env.local
+**/.env.*.local
 .git
 .github
 docs
