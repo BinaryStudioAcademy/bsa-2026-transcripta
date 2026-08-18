@@ -25,13 +25,13 @@ data "aws_iam_policy_document" "gha_assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
-    # The org customizes the OIDC subject template, so `repo:owner/repo:*` on
-    # `sub` does not match. `job_workflow_ref` is unaffected by that and AWS
-    # accepts it as the required scoping claim.
+    # The org customizes the OIDC subject to include numeric org/repo ids, e.g.
+    # `repo:BinaryStudioAcademy@13114349/bsa-2026-transcripta@1330685497:ref:...`,
+    # so the plain `repo:owner/repo:*` does not match. Wildcard the ids.
     condition {
       test     = "StringLike"
-      variable = "token.actions.githubusercontent.com:job_workflow_ref"
-      values   = ["${var.github_repo}/.github/workflows/deploy.yml@*"]
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:*"]
     }
   }
 }
