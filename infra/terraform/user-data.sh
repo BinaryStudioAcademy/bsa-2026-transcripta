@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
-# Runs once on first boot. Prepares the host to run the app via docker compose.
-# The app itself (compose file + .env) is deployed on top of this later.
+# First-boot provisioning + self-deploy. Installs Docker, writes the prod
+# compose, then a systemd unit pulls the image from ECR and starts the stack.
+# The pull retries until the image exists, so the box self-heals whether it
+# boots before or after the first `docker push`. On every stop/start it re-pulls
+# the latest image.
 set -euxo pipefail
 
-# --- swap: t3.small has only 2 GB; sharp + Postgres want headroom ---
+REGION="us-east-1"
+ACCOUNT="940521992973"
+REGISTRY="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
+IMAGE="${REGISTRY}/transcripta-backend:latest"
+APP_DIR="/opt/transcripta"
+
+# --- swap: t3.small has only 2 GB ---
 if [ ! -f /swapfile ]; then
   fallocate -l 2G /swapfile
   chmod 600 /swapfile
@@ -12,10 +21,10 @@ if [ ! -f /swapfile ]; then
   echo '/swapfile none swap sw 0 0' >>/etc/fstab
 fi
 
-# --- Docker Engine + compose plugin ---
+# --- Docker + compose plugin + awscli (for ECR login) ---
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y ca-certificates curl gnupg
+apt-get install -y ca-certificates curl gnupg unzip
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 chmod a+r /etc/apt/keyrings/docker.gpg
@@ -26,6 +35,100 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin do
 usermod -aG docker ubuntu
 systemctl enable --now docker
 
-# --- where the app lands (docker-compose.yml + .env go here) ---
-mkdir -p /opt/transcripta
-chown ubuntu:ubuntu /opt/transcripta
+curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip
+unzip -q /tmp/awscliv2.zip -d /tmp
+/tmp/aws/install
+rm -rf /tmp/aws /tmp/awscliv2.zip
+
+# --- app files ---
+mkdir -p "$APP_DIR"
+
+cat >"$APP_DIR/docker-compose.prod.yml" <<'YAML'
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+    restart: unless-stopped
+    env_file: .env.prod
+    ports:
+      - "80:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: transcripta
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-transcripta}
+      POSTGRES_DB: transcripta
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transcripta"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "2gb", "--maxmemory-policy", "noeviction", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  pgdata:
+  redisdata:
+YAML
+
+cat >"$APP_DIR/.env.prod" <<'ENV'
+NODE_ENV=production
+PORT=3001
+HOST=0.0.0.0
+DB_CONNECTION_STRING=postgresql://transcripta:transcripta@postgres:5432/transcripta
+DB_DIALECT=pg
+DB_POOL_MIN=2
+DB_POOL_MAX=10
+ENV
+
+# --- deploy script: ECR login, pull (retry until present), up ---
+cat >/usr/local/bin/transcripta-deploy.sh <<DEPLOY
+#!/usr/bin/env bash
+set -uo pipefail
+export BACKEND_IMAGE="${IMAGE}"
+cd "${APP_DIR}"
+until aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${REGISTRY}; do
+  echo "ecr login failed, retrying"; sleep 5
+done
+until docker compose -f docker-compose.prod.yml pull; do
+  echo "image not in ECR yet, waiting..."; sleep 15
+done
+docker compose -f docker-compose.prod.yml up -d
+DEPLOY
+chmod +x /usr/local/bin/transcripta-deploy.sh
+
+# --- systemd: deploy on boot; stop/start re-pulls latest ---
+cat >/etc/systemd/system/transcripta.service <<'UNIT'
+[Unit]
+Description=Transcripta: pull image from ECR and start the stack
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/transcripta-deploy.sh
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable transcripta.service
+systemctl start --no-block transcripta.service

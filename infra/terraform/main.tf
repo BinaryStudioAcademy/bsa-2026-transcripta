@@ -26,9 +26,10 @@ data "aws_subnets" "default" {
   }
 }
 
-# Latest Ubuntu 24.04 LTS AMI, published by Canonical as a public SSM parameter
+# Latest Ubuntu 24.04 LTS AMI (arm64, for Graviton), published by Canonical as a
+# public SSM parameter.
 data "aws_ssm_parameter" "ubuntu" {
-  name = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+  name = "/aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id"
 }
 
 # ---------------------------------------------------------------------------

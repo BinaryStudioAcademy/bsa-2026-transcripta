@@ -32,3 +32,9 @@ resource "aws_iam_role_policy_attachment" "ecr_read" {
   role       = aws_iam_role.app.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
+
+# Remote command/log access without SSH or an open port (Session Manager).
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.app.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
