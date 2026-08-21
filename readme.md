@@ -234,4 +234,15 @@ A new push to the same pull request cancels the previous run.
 
 ### 8.2 Continuous Delivery
 
-TODO: not set up yet. The project runs a single environment.
+`.github/workflows/deploy.yml` runs on every push to `main` and ships the
+backend to AWS:
+
+1. assumes an IAM role through GitHub OIDC — no AWS keys are stored in the
+   repository or in secrets
+2. builds the backend image for `linux/arm64`, because the instance is Graviton
+3. pushes it to ECR under both `latest` and the commit SHA
+4. triggers a redeploy on the instance through SSM, targeting the
+   `Project=transcripta` tag
+
+The project runs a **single environment** — there is no dev/staging split, so a
+push to `main` goes straight to it.
