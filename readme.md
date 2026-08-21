@@ -11,13 +11,14 @@ for the pages that follow.
 
 ### 1.1 Useful Links
 
-| Where                                                  | What for                                                           |
-| ------------------------------------------------------ | ------------------------------------------------------------------ |
-| [docs/README.md](docs/README.md)                       | Documentation entry point, implementation order                    |
-| [docs/07-how-it-works.md](docs/07-how-it-works.md)     | How the app works, in plain words                                  |
-| [docs/08-template-gaps.md](docs/08-template-gaps.md)   | **What the template already has, what is a stub, what is missing** |
-| [docs/09-open-questions.md](docs/09-open-questions.md) | **What is still undecided before implementation starts**           |
-| [diagrams/README.md](docs/diagrams/README.md)          | Seven diagrams with walkthroughs                                   |
+| Where                                                                    | What for                                                           |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| [Project board](https://github.com/orgs/BinaryStudioAcademy/projects/39) | Epics, user stories and tasks                                      |
+| [docs/README.md](docs/README.md)                                         | Documentation entry point, implementation order                    |
+| [docs/07-how-it-works.md](docs/07-how-it-works.md)                       | How the app works, in plain words                                  |
+| [docs/08-template-gaps.md](docs/08-template-gaps.md)                     | **What the template already has, what is a stub, what is missing** |
+| [docs/09-open-questions.md](docs/09-open-questions.md)                   | **What is still undecided before implementation starts**           |
+| [diagrams/README.md](docs/diagrams/README.md)                            | Seven diagrams with walkthroughs                                   |
 
 ## 2. Domain
 
@@ -192,6 +193,45 @@ Examples:
 - `TSA-12: * header styles`
 - `TSA-16: - header component`
 
+### 7.4 Issue Flow
+
+The backlog has three levels, linked through GitHub sub-issues:
+
+```
+Epic: <Area>                              an umbrella for one product area
+   As <Role>, I want <X> so that <Y>      a user story, what the user gets
+      [BE] / [FE] <what we build>         the implementation tasks
+```
+
+Examples:
+
+- `Epic: Authentication & Access Control`
+- `As a Visitor, I want to sign in with my email and password so that I can reach my documents`
+- `[BE] Sign-in flow`
+- `[FE] Sign-in flow`
+
+Prefixes for tasks: `[BE]` backend, `[FE]` frontend, `[Setup]` project setup,
+`[QA]` quality assurance.
+
+Note that an issue title and its pull request title are **not** the same: the
+issue reads `[FE] Sign-in flow`, while the pull request must follow 7.1 —
+`TSA-1: Add sign-in flow to the frontend`. Danger checks the pull request title,
+never the issue title.
+
 ## 8. Deployment
 
-TODO: CI/CD is not set up yet — there is no `.github/` directory in the repository.
+### 8.1 Continuous Integration
+
+`.github/workflows/ci.yml` runs on every pull request and on every push to
+`main`, with two jobs:
+
+- **lint** — `npm run lint`, which fans out to `editorconfig-checker`,
+  `ls-lint`, `tsc --noEmit`, `eslint`, `prettier --check`, `knip`, and each
+  workspace's own lint script
+- **build** — `npm run build` for `shared`, `backend` and `frontend`
+
+A new push to the same pull request cancels the previous run.
+
+### 8.2 Continuous Delivery
+
+TODO: not set up yet. The project runs a single environment.
