@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="./ds-base.js"></script><style>body{margin:0}</style></helmet>
+<div data-theme="{{ theme }}" data-screen-label="New document" style="display:flex;height:100vh;background:var(--bg);font-family:var(--font-ui);color:var(--text)">
+<aside style="width:232px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--hairline);padding:14px 12px;box-sizing:border-box;gap:4px">
+<div style="display:flex;gap:9px;align-items:center;padding:4px 8px 14px">
+<span style="width:26px;height:26px;border-radius:5px;background:var(--seal-500);display:inline-grid;place-items:center"><svg width="18" height="18" viewBox="0 0 48 48"><path d="M7 12 L41 8.5 L39.5 17 L8.5 19.5 Z" fill="var(--paper-100)"></path><path d="M19.5 15.5 L29 14.5 L26 42 L22.5 42 Z" fill="var(--paper-100)"></path><circle cx="33.5" cy="38.5" r="3.4" fill="var(--paper-100)"></circle></svg></span>
+<span style="font:600 16px/1 var(--font-display)">Transcripta</span>
+</div>
+<a href="#" aria-current="page" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font:500 13px/1 var(--font-ui);text-decoration:none">Documents</a>
+<a href="#" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:var(--r-md);color:var(--text-2);font:500 13px/1 var(--font-ui);text-decoration:none" style-hover="background:var(--surface-2);color:var(--text)">Presets</a>
+<div style="flex:1"></div>
+<div style="border-top:1px solid var(--hairline);padding:10px 8px 2px;display:flex;flex-direction:column;gap:6px">
+<span style="font:400 12px/1.3 var(--font-ui);color:var(--text-2);overflow:hidden;text-overflow:ellipsis">reader@example.com</span>
+<a href="#" style="font:500 12px/1 var(--font-ui);color:var(--text-3);text-decoration:none" style-hover="color:var(--accent-text)">Sign out</a>
+</div>
+</aside>
+<div style="flex:1;display:flex;flex-direction:column;min-width:0">
+<header style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--hairline)">
+<h1 style="font:600 22px/1.15 var(--font-display);margin:0">New document</h1>
+<div style="display:flex;gap:10px;align-items:center">
+<button class="tx-btn tx-btn--ghost tx-btn--sm" onClick="{{ toggleTheme }}">{{ themeLabel }}</button>
+</div>
+</header>
+<main style="flex:1;overflow:auto;padding:32px;box-sizing:border-box">
+<div style="max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+<input type="file" accept="application/pdf,.pdf,application/zip,.zip" ref="{{ fileRef }}" onChange="{{ fileChanged }}" style="display:none">
+
+<sc-if value="{{ isRest }}" hint-placeholder-val="{{ true }}">
+<div class="{{ dropCls }}" onDragOver="{{ dragOver }}" onDragLeave="{{ dragLeave }}" onDrop="{{ dropped }}">
+<b>Drag a PDF here, or <a href="#" onClick="{{ choose }}">choose a file</a></b>
+<small>up to <span class="tnum">500 MB</span>, up to <span class="tnum">500 pages</span></small>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRejected }}" hint-placeholder-val="{{ false }}">
+<div class="tx-drop tx-drop--rejected">
+<b>{{ rejectReason }}</b>
+<small>up to <span class="tnum">500 MB</span>, up to <span class="tnum">500 pages</span></small>
+<button class="tx-btn tx-btn--secondary tx-btn--sm" onClick="{{ choose }}" style="margin-top:6px">Choose another file</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+<div>
+<div class="tx-progress-track"><div class="tx-progress-fill" style="width:{{ pctW }}"></div></div>
+<div class="tx-progress-cap"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fileName }} · {{ fileSize }}</span><span style="white-space:nowrap">{{ pct }}%</span></div>
+<small style="display:block;margin-top:5px;font:400 12px/1.4 var(--font-ui);color:var(--text-2)">uploading straight to storage · about a minute left</small>
+</div>
+</sc-if>
+
+<sc-if value="{{ isUploaded }}" hint-placeholder-val="{{ false }}">
+<div>
+<div class="tx-progress-track"><div class="tx-progress-fill" style="width:100%"></div></div>
+<div class="tx-progress-cap"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Uploaded {{ fileName }} · {{ fileMeta }}</span><span style="white-space:nowrap">100%</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showFields }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div>
+<label class="tx-label" for="doc-title">Title</label>
+<input id="doc-title" class="tx-input" style="width:100%" value="{{ docName }}" onChange="{{ nameChanged }}">
+</div>
+<div style="position:relative">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<label class="tx-label" for="preset">Preset</label>
+<a href="#" onClick="{{ noop }}" style="font:400 12px/1 var(--font-ui);color:var(--text-3)" style-hover="color:var(--accent-text)">new preset</a>
+</div>
+<div aria-hidden="true" style="position:absolute;left:calc(100% + 20px);top:-10px;width:224px;display:flex;align-items:flex-start;gap:6px;pointer-events:none">
+<span style="font:400 12px/1.5 var(--font-mono);color:var(--warn-text);flex:none;margin-top:8px">◄</span>
+<div style="border:1px dashed var(--warn);background:var(--warn-tint);border-radius:4px;padding:8px 10px;font:400 11.5px/1.5 var(--font-ui);color:var(--warn-text)"><b style="display:block;font:600 10px/1 var(--font-ui);letter-spacing:var(--ls-caps);text-transform:uppercase;margin-bottom:4px">Spec note</b>new preset → navigates to the Preset editor screen (separate page, not a modal); after Save the user returns here with the new preset selected in the dropdown.</div>
+</div>
+
+<x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.Select" id="preset" options="{{ presetOptions }}" hint-size="100%,32px"></x-import>
+</div>
+</div>
+<div style="display:flex;gap:8px">
+<sc-if value="{{ isUploaded }}" hint-placeholder-val="{{ false }}">
+<button class="tx-btn tx-btn--primary" onClick="{{ startProcessing }}">Start processing</button>
+<button class="tx-btn tx-btn--ghost" onClick="{{ remove }}">Remove</button>
+</sc-if>
+<sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+<button class="tx-btn tx-btn--ghost" onClick="{{ cancelUpload }}">Cancel upload</button>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;screenState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;rest&quot;,&quot;options&quot;:[&quot;rest&quot;,&quot;drag-over&quot;,&quot;rejected&quot;,&quot;uploading&quot;,&quot;uploaded-ready&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo state&quot;}}">
+class Component extends DCLogic {
+  state = { dark:null, step:null, over:false, pct:0, file:null, rej:null, docName:null };
+  fileRef = React.createRef();
+  componentWillUnmount(){ clearInterval(this.t); }
+  startUpload(){
+    clearInterval(this.t);
+    this.setState({ step:'uploading', over:false, pct:34 });
+    this.t = setInterval(() => this.setState(s => {
+      const p = Math.min(71, s.pct + 1);
+      if (p >= 71) clearInterval(this.t);
+      return { pct:p };
+    }), 200);
+  }
+  acceptFile(f){
+    const mb = f.size / 1048576;
+    const isPdf = /\.(pdf|zip)$/i.test(f.name) || f.type === 'application/pdf' || f.type === 'application/zip' || f.type === 'application/x-zip-compressed';
+    if (!isPdf || mb > 500) this.setState({ step:'rejected', rej:{ name:f.name, mb, pdf:isPdf } });
+    else { this.setState({ file:{ name:f.name, mb:Math.max(mb, 0.1), pages:null }, docName:f.name.replace(/\.pdf$/i, '') }); this.startUpload(); }
+  }
+  renderVals(){
+    const dark = this.state.dark ?? !!this.props.darkTheme;
+    const step = this.state.step ?? this.props.screenState ?? 'rest';
+    const file = this.state.file ?? { name:'dykanka-1887.pdf', mb:180, pages:300 };
+    const fileSize = (file.mb % 1 ? file.mb.toFixed(1) : file.mb) + ' MB';
+    const mono = t => React.createElement('span', { className:'tnum' }, t);
+    const rej = this.state.rej;
+    const rejectReason = (rej && !rej.pdf)
+      ? 'Unsupported type. PDFs and image archives only.'
+      : React.createElement(React.Fragment, null, 'Too large \u2014 the limit is ', mono('500 MB'), '. Nothing was uploaded.');
+    const isUploading = step === 'uploading', isUploaded = step === 'uploaded-ready';
+    return {
+      theme: dark ? 'dark' : null,
+      themeLabel: dark ? 'Day' : 'Night',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      isRest: step === 'rest' || step === 'drag-over',
+      isRejected: step === 'rejected',
+      isUploading, isUploaded,
+      showFields: isUploading || isUploaded,
+      dropCls: 'tx-drop' + ((this.state.over || step === 'drag-over') ? ' tx-drop--over' : ''),
+      fileRef: this.fileRef,
+      fileName: file.name, fileSize,
+      fileMeta: fileSize + (file.pages ? ' \u00b7 ' + file.pages + ' pages' : ''),
+      rejectReason,
+      docName: this.state.docName ?? 'Parish register of Dykanka, 1887',
+      nameChanged: e => this.setState({ docName: e.target.value }),
+      presetOptions: ['Parish register', 'Medical record', 'Diary', 'Ledger'],
+      noop: e => e.preventDefault(),
+      choose: e => { e.preventDefault(); this.fileRef.current && this.fileRef.current.click(); },
+      fileChanged: e => { const f = e.target.files && e.target.files[0]; if (f) this.acceptFile(f); e.target.value = ''; },
+      dragOver: e => { e.preventDefault(); if (!this.state.over) this.setState({ over:true }); },
+      dragLeave: () => this.setState({ over:false }),
+      dropped: e => { e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) this.acceptFile(f); else this.startUpload(); },
+      startProcessing: () => {},
+      remove: () => { clearInterval(this.t); this.setState({ step:'rest', pct:0, file:null, docName:null }); },
+      cancelUpload: () => { clearInterval(this.t); this.setState({ step:'rest', pct:0, file:null, docName:null }); },
+      pct: this.state.step ? this.state.pct : 71, pctW: (this.state.step ? this.state.pct : 71) + '%'
+    };
+  }
+}
+</script>
+</body>
+</html>

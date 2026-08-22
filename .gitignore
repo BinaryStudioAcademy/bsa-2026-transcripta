@@ -16,3 +16,6 @@ build
 # both hundreds of MB, neither belongs in the repo.
 docs/demo/out
 docs/demo/.cache
+
+# superpowers brainstorm sessions
+.superpowers/

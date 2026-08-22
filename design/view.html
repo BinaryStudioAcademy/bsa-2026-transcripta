@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transcripta — design hub</title>
+<link rel="icon" href="design-system/assets/logo-small.svg">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  :root {
+    --paper: #f6f1e7; --ivory: #fffdf8; --ink: #211c14; --muted: #6b6254;
+    --line: #e8e0d0; --seal: #b23a2f;
+  }
+  :root[data-th="dark"] {
+    --paper: #211c14; --ivory: #2b251c; --ink: #f0e9db; --muted: #a89c88;
+    --line: #3a3226; --seal: #c9584a;
+  }
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; background: var(--paper); color: var(--ink);
+         font-family: Inter, -apple-system, sans-serif; font-size: 13px; }
+  #bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+         padding: 8px 14px; background: var(--ivory); border-bottom: 1px solid var(--line); }
+  #bar .name { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 15px; }
+  #bar a.back { color: var(--muted); text-decoration: none; font-size: 12px; }
+  #bar a.back:hover { color: var(--seal); }
+  #bar label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+  #bar label b { color: var(--ink); font-weight: 500; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+  #bar select, #bar input[type=text], #bar input[type=number] {
+    font: inherit; color: var(--ink); background: var(--ivory);
+    border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; }
+  #bar input[type=checkbox] { accent-color: var(--seal); }
+  #bar :focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
+  #bar .spacer { flex: 1; }
+  #bar button { font: inherit; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px;
+                background: var(--ivory); color: var(--ink); cursor: pointer; }
+  #bar button:hover { border-color: var(--seal); }
+  #bar .note { color: var(--muted); font-size: 12px; }
+  iframe { flex: 1; width: 100%; border: 0; background: var(--ivory); }
+  #index { max-width: 620px; margin: 48px auto; padding: 0 24px; }
+  #index h1 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 24px; margin-bottom: 4px; }
+  #index p { color: var(--muted); margin-bottom: 20px; }
+  #index code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+  #index h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 16px; margin: 26px 0 8px; }
+  #index ul { list-style: none; padding: 0; }
+  #index li a { display: block; padding: 9px 14px; margin-bottom: 6px; text-decoration: none;
+                background: var(--ivory); color: var(--ink);
+                border: 1px solid var(--line); border-radius: 6px; }
+  #index li a:hover { border-color: var(--seal); }
+  #index li a small { color: var(--muted); margin-left: 8px; }
+  #theme { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  #theme span { color: var(--muted); }
+  #theme button { font: inherit; padding: 4px 14px; border: 1px solid var(--line); border-radius: 4px;
+                  background: var(--ivory); color: var(--ink); cursor: pointer; }
+  #theme button[aria-pressed="true"] { border-color: var(--seal); color: var(--seal); font-weight: 600; }
+  #theme button:focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
+</style>
+</head>
+<body>
+<script>
+(() => {
+  const SCREENS = [
+    ["landing/Transcripta Landing.dc.html", "Landing"],
+    ["auth/Auth.dc.html", "Auth"],
+    ["workspace/Workspace.dc.html", "Workspace"],
+    ["upload/New Document.dc.html", "Upload"],
+    ["document-page/Document Page.dc.html", "Document page"],
+    ["verification/Verification.dc.html", "Verification"],
+    ["preset-editor/Preset Editor.dc.html", "Preset editor"],
+    ["export-dialog/Export Dialog.dc.html", "Export dialog"],
+    ["ground-truth/Ground-Truth Mode.dc.html", "Ground-truth mode"],
+  ];
+
+  const THEME_KEY = "tx-viewer-theme";
+  const theme = localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
+  document.documentElement.dataset.th = theme;
+
+  const params = new URLSearchParams(location.search);
+  const page = params.get("p");
+
+  if (!page) {
+    const ul = SCREENS.map(([p, name]) =>
+      `<li><a href="view.html?p=${encodeURIComponent(p)}">${name}<small>${p}</small></a></li>`).join("");
+    document.body.innerHTML = `<div id="index">
+      <h1>Transcripta — design hub</h1>
+      <p>Every screen opens with its Claude Design props as a local toolbar.
+         Props can also be set in the URL, e.g.
+         <code>view.html?p=verification/Verification.dc.html&amp;degradedState=budget-stop&amp;darkTheme=true</code>.</p>
+      <div id="theme"><span>Theme</span>
+        <button type="button" data-t="light">Light</button>
+        <button type="button" data-t="dark">Dark</button></div>
+      <p>Applies to every screen you open (the URL and the toolbar can still override it).</p>
+      <h2>Design system</h2>
+      <ul><li><a href="design-system/index.html">Ink &amp; Paper — system catalog<small>tokens · components · shells · UI kits</small></a></li></ul>
+      <h2>Screens</h2>
+      <ul>${ul}</ul></div>`;
+    for (const b of document.querySelectorAll("#theme button")) {
+      b.setAttribute("aria-pressed", String(b.dataset.t === theme));
+      b.onclick = () => {
+        localStorage.setItem(THEME_KEY, b.dataset.t);
+        document.documentElement.dataset.th = b.dataset.t;
+        for (const x of document.querySelectorAll("#theme button"))
+          x.setAttribute("aria-pressed", String(x === b));
+      };
+    }
+    return;
+  }
+
+  document.body.innerHTML = `
+    <div id="bar">
+      <a class="back" href="view.html">&larr; screens</a>
+      <span class="name"></span>
+      <span id="controls"><span class="note">loading props&hellip;</span></span>
+      <span class="spacer"></span>
+      <button id="copy" type="button">Copy link to this state</button>
+    </div>
+    <iframe id="frame" title="screen"></iframe>`;
+
+  const frame = document.getElementById("frame");
+  const controls = document.getElementById("controls");
+  document.querySelector("#bar .name").textContent =
+    (SCREENS.find(([p]) => p === page) || [null, page])[1];
+  frame.src = page.split("/").map(encodeURIComponent).join("/");
+
+  const state = {};   // current prop overrides sent to the page
+
+  function coerce(meta, raw) {
+    if (meta.editor === "boolean") return raw === "true" || raw === "1";
+    if (meta.editor === "number") return Number(raw);
+    return raw;
+  }
+
+  function apply(w, root) {
+    try { w.__dcSetProps(root, { ...state }); } catch (e) { console.warn("setProps failed", e); }
+  }
+
+  // pages without a theme prop (e.g. Ground-truth mode): flip their own
+  // Night/Day toggle instead — its label names the theme it switches TO
+  function syncThemeViaToggle(w) {
+    const label = theme === "dark" ? "Night" : "Day";
+    let tries = 0;
+    const t = setInterval(() => {
+      tries++;
+      let el = null;
+      try {
+        el = [...w.document.querySelectorAll("button, [role=button], a")]
+          .find(n => n.textContent.trim() === label);
+      } catch { /* frame gone */ }
+      if (el) { clearInterval(t); el.click(); }
+      else if (tries > 20) clearInterval(t);   // no toggle here — leave the page as exported
+    }, 150);
+  }
+
+  function buildToolbar(w, root, propsMeta) {
+    const names = Object.keys(propsMeta || {}).filter(k => k[0] !== "$");
+    if (!propsMeta || (!propsMeta.darkTheme && !propsMeta.pageTheme)) syncThemeViaToggle(w);
+    if (!names.length) {
+      controls.innerHTML = `<span class="note">no adjustable props — states are interactive in-page</span>`;
+      return;
+    }
+    // seed overrides: URL params win, then the hub theme choice
+    for (const k of names) {
+      if (params.has(k)) state[k] = coerce(propsMeta[k], params.get(k));
+    }
+    if (propsMeta.darkTheme && !("darkTheme" in state)) state.darkTheme = theme === "dark";
+    if (propsMeta.pageTheme && !("pageTheme" in state)) state.pageTheme = theme;
+    controls.innerHTML = "";
+    for (const k of names) {
+      const meta = propsMeta[k];
+      const current = k in state ? state[k] : meta.default;
+      const label = document.createElement("label");
+      const title = document.createElement("b");
+      title.textContent = k;
+      label.appendChild(title);
+      let input;
+      if (meta.editor === "boolean") {
+        input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = !!current;
+        input.onchange = () => { state[k] = input.checked; apply(w, root); };
+      } else if (meta.editor === "enum" && Array.isArray(meta.options)) {
+        input = document.createElement("select");
+        for (const opt of meta.options) {
+          const o = document.createElement("option");
+          o.value = o.textContent = opt;
+          if (opt === current) o.selected = true;
+          input.appendChild(o);
+        }
+        input.onchange = () => { state[k] = input.value; apply(w, root); };
+      } else {
+        input = document.createElement("input");
+        input.type = meta.editor === "number" ? "number" : "text";
+        input.value = current ?? "";
+        input.onchange = () => {
+          state[k] = meta.editor === "number" ? Number(input.value) : input.value;
+          apply(w, root);
+        };
+      }
+      label.appendChild(input);
+      controls.appendChild(label);
+    }
+    if (Object.keys(state).length) apply(w, root);
+  }
+
+  document.getElementById("copy").onclick = () => {
+    const u = new URL(location.href);
+    u.search = "";
+    u.searchParams.set("p", page);
+    for (const [k, v] of Object.entries(state)) u.searchParams.set(k, String(v));
+    navigator.clipboard.writeText(u.toString());
+  };
+
+  frame.addEventListener("load", () => {
+    const w = frame.contentWindow;
+    let tries = 0;
+    const poll = setInterval(() => {
+      tries++;
+      let root = null, entry = null;
+      try {
+        root = typeof w.__dcRootName === "function" ? w.__dcRootName() : null;
+        entry = root && w.__dcRegistry ? w.__dcRegistry[root] : null;
+      } catch { /* not booted yet */ }
+      if (entry) {
+        clearInterval(poll);
+        buildToolbar(w, root, entry.propsMeta || null);
+      } else if (tries > 100) {  // ~10s — not a dc page or boot failed
+        clearInterval(poll);
+        controls.innerHTML = `<span class="note">no Claude Design runtime detected on this page</span>`;
+      }
+    }, 100);
+  });
+})();
+</script>
+</body>
+</html>

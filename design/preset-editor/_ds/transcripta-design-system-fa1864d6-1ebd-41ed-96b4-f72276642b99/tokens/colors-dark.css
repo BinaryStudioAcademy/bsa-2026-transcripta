@@ -1,0 +1,41 @@
+/* Dark theme — "reading room at night". Warm near-black (hue ~75, never blue-grey, never #000); the scanned page stays the brightest object; accents shift amber-ward. Apply with data-theme="dark" on html, body, or any container. */
+[data-theme="dark"]{
+--bg:oklch(20.5% 0.012 75);        /* night ground */
+--surface:oklch(24% 0.014 75);     /* raised night surface */
+--surface-2:oklch(27.5% 0.016 75); /* hover fill, table header */
+--text:oklch(91% 0.02 85);         /* warm off-white, never pure white */
+--text-2:oklch(72% 0.025 80);      /* secondary */
+--text-3:oklch(57% 0.022 78);      /* tertiary, placeholder */
+--hairline:oklch(30.5% 0.016 75);  /* rules — slightly lighter than surfaces */
+--hairline-strong:oklch(36.5% 0.02 75);
+--accent:oklch(64% 0.13 35);       /* amber-tinted seal, tuned for low light */
+--accent-hover:oklch(68% 0.135 36);/* hover brightens slightly at night */
+--accent-active:oklch(58% 0.125 34);
+--accent-tint:oklch(29% 0.05 33);
+--accent-text:oklch(76% 0.10 38);
+--on-accent:oklch(17% 0.03 40);
+--link:oklch(72% 0.11 40);
+--ring:oklch(64% 0.13 35);
+--ok:oklch(66% 0.085 152);
+--ok-tint:oklch(27% 0.035 152);
+--ok-text:oklch(78% 0.08 150);
+--warn:oklch(71% 0.12 74);
+--warn-tint:oklch(28.5% 0.05 75);
+--warn-text:oklch(80% 0.10 78);
+--danger:oklch(58% 0.14 13);
+--danger-hover:oklch(63% 0.145 13);
+--danger-active:oklch(53% 0.13 13);
+--danger-tint:oklch(27% 0.06 13);
+--danger-text:oklch(75% 0.11 13);
+--on-danger:oklch(15% 0.03 13);
+--mark-bg:oklch(31% 0.055 33);
+--mark-underline:oklch(56% 0.11 35);
+--tip-bg:oklch(33% 0.02 78);       /* tooltip flips to raised warm grey */
+--tip-text:oklch(93% 0.018 85);
+--kbd-face:oklch(28% 0.016 75);
+--kbd-edge:oklch(15% 0.01 75);
+--scrim:oklch(8% 0.008 75 / .6);
+--shadow-pop:0 4px 16px oklch(5% 0.005 75 / .5);
+--shadow-modal:0 12px 40px oklch(4% 0.005 75 / .6);
+color-scheme:dark;
+}

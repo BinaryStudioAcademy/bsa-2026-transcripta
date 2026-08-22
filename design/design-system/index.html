@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transcripta Design System — local catalog</title>
+<link rel="icon" href="assets/logo-small.svg">
+<link rel="stylesheet" href="tokens/fonts.css">
+<link rel="stylesheet" href="tokens/colors.css">
+<link rel="stylesheet" href="tokens/typography.css">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--paper-200, #f6f1e7);
+    color: var(--paper-900, #211c14);
+    font-family: Inter, -apple-system, sans-serif;
+    padding: 48px 24px 96px;
+  }
+  main { max-width: 880px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  header img { width: 34px; height: 34px; }
+  h1 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 30px; letter-spacing: -0.01em; }
+  .sub { color: var(--paper-700, #6b6254); font-size: 14px; margin: 6px 0 36px; }
+  .sub code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12.5px; }
+  h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 19px; margin: 34px 0 4px; }
+  .hint { color: var(--paper-700, #6b6254); font-size: 13px; margin-bottom: 12px; }
+  ul.cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+  ul.cards li a {
+    display: block; padding: 10px 14px; text-decoration: none;
+    background: var(--paper-100, #fffdf8); color: var(--paper-900, #211c14);
+    border: 1px solid var(--paper-300, #e8e0d0); border-radius: 6px; font-size: 14px;
+  }
+  ul.cards li a:hover { border-color: var(--seal-500, #b23a2f); }
+  ul.cards li a small { display: block; color: var(--paper-700, #6b6254); font-size: 12px; margin-top: 2px; }
+  .src { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12.5px; }
+  hr { border: 0; border-top: 1px solid var(--paper-300, #e8e0d0); margin: 40px 0 0; }
+  footer { color: var(--paper-700, #6b6254); font-size: 12.5px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="assets/logo.svg" alt="Transcripta mark">
+    <h1>Transcripta Design System</h1>
+  </header>
+  <p class="sub">Local catalog of the exported "Ink &amp; Paper" system. Serve the <code>design/</code> folder (<code>python3 -m http.server 8123</code>) and browse from here. Rules live in <a href="readme.md">readme.md</a>; tokens in <span class="src">tokens/*.css</span> + <span class="src">styles.css</span> — the single source for colors, type and spacing.</p>
+
+  <h2>Foundations</h2>
+  <p class="hint">Token specimen cards — colors, type, spacing, focus, motion.</p>
+  <ul class="cards">
+    <li><a href="guidelines/wordmark.html">Wordmark &amp; lockup<small>the Nib mark in every context</small></a></li>
+    <li><a href="guidelines/colors-paper.html">Paper &amp; ink ramp<small>warm neutrals 100–900</small></a></li>
+    <li><a href="guidelines/colors-seal.html">Seal red<small>the action accent</small></a></li>
+    <li><a href="guidelines/colors-rule.html">Action vs failure<small>seal red ≠ error carmine</small></a></li>
+    <li><a href="guidelines/colors-semantic.html">Semantic colors<small>moss · amber · error</small></a></li>
+    <li><a href="guidelines/colors-dark.html">Dark theme<small>reading room at night</small></a></li>
+    <li><a href="guidelines/type-display.html">Type — display<small>Fraunces</small></a></li>
+    <li><a href="guidelines/type-body.html">Type — body<small>Inter</small></a></li>
+    <li><a href="guidelines/type-mono.html">Type — figures<small>JetBrains Mono, tabular</small></a></li>
+    <li><a href="guidelines/type-scale.html">Type scale</a></li>
+    <li><a href="guidelines/spacing-scale.html">Spacing scale<small>4px grid</small></a></li>
+    <li><a href="guidelines/density.html">Control density<small>32–36px work controls</small></a></li>
+    <li><a href="guidelines/radii-hairlines.html">Radii &amp; hairlines<small>print, not pill</small></a></li>
+    <li><a href="guidelines/focus-states.html">Focus &amp; states<small>2px seal ring; derived states</small></a></li>
+    <li><a href="guidelines/motion.html">Motion — instant cuts<small>transition: none is the default</small></a></li>
+  </ul>
+
+  <h2>Components</h2>
+  <p class="hint">Catalog pages render every variant and state in both themes. Sources sit beside each card: <span class="src">*.jsx</span> + <span class="src">*.d.ts</span> + <span class="src">*.prompt.md</span>.</p>
+  <ul class="cards">
+    <li><a href="components/buttons/buttons.card.html">Buttons &amp; keycaps<small>Button · Kbd · KbdHints</small></a></li>
+    <li><a href="components/forms/forms.card.html">Forms<small>Input · Select · Textarea · Radio · Checkbox</small></a></li>
+    <li><a href="components/data/table.card.html">Table<small>themed header, status-distinct rows</small></a></li>
+    <li><a href="components/feedback/feedback.card.html">Feedback<small>Chip · BudgetMeter · ProgressBar · QueuedChip · StateCard · Toast · Tooltip</small></a></li>
+    <li><a href="components/navigation/navigation.card.html">Navigation<small>PageStrip (8 states) · Tabs</small></a></li>
+    <li><a href="components/overlay/dialog.card.html">Overlay<small>Dialog with backdrop</small></a></li>
+    <li><a href="components/verification/verification.card.html">Verification kit<small>ContextMark · SplitPane · degraded states</small></a></li>
+  </ul>
+
+  <h2>Layout shells (templates)</h2>
+  <p class="hint">Every product screen composes from one of these.</p>
+  <ul class="cards">
+    <li><a href="templates/app-shell/AppShell.dc.html">Transcripta App Shell<small>sidebar + topbar — workspace, upload, presets, document page</small></a></li>
+    <li><a href="templates/focus-shell/FocusShell.dc.html">Transcripta Focus Shell<small>no sidebar — verification, ground truth</small></a></li>
+    <li><a href="templates/auth-card/AuthCard.dc.html">Transcripta Centered-Card Shell<small>auth</small></a></li>
+  </ul>
+
+  <h2>UI kits</h2>
+  <ul class="cards">
+    <li><a href="ui_kits/app/index.html">App kit — interactive<small>Documents → Verification → Upload → Auth, Night toggle</small></a></li>
+    <li><a href="ui_kits/landing/index.html">Landing kit</a></li>
+  </ul>
+
+  <hr>
+  <footer>Exported from the live Claude Design project (org default) — see the Artifacts table in <a href="../prompts.md">../prompts.md</a>. Logo assets: <span class="src">assets/logo.svg</span> (≥26px) · <span class="src">assets/logo-small.svg</span> (16–24px, bolder redraw).</footer>
+</main>
+</body>
+</html>

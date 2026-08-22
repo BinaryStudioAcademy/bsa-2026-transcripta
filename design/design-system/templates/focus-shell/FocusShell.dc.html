@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Transcripta Focus Shell" description="No sidebar — slim header + edge-to-edge content, for verification and ground truth" -->
+<helmet><script src="./ds-base.js"></script><style>body{margin:0}</style></helmet>
+<div data-theme="{{ theme }}" style="display:flex;flex-direction:column;height:100vh;background:var(--bg);font-family:var(--font-ui);color:var(--text)">
+<header style="height:48px;flex:none;display:flex;align-items:center;gap:16px;padding:0 14px;border-bottom:1px solid var(--hairline)">
+<a href="#" style="font:500 12px/1 var(--font-ui);color:var(--text-2);text-decoration:none" style-hover="color:var(--text)">← Documents</a>
+<span style="font:600 15px/1.15 var(--font-display)">{{ docTitle }}</span>
+<span style="font:500 12px/1 var(--font-mono);color:var(--text-2)">page 47 of 300</span>
+<div style="flex:1"></div>
+<span class="tx-kbdrow"><span><kbd class="tx-kbd">Enter</kbd>Correct</span><span><kbd class="tx-kbd">E</kbd>Edit</span><span><kbd class="tx-kbd">S</kbd>Skip</span><span><kbd class="tx-kbd">?</kbd>Shortcuts</span></span>
+<span class="tx-budget"><span class="tx-budget-bar"><i style="width:10%"></i></span>$0.98 / $10.00</span>
+<button class="tx-btn tx-btn--ghost tx-btn--sm" onClick="{{ toggleTheme }}">{{ themeLabel }}</button>
+</header>
+<main style="flex:1;min-height:0;display:grid;place-items:center;border-bottom:1px solid var(--hairline)">
+<div style="border:1px dashed var(--hairline-strong);border-radius:var(--r-lg);width:min(90%,900px);height:70%;display:grid;place-items:center;color:var(--text-3);font:400 13px/1 var(--font-ui)">Edge-to-edge work area — every pixel serves the work (split-pane goes here)</div>
+</main>
+<footer style="height:44px;flex:none;display:flex;align-items:center;justify-content:center;padding:0 14px">
+<x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.PageStrip" dc-props="{{ pstrip }}" hint-size="520px,26px"></x-import>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;docTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Parish register, 1887&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { dark: null };
+  renderVals(){
+    const dark = this.state.dark ?? !!this.props.darkTheme;
+    return {
+      theme: dark ? 'dark' : null,
+      themeLabel: dark ? 'Day' : 'Night',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      docTitle: this.props.docTitle ?? 'Parish register, 1887',
+      pstrip: { pages: [{n:44,state:'confirmed'},{n:45,state:'confirmed'},{n:46,state:'corrected'},{n:47,state:'current'},{n:48,state:'ready'},{n:49,state:'ready'},{n:50,state:'ready'},{n:51,state:'queued'}] }
+    };
+  }
+}
+</script>
+</body>
+</html>

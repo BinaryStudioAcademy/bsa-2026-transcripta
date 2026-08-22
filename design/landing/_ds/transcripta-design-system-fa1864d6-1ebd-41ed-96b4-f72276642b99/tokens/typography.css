@@ -1,0 +1,19 @@
+/* Type tokens. Fraunces = display/headings/brand only. Inter = all UI body. JetBrains Mono = EVERY figure (pages, money, %, timestamps) with tabular numerals — a number never appears in Inter. */
+:root{
+--font-display:'Fraunces',Georgia,'Times New Roman',serif; /* headings, brand, page titles */
+--font-ui:'Inter',system-ui,-apple-system,sans-serif;      /* body, labels, controls */
+--font-mono:'JetBrains Mono',ui-monospace,'SF Mono',monospace; /* all numerals + code */
+--fs-2xs:11px; /* table headers, legends */
+--fs-xs:12px;  /* captions, chips, kbd hints */
+--fs-sm:13px;  /* dense UI default — controls, table cells */
+--fs-md:14px;  /* comfortable body */
+--fs-lg:16px;  /* transcription reading text, card headlines */
+--fs-xl:20px;  /* section titles */
+--fs-2xl:26px; /* page titles (display serif) */
+--fs-3xl:34px; /* landing subheads */
+--fs-display:52px; /* landing hero */
+--lh-tight:1.15; /* @kind other */ /* display line-height */
+--lh-ui:1.45;    /* @kind other */ /* controls, tables line-height */
+--lh-read:1.65;  /* @kind other */ /* transcription text line-height */
+--ls-caps:.07em; /* uppercase micro-labels */
+}

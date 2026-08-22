@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors-dark.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/typography.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/base.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/components.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/styles.css">
+<script src="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/_ds_bundle.js"></script>
+<style>body{margin:0}
+.tx-tip.is-open::after{left:0 !important;transform:none !important}</style>
+</helmet>
+<div data-theme="{{ theme }}" data-screen-label="Verification" style="display:flex;flex-direction:column;height:100vh;background:var(--bg);font-family:var(--font-ui);color:var(--text)">
+<header style="height:48px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;border-bottom:1px solid var(--hairline);overflow:hidden">
+  <a href="#" style="font:500 12px/1 var(--font-ui);color:var(--text-2);text-decoration:none;white-space:nowrap" style-hover="color:var(--text)">← Documents</a>
+  <span style="font:600 15px/1.15 var(--font-display);white-space:nowrap">Parish register, 1887</span>
+  <span style="font:500 12px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-2);white-space:nowrap">page {{ curN }} of 300</span>
+  <div style="flex:1"></div>
+  <div style="flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap"><x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.KbdHints" dc-props="{{ hintsProps }}" hint-size="320px,21px"></x-import></div>
+  <div style="flex:none"><x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.QueuedChip" count="{{ queuedCount }}" hint-size="auto,22px"></x-import></div>
+  <div style="flex:none"><x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.BudgetMeter" spent="{{ budgetSpent }}" limit="{{ budgetLimit }}" hint-size="150px,24px"></x-import></div>
+  <button class="tx-btn tx-btn--ghost tx-btn--sm" onClick="{{ toggleTheme }}" style="flex:none">{{ themeLabel }}</button>
+</header>
+<div class="tx-split" style="flex:1;min-height:0">
+  <div class="tx-split-pane" ref="{{ leftRef }}" style="flex:0 0 50%">
+    <div style="height:100%;background:var(--paper-100);padding:28px 32px;box-sizing:border-box;position:relative;overflow:auto">
+      <span style="position:absolute;top:10px;right:10px;font:400 10px/1 var(--font-mono);color:var(--paper-600);border:1px solid var(--paper-400);border-radius:3px;padding:3px 6px">scan placeholder</span>
+      <div style="transform:scale({{ scanScale }});transform-origin:top left"><div style="font:italic 400 21px/1.9 var(--font-display);color:#453A28;max-width:520px">No. 15. Born on 11 January, Anna. Parents: peasant of Dykanka village, Petr Ivanenko and his lawful wife Maria, both Orthodox.</div></div>
+    </div>
+  </div>
+  <div class="tx-split-divider" onMouseDown="{{ dragStart }}"><span class="tx-split-grip"></span></div>
+  <div class="tx-split-pane" style="flex:1">
+    <div style="padding:24px 28px;display:flex;flex-direction:column;gap:16px;height:100%;box-sizing:border-box">
+      <sc-if value="{{ isRead }}" hint-placeholder-val="{{ true }}">
+        <span style="font:500 11px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-3)">page {{ curN }} of 300</span>
+        <sc-if value="{{ hlA }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0;font:400 16px/1.65 var(--font-ui);color:var(--text);max-width:560px;text-wrap:pretty">No. 15. Born on 11 January, Anna. Parents: peasant of <span class="tx-tip is-open" data-tip="from the lexicon, seen on 4 pages" style="background:var(--mark-bg);padding:0 2px;border-radius:var(--r-xs);cursor:help">Dykanka</span> village, Petr <span class="tx-tip" data-tip="from the lexicon, seen on 4 pages" style="background:var(--mark-bg);padding:0 2px;border-radius:var(--r-xs);cursor:help">Ivanenko</span> and his lawful wife Maria, both Orthodox.</p>
+        </sc-if>
+        <sc-if value="{{ hlB }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0;font:400 16px/1.65 var(--font-ui);color:var(--text);max-width:560px;text-wrap:pretty">No. 15. Born on 11 January, Anna. Parents: peasant of <span class="tx-tip is-open" data-tip="from the lexicon, seen on 4 pages" style="border-bottom:1px solid var(--accent);padding:0 1px;cursor:help">Dykanka</span> village, Petr <span class="tx-tip" data-tip="from the lexicon, seen on 4 pages" style="border-bottom:1px solid var(--mark-underline);padding:0 1px;cursor:help" style-hover="border-bottom-color:var(--accent)">Ivanenko</span> and his lawful wife Maria, both Orthodox.</p>
+        </sc-if>
+        <sc-if value="{{ hlC }}" hint-placeholder-val="{{ true }}">
+          <p style="margin:0;font:400 16px/1.65 var(--font-ui);color:var(--text);max-width:560px;text-wrap:pretty">No. 15. Born on 11 January, Anna. Parents: peasant of <span class="tx-tip is-open" data-tip="from the lexicon, seen on 4 pages" style="background:var(--mark-bg);border:1px solid color-mix(in oklab,var(--accent) 35%,transparent);padding:0 2px;border-radius:var(--r-xs);cursor:help">Dykanka</span> village, Petr <span class="tx-tip" data-tip="from the lexicon, seen on 4 pages" style="background:var(--mark-bg);border:1px solid color-mix(in oklab,var(--accent) 35%,transparent);padding:0 2px;border-radius:var(--r-xs);cursor:help">Ivanenko</span> and his lawful wife Maria, both Orthodox.</p>
+        </sc-if>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="tx-btn tx-btn--primary" onClick="{{ onConfirm }}">Correct</button>
+          <button class="tx-btn tx-btn--secondary" onClick="{{ onEdit }}">Edit</button>
+          <button class="tx-btn tx-btn--ghost" onClick="{{ onSkip }}">Skip</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}">
+        <span style="font:500 11px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-3)">page {{ curN }} of 300 · editing</span>
+        <textarea class="tx-input" autoFocus="{{ true }}" rows="5" defaultValue="{{ recordText }}" style="font:400 15px/1.65 var(--font-ui);max-width:560px"></textarea>
+        <div style="display:flex;gap:14px;align-items:center;white-space:nowrap;overflow:hidden">
+          <button class="tx-btn tx-btn--primary" style="flex:none" onClick="{{ onConfirm }}">Save and next</button>
+          <span class="tx-kbdrow" style="flex:none"><span><kbd class="tx-kbd">Ctrl+Enter</kbd>— Save and next</span><span><kbd class="tx-kbd">Esc</kbd>— cancel</span></span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ waiting }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:grid;place-items:center">
+          <x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.StateCard" dc-props="{{ stateCardProps }}" hint-size="440px,140px"></x-import>
+        </div>
+      </sc-if>
+      <sc-if value="{{ degQueue }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:grid;place-items:center">
+          <div class="tx-state" style="width:min(440px,100%)">
+            <h3 class="tx-state-h">Preparing the next pages</h3>
+            <div style="margin:4px 0">
+              <div class="tx-progress-track"><div class="tx-progress-fill" style="width:35%"></div></div>
+              <div class="tx-progress-cap"><span>preparing pages 48–50 · about 40 seconds</span></div>
+            </div>
+            <p class="tx-state-reason">Recognition is slower than your verification.</p>
+            <div class="tx-state-actions"><button class="tx-btn tx-btn--secondary">Review the ready ones</button><button class="tx-btn tx-btn--ghost">Pause</button></div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ degBudget }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:grid;place-items:center">
+          <div class="tx-state" style="width:min(440px,100%);border-color:color-mix(in oklab,var(--warn) 55%,transparent);background:var(--warn-tint)">
+            <h3 class="tx-state-h">Spent <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">$10.00</span> of <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">$10.00</span></h3>
+            <p class="tx-state-reason">Recognition stopped at your spending limit.</p>
+            <div class="tx-state-actions"><button class="tx-btn tx-btn--primary">Raise the limit</button></div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ degUnavail }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:grid;place-items:center">
+          <div class="tx-state" style="width:min(440px,100%)">
+            <h3 class="tx-state-h">Service unavailable</h3>
+            <p class="tx-state-reason">The recognition service is not responding; your verified pages are safe.</p>
+            <div class="tx-state-actions"><button class="tx-btn tx-btn--secondary">Try again</button></div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ degFailed }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:grid;place-items:center">
+          <div class="tx-state" style="width:min(440px,100%)">
+            <h3 class="tx-state-h">Failed after <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">3</span> attempts</h3>
+            <p class="tx-state-reason">The model could not read page <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">47</span>.</p>
+            <div class="tx-state-actions"><button class="tx-btn tx-btn--secondary">Re-read</button><button class="tx-btn tx-btn--ghost">Type it by hand</button></div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+<footer style="height:46px;flex:none;display:flex;align-items:center;justify-content:center;gap:16px;padding:0 16px;border-top:1px solid var(--hairline);overflow:hidden">
+  <x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.PageStrip" dc-props="{{ pstrip }}" hint-size="560px,26px"></x-import>
+  <span class="tx-pstrip-legend" style="white-space:nowrap;overflow:hidden;min-width:0">▓ ready&ensp;░ running&ensp;· queued</span>
+</footer>
+<sc-if value="{{ helpOn }}" hint-placeholder-val="{{ false }}">
+  <div class="tx-scrim" onClick="{{ closeHelp }}">
+    <div class="tx-dialog" onClick="{{ stopProp }}">
+      <h2 class="tx-dialog-title">Keyboard shortcuts</h2>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 14px;align-items:center;font:400 13px/1.4 var(--font-ui);color:var(--text)">
+        <span style="display:inline-flex;gap:4px"><kbd class="tx-kbd">Enter</kbd><kbd class="tx-kbd">→</kbd></span><span>Correct, next</span>
+        <kbd class="tx-kbd">←</kbd><span>Previous</span>
+        <kbd class="tx-kbd">E</kbd><span>Edit</span>
+        <kbd class="tx-kbd">S</kbd><span>Skip</span>
+        <kbd class="tx-kbd">Ctrl+Z</kbd><span>Undo</span>
+        <kbd class="tx-kbd">Space</kbd><span>Zoom</span>
+        <kbd class="tx-kbd">?</kbd><span>This list</span>
+      </div>
+      <div class="tx-dialog-actions"><button class="tx-btn tx-btn--secondary" onClick="{{ closeHelp }}">Close</button></div>
+    </div>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;highlightStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;C — tint + outline&quot;,&quot;options&quot;:[&quot;A — soft tint&quot;,&quot;B — underline&quot;,&quot;C — tint + outline&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Verification&quot;},&quot;degradedState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;none&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;queue-slow&quot;,&quot;budget-stop&quot;,&quot;unavailable&quot;,&quot;page-failed&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Degraded state&quot;}}">
+class Component extends DCLogic {
+  state = {
+    pages: [{n:41,state:'skipped'},{n:42,state:'error'},{n:43,state:'confirmed'},{n:44,state:'confirmed'},{n:45,state:'confirmed'},{n:46,state:'corrected'},{n:47,state:'current'},{n:48,state:'ready'},{n:49,state:'ready'},{n:50,state:'running'},{n:51,state:'queued'}],
+    mode: 'read', help: false, queued: 3, dark: null, zoom: false
+  };
+  leftRef = React.createRef();
+  RECORD = 'No. 15. Born on 11 January, Anna. Parents: peasant of Dykanka village, Petr Ivanenko and his lawful wife Maria, both Orthodox.';
+  componentDidMount() {
+    this.startT = Date.now();
+    const saved = parseFloat(localStorage.getItem('tx-verify-split'));
+    if (saved && this.leftRef.current) this.leftRef.current.style.flexBasis = saved + '%';
+    this.hist = [];
+    this.keyH = (e) => {
+      if (e.key === '?') { e.preventDefault(); this.setState(s => ({help: !s.help})); return; }
+      if (e.key === 'Escape') { this.setState({help: false, mode: 'read'}); return; }
+      if (this.state.help) return;
+      if (this.state.mode === 'edit') {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.act('confirm'); }
+        return;
+      }
+      if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.undo(); return; }
+      if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); this.act('confirm'); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); this.goPrev(); }
+      else if (e.key === 'e' || e.key === 'E') this.act('edit');
+      else if (e.key === 's' || e.key === 'S') this.act('skip');
+      else if (e.key === ' ') { e.preventDefault(); this.setState(s => ({zoom: !s.zoom})); }
+    };
+    window.addEventListener('keydown', this.keyH);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.keyH); }
+  dragStart = (e) => {
+    e.preventDefault();
+    const el = this.leftRef.current; if (!el) return;
+    const split = el.parentElement;
+    const move = (ev) => {
+      const r = split.getBoundingClientRect();
+      const pct = Math.max(25, Math.min(75, (ev.clientX - r.left) / r.width * 100));
+      el.style.flexBasis = pct + '%'; this._pct = pct;
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
+      if (this._pct) localStorage.setItem('tx-verify-split', String(this._pct));
+    };
+    window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  };
+  degOn() { const d = this.props.degradedState; return !!d && d !== 'none'; }
+  goPrev = () => {
+    if (this.degOn()) return;
+    this.setState(s => {
+      const i = s.pages.findIndex(p => p.state === 'current');
+      const j = (i < 0 ? s.pages.length : i) - 1;
+      if (j < 0) return null;
+      this.hist.push(s.pages);
+      const pages = [...s.pages];
+      if (i >= 0) pages[i] = {...pages[i], state: 'ready'};
+      pages[j] = {...pages[j], state: 'current'};
+      return {pages, mode: 'read'};
+    });
+  };
+  undo = () => {
+    if (this.degOn() || !this.hist || !this.hist.length) return;
+    this.setState({pages: this.hist.pop(), mode: 'read'});
+  };
+  act(kind) {
+    if (this.degOn()) return;
+    const cur = this.state.pages.find(p => p.state === 'current');
+    if (!cur) return;
+    if (kind === 'edit') { this.setState({mode: 'edit'}); return; }
+    this.hist.push(this.state.pages);
+    const newState = kind === 'skip' ? 'skipped' : (this.state.mode === 'edit' ? 'corrected' : 'confirmed');
+    this.setState(s => {
+      const i = s.pages.findIndex(p => p.state === 'current');
+      const pages = s.pages.map((p, j) => j === i ? {...p, state: newState} : p);
+      const k = pages.findIndex(p => p.state === 'ready');
+      if (k >= 0) pages[k] = {...pages[k], state: 'current'};
+      return {pages, mode: 'read', queued: s.queued + 1};
+    });
+    setTimeout(() => this.setState(s => ({queued: Math.max(0, s.queued - 1)})), 900);
+  }
+  renderVals() {
+    const dark = this.state.dark ?? !!this.props.darkTheme;
+    const cur = this.state.pages.find(p => p.state === 'current');
+    const hl = (this.props.highlightStyle || 'C').charAt(0);
+    const deg = this.props.degradedState ?? 'none';
+    const off = deg !== 'none';
+    let pages = this.state.pages;
+    if (deg === 'queue-slow') pages = pages.map(p => (p.n >= 48 && p.n <= 50) ? {...p, state: 'running'} : p);
+    if (deg === 'budget-stop' || deg === 'unavailable') pages = pages.map(p => p.state === 'running' ? {...p, state: 'queued'} : p);
+    if (deg === 'page-failed') pages = pages.map(p => p.state === 'current' ? {...p, state: 'error'} : p);
+    return {
+      theme: dark ? 'dark' : null,
+      themeLabel: dark ? 'Day' : 'Night',
+      toggleTheme: () => this.setState({dark: !dark}),
+      curN: cur ? cur.n : '—',
+      isRead: !off && !!cur && this.state.mode !== 'edit',
+      isEdit: !off && !!cur && this.state.mode === 'edit',
+      waiting: !off && !cur,
+      degQueue: deg === 'queue-slow',
+      degBudget: deg === 'budget-stop',
+      degUnavail: deg === 'unavailable',
+      degFailed: deg === 'page-failed',
+      scanScale: this.state.zoom ? 1.45 : 1,
+      recordText: this.RECORD,
+      hlA: hl === 'A', hlB: hl === 'B', hlC: hl === 'C',
+      onConfirm: () => this.act('confirm'),
+      onEdit: () => this.act('edit'),
+      onSkip: () => this.act('skip'),
+      pstrip: {pages: pages},
+      hintsProps: {hints: [{key:'Enter',label:'Correct'},{key:'E',label:'Edit'},{key:'S',label:'Skip'},{key:'?',label:'Shortcuts'}]},
+      queuedCount: this.state.queued,
+      budgetSpent: deg === 'budget-stop' ? 9.9999 : 0.98, budgetLimit: 10,
+      helpOn: this.state.help,
+      closeHelp: () => this.setState({help: false}),
+      stopProp: (e) => e.stopPropagation(),
+      stateCardProps: {headline: 'Preparing the next pages', reason: 'Everything ready has been verified; the model is still reading.', estimate: 'about 40 seconds', actions: [{label: 'Pause', variant: 'secondary'}]},
+      dragStart: this.dragStart,
+      leftRef: this.leftRef
+    };
+  }
+}
+</script>
+</body>
+</html>

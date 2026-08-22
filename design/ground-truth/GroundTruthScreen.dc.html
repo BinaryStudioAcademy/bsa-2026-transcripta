@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors-dark.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/typography.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/base.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/components.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/styles.css">
+<script src="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/_ds_bundle.js"></script>
+<style>html,body{height:100%;margin:0}
+/* Band theme rule: chrome always inverts the current theme's polarity. Light theme → ink band (data-theme="dark" on the header); dark theme → paper band via this token override. */
+[data-theme="dark"] [data-band-invert]{--bg:var(--paper-200);--surface:var(--paper-100);--surface-2:var(--paper-300);--text:var(--paper-900);--text-2:var(--paper-800);--text-3:var(--paper-700);--hairline:var(--paper-400);--hairline-strong:var(--paper-500);--accent:var(--seal-500);--accent-hover:var(--seal-600);--accent-active:var(--seal-700);--ring:var(--seal-500);--link:var(--seal-600);--kbd-face:var(--paper-100);--kbd-edge:var(--paper-500);color-scheme:light}</style>
+</helmet>
+<div data-theme="{{ theme }}" style="position:relative;display:flex;flex-direction:column;height:100%;background:var(--bg);font-family:var(--font-ui);color:var(--text);overflow:hidden">
+<sc-if value="{{ isFrame }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;border:5px solid var(--text);pointer-events:none;z-index:40"></div>
+</sc-if>
+<header data-theme="{{ headerTheme }}" data-band-invert="{{ bandInvert }}" style="height:48px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;border-bottom:1px solid var(--hairline);background:var(--bg);color:var(--text)">
+<a href="#" style="font:500 12px/1 var(--font-ui);color:var(--text-2);text-decoration:none" style-hover="color:var(--text)">← Back to document</a>
+<span style="display:inline-flex;align-items:center;height:20px;padding:0 8px;border:1px solid var(--hairline-strong);border-radius:var(--r-xs);font:600 10px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)">Ground truth</span>
+<span style="font:600 15px/1.15 var(--font-display)">{{ docTitle }}</span>
+<span style="font:500 12px/1 var(--font-mono);color:var(--text-2)">{{ pageOf }}</span>
+<div style="flex:1"></div>
+<span class="tx-kbdrow"><span><kbd class="tx-kbd">⌘Enter</kbd>Save page</span><span><kbd class="tx-kbd">⌥→</kbd>Next picked</span></span>
+<button class="tx-btn tx-btn--ghost tx-btn--sm" onClick="{{ toggleTheme }}">{{ themeLabel }}</button>
+</header>
+<sc-if value="{{ isBand }}" hint-placeholder-val="{{ false }}">
+<div style="flex:none;height:7px;border-bottom:1px solid var(--hairline);background:repeating-linear-gradient(-45deg,var(--seal-300) 0 1px,transparent 1px 6px)"></div>
+</sc-if>
+<sc-if value="{{ isBanner }}" hint-placeholder-val="{{ false }}">
+<div style="flex:none;height:28px;display:flex;align-items:stretch;border-bottom:1px solid var(--hairline)">
+<div style="flex:1;background:repeating-linear-gradient(-45deg,var(--seal-300) 0 1px,transparent 1px 8px)"></div>
+<div style="flex:none;display:flex;align-items:center;padding:0 14px;border-left:1px solid var(--hairline);border-right:1px solid var(--hairline);font:600 10px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)">Ground truth — typed blind · model text hidden</div>
+<div style="flex:1;background:repeating-linear-gradient(-45deg,var(--seal-300) 0 1px,transparent 1px 8px)"></div>
+</div>
+</sc-if>
+<div ref="{{ splitRef }}" class="tx-split" style="flex:1;min-height:0;display:flex">
+<div class="tx-split-pane" style="width:{{ leftW }};display:flex;flex-direction:column;min-width:0;background:var(--bg)">
+<div style="flex:none;height:34px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--hairline)">
+<span class="tx-label" style="margin:0">Scan</span>
+<span style="font:500 11px/1 var(--font-mono);color:var(--text-3)">{{ pageOf }}</span>
+</div>
+<div style="flex:1;min-height:0;display:grid;place-items:center;padding:20px">
+<div style="width:min(88%,580px);height:94%;background:var(--paper-100);border:1px solid var(--hairline-strong);border-radius:var(--r-sm);display:grid;place-items:center">
+<div style="text-align:center;color:var(--text-3);font:400 12px/1.6 var(--font-ui)">Scanned page — placeholder<br>{{ docTitle }} · {{ pageOf }}</div>
+</div>
+</div>
+</div>
+<div class="tx-split-divider" onMouseDown="{{ dragStart }}" role="separator" aria-orientation="vertical"><span class="tx-split-grip"></span></div>
+<div class="tx-split-pane" style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--surface)">
+<div style="flex:none;height:34px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--hairline)">
+<span class="tx-label" style="margin:0">Your transcription</span>
+<span style="font:400 11px/1 var(--font-ui);color:var(--text-3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">typed blind — model text stays hidden</span>
+<div style="flex:1"></div>
+<button class="tx-btn tx-btn--primary tx-btn--sm" onClick="{{ save }}" disabled="{{ saveDisabled }}" style="flex:none;white-space:nowrap">Save page</button>
+</div>
+<textarea ref="{{ taRef }}" value="{{ text }}" onChange="{{ onText }}" onKeyDown="{{ onKey }}" spellCheck="{{ false }}" placeholder="Type exactly what the page says, line by line." style="flex:1;min-height:0;width:100%;box-sizing:border-box;border:none;resize:none;background:var(--surface);color:var(--text);caret-color:var(--accent);padding:16px 18px;font:400 14px/1.8 var(--font-ui)" style-focus="outline:2px solid var(--ring);outline-offset:-2px"></textarea>
+<div style="flex:none;height:30px;display:flex;align-items:center;gap:10px;padding:0 14px;border-top:1px solid var(--hairline);font:500 11px/1 var(--font-mono);color:var(--text-3)">
+<span>{{ charLabel }}</span>
+<div style="flex:1"></div>
+<span>{{ saveHint }}</span>
+</div>
+</div>
+</div>
+<footer style="height:44px;flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 14px;border-top:1px solid var(--hairline)">
+<span style="font:500 11px/1 var(--font-mono);color:var(--text-3)">{{ pickedSummary }}</span>
+<x-import component-from-global-scope="TranscriptaDesignSystem_fa1864.PageStrip" dc-props="{{ strip }}" hint-size="420px,26px"></x-import>
+<span style="font:400 11px/1 var(--font-ui);color:var(--text-3);justify-self:end">Pages you picked for ground truth</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;chrome&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;band&quot;,&quot;options&quot;:[&quot;band&quot;,&quot;frame&quot;,&quot;banner&quot;],&quot;tsType&quot;:&quot;'band'|'frame'|'banner'&quot;,&quot;section&quot;:&quot;Chrome&quot;},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;docTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Parish register, 1887&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.splitRef = React.createRef();
+    this.taRef = React.createRef();
+    this.picked = [12, 47, 103, 166, 210, 258, 281, 300];
+    this.state = {
+      dark: null, cur: 47, pct: 52, drag: false,
+      texts: { 12: "No. 15. Born on 11 January, Anna. Parents: peasant of Dykanka village, Petr Ivanenko and his lawful wife Maria, both Orthodox." },
+      saved: { 12: true }, dirty: {}
+    };
+  }
+  componentDidMount(){
+    this.mm = e => {
+      if(!this.state.drag || !this.splitRef.current) return;
+      const r = this.splitRef.current.getBoundingClientRect();
+      const p = Math.min(75, Math.max(25, (e.clientX - r.left) / r.width * 100));
+      this.setState({ pct: p });
+    };
+    this.mu = () => { if(this.state.drag) this.setState({ drag: false }); };
+    window.addEventListener('mousemove', this.mm);
+    window.addEventListener('mouseup', this.mu);
+  }
+  componentWillUnmount(){
+    window.removeEventListener('mousemove', this.mm);
+    window.removeEventListener('mouseup', this.mu);
+  }
+  go(n){ this.setState({ cur: n }); }
+  step(d){
+    const i = this.picked.indexOf(this.state.cur);
+    const n = this.picked[i + d];
+    if(n !== undefined) this.go(n);
+  }
+  doSave(){
+    const { cur, texts } = this.state;
+    if(!(texts[cur] || '').trim()) return;
+    this.setState(s => {
+      const dirty = { ...s.dirty }; delete dirty[cur];
+      return { saved: { ...s.saved, [cur]: true }, dirty };
+    });
+    const i = this.picked.indexOf(cur);
+    if(i < this.picked.length - 1) this.go(this.picked[i + 1]);
+  }
+  renderVals(){
+    const dark = this.state.dark ?? !!this.props.darkTheme;
+    const chrome = this.props.chrome ?? 'band';
+    const { cur, texts, saved, dirty, pct } = this.state;
+    const text = texts[cur] ?? '';
+    const savedCount = Object.keys(saved).length;
+    const isSaved = !!saved[cur] && !dirty[cur];
+    return {
+      theme: dark ? 'dark' : null,
+      headerTheme: chrome === 'band' ? (dark ? null : 'dark') : (dark ? 'dark' : null),
+      bandInvert: chrome === 'band' && dark ? '' : null,
+      isBand: chrome === 'band',
+      themeLabel: dark ? 'Day' : 'Night',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      isFrame: chrome === 'frame',
+      isBanner: chrome === 'banner',
+      docTitle: this.props.docTitle ?? 'Parish register, 1887',
+      pageOf: 'page ' + cur + ' of 300',
+      leftW: pct + '%',
+      dragStart: e => { e.preventDefault(); this.setState({ drag: true }); },
+      splitRef: this.splitRef,
+      taRef: this.taRef,
+      text,
+      onText: e => {
+        const v = e.target.value;
+        this.setState(s => ({ texts: { ...s.texts, [s.cur]: v }, dirty: { ...s.dirty, [s.cur]: true } }));
+      },
+      onKey: e => {
+        if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ e.preventDefault(); this.doSave(); }
+        else if(e.altKey && e.key === 'ArrowRight'){ e.preventDefault(); this.step(1); }
+        else if(e.altKey && e.key === 'ArrowLeft'){ e.preventDefault(); this.step(-1); }
+      },
+      save: () => this.doSave(),
+      saveDisabled: !text.trim(),
+      charLabel: text.length.toLocaleString('en-US') + ' characters',
+      saveHint: isSaved ? '✓ saved to ground truth' : (text ? 'unsaved · ⌘Enter saves' : 'nothing typed yet'),
+      pickedSummary: this.picked.length + ' pages picked · ' + savedCount + ' saved',
+      strip: {
+        pages: this.picked.map(n => ({ n, state: n === cur ? 'current' : (saved[n] ? 'confirmed' : 'ready') })),
+        onSelect: n => this.go(n),
+        onPrev: () => this.step(-1),
+        onNext: () => this.step(1)
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

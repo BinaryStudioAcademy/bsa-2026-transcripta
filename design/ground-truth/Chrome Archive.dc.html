@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/typography.css">
+<style>body{margin:0;background:#F6F1E7}a{color:#B23A2F}a:hover{color:#8f2e26}</style>
+</helmet>
+<section style="padding:40px;display:flex;flex-direction:column;gap:24px;font-family:var(--font-ui);color:var(--paper-900)">
+<div style="max-width:720px">
+<div style="font:600 18px/1.2 var(--font-display)">Retired chrome variants</div>
+<div style="font:400 13px/1.6 var(--font-ui);color:var(--paper-800);margin-top:4px">1a (inverted ink band) is the canonical ground-truth chrome — see <a href="Ground-Truth Mode.dc.html">Ground-Truth Mode</a>. These two were explored and retired.</div>
+</div>
+<div style="display:flex;gap:56px;align-items:flex-start;flex-wrap:wrap">
+<div id="1b" data-screen-label="1b Full ink frame (retired)" style="flex:none">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;background:var(--paper-900);color:var(--paper-100);border-radius:2px;font:600 12px/1 var(--font-mono)">1b</span>
+<span style="font:600 15px/1 var(--font-display)">Full ink frame</span>
+<span style="font:400 12px/1 var(--font-ui);color:var(--paper-700)">retired — a 5px ink border wraps the whole screen</span>
+</div>
+<div style="width:1280px;height:800px;border:1px solid var(--paper-500)">
+<dc-import name="GroundTruthScreen" chrome="frame" style="width:1280px;height:800px" hint-size="1280px,800px"></dc-import>
+</div>
+</div>
+<div id="1c" data-screen-label="1c Banner + hatched motif (retired)" style="flex:none">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;background:var(--paper-900);color:var(--paper-100);border-radius:2px;font:600 12px/1 var(--font-mono)">1c</span>
+<span style="font:600 15px/1 var(--font-display)">Banner + hatched motif</span>
+<span style="font:400 12px/1 var(--font-ui);color:var(--paper-700)">retired — a seal-hatched strip under the header names the mode in words</span>
+</div>
+<div style="width:1280px;height:800px;border:1px solid var(--paper-500)">
+<dc-import name="GroundTruthScreen" chrome="banner" style="width:1280px;height:800px" hint-size="1280px,800px"></dc-import>
+</div>
+</div>
+</div>
+</section>
+</x-dc>
+</body>
+</html>
