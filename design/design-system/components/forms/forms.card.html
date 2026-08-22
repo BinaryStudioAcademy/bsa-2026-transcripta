@@ -1,0 +1,20 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Forms" subtitle="Input, select, textarea, checkbox, radio — 32px dense controls" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0}#root{display:flex}.panel{flex:1;padding:16px;background:var(--bg);display:flex;flex-direction:column;gap:12px}</style></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {Input,Textarea,Select,Checkbox,Radio}=window.TranscriptaDesignSystem_fa1864;
+const Demo=({s})=>(<React.Fragment>
+<Input label="Document name" id={'a'+s} placeholder="Parish register, 1887"/>
+<Select label="Preset" id={'b'+s} options={['Church records','Ledgers','Letters']}/>
+<Input label="Disabled" id={'c'+s} disabled value="Locked while processing" readOnly/>
+<Textarea label="Prompt notes" id={'d'+s} rows={2} placeholder="Names repeat across pages; keep spelling."/>
+<div style={{display:'flex',gap:16,flexWrap:'wrap'}}><Checkbox label="Feed confirmed words into the lexicon" defaultChecked/><Checkbox label="Unchecked"/><Checkbox label="Disabled" disabled/></div>
+<div style={{display:'flex',gap:16}}><Radio name={'q'+s} label="Whole document" defaultChecked/><Radio name={'q'+s} label="Selected pages"/></div>
+</React.Fragment>);
+ReactDOM.createRoot(document.getElementById('root')).render(<React.Fragment><div className="panel"><Demo s="l"/></div><div className="panel" data-theme="dark"><Demo s="d"/></div></React.Fragment>);
+</script></body></html>

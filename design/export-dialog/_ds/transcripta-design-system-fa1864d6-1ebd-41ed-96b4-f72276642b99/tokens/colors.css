@@ -1,0 +1,91 @@
+/* Transcripta color tokens — light theme ("reading room"). Ramps are OKLCH, 100=lightest, 900=darkest. */
+:root{
+/* — Paper ramp (warm neutrals, ivory → ink). The entire neutral world lives here; never cool grey. — */
+--paper-100:#FFFDF8; /* ivory: raised surfaces — cards, inputs, modals */
+--paper-200:#F6F1E7; /* paper: the page ground behind everything */
+--paper-300:#EFE7D8; /* deepened paper: hover fills, table header, pressed ivory */
+--paper-400:#E8E0D0; /* hairline: default 1px rules and borders */
+--paper-500:#D5CAB3; /* strong hairline: input borders, kbd edges */
+--paper-600:#B0A488; /* faint glyphs, disabled text on paper */
+--paper-700:#8C8168; /* tertiary text, placeholder */
+--paper-800:#6B6254; /* secondary text */
+--paper-900:#211C14; /* ink: primary text; tooltip ground in light theme */
+/* — Seal ramp (accent red, base #B23A2F). Means ACTION: primary buttons, links, focus, lexicon marks. Never used for errors. — */
+--seal-100:oklch(95.5% 0.015 30); /* faint seal wash: lexicon-mark ground, selected tint */
+--seal-200:oklch(90% 0.04 30);   /* seal tint borders, mark hover */
+--seal-300:oklch(81% 0.075 30);  /* decorative seal, chart fill */
+--seal-400:oklch(69% 0.115 30);  /* mark underline, dark-theme link base */
+--seal-500:oklch(54.5% 0.146 30);/* ≈#B23A2F — primary action fill, focus ring */
+--seal-600:oklch(49% 0.14 30);   /* hover: deepened action fill; link color */
+--seal-700:oklch(43% 0.12 30);   /* active/pressed fill; accent text on tint */
+--seal-800:oklch(36% 0.095 30);  /* deep seal, dark-theme mark ground */
+--seal-900:oklch(29% 0.07 30);   /* near-ink seal */
+/* — Moss ramp (success, base #4A7C59). Confirmed pages, done documents. — */
+--moss-100:oklch(95% 0.02 152);  /* confirmed tint ground */
+--moss-200:oklch(89% 0.045 152); /* confirmed chip border */
+--moss-300:oklch(79% 0.07 152);  /* progress accents */
+--moss-400:oklch(66% 0.085 152); /* dark-theme success glyphs */
+--moss-500:oklch(54% 0.083 152); /* ≈#4A7C59 — success fills, ✓ glyphs */
+--moss-600:oklch(47% 0.075 150); /* success hover */
+--moss-700:oklch(40% 0.065 150); /* success text on tint */
+--moss-800:oklch(33% 0.05 150);  /* deep moss */
+--moss-900:oklch(27% 0.04 150);  /* near-ink moss */
+/* — Amber ramp (warning/budget, base #B7791F). Budget nearing limit, degraded-but-working. — */
+--amber-100:oklch(96% 0.02 80);  /* warning tint ground */
+--amber-200:oklch(90% 0.05 80);  /* warning chip border */
+--amber-300:oklch(81% 0.09 78);  /* meter fill near limit */
+--amber-400:oklch(71% 0.12 74);  /* dark-theme warning glyphs */
+--amber-500:oklch(61.5% 0.123 72);/* ≈#B7791F — warning fills */
+--amber-600:oklch(53% 0.11 70);  /* warning hover */
+--amber-700:oklch(45% 0.09 70);  /* warning text on tint */
+--amber-800:oklch(37% 0.07 70);  /* deep amber */
+--amber-900:oklch(29% 0.05 70);  /* near-ink amber */
+/* — Error ramp (failure, base carmine — COOLER and darker than seal; hue 13 vs 30). Means FAILURE: failed pages, destructive, hard stops. Never the seal red. — */
+--err-100:oklch(94.5% 0.02 13);  /* error tint ground */
+--err-200:oklch(88% 0.05 13);    /* error chip border */
+--err-300:oklch(77% 0.09 13);    /* error accents */
+--err-400:oklch(63% 0.13 13);    /* dark-theme error glyphs */
+--err-500:oklch(47% 0.145 13);   /* ≈#96263B — destructive fill, failed states */
+--err-600:oklch(42% 0.135 13);   /* destructive hover */
+--err-700:oklch(37% 0.115 13);   /* error text on tint */
+--err-800:oklch(31% 0.09 13);    /* deep error */
+--err-900:oklch(25% 0.07 13);    /* near-ink error */
+/* — Semantic aliases, light theme. Components reference ONLY these. — */
+--bg:var(--paper-200);            /* page ground */
+--surface:var(--paper-100);       /* raised: cards, inputs, table, modal */
+--surface-2:var(--paper-300);     /* deepened surface: hover, table header */
+--text:var(--paper-900);          /* primary text */
+--text-2:var(--paper-800);        /* secondary text */
+--text-3:var(--paper-700);        /* tertiary text, placeholder */
+--hairline:var(--paper-400);      /* default rule */
+--hairline-strong:var(--paper-500);/* borders that must read: inputs, chips */
+--accent:var(--seal-500);         /* primary action fill */
+--accent-hover:var(--seal-600);   /* hover deepens the fill */
+--accent-active:var(--seal-700);  /* active presses in */
+--accent-tint:var(--seal-100);    /* seal wash grounds */
+--accent-text:var(--seal-700);    /* seal-colored text on tint */
+--on-accent:var(--paper-100);     /* text on seal fill */
+--link:var(--seal-600);           /* links */
+--ring:var(--seal-500);           /* 2px focus ring, both themes, never suppressed */
+--ok:var(--moss-500);             /* success fill/glyph */
+--ok-tint:var(--moss-100);        /* success ground */
+--ok-text:var(--moss-700);        /* success text on tint */
+--warn:var(--amber-500);          /* warning fill/glyph */
+--warn-tint:var(--amber-100);     /* warning ground */
+--warn-text:var(--amber-700);     /* warning text on tint */
+--danger:var(--err-500);          /* destructive fill, failure glyph */
+--danger-hover:var(--err-600);    /* destructive hover */
+--danger-active:var(--err-700);   /* destructive pressed */
+--danger-tint:var(--err-100);     /* failure ground */
+--danger-text:var(--err-700);     /* failure text on tint */
+--on-danger:var(--paper-100);     /* text on error fill */
+--mark-bg:var(--seal-100);        /* lexicon context-word ground */
+--mark-underline:var(--seal-400); /* lexicon context-word underline */
+--tip-bg:var(--paper-900);        /* tooltip ground (ink on light) */
+--tip-text:var(--paper-100);      /* tooltip text */
+--kbd-face:var(--paper-100);      /* keycap top */
+--kbd-edge:var(--paper-500);      /* keycap side/edge */
+--scrim:oklch(25% 0.02 60 / .42); /* warm modal backdrop — overlays only */
+--shadow-pop:0 4px 16px oklch(30% 0.03 60 / .16);  /* tooltip, toast, popover */
+--shadow-modal:0 12px 40px oklch(25% 0.03 60 / .26);/* dialog */
+}

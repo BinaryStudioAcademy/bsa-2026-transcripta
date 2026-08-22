@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors-dark.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/base.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/components.css">
+  <link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/styles.css">
+  <script src="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/_ds_bundle.js"></script>
+  <style>html,body{margin:0}</style>
+</helmet>
+<section style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start;padding:32px;font-family:var(--font-ui)">
+  <div id="1" style="display:flex;flex-direction:column;gap:10px">
+    <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:1px solid var(--hairline-strong);border-radius:var(--r-sm);padding:4px 8px;background:var(--surface);font:500 11px/1 var(--font-mono);color:var(--text-2)">1<span style="font:400 11px/1 var(--font-ui)">Export dialog — canonical</span></span>
+    <div style="width:600px;background:var(--bg);border:1px solid var(--hairline);display:grid;place-items:center;padding:56px 24px">
+      <div class="tx-dialog" role="dialog" aria-modal="true" style="width:min(420px,100%);display:flex;flex-direction:column;gap:16px">
+        <h2 class="tx-dialog-title" style="margin:0">Export &ldquo;Parish register, 1887&rdquo;</h2>
+        <div>
+          <span class="tx-label">Format</span>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label class="tx-field" onClick="{{ a.jsonPick }}"><input type="radio" name="fmt1" class="tx-radio" checked="{{ a.json }}" onChange="{{ a.jsonPick }}">JSON</label>
+            <label class="tx-field" onClick="{{ a.csvPick }}"><input type="radio" name="fmt1" class="tx-radio" checked="{{ a.csv }}" onChange="{{ a.csvPick }}">CSV</label>
+            <label class="tx-field" onClick="{{ a.txtPick }}"><input type="radio" name="fmt1" class="tx-radio" checked="{{ a.txt }}" onChange="{{ a.txtPick }}">TXT</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;align-items:flex-start;padding:10px 12px;background:var(--warn-tint);border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);border-radius:var(--r-md)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;color:var(--warn-text);margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+          <span style="font:400 var(--fs-xs)/1.5 var(--font-ui);color:var(--warn-text)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">12 of 300</span> pages are still unverified. They will be exported as the model read them, unchecked.</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span class="tx-kbdrow"><span><span class="tx-kbd">Esc</span>Cancel</span><span><span class="tx-kbd">Enter</span>Export</span></span>
+          <span style="display:flex;gap:8px">
+            <button class="tx-btn tx-btn--ghost">Cancel</button>
+            <button class="tx-btn tx-btn--primary">Export</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="2" style="display:flex;flex-direction:column;gap:10px">
+    <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:1px solid var(--hairline-strong);border-radius:var(--r-sm);padding:4px 8px;background:var(--surface);font:500 11px/1 var(--font-mono);color:var(--text-2)">2<span style="font:400 11px/1 var(--font-ui)">Keyboard focus on Export</span></span>
+    <div style="width:600px;background:var(--bg);border:1px solid var(--hairline);display:grid;place-items:center;padding:56px 24px">
+      <div class="tx-dialog" role="dialog" aria-modal="true" style="width:min(420px,100%);display:flex;flex-direction:column;gap:16px">
+        <h2 class="tx-dialog-title" style="margin:0">Export &ldquo;Parish register, 1887&rdquo;</h2>
+        <div>
+          <span class="tx-label">Format</span>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label class="tx-field" onClick="{{ b.jsonPick }}"><input type="radio" name="fmt2" class="tx-radio" checked="{{ b.json }}" onChange="{{ b.jsonPick }}">JSON</label>
+            <label class="tx-field" onClick="{{ b.csvPick }}"><input type="radio" name="fmt2" class="tx-radio" checked="{{ b.csv }}" onChange="{{ b.csvPick }}">CSV</label>
+            <label class="tx-field" onClick="{{ b.txtPick }}"><input type="radio" name="fmt2" class="tx-radio" checked="{{ b.txt }}" onChange="{{ b.txtPick }}">TXT</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;align-items:flex-start;padding:10px 12px;background:var(--warn-tint);border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);border-radius:var(--r-md)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;color:var(--warn-text);margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+          <span style="font:400 var(--fs-xs)/1.5 var(--font-ui);color:var(--warn-text)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">12 of 300</span> pages are still unverified. They will be exported as the model read them, unchecked.</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span class="tx-kbdrow"><span><span class="tx-kbd">Esc</span>Cancel</span><span><span class="tx-kbd">Enter</span>Export</span></span>
+          <span style="display:flex;gap:8px">
+            <button class="tx-btn tx-btn--ghost">Cancel</button>
+            <button class="tx-btn tx-btn--primary" style="outline:var(--ring-w) solid var(--ring);outline-offset:1px">Export</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="3a" style="display:flex;flex-direction:column;gap:10px">
+    <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:1px solid var(--hairline-strong);border-radius:var(--r-sm);padding:4px 8px;background:var(--surface);font:500 11px/1 var(--font-mono);color:var(--text-2)">3a<span style="font:400 11px/1 var(--font-ui)">Just after Export — background job started</span></span>
+    <div style="width:600px;background:var(--bg);border:1px solid var(--hairline);position:relative;display:flex;flex-direction:column;min-height:400px">
+      <div style="display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--hairline)">
+        <h2 style="margin:0;font:600 var(--fs-lg)/var(--lh-tight) var(--font-display);color:var(--text)">Parish register, 1887</h2>
+      </div>
+      <div style="flex:1"></div>
+      <div class="tx-toast" style="position:absolute;right:16px;bottom:16px">
+        <span style="font:400 var(--fs-sm)/var(--lh-ui) var(--font-ui);color:var(--text)">Export started. The file will appear on this page when it&rsquo;s ready.</span>
+      </div>
+    </div>
+  </div>
+  <div id="3b" style="display:flex;flex-direction:column;gap:10px">
+    <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:1px solid var(--hairline-strong);border-radius:var(--r-sm);padding:4px 8px;background:var(--surface);font:500 11px/1 var(--font-mono);color:var(--text-2)">3b<span style="font:400 11px/1 var(--font-ui)">Later — the file is ready</span></span>
+    <div style="width:600px;background:var(--bg);border:1px solid var(--hairline);display:flex;flex-direction:column;min-height:400px">
+      <div style="display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--hairline)">
+        <h2 style="margin:0;font:600 var(--fs-lg)/var(--lh-tight) var(--font-display);color:var(--text)">Parish register, 1887</h2>
+      </div>
+      <div style="padding:16px 20px;display:flex;align-items:center;gap:6px;font:400 12px/1.4 var(--font-ui);color:var(--text-2)">
+        <span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text)">parish-register-1887.csv</span>
+        <span>&middot; ready &mdash;</span>
+        <a href="#3b">Download</a>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+  </div>
+  <div id="4" style="display:flex;flex-direction:column;gap:10px">
+    <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:1px solid var(--hairline-strong);border-radius:var(--r-sm);padding:4px 8px;background:var(--surface);font:500 11px/1 var(--font-mono);color:var(--text-2)">4<span style="font:400 11px/1 var(--font-ui)">Dark theme — default state</span></span>
+    <div data-theme="dark" style="width:600px;background:var(--bg);border:1px solid var(--hairline);color:var(--text);display:grid;place-items:center;padding:56px 24px">
+      <div class="tx-dialog" role="dialog" aria-modal="true" style="width:min(420px,100%);display:flex;flex-direction:column;gap:16px">
+        <h2 class="tx-dialog-title" style="margin:0">Export &ldquo;Parish register, 1887&rdquo;</h2>
+        <div>
+          <span class="tx-label">Format</span>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label class="tx-field" onClick="{{ d.jsonPick }}"><input type="radio" name="fmt4" class="tx-radio" checked="{{ d.json }}" onChange="{{ d.jsonPick }}">JSON</label>
+            <label class="tx-field" onClick="{{ d.csvPick }}"><input type="radio" name="fmt4" class="tx-radio" checked="{{ d.csv }}" onChange="{{ d.csvPick }}">CSV</label>
+            <label class="tx-field" onClick="{{ d.txtPick }}"><input type="radio" name="fmt4" class="tx-radio" checked="{{ d.txt }}" onChange="{{ d.txtPick }}">TXT</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;align-items:flex-start;padding:10px 12px;background:var(--warn-tint);border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);border-radius:var(--r-md)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;color:var(--warn-text);margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+          <span style="font:400 var(--fs-xs)/1.5 var(--font-ui);color:var(--warn-text)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">12 of 300</span> pages are still unverified. They will be exported as the model read them, unchecked.</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span class="tx-kbdrow"><span><span class="tx-kbd">Esc</span>Cancel</span><span><span class="tx-kbd">Enter</span>Export</span></span>
+          <span style="display:flex;gap:8px">
+            <button class="tx-btn tx-btn--ghost">Cancel</button>
+            <button class="tx-btn tx-btn--primary">Export</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1330,&quot;height&quot;:1100}}">
+class Component extends DCLogic {
+  state = { a: 'csv', b: 'csv', d: 'csv' };
+  renderVals() {
+    const grp = (k) => {
+      const v = this.state[k];
+      const pick = (val) => () => this.setState({ [k]: val });
+      return { json: v === 'json', csv: v === 'csv', txt: v === 'txt', jsonPick: pick('json'), csvPick: pick('csv'), txtPick: pick('txt') };
+    };
+    return { a: grp('a'), b: grp('b'), d: grp('d') };
+  }
+}
+</script>
+</body>
+</html>

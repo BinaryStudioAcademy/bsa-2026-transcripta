@@ -1,0 +1,10 @@
+/* Element defaults. NO transitions anywhere — state changes are instant cuts. */
+html{-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--text);font:400 var(--fs-md)/var(--lh-ui) var(--font-ui)}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;line-height:var(--lh-tight);margin:0}
+a{color:var(--link);text-decoration:underline;text-decoration-color:color-mix(in oklab,var(--link) 45%,transparent);text-underline-offset:2px}
+a:hover{color:var(--accent-active);text-decoration-color:currentColor}
+::selection{background:var(--seal-200);color:var(--paper-900)}
+[data-theme="dark"] ::selection{background:var(--seal-800);color:var(--paper-100)}
+:focus-visible{outline:var(--ring-w) solid var(--ring);outline-offset:1px}
+.tnum,code,kbd,samp{font-family:var(--font-mono);font-variant-numeric:tabular-nums}

@@ -1,0 +1,23 @@
+<!-- @dsCard group="Components" viewport="700x620" name="Verification" subtitle="Context-word mark, split pane, dropzone states" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0}.panel{padding:16px;background:var(--bg);display:flex;flex-direction:column;gap:14px}</style></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {ContextMark,SplitPane,Dropzone}=window.TranscriptaDesignSystem_fa1864;
+const Scan=()=><div style={{height:'100%',background:'var(--paper-100)',padding:'14px 16px',boxSizing:'border-box'}}>{[92,80,88,66,84,74].map((w,i)=><div key={i} style={{height:5,width:w+'%',background:'var(--paper-400)',borderRadius:2,marginBottom:9}}></div>)}</div>;
+const Demo=({sk})=>(<React.Fragment>
+<p style={{margin:0,font:'400 15px/1.65 var(--font-ui)',color:'var(--text)',maxWidth:620}}>No. 15. Born on 11 January, Anna. Parents: peasant of <ContextMark tip="from the lexicon, seen on 4 pages">Dykanka</ContextMark> village, Petr <ContextMark tip="from the lexicon, seen on 4 pages">Ivanenko</ContextMark> and his lawful wife Maria, both Orthodox.</p>
+<SplitPane storageKey={sk} style={{height:130,border:'1px solid var(--hairline)',borderRadius:'var(--r-sm)',overflow:'hidden'}} left={<Scan/>} right={<div style={{padding:'12px 14px',font:'400 13px/1.6 var(--font-ui)',color:'var(--text-2)'}}>Editable transcription — drag the divider; position is remembered.</div>}/>
+<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
+<Dropzone/>
+<Dropzone state="over"/>
+<Dropzone state="selected" file="dykanka-1887.pdf · 180 MB"/>
+<Dropzone state="rejected" reason="Unsupported type. PDFs and image archives only."/>
+</div>
+</React.Fragment>);
+ReactDOM.createRoot(document.getElementById('root')).render(<React.Fragment><div className="panel"><Demo sk="card-l"/></div><div className="panel" data-theme="dark"><Demo sk="card-d"/></div></React.Fragment>);
+</script></body></html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors-dark.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/typography.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/base.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/components.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/styles.css">
+<script src="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/_ds_bundle.js"></script>
+<style>body{margin:0}</style>
+</helmet>
+<div data-theme="{{ theme }}" data-screen-label="Document page" style="display:flex;height:100vh;background:var(--bg);font-family:var(--font-ui);color:var(--text)">
+<aside style="width:232px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--hairline);padding:14px 12px;box-sizing:border-box;gap:4px">
+<div style="display:flex;gap:9px;align-items:center;padding:4px 8px 14px">
+<span style="width:26px;height:26px;border-radius:5px;background:var(--seal-500);display:inline-grid;place-items:center"><svg width="18" height="18" viewBox="0 0 48 48"><path d="M7 12 L41 8.5 L39.5 17 L8.5 19.5 Z" fill="var(--paper-100)"></path><path d="M19.5 15.5 L29 14.5 L26 42 L22.5 42 Z" fill="var(--paper-100)"></path><circle cx="33.5" cy="38.5" r="3.4" fill="var(--paper-100)"></circle></svg></span>
+<span style="font:600 16px/1 var(--font-display)">Transcripta</span>
+</div>
+<a href="#" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font:500 13px/1 var(--font-ui);text-decoration:none">Documents</a>
+<a href="#" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:var(--r-md);color:var(--text-2);font:500 13px/1 var(--font-ui);text-decoration:none" style-hover="background:var(--surface-2);color:var(--text)">Presets</a>
+<div style="flex:1"></div>
+<div style="border-top:1px solid var(--hairline);padding:10px 8px 2px;display:flex;flex-direction:column;gap:6px">
+<span style="font:400 12px/1.3 var(--font-ui);color:var(--text-2);overflow:hidden;text-overflow:ellipsis">reader@example.com</span>
+<a href="#" style="font:500 12px/1 var(--font-ui);color:var(--text-3);text-decoration:none" style-hover="color:var(--accent-text)">Sign out</a>
+</div>
+</aside>
+<div style="flex:1;display:flex;flex-direction:column;min-width:0">
+<header style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--hairline)">
+<nav style="display:flex;align-items:center;gap:8px;font:500 13px/1 var(--font-ui)">
+<a href="#" style="color:var(--text-2);text-decoration:none" style-hover="color:var(--accent-text)">Documents</a>
+<span style="color:var(--text-3)">/</span>
+<span style="color:var(--text)">Parish register, 1887</span>
+</nav>
+<button class="tx-btn tx-btn--ghost tx-btn--sm" onClick="{{ toggleTheme }}">{{ themeLabel }}</button>
+</header>
+<main style="flex:1;overflow:auto">
+<div style="max-width:640px;margin:0 auto;padding:28px 24px 56px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+
+<div style="display:flex;flex-direction:column;gap:8px;padding-bottom:6px">
+<div style="display:flex;align-items:center;gap:12px">
+<h1 style="font:600 24px/1.15 var(--font-display);margin:0">Parish register, 1887</h1>
+<span class="tx-chip {{ chipClass }}">{{ chipLabel }}</span>
+<div style="flex:1"></div>
+<span style="position:relative;display:inline-flex">
+<button class="tx-btn tx-btn--ghost tx-btn--sm" aria-label="More actions" onClick="{{ toggleMenu }}" style="font-size:15px;letter-spacing:1px;padding:0 8px">⋯</button>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:calc(100% + 4px);right:0;min-width:184px;background:var(--surface);border:1px solid var(--hairline-strong);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:4px;z-index:50;box-sizing:border-box">
+<button style="display:flex;width:100%;align-items:center;height:30px;padding:0 10px;border:none;background:none;border-radius:var(--r-sm);font:500 13px/1 var(--font-ui);color:var(--text);cursor:pointer;text-align:left" style-hover="background:var(--surface-2)" onClick="{{ closeMenu }}">Ground-truth mode</button>
+</div>
+</sc-if>
+</span>
+</div>
+<span style="font:400 12px/1.5 var(--font-ui);color:var(--text-3)">Uploaded <span class="tx-num">19 August 2026</span> · <span class="tx-num">41.2 MB</span> · <span class="tx-num">300</span> pages · Preset: Parish register</span>
+</div>
+
+<section style="background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:16px 18px;box-sizing:border-box">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<h2 style="font:600 var(--fs-2xs)/1 var(--font-ui);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-2);margin:0">Transcription</h2>
+<span class="tx-num" style="color:var(--text-2)">{{ pagesStr }}</span>
+</div>
+<div class="tx-progress-track" style="margin-top:12px"><div class="tx-progress-fill" style="width:{{ pctStr }}"></div></div>
+<div class="tx-progress-cap"><span>{{ spentStr }}</span><span>{{ etaStr }}</span></div>
+<sc-if value="{{ stopped }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline)">
+<p style="margin:0;font:400 var(--fs-sm)/1.5 var(--font-ui);color:var(--warn-text)">Stopped before page <span class="tx-num">213</span> — the budget limit was reached.</p>
+<button class="tx-btn tx-btn--secondary tx-btn--sm" onClick="{{ openBudget }}" style="flex:none">Raise the limit</button>
+</div>
+</sc-if>
+</section>
+
+<section style="background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:16px 18px;box-sizing:border-box">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<h2 style="font:600 var(--fs-2xs)/1 var(--font-ui);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-2);margin:0">Verification</h2>
+<span class="tx-num" style="color:var(--text-2)">{{ reviewedStr }}</span>
+</div>
+<p style="margin:10px 0 0;font:400 var(--fs-sm)/1.55 var(--font-ui);color:var(--text)">Your cursor is saved at page <span class="tx-num">47</span>. So far: <span class="tx-num">44</span> confirmed, <span class="tx-num">1</span> corrected, <span class="tx-num">1</span> skipped. <span class="tx-num">{{ readyAhead }}</span> transcribed pages are ready ahead of the cursor.</p>
+<div style="display:flex;align-items:center;gap:14px;margin-top:14px">
+<button class="tx-btn tx-btn--primary" onClick="{{ resume }}">Resume at page 47</button>
+<span class="tx-kbdrow"><span><span class="tx-kbd">Enter</span>Resume</span></span>
+</div>
+</section>
+
+<section style="background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:16px 18px;box-sizing:border-box">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<h2 style="font:600 var(--fs-2xs)/1 var(--font-ui);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-2);margin:0">Export</h2>
+<button class="tx-btn tx-btn--secondary tx-btn--sm" onClick="{{ openExport }}">Export…</button>
+</div>
+<p style="margin:10px 0 12px;font:400 var(--fs-xs)/1.5 var(--font-ui);color:var(--text-3)">Exports include every page — unverified pages are exported as the model read them.</p>
+<sc-if value="{{ noExports }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;padding-top:10px;border-top:1px solid var(--hairline);font:400 var(--fs-xs)/1.5 var(--font-ui);color:var(--text-3)">No exports yet.</p>
+</sc-if>
+<sc-for list="{{ exports }}" as="ex" hint-placeholder-count="1">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hairline)">
+<sc-if value="{{ ex.ready }}" hint-placeholder-val="{{ true }}"><span style="flex:none;font:700 12px/1 var(--font-mono);color:var(--ok-text)">✓</span></sc-if>
+<sc-if value="{{ ex.pending }}" hint-placeholder-val="{{ false }}"><span style="flex:none;font:500 12px/1 var(--font-mono);color:var(--text-3)">░</span></sc-if>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="font:500 12.5px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ex.name }}</span>
+<span style="font:400 11px/1.4 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-3)">{{ ex.meta }}</span>
+</div>
+<sc-if value="{{ ex.ready }}" hint-placeholder-val="{{ true }}"><a href="#" style="flex:none;font:500 12px/1 var(--font-ui)" onClick="{{ noop }}">Download</a></sc-if>
+</div>
+</sc-for>
+</section>
+
+<sc-if value="{{ hasGroundTruth }}" hint-placeholder-val="{{ false }}">
+<section style="background:var(--bg);border:1px dashed var(--hairline-strong);border-radius:var(--r-lg);padding:14px 18px;box-sizing:border-box">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<h2 style="font:600 var(--fs-2xs)/1 var(--font-ui);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-3);margin:0">Ground truth</h2>
+<span class="tx-num" style="color:var(--text-3)">8 of 300 pages typed blind</span>
+</div>
+<p style="margin:8px 0 0;font:400 var(--fs-sm)/1.55 var(--font-ui);color:var(--text-2)">CER <span class="tx-num">3.2%</span> — measured against your blind-typed pages.</p>
+<a href="#" style="display:inline-block;margin-top:8px;font:500 var(--fs-xs)/1 var(--font-ui)" onClick="{{ noop }}">Type more pages</a>
+</section>
+</sc-if>
+
+</div>
+</main>
+</div>
+<sc-if value="{{ exportOpen }}" hint-placeholder-val="{{ false }}">
+<div class="tx-scrim" onClick="{{ closeDialog }}">
+<div class="tx-dialog" onClick="{{ stopClick }}">
+<h2 class="tx-dialog-title">Export</h2>
+<p style="margin:0 0 14px;font:400 var(--fs-sm)/1.55 var(--font-ui);color:var(--text-2)">Every page is included. Unverified pages are exported as the model read them.</p>
+<span class="tx-label">Format</span>
+<div style="display:flex;flex-direction:column;gap:8px">
+<label class="tx-field"><input class="tx-radio" type="radio" name="fmt" value="JSON" checked="{{ fmtJson }}" onChange="{{ setFmt }}">JSON</label>
+<label class="tx-field"><input class="tx-radio" type="radio" name="fmt" value="CSV" checked="{{ fmtCsv }}" onChange="{{ setFmt }}">CSV</label>
+<label class="tx-field"><input class="tx-radio" type="radio" name="fmt" value="TXT" checked="{{ fmtTxt }}" onChange="{{ setFmt }}">TXT</label>
+</div>
+<div class="tx-dialog-actions">
+<button class="tx-btn tx-btn--ghost" onClick="{{ closeDialog }}">Cancel</button>
+<button class="tx-btn tx-btn--primary" onClick="{{ doExport }}">Export</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ budgetOpen }}" hint-placeholder-val="{{ false }}">
+<div class="tx-scrim" onClick="{{ closeDialog }}">
+<div class="tx-dialog" onClick="{{ stopClick }}">
+<h2 class="tx-dialog-title">Raise the limit</h2>
+<p style="margin:0 0 14px;font:400 var(--fs-sm)/1.55 var(--font-ui);color:var(--text-2)">Transcription stopped at <span class="tx-num">$10.00 / $10.00</span>. It resumes as soon as the limit is higher.</p>
+<label class="tx-label" for="lim">New limit</label>
+<div style="display:flex;align-items:center;gap:8px">
+<span class="tx-num" style="color:var(--text-2)">$</span>
+<input class="tx-input" id="lim" style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;max-width:120px" value="{{ budgetVal }}" onChange="{{ setBudgetVal }}">
+</div>
+<div class="tx-dialog-actions">
+<button class="tx-btn tx-btn--ghost" onClick="{{ closeDialog }}">Cancel</button>
+<button class="tx-btn tx-btn--primary" onClick="{{ doRaise }}">Raise the limit</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;docStatus&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;processing&quot;,&quot;options&quot;:[&quot;processing&quot;,&quot;done&quot;,&quot;budget_stop&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;priorExport&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;groundTruth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;has-results&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;has-results&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Document&quot;}}">
+class Component extends DCLogic {
+  state = {
+    dark: null, dialog: null, fmt: 'CSV', menuOpen: true,
+    raised: false, budgetVal: '20.00', nextId: 2,
+    exports: [{ id: 1, name: 'parish-register-1887.csv', readyMeta: '4 KB · yesterday, 21:40', ready: true }]
+  };
+  componentDidMount() {
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.dialog) this.setState({ dialog: null }); };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+  renderVals() {
+    const dark = this.state.dark ?? !!this.props.darkTheme;
+    const status = this.props.docStatus ?? 'processing';
+    const raised = this.state.raised && status === 'budget_stop';
+    const total = 300, reviewed = 46;
+    const M = {
+      processing: { transcribed: 212, chip: 'Processing', chipClass: '', spent: '$0.98', limit: '$10.00', eta: 'about 12 minutes left' },
+      done: { transcribed: 300, chip: 'Done', chipClass: 'tx-chip--ok', spent: '$6.42', limit: '$10.00', eta: 'finished' },
+      budget_stop: { transcribed: 212, chip: 'Budget limit', chipClass: 'tx-chip--warn', spent: '$10.00', limit: '$10.00', eta: 'stopped' }
+    };
+    const m = { ...M[status] };
+    if (raised) {
+      m.chip = 'Processing'; m.chipClass = '';
+      m.limit = '$' + (parseFloat(this.state.budgetVal || '20') || 20).toFixed(2);
+      m.eta = 'about 12 minutes left';
+    }
+    const stopped = status === 'budget_stop' && !raised;
+    const pct = m.transcribed / total * 100;
+    const draftCount = m.transcribed - reviewed;
+    const showPrior = this.props.priorExport ?? true;
+    const list = this.state.exports.filter(e => e.id !== 1 || showPrior);
+    const exports = list.map(e => ({
+      name: e.name, ready: e.ready, pending: !e.ready,
+      meta: e.ready ? e.readyMeta : 'Preparing the file · about 5 seconds'
+    }));
+    return {
+      theme: dark ? 'dark' : null,
+      themeLabel: dark ? 'Day' : 'Night',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      chipLabel: m.chip, chipClass: m.chipClass,
+      pagesStr: m.transcribed + ' of ' + total + ' pages transcribed',
+      menuOpen: this.state.menuOpen,
+      toggleMenu: () => this.setState({ menuOpen: !this.state.menuOpen }),
+      closeMenu: () => this.setState({ menuOpen: false }),
+      pctStr: pct + '%',
+      spentStr: m.spent + ' / ' + m.limit + ' spent',
+      etaStr: m.eta,
+      stopped,
+      hasGroundTruth: (this.props.groundTruth ?? 'none') === 'has-results',
+      reviewedStr: reviewed + ' of ' + m.transcribed + ' reviewed',
+      readyAhead: String(m.transcribed - reviewed),
+      draftCount: String(draftCount),
+      exports, noExports: exports.length === 0,
+      exportOpen: this.state.dialog === 'export',
+      budgetOpen: this.state.dialog === 'budget',
+      openExport: () => this.setState({ dialog: 'export' }),
+      openBudget: () => this.setState({ dialog: 'budget' }),
+      closeDialog: () => this.setState({ dialog: null }),
+      stopClick: (e) => e.stopPropagation(),
+      fmtJson: this.state.fmt === 'JSON',
+      fmtCsv: this.state.fmt === 'CSV',
+      fmtTxt: this.state.fmt === 'TXT',
+      setFmt: (e) => this.setState({ fmt: e.target.value }),
+      budgetVal: this.state.budgetVal,
+      setBudgetVal: (e) => this.setState({ budgetVal: e.target.value }),
+      doRaise: () => this.setState({ raised: true, dialog: null }),
+      doExport: () => this.doExport(m, reviewed, draftCount),
+      resume: () => {},
+      noop: (e) => e.preventDefault()
+    };
+  }
+  doExport(m, reviewed, draftCount) {
+    const ext = { JSON: '.json', CSV: '.csv', TXT: '.txt' }[this.state.fmt];
+    const size = { '.json': '128 KB', '.csv': '11 KB', '.txt': '86 KB' }[ext];
+    const id = this.state.nextId;
+    const row = { id, name: 'parish-register-1887' + ext, readyMeta: size + ' · just now', ready: false };
+    this.setState({ exports: [row, ...this.state.exports], nextId: id + 1, dialog: null });
+    setTimeout(() => {
+      this.setState({ exports: this.state.exports.map(e => e.id === id ? { ...e, ready: true } : e) });
+    }, 2600);
+  }
+}
+</script>
+</body>
+</html>

@@ -24,8 +24,9 @@ const filesConfig = {
 /** @type {Config} */
 const ignoresConfig = {
 	// Workspaces lint themselves; docs holds standalone scripts (the demo
-	// renderer), not application code.
-	ignores: ["apps", "packages", "docs", "dangerfile.ts"],
+	// renderer), not application code; design holds exported Claude Design
+	// artifacts (generated runtime, not source).
+	ignores: ["apps", "packages", "docs", "design", "dangerfile.ts"],
 };
 
 /** @type {Config} */

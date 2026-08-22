@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/colors-dark.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/typography.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/base.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/css/components.css">
+<link rel="stylesheet" href="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/styles.css">
+<script src="_ds/transcripta-design-system-fa1864d6-1ebd-41ed-96b4-f72276642b99/_ds_bundle.js"></script>
+<style>body{margin:0}</style>
+</helmet>
+<div data-theme="{{ theme }}" style="display:flex;height:100vh;background:var(--bg);font-family:var(--font-ui);color:var(--text)">
+<aside style="width:232px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--hairline);padding:14px 12px;box-sizing:border-box;gap:4px">
+<div style="display:flex;gap:9px;align-items:center;padding:4px 8px 14px">
+<span style="width:26px;height:26px;border-radius:5px;background:var(--seal-500);display:inline-grid;place-items:center"><svg width="18" height="18" viewBox="0 0 48 48"><path d="M7 12 L41 8.5 L39.5 17 L8.5 19.5 Z" fill="var(--paper-100)"></path><path d="M19.5 15.5 L29 14.5 L26 42 L22.5 42 Z" fill="var(--paper-100)"></path><circle cx="33.5" cy="38.5" r="3.4" fill="var(--paper-100)"></circle></svg></span>
+<span style="font:600 16px/1 var(--font-display)">Transcripta</span>
+</div>
+<a href="#" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:var(--r-md);color:var(--text-2);font:500 13px/1 var(--font-ui);text-decoration:none" style-hover="background:var(--surface-2);color:var(--text)">Documents</a>
+<a href="#" style="display:flex;align-items:center;height:32px;padding:0 10px;border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font:500 13px/1 var(--font-ui);text-decoration:none">Presets</a>
+<div style="flex:1"></div>
+<div style="border-top:1px solid var(--hairline);padding:10px 8px 2px;display:flex;flex-direction:column;gap:6px">
+<span style="font:400 12px/1.3 var(--font-ui);color:var(--text-2);overflow:hidden;text-overflow:ellipsis">reader@example.com</span>
+<a href="#" style="font:500 12px/1 var(--font-ui);color:var(--text-3);text-decoration:none" style-hover="color:var(--accent-text)">Sign out</a>
+</div>
+</aside>
+<div style="flex:1;display:flex;flex-direction:column;min-width:0">
+<header style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--hairline)">
+<h1 style="font:600 22px/1.15 var(--font-display);margin:0" data-screen-label="Preset editor">{{ pageTitle }}</h1>
+<button class="tx-btn tx-btn--ghost tx-btn--sm" onClick="{{ toggleTheme }}">{{ themeLabel }}</button>
+</header>
+<main style="flex:1;overflow:auto;padding:20px;box-sizing:border-box">
+<div style="max-width:960px">
+<sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid var(--hairline);background:var(--surface);border-radius:var(--r-md);padding:8px 12px;font:400 12px/1.5 var(--font-ui);color:var(--text-2);margin-bottom:14px">Presets are immutable — saving creates a new version. Pages already processed keep the version they were read with; only pages processed from now on use the new one.</div>
+</sc-if>
+<div style="display:flex;gap:16px;align-items:flex-start">
+<section style="flex:1;min-width:0;max-width:720px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);overflow:visible">
+<div style="padding:16px 20px;display:grid;grid-template-columns:240px 1fr;gap:12px 16px">
+<div>
+<label class="tx-label" for="basedon">Based on</label>
+<sc-if value="{{ canPickTmpl }}" hint-placeholder-val="{{ true }}">
+<span class="tx-selectwrap"><select id="basedon" class="tx-input" value="{{ tmpl }}" onChange="{{ onTmpl }}">
+<option>Parish register</option>
+<option>Medical record</option>
+<option>Diary</option>
+<option>Ledger</option>
+</select></span>
+</sc-if>
+<sc-if value="{{ editMode }}" hint-placeholder-val="{{ false }}">
+<span style="box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;height:var(--ctl-md);padding:0 10px;border:1px solid var(--hairline);border-radius:var(--r-md);background:var(--surface-2);font:400 var(--fs-sm)/1 var(--font-ui);color:var(--text-2)">{{ tmpl }}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3);flex:none"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+<p style="margin:6px 0 0;font:400 11.5px/1.4 var(--font-ui);color:var(--text-3)">Set at creation, cannot change.</p>
+</sc-if>
+</div>
+<div>
+<label class="tx-label" for="pname">Name</label>
+<input id="pname" class="tx-input" defaultValue="Dykanka, 1880s">
+</div>
+</div>
+<div style="border-top:1px solid var(--hairline);padding:16px 20px">
+<label class="tx-label" for="instr">Instructions for the model</label>
+<textarea id="instr" class="tx-input" rows="3" style="min-height:72px" defaultValue="This is a page from a late 19th-century parish register. Cursive, faded ink. Preserve the original spelling — do not modernise it."></textarea>
+</div>
+<div style="border-top:1px solid var(--hairline);padding:16px 20px 12px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px">
+<h2 style="font:600 15px/1.2 var(--font-display);margin:0">Seed glossary <span style="font:400 12px/1.2 var(--font-ui);color:var(--text-3)">— known names and phrases to help the first pages</span></h2>
+<button class="tx-btn tx-btn--secondary tx-btn--sm" onClick="{{ addRow }}">+ add word</button>
+</div>
+<div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+<div style="position:relative;display:grid;grid-template-columns:170px 1fr 28px;align-items:center;height:38px;border-bottom:1px solid var(--hairline)">
+<button onClick="{{ r.onKind }}" aria-haspopup="listbox" style="all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:5px 8px;border-radius:var(--r-sm);font:500 12px/1 var(--font-ui);color:var(--text-2);cursor:pointer" style-hover="background:var(--surface-2);color:var(--text)" style-focus="outline:var(--ring-w) solid var(--ring);outline-offset:1px">{{ r.kind }} <span style="font-size:9px;color:var(--text-3)">▾</span></button>
+<input value="{{ r.word }}" onChange="{{ r.onWord }}" aria-label="Glossary entry" style="all:unset;box-sizing:border-box;width:100%;font:400 13px/1.3 var(--font-ui);color:var(--text);padding:5px 2px" style-focus="outline:var(--ring-w) solid var(--ring);outline-offset:1px;border-radius:var(--r-xs)">
+<button onClick="{{ r.onRemove }}" aria-label="Remove entry" style="all:unset;cursor:pointer;text-align:center;color:var(--text-3);font:500 14px/1 var(--font-ui);padding:4px;border-radius:var(--r-xs)" style-hover="color:var(--danger-text)" style-focus="outline:var(--ring-w) solid var(--ring);outline-offset:1px">×</button>
+<sc-if value="{{ r.menu }}" hint-placeholder-val="{{ false }}">
+<div role="listbox" style="position:absolute;left:0;top:36px;z-index:50;min-width:170px;background:var(--surface);border:1px solid var(--hairline-strong);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:4px">
+<sc-for list="{{ r.menu }}" as="k" hint-placeholder-count="7">
+<button role="option" onClick="{{ k.onPick }}" style="all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:6px 8px;border-radius:var(--r-sm);font:400 12.5px/1 var(--font-ui);color:var(--text);cursor:pointer" style-hover="background:var(--surface-2)" style-focus="outline:var(--ring-w) solid var(--ring);outline-offset:-2px">{{ k.k }}<span style="color:var(--accent-text);font-size:11px">{{ k.mark }}</span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
+<div style="border-top:1px solid var(--hairline);background:var(--surface-2);padding:14px 20px">
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;color:var(--text-3)">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+<span class="tx-label" style="margin:0">Output fields (from the template, not editable)</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="6">
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-sm);border:1px solid var(--hairline);background:var(--surface);font:500 12px/1 var(--font-mono);color:var(--text-2)">{{ f.name }}</span><span style="font:400 12px/1 var(--font-mono);color:var(--text-3)">{{ f.sep }}</span>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="border-top:1px solid var(--hairline);padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px">
+<sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
+<p style="flex:1;min-width:280px;margin:0;font:400 12px/1.5 var(--font-ui);color:var(--text-3)">Presets are immutable — saving creates a new version. Pages already processed keep the version they were read with; only pages processed from now on use the new one.</p>
+</sc-if>
+<sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}"><div style="flex:1"></div></sc-if>
+<button class="tx-btn tx-btn--ghost">Cancel</button>
+<button class="tx-btn tx-btn--primary">{{ saveLabel }}</button>
+</div>
+</section>
+<sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}">
+<aside style="width:224px;flex:none;background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:14px;box-sizing:border-box">
+<div style="display:flex;align-items:center;gap:7px;color:var(--text-3)">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+<span class="tx-label" style="margin:0">Output fields</span>
+</div>
+<p style="margin:6px 0 12px;font:400 11.5px/1.4 var(--font-ui);color:var(--text-3)">From the template, not editable.</p>
+<div style="display:flex;flex-direction:column;gap:6px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="6">
+<span style="display:inline-flex;align-items:center;width:fit-content;height:22px;padding:0 8px;border-radius:var(--r-sm);border:1px solid var(--hairline);background:var(--surface);font:500 12px/1 var(--font-mono);color:var(--text-2)">{{ f.name }}</span>
+</sc-for>
+</div>
+</aside>
+</sc-if>
+</div>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;A — sealed footer&quot;,&quot;options&quot;:[&quot;A — sealed footer&quot;,&quot;B — locked side panel&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;editMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;}}">
+class Component extends DCLogic {
+  state = { dark: null, tmpl: 'Parish register', kindOpen: 1,
+    rows: [
+      { kind: 'surname', word: 'Ivanenko' },
+      { kind: 'place', word: 'Dykanka' },
+      { kind: 'formula', word: 'born and baptised' },
+      { kind: 'abbreviation', word: 'peas. = peasant' }
+    ] };
+  renderVals() {
+    const dark = this.state.dark ?? !!this.props.darkTheme;
+    const isB = (this.props.variant ?? 'A').startsWith('B');
+    const kinds = ['person name', 'surname', 'place', 'term', 'formula', 'abbreviation', 'other'];
+    const fieldMap = {
+      'Parish register': ['record_no', 'date', 'given_name', 'surname', 'place', 'notes'],
+      'Medical record': ['record_no', 'date', 'patient_name', 'age', 'diagnosis', 'notes'],
+      'Diary': ['date', 'entry_text'],
+      'Ledger': ['entry_no', 'date', 'description', 'amount', 'balance']
+    };
+    const flist = fieldMap[this.state.tmpl];
+    return {
+      theme: dark ? 'dark' : null,
+      themeLabel: dark ? 'Day' : 'Night',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      isA: !isB, isB,
+      editMode: !!this.props.editMode,
+      canPickTmpl: !this.props.editMode,
+      pageTitle: this.props.editMode ? 'Dykanka, 1880s' : 'New preset',
+      saveLabel: this.props.editMode ? 'Save as new version' : 'Save preset',
+      tmpl: this.state.tmpl,
+      onTmpl: (e) => this.setState({ tmpl: e.target.value }),
+      fields: flist.map((name, i) => ({ name, sep: i < flist.length - 1 ? '·' : '' })),
+      rows: this.state.rows.map((r, i) => ({ ...r,
+        onKind: () => this.setState({ kindOpen: this.state.kindOpen === i ? null : i }),
+        onWord: (e) => this.setState({ rows: this.state.rows.map((x, j) => j === i ? { ...x, word: e.target.value } : x) }),
+        onRemove: () => this.setState({ rows: this.state.rows.filter((_, j) => j !== i), kindOpen: null }),
+        menu: this.state.kindOpen === i ? kinds.map((k) => ({ k, mark: k === r.kind ? '✓' : '',
+          onPick: () => this.setState({ rows: this.state.rows.map((x, j) => j === i ? { ...x, kind: k } : x), kindOpen: null }) })) : null })),
+      addRow: () => this.setState({ rows: [...this.state.rows, { kind: 'term', word: '' }], kindOpen: null })
+    };
+  }
+}
+</script>
+</body>
+</html>
