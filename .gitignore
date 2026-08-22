@@ -19,3 +19,6 @@ docs/demo/.cache
 
 # superpowers brainstorm sessions
 .superpowers/
+
+# local Claude Code settings
+.claude/
