@@ -4,6 +4,10 @@ import { config } from "~/libs/modules/config/config.js";
 
 import { calculateCer } from "./libs/cer.js";
 
+const FIRST_FILE_INDEX = 0;
+const FIRST_MODEL_INDEX = 0;
+const CER_PRECISION = 1;
+
 const MODEL_OPTIONS = [
 	{ label: "Claude Sonnet 4.6", value: "us.anthropic.claude-sonnet-4-6" },
 	{ label: "Claude Opus 5", value: "us.anthropic.claude-opus-5" },
@@ -28,14 +32,16 @@ const Test: React.FC = () => {
 	const [file, setFile] = useState<File | null>(null);
 	const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
 	const [reference, setReference] = useState("");
-	const [modelId, setModelId] = useState(MODEL_OPTIONS[0]?.value ?? "");
+	const [modelId, setModelId] = useState(
+		MODEL_OPTIONS[FIRST_MODEL_INDEX]?.value ?? "",
+	);
 	const [result, setResult] = useState<null | Result>(null);
 	const [error, setError] = useState<null | string>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleFileChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
-			setFile(event.target.files?.[0] ?? null);
+			setFile(event.target.files?.[FIRST_FILE_INDEX] ?? null);
 		},
 		[],
 	);
@@ -162,7 +168,7 @@ const Test: React.FC = () => {
 							<dd>
 								{cer === null
 									? "no reference"
-									: `${(cer * PERCENT).toFixed(1)}%`}
+									: `${(cer * PERCENT).toFixed(CER_PRECISION)}%`}
 							</dd>
 						</div>
 						<div>

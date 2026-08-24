@@ -24,7 +24,9 @@ import {
 	type ServerApplicationRouteParameters,
 } from "./libs/types/types.js";
 
-const FILE_SIZE_LIMIT = 20 * 1024 * 1024;
+const MEGABYTE = 1_048_576;
+const FILE_SIZE_LIMIT_MB = 20;
+const FILE_SIZE_LIMIT = FILE_SIZE_LIMIT_MB * MEGABYTE;
 
 type Constructor = {
 	apis: ServerApplicationApi[];

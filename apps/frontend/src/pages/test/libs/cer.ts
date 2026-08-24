@@ -5,6 +5,11 @@
  * Whitespace is normalised, nothing else — the product promises to preserve
  * the original orthography, so a case or spelling difference is a real error.
  */
+const EMPTY_LENGTH = 0;
+const STEP = 1;
+const SUBSTITUTION_COST = 1;
+const NO_COST = 0;
+
 const normalize = (value: string): string =>
 	value
 		.split("\n")
@@ -13,18 +18,24 @@ const normalize = (value: string): string =>
 		.trim();
 
 const levenshtein = (source: string, target: string): number => {
-	let previous = Array.from({ length: target.length + 1 }, (_, index) => index);
+	let previous = Array.from(
+		{ length: target.length + STEP },
+		(_, index) => index,
+	);
 
-	for (let row = 1; row <= source.length; row++) {
+	for (let row = STEP; row <= source.length; row++) {
 		const current = [row];
 
-		for (let column = 1; column <= target.length; column++) {
-			const cost = source[row - 1] === target[column - 1] ? 0 : 1;
+		for (let column = STEP; column <= target.length; column++) {
+			const cost =
+				source[row - STEP] === target[column - STEP]
+					? NO_COST
+					: SUBSTITUTION_COST;
 
 			current[column] = Math.min(
-				(current[column - 1] as number) + 1,
-				(previous[column] as number) + 1,
-				(previous[column - 1] as number) + cost,
+				(current[column - STEP] as number) + STEP,
+				(previous[column] as number) + STEP,
+				(previous[column - STEP] as number) + cost,
 			);
 		}
 
@@ -37,7 +48,7 @@ const levenshtein = (source: string, target: string): number => {
 const calculateCer = (reference: string, hypothesis: string): null | number => {
 	const expected = normalize(reference);
 
-	if (expected.length === 0) {
+	if (expected.length === EMPTY_LENGTH) {
 		return null;
 	}
 
