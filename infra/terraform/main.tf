@@ -162,6 +162,27 @@ resource "aws_iam_role_policy" "s3" {
   policy = data.aws_iam_policy_document.s3.json
 }
 
+# The app calls Claude through Bedrock. Scoped to invoke only — no model
+# management, no listing, and no other AWS service.
+data "aws_iam_policy_document" "bedrock" {
+  statement {
+    actions = [
+      "bedrock:InvokeModel",
+      "bedrock:InvokeModelWithResponseStream",
+    ]
+    resources = [
+      "arn:aws:bedrock:*::foundation-model/anthropic.*",
+      "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "bedrock" {
+  name   = "${var.project}-bedrock"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.bedrock.json
+}
+
 resource "aws_iam_instance_profile" "app" {
   name = "${var.project}-app-profile"
   role = aws_iam_role.app.name

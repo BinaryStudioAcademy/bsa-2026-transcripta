@@ -94,6 +94,8 @@ DB_CONNECTION_STRING=postgresql://transcripta:transcripta@postgres:5432/transcri
 DB_DIALECT=pg
 DB_POOL_MIN=2
 DB_POOL_MAX=10
+AWS_REGION=us-east-1
+BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-6
 ENV
 
 # --- deploy script: ECR login, pull (retry until present), up ---

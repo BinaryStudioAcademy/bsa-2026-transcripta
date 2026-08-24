@@ -50,6 +50,20 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			BEDROCK: {
+				MODEL_ID: {
+					default: "us.anthropic.claude-sonnet-4-6",
+					doc: "Bedrock inference profile id — never a bare model id",
+					env: "BEDROCK_MODEL_ID",
+					format: String,
+				},
+				REGION: {
+					default: "us-east-1",
+					doc: "AWS region the Bedrock runtime is called in",
+					env: "AWS_REGION",
+					format: String,
+				},
+			},
 			DB: {
 				CONNECTION_STRING: {
 					default: null,

@@ -1,3 +1,4 @@
+import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import swagger, { type StaticDocumentSpec } from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
@@ -22,6 +23,8 @@ import {
 	type ServerApplicationApi,
 	type ServerApplicationRouteParameters,
 } from "./libs/types/types.js";
+
+const FILE_SIZE_LIMIT = 20 * 1024 * 1024;
 
 type Constructor = {
 	apis: ServerApplicationApi[];
@@ -191,6 +194,13 @@ class BaseServerApplication implements ServerApplication {
 	}
 
 	public async initMiddlewares(): Promise<void> {
+		// Files arrive as Buffers on request.body, so the existing controller
+		// mapping keeps working without touching the raw request.
+		await this.app.register(fastifyMultipart, {
+			attachFieldsToBody: "keyValues",
+			limits: { fileSize: FILE_SIZE_LIMIT },
+		});
+
 		await Promise.all(
 			this.apis.map(async (api) => {
 				this.logger.info(
