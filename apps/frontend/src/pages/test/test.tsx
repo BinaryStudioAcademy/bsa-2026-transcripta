@@ -9,9 +9,26 @@ const FIRST_MODEL_INDEX = 0;
 const CER_PRECISION = 1;
 
 const MODEL_OPTIONS = [
-	{ label: "Claude Sonnet 4.6", value: "us.anthropic.claude-sonnet-4-6" },
-	{ label: "Claude Opus 5", value: "us.anthropic.claude-opus-5" },
-	{ label: "Claude Sonnet 5", value: "us.anthropic.claude-sonnet-5" },
+	{
+		isDisabled: false,
+		label: "Amazon Nova Pro (Bedrock)",
+		value: "us.amazon.nova-pro-v1:0",
+	},
+	{
+		isDisabled: false,
+		label: "Amazon Nova Lite (Bedrock)",
+		value: "us.amazon.nova-lite-v1:0",
+	},
+	{
+		isDisabled: false,
+		label: "Claude Sonnet 4.6 (direct API)",
+		value: "anthropic-direct:claude-sonnet-4-6",
+	},
+	{
+		isDisabled: true,
+		label: "Claude Sonnet 4.6 (Bedrock — needs a subscription)",
+		value: "us.anthropic.claude-sonnet-4-6",
+	},
 ];
 
 const DEFAULT_PROMPT =
@@ -127,7 +144,11 @@ const Test: React.FC = () => {
 					Model
 					<select onChange={handleModelChange} value={modelId}>
 						{MODEL_OPTIONS.map((option) => (
-							<option key={option.value} value={option.value}>
+							<option
+								disabled={option.isDisabled}
+								key={option.value}
+								value={option.value}
+							>
 								{option.label}
 							</option>
 						))}

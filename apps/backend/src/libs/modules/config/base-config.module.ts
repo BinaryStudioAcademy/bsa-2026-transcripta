@@ -52,7 +52,7 @@ class BaseConfig implements Config {
 			},
 			BEDROCK: {
 				MODEL_ID: {
-					default: "us.anthropic.claude-sonnet-4-6",
+					default: "us.amazon.nova-pro-v1:0",
 					doc: "Bedrock inference profile id — never a bare model id",
 					env: "BEDROCK_MODEL_ID",
 					format: String,

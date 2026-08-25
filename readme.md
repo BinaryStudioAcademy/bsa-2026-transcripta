@@ -18,7 +18,7 @@ for the pages that follow.
 | [docs/07-how-it-works.md](docs/07-how-it-works.md)                       | How the app works, in plain words                                  |
 | [docs/08-template-gaps.md](docs/08-template-gaps.md)                     | **What the template already has, what is a stub, what is missing** |
 | [docs/09-open-questions.md](docs/09-open-questions.md)                   | **What is still undecided before implementation starts**           |
-| [docs/11-claude-code.md](docs/11-claude-code.md)                         | Shared Claude Code agent and skill (after `git pull`)              |
+| [docs/12-claude-code.md](docs/12-claude-code.md)                         | Shared Claude Code agent and skill (after `git pull`)              |
 | [diagrams/README.md](docs/diagrams/README.md)                            | Seven diagrams with walkthroughs                                   |
 
 ## 2. Domain
@@ -224,7 +224,7 @@ never the issue title.
 Shared helpers live in [`.claude/`](.claude/) and are available after `git
 pull` — no extra setup. Usage of the `code-review` agent and the
 `feature-assistant` skill:
-[docs/11-claude-code.md](docs/11-claude-code.md).
+[docs/12-claude-code.md](docs/12-claude-code.md).
 
 ## 8. Deployment
 

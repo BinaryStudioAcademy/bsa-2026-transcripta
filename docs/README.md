@@ -92,8 +92,9 @@ processing pipeline.
 | [07-how-it-works.md](07-how-it-works.md)       | **How the whole app works in plain words — from file to export**         |
 | [08-template-gaps.md](08-template-gaps.md)     | **What the repository has, what is a stub, what is missing**             |
 | [09-open-questions.md](09-open-questions.md)   | **What is not decided yet: columns without rules, undescribed screens**  |
-| [10-infra.md](10-infra.md)                     | Infrastructure plan (EC2 + S3, study-project shape)                      |
-| [11-claude-code.md](11-claude-code.md)         | Shared Claude Code agent (`code-review`) and skill (`feature-assistant`) |
+| [10-infra.md](10-infra.md)                     | One EC2 host, two S3 buckets, what it costs and how to switch it off     |
+| [11-how-we-work.md](11-how-we-work.md)         | **The board, the releases, who moves what — start here as a newcomer**   |
+| [12-claude-code.md](12-claude-code.md)         | Shared Claude Code agent (`code-review`) and skill (`feature-assistant`) |
 
 ## Diagrams
 

@@ -95,7 +95,7 @@ DB_DIALECT=pg
 DB_POOL_MIN=2
 DB_POOL_MAX=10
 AWS_REGION=us-east-1
-BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-6
+BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0
 ENV
 
 # --- deploy script: ECR login, pull (retry until present), up ---
