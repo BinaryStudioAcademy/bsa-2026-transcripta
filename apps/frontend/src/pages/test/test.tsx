@@ -11,23 +11,23 @@ const CER_PRECISION = 1;
 const MODEL_OPTIONS = [
 	{
 		isDisabled: false,
-		label: "Amazon Nova Pro",
+		label: "Amazon Nova Pro (Bedrock)",
 		value: "us.amazon.nova-pro-v1:0",
 	},
 	{
 		isDisabled: false,
-		label: "Amazon Nova Lite",
+		label: "Amazon Nova Lite (Bedrock)",
 		value: "us.amazon.nova-lite-v1:0",
 	},
 	{
-		isDisabled: true,
-		label: "Claude Sonnet 4.6 (needs a Marketplace subscription)",
-		value: "us.anthropic.claude-sonnet-4-6",
+		isDisabled: false,
+		label: "Claude Sonnet 4.6 (direct API)",
+		value: "anthropic-direct:claude-sonnet-4-6",
 	},
 	{
 		isDisabled: true,
-		label: "Claude Opus 5 (no account access)",
-		value: "us.anthropic.claude-opus-5",
+		label: "Claude Sonnet 4.6 (Bedrock — needs a subscription)",
+		value: "us.anthropic.claude-sonnet-4-6",
 	},
 ];
 

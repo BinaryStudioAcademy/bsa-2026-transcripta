@@ -18,7 +18,9 @@
 		"start": "node ./src/index.js"
 	},
 	"dependencies": {
+		"@anthropic-ai/sdk": "0.120.0",
 		"@aws-sdk/client-bedrock-runtime": "3.1116.0",
+		"@aws-sdk/client-ssm": "3.1117.0",
 		"@fastify/multipart": "10.1.1",
 		"@fastify/static": "8.2.0",
 		"@fastify/swagger": "9.5.1",

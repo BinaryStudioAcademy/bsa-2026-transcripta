@@ -1,9 +1,11 @@
+import Anthropic from "@anthropic-ai/sdk";
 import {
 	BedrockRuntimeClient,
 	InvokeModelCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 
 import { type Config } from "~/libs/modules/config/config.js";
+import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
 import {
 	type TranscriptionRequest,
@@ -15,6 +17,8 @@ const MAX_TOKENS = 8192;
 const AMAZON_PREFIX = "amazon";
 const PROFILE_SEPARATOR = ".";
 const PROFILE_PREFIX_INDEX = 1;
+const DIRECT_PREFIX = "anthropic-direct:";
+const ANTHROPIC_KEY_PARAMETER = "/transcripta/anthropic-api-key";
 
 type AnthropicPayload = {
 	content: { text: string }[];
@@ -40,11 +44,14 @@ class TranscriptionService {
 
 	private defaultModelId: string;
 
-	public constructor(config: Config) {
+	private secrets: BaseSecrets;
+
+	public constructor(config: Config, secrets: BaseSecrets) {
 		this.client = new BedrockRuntimeClient({
 			region: config.ENV.BEDROCK.REGION,
 		});
 		this.defaultModelId = config.ENV.BEDROCK.MODEL_ID;
+		this.secrets = secrets;
 	}
 
 	private buildAnthropicBody(
@@ -100,6 +107,58 @@ class TranscriptionService {
 		});
 	}
 
+	/**
+	 * Calls Anthropic directly rather than through Bedrock. Used while the
+	 * Bedrock Marketplace subscription is unavailable; the key comes from SSM,
+	 * never from the environment.
+	 */
+	private async transcribeDirect(
+		{ image, mediaType, prompt }: TranscriptionRequest,
+		modelId: string,
+	): Promise<TranscriptionResponse> {
+		const apiKey = await this.secrets.get(ANTHROPIC_KEY_PARAMETER);
+
+		if (apiKey === null) {
+			throw new Error(
+				`Anthropic API key is not set. Put it in SSM as ${ANTHROPIC_KEY_PARAMETER}.`,
+			);
+		}
+
+		const startedAt = Date.now();
+		const response = await new Anthropic({ apiKey }).messages.create({
+			max_tokens: MAX_TOKENS,
+			messages: [
+				{
+					content: [
+						{
+							source: {
+								data: image.toString("base64"),
+								media_type: mediaType as "image/jpeg" | "image/png",
+								type: "base64",
+							},
+							type: "image",
+						},
+						{ text: prompt, type: "text" },
+					],
+					role: "user",
+				},
+			],
+			model: modelId,
+		});
+
+		return {
+			latencyMs: Date.now() - startedAt,
+			modelId,
+			text: response.content
+				.map((block) => (block.type === "text" ? block.text : ""))
+				.join(""),
+			usage: {
+				inputTokens: response.usage.input_tokens,
+				outputTokens: response.usage.output_tokens,
+			},
+		};
+	}
+
 	public async transcribe({
 		image,
 		mediaType,
@@ -107,6 +166,14 @@ class TranscriptionService {
 		prompt,
 	}: TranscriptionRequest): Promise<TranscriptionResponse> {
 		const resolvedModelId = modelId ?? this.defaultModelId;
+
+		if (resolvedModelId.startsWith(DIRECT_PREFIX)) {
+			return await this.transcribeDirect(
+				{ image, mediaType, modelId, prompt },
+				resolvedModelId.slice(DIRECT_PREFIX.length),
+			);
+		}
+
 		const isNova = isNovaModel(resolvedModelId);
 		const startedAt = Date.now();
 
