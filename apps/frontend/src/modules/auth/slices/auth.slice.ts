@@ -27,7 +27,11 @@ const { actions, name, reducer } = createSlice({
 	},
 	initialState,
 	name: "auth",
-	reducers: {},
+	reducers: {
+		logout(state) {
+			state.dataStatus = DataStatus.IDLE;
+		},
+	},
 });
 
 export { actions, name, reducer };
