@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import { Loader } from "~/libs/components/components.js";
+import { LoaderSize } from "~/libs/enums/enums.js";
 import { config } from "~/libs/modules/config/config.js";
 
 import { calculateCer } from "./libs/cer.js";
@@ -155,7 +156,7 @@ const Test: React.FC = () => {
 				</label>
 
 				<button disabled={!file || isLoading} type="submit">
-					{isLoading && <Loader size="small" />}
+					{isLoading && <Loader size={LoaderSize.SMALL} />}
 					{isLoading ? "Transcribing…" : "Transcribe"}
 				</button>
 			</form>

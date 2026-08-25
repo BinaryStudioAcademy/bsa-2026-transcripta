@@ -1,22 +1,24 @@
+import { type ValueOf } from "@transcripta/shared";
+
+import { LoaderSize } from "~/libs/enums/enums.js";
+
 import styles from "./loader.module.css";
 
 type Properties = {
-	/** Screen-reader text next to the spinner. Not shown visually. */
 	label?: string;
-	/** Spinner size. */
-	size?: "large" | "medium" | "small";
+	size?: ValueOf<typeof LoaderSize>
 };
 
 /**
  * CSS spinner with a continuous rotation. Accessible via role="status"
  * plus a visually hidden label.
  *
- * @example <Loader label="Loading transcripts" size="small" />
+ * @example <Loader label="Loading transcripts" size={LoaderSize.SMALL} />
  */
 
 const Loader: React.FC<Properties> = ({
 	label = "Loading",
-	size = "medium",
+	size = LoaderSize.MEDIUM,
 }: Properties) => (
 	<span className={styles["wrapper"]} role="status">
 		<span
