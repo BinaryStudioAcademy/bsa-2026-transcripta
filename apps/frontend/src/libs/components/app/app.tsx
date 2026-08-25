@@ -1,8 +1,8 @@
 import reactLogo from "~/assets/img/react.svg";
 import {
 	Link,
-	RouterOutlet,
 	LoaderOverlay,
+	RouterOutlet,
 } from "~/libs/components/components.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
