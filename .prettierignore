@@ -1,5 +1,6 @@
 # Exported Claude Design artifacts — generated, not source.
 design/
 
-# Local Claude Code settings.
-.claude/
+# Claude Code: per-developer settings and feature scratch (not shared).
+.claude/settings.local.json
+.claude/feature-scratch/
