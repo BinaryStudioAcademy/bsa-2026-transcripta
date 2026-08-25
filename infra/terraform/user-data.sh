@@ -12,7 +12,7 @@ REGISTRY="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
 IMAGE="${REGISTRY}/transcripta-backend:latest"
 APP_DIR="/opt/transcripta"
 
-# --- swap: t3.small has only 2 GB ---
+# --- swap: t4g.micro has only 1 GB, and it runs Node + Postgres + Redis ---
 if [ ! -f /swapfile ]; then
   fallocate -l 2G /swapfile
   chmod 600 /swapfile
@@ -33,6 +33,17 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 apt-get update -y
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 usermod -aG docker ubuntu
+
+# Cap container logs. The default json-file driver grows without bound, which is
+# the other way this box can fill its disk and lock itself out of SSM.
+mkdir -p /etc/docker
+cat >/etc/docker/daemon.json <<'JSON'
+{
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "10m", "max-file": "3" }
+}
+JSON
+
 systemctl enable --now docker
 
 curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip
@@ -111,6 +122,10 @@ until docker compose -f docker-compose.prod.yml pull; do
   echo "image not in ECR yet, waiting..."; sleep 15
 done
 docker compose -f docker-compose.prod.yml up -d
+# Drop the image this deploy just replaced. Without this every deploy leaves
+# another ~220 MB behind; a full root disk locks out SSM and the box becomes
+# unreachable, which is exactly how it died once.
+docker image prune -af --filter "until=24h"
 DEPLOY
 chmod +x /usr/local/bin/transcripta-deploy.sh
 
@@ -131,6 +146,29 @@ ExecStart=/usr/local/bin/transcripta-deploy.sh
 WantedBy=multi-user.target
 UNIT
 
+# --- weekly cleanup: a safety net for whatever prune-on-deploy misses ---
+cat >/etc/systemd/system/docker-prune.service <<'UNIT'
+[Unit]
+Description=Reclaim disk from unused Docker data
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker system prune -af --filter "until=168h"
+UNIT
+
+cat >/etc/systemd/system/docker-prune.timer <<'UNIT'
+[Unit]
+Description=Weekly Docker cleanup
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+
 systemctl daemon-reload
 systemctl enable transcripta.service
+systemctl enable --now docker-prune.timer
 systemctl start --no-block transcripta.service
