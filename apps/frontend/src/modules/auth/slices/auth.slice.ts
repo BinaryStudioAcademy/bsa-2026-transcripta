@@ -1,9 +1,9 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, isAnyOf } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 
-import { signUp } from "./actions.js";
+import { signIn, signUp } from "./actions.js";
 
 type State = {
 	dataStatus: ValueOf<typeof DataStatus>;
@@ -15,13 +15,13 @@ const initialState: State = {
 
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
-		builder.addCase(signUp.pending, (state) => {
+		builder.addMatcher(isAnyOf(signIn.pending, signUp.pending), (state) => {
 			state.dataStatus = DataStatus.PENDING;
 		});
-		builder.addCase(signUp.fulfilled, (state) => {
+		builder.addMatcher(isAnyOf(signIn.fulfilled, signUp.fulfilled), (state) => {
 			state.dataStatus = DataStatus.FULFILLED;
 		});
-		builder.addCase(signUp.rejected, (state) => {
+		builder.addMatcher(isAnyOf(signIn.rejected, signUp.rejected), (state) => {
 			state.dataStatus = DataStatus.REJECTED;
 		});
 	},

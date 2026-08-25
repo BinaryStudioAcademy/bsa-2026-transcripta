@@ -8,6 +8,17 @@ import {
 
 import { name as sliceName } from "./auth.slice.js";
 
+// Replace sign up with sign in
+const signIn = createAsyncThunk<
+	UserSignUpResponseDto,
+	UserSignUpRequestDto,
+	AsyncThunkConfig
+>(`${sliceName}/sign-in`, (loginPayload, { extra }) => {
+	const { authApi } = extra;
+
+	return authApi.signIn(loginPayload);
+});
+
 const signUp = createAsyncThunk<
 	UserSignUpResponseDto,
 	UserSignUpRequestDto,
@@ -18,4 +29,4 @@ const signUp = createAsyncThunk<
 	return authApi.signUp(registerPayload);
 });
 
-export { signUp };
+export { signIn, signUp };
