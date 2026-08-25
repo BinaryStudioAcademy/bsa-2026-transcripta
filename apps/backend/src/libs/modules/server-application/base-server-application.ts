@@ -3,6 +3,7 @@ import fastifyStatic from "@fastify/static";
 import swagger, { type StaticDocumentSpec } from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -113,18 +114,37 @@ class BaseServerApplication implements ServerApplication {
 	}
 
 	private async initServe(): Promise<void> {
-		const staticPath = path.join(
-			path.dirname(fileURLToPath(import.meta.url)),
-			"../../../../public",
-		);
+		const buildPath = path.dirname(fileURLToPath(import.meta.url));
+		const staticPath = path.join(buildPath, "../../../../public");
+		// In the image the design package sits next to `public`; in the repo it
+		// lives at the root, four levels up from src/libs/modules/…
+		const bundledDesignPath = path.join(buildPath, "../../../../design");
+		const designPath = existsSync(bundledDesignPath)
+			? bundledDesignPath
+			: path.join(buildPath, "../../../../../../design");
 
 		await this.app.register(fastifyStatic, {
 			prefix: "/",
 			root: staticPath,
 		});
 
-		this.app.setNotFoundHandler(async (_request, response) => {
-			await response.sendFile("index.html", staticPath);
+		// The design package is a static export from Claude Design — the same
+		// files the team opens locally on :8123, served here so a reviewer only
+		// needs a link. Its own hub is view.html.
+		await this.app.register(fastifyStatic, {
+			decorateReply: false,
+			prefix: "/design/",
+			root: designPath,
+		});
+
+		this.app.setNotFoundHandler(async (request, response) => {
+			if (request.url.startsWith("/design/")) {
+				return await response
+					.status(HTTPCode.NOT_FOUND)
+					.send({ message: "Not found" });
+			}
+
+			return await response.sendFile("index.html", staticPath);
 		});
 	}
 

@@ -183,6 +183,31 @@ resource "aws_iam_role_policy" "bedrock" {
   policy = data.aws_iam_policy_document.bedrock.json
 }
 
+# The Anthropic API key lives in SSM as a SecureString, not in .env — nothing
+# on the box holds it at rest, and rotating it needs no redeploy.
+data "aws_iam_policy_document" "ssm_params" {
+  statement {
+    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
+    resources = ["arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/*"]
+  }
+
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["ssm.${data.aws_region.current.name}.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "ssm_params" {
+  name   = "${var.project}-ssm-params"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.ssm_params.json
+}
+
 resource "aws_iam_instance_profile" "app" {
   name = "${var.project}-app-profile"
   role = aws_iam_role.app.name
