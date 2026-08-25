@@ -122,10 +122,13 @@ until docker compose -f docker-compose.prod.yml pull; do
   echo "image not in ECR yet, waiting..."; sleep 15
 done
 docker compose -f docker-compose.prod.yml up -d
-# Drop the image this deploy just replaced. Without this every deploy leaves
-# another ~220 MB behind; a full root disk locks out SSM and the box becomes
-# unreachable, which is exactly how it died once.
-docker image prune -af --filter "until=24h"
+# Drop the image this deploy just replaced. No `until` filter: the image we are
+# replacing is usually minutes old, so any age filter would skip the one thing
+# this line exists to remove. `up -d` has already started the new container, so
+# the images still in use are protected by Docker itself.
+# Without this every deploy strands another ~1 GB; a full root disk locks out
+# SSM and the box becomes unreachable, which is exactly how it died once.
+docker image prune -af
 DEPLOY
 chmod +x /usr/local/bin/transcripta-deploy.sh
 
