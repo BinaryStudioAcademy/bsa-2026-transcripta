@@ -171,7 +171,10 @@ data "aws_iam_policy_document" "bedrock" {
       "bedrock:InvokeModelWithResponseStream",
     ]
     resources = [
-      "arn:aws:bedrock:*::foundation-model/anthropic.*",
+      # Every vendor, not just Anthropic: a cross-region inference profile call
+      # needs the foundation models behind the profile, and Amazon Nova is what
+      # actually works today.
+      "arn:aws:bedrock:*::foundation-model/*",
       "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*",
     ]
   }
