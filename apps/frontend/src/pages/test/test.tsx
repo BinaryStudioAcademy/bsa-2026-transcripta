@@ -105,8 +105,9 @@ const Test: React.FC = () => {
 				payload.append("prompt", prompt);
 
 				try {
+					// ORIGIN_URL already carries the /api/v1 prefix.
 					const response = await fetch(
-						`${config.ENV.API.ORIGIN_URL}/api/v1/test/transcribe`,
+						`${config.ENV.API.ORIGIN_URL}/test/transcribe`,
 						{ body: payload, method: "POST" },
 					);
 
