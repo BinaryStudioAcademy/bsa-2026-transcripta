@@ -6,7 +6,7 @@ import styles from "./loader.module.css";
 
 type Properties = {
 	label?: string;
-	size?: ValueOf<typeof LoaderSize>
+	size?: ValueOf<typeof LoaderSize>;
 };
 
 /**
