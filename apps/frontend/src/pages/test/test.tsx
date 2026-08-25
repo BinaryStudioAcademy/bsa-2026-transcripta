@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { config } from "~/libs/modules/config/config.js";
 
 import { calculateCer } from "./libs/cer.js";
+import { Loader } from "~/libs/components/components.js";
 
 const FIRST_FILE_INDEX = 0;
 const FIRST_MODEL_INDEX = 0;
@@ -154,6 +155,7 @@ const Test: React.FC = () => {
 				</label>
 
 				<button disabled={!file || isLoading} type="submit">
+					{isLoading && <Loader size="small" />}
 					{isLoading ? "Transcribing…" : "Transcribe"}
 				</button>
 			</form>

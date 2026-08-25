@@ -1,0 +1,43 @@
+.wrapper {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.spinner {
+	box-sizing: border-box;
+	border: 3px solid #e5e2db;
+	border-top-color: #6b665f;
+	border-radius: 50%;
+	animation: spin 800ms linear infinite;
+}
+
+.small {
+	width: 16px;
+	height: 16px;
+	border-width: 2px;
+}
+
+.medium {
+	width: 32px;
+	height: 32px;
+	border-width: 3px;
+}
+
+.large {
+	width: 48px;
+	height: 48px;
+	border-width: 4px;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.spinner {
+		animation-duration: 1600ms;
+	}
+}
