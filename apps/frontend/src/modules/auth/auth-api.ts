@@ -20,6 +20,23 @@ class AuthApi extends BaseHTTPApi {
 		super({ baseUrl, http, path: APIPath.AUTH, storage });
 	}
 
+	// Replace sign up with sign in
+	public async signIn(
+		payload: UserSignUpRequestDto,
+	): Promise<UserSignUpResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(AuthApiPath.SIGN_IN, {}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: false,
+				method: "POST",
+				payload: JSON.stringify(payload),
+			},
+		);
+
+		return await response.json<UserSignUpResponseDto>();
+	}
+
 	public async signUp(
 		payload: UserSignUpRequestDto,
 	): Promise<UserSignUpResponseDto> {
