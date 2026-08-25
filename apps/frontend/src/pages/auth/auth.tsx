@@ -17,9 +17,13 @@ const Auth: React.FC = () => {
 	}));
 	const { pathname } = useLocation();
 
-	const handleSignInSubmit = useCallback((): void => {
-		// handle sign in
-	}, []);
+	const handleSignInSubmit = useCallback(
+		// Replace sign up with sign in
+		(payload: UserSignUpRequestDto): void => {
+			void dispatch(authActions.signIn(payload));
+		},
+		[dispatch],
+	);
 
 	const handleSignUpSubmit = useCallback(
 		(payload: UserSignUpRequestDto): void => {
