@@ -1,0 +1,78 @@
+/*
+ * THEME TOKENS — Transcripta
+ *
+ * Styling approach: Global CSS + BEM class names.
+ * CSS Modules are not used (no *.module.css files).
+ * Vite supports CSS Modules natively if needed later.
+ * Decision tracked in issue #11; needed by #6 (loader).
+ *
+ * Constraints (Stylelint):
+ *   - px only (no em/rem)
+ *   - hex long form (#ffffff)
+ *   - no !important
+ *   - no nesting (max-nesting-depth: 0)
+ *   - recess property order
+ */
+
+:root {
+	/* ── Brand ── */
+	--color-primary: #b23a2f;
+	--color-primary-contrast: #fffdf8;
+
+	/* ── Neutrals ── */
+	--color-white: #ffffff;
+	--color-background: #fffdf8;
+	--color-surface: #f2f0ec;
+	--color-border: #e5e2db;
+	--color-border-strong: #e8e0d0;
+
+	/* ── Text ── */
+	--color-text-primary: #211c14;
+	--color-text-secondary: #6b6254;
+	--color-text-muted: #6b665f;
+	--color-text-disabled: #9e9589;
+
+	/* ── Interactive ── */
+	--color-background-hover: #efe7d8;
+
+	/* ── Feedback ── */
+	--color-error: #b3261e;
+	--color-error-background: #fce8e6;
+
+	/* ── Typography ── */
+	--font-family-primary: arial, sans-serif;
+	--font-family-brand: georgia, serif;
+
+	/* ── Font Sizes ── */
+	--font-size-xs: 12px;
+	--font-size-sm: 13px;
+	--font-size-base: 14px;
+	--font-size-md: 16px;
+	--font-size-lg: 18px;
+
+	/* ── Font Weights ── */
+	--font-weight-regular: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+
+	/* ── Line Heights ── */
+	--line-height-tight: 1;
+	--line-height-snug: 1.3;
+	--line-height-normal: 1.5;
+
+	/* ── Spacing ── */
+	--space-2xs: 4px;
+	--space-xs: 8px;
+	--space-sm: 10px;
+	--space-md: 12px;
+	--space-lg: 14px;
+	--space-xl: 24px;
+
+	/* ── Border Radius ── */
+	--border-radius-sm: 4px;
+	--border-radius-md: 5px;
+
+	/* ── Layout ── */
+	--sidebar-width: 232px;
+	--content-min-width: 320px;
+}
