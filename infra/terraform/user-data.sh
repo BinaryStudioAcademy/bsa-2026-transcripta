@@ -109,6 +109,18 @@ AWS_REGION=us-east-1
 BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0
 ENV
 
+# JWT_SECRET is required (convict declares it with `default: null`, so the app
+# refuses to boot without it) and must never sit in git. Pull it from SSM at
+# boot; generate and store one on first run if the parameter does not exist yet.
+JWT_SECRET="$(aws ssm get-parameter --region "$REGION" --name /transcripta/jwt-secret \
+  --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || true)"
+if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "None" ]; then
+  JWT_SECRET="$(openssl rand -hex 32)"
+  aws ssm put-parameter --region "$REGION" --name /transcripta/jwt-secret \
+    --type SecureString --value "$JWT_SECRET" --overwrite
+fi
+echo "JWT_SECRET=$JWT_SECRET" >>"$APP_DIR/.env.prod"
+
 # --- deploy script: ECR login, pull (retry until present), up ---
 cat >/usr/local/bin/transcripta-deploy.sh <<DEPLOY
 #!/usr/bin/env bash

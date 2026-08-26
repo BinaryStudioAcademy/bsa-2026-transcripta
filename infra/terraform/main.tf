@@ -190,8 +190,21 @@ resource "aws_iam_role_policy" "bedrock" {
 # on the box holds it at rest, and rotating it needs no redeploy.
 data "aws_iam_policy_document" "ssm_params" {
   statement {
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
+    # PutParameter as well as reads: user-data generates JWT_SECRET on first
+    # boot and stores it, so a replaced instance keeps signing tokens with the
+    # same secret instead of logging everyone out.
+    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter"]
     resources = ["arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/*"]
+  }
+
+  statement {
+    actions   = ["kms:Encrypt", "kms:GenerateDataKey"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["ssm.${data.aws_region.current.name}.amazonaws.com"]
+    }
   }
 
   statement {
