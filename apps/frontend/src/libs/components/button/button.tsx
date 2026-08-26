@@ -1,3 +1,5 @@
+import styles from "./styles.module.css";
+
 type Properties = {
 	label: string;
 	type?: "button" | "submit";
@@ -6,6 +8,10 @@ type Properties = {
 const Button: React.FC<Properties> = ({
 	label,
 	type = "button",
-}: Properties) => <button type={type}>{label}</button>;
+}: Properties) => (
+	<button className={styles["button"]} type={type}>
+		{label}
+	</button>
+);
 
 export { Button };
