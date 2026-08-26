@@ -1,5 +1,6 @@
 import reactLogo from "~/assets/img/react.svg";
 import {
+	Header,
 	Link,
 	LoaderOverlay,
 	RouterOutlet,
@@ -32,6 +33,12 @@ const App: React.FC = () => {
 
 	return (
 		<>
+			<div>
+				<Header />
+				<main>
+					<RouterOutlet />
+				</main>
+			</div>
 			{isLoading && <LoaderOverlay label="Loading users" />}
 			<img alt="logo" className="App-logo" src={reactLogo} width="30" />
 
@@ -48,9 +55,6 @@ const App: React.FC = () => {
 			</ul>
 			<p>Current path: {pathname}</p>
 
-			<div>
-				<RouterOutlet />
-			</div>
 			{isRoot && (
 				<>
 					<h2>Users:</h2>
