@@ -18,6 +18,8 @@
 	/* ── Brand ── */
 	--color-primary: #b23a2f;
 	--color-primary-contrast: #fffdf8;
+	--color-accent: #b54739;
+	--color-accent-hover: #a1392c;
 
 	/* ── Neutrals ── */
 	--color-white: #ffffff;
@@ -25,12 +27,19 @@
 	--color-surface: #f2f0ec;
 	--color-border: #e5e2db;
 	--color-border-strong: #e8e0d0;
+	--color-input-border: #d5cab3;
+	--color-input-border-hover: #8c8168;
+	--color-input-border-error: #9b2d43;
 
 	/* ── Text ── */
 	--color-text-primary: #211c14;
 	--color-text-secondary: #6b6254;
 	--color-text-muted: #6b665f;
 	--color-text-disabled: #9e9589;
+	--color-text-error: #6f1d2e;
+	--color-text-contrast: #fffdf8;
+	--color-link: #a1392c;
+	--color-link-hover: #853025;
 
 	/* ── Interactive ── */
 	--color-background-hover: #efe7d8;
@@ -42,13 +51,19 @@
 	/* ── Typography ── */
 	--font-family-primary: arial, sans-serif;
 	--font-family-brand: georgia, serif;
+	--font-family-ui: "Inter", system-ui, -apple-system, sans-serif;
+	--font-family-display: "Fraunces", georgia, "Times New Roman", serif;
 
 	/* ── Font Sizes ── */
+	--font-size-2xs: 11px;
 	--font-size-xs: 12px;
 	--font-size-sm: 13px;
 	--font-size-base: 14px;
 	--font-size-md: 16px;
 	--font-size-lg: 18px;
+	--font-size-xl: 20px;
+	--font-size-2xl: 22px;
+	--font-size-3xl: 24px;
 
 	/* ── Font Weights ── */
 	--font-weight-regular: 400;
@@ -57,7 +72,9 @@
 
 	/* ── Line Heights ── */
 	--line-height-tight: 1;
+	--line-height-compact: 1.2;
 	--line-height-snug: 1.3;
+	--line-height-relaxed: 1.4;
 	--line-height-normal: 1.5;
 
 	/* ── Spacing ── */
@@ -71,8 +88,11 @@
 	/* ── Border Radius ── */
 	--border-radius-sm: 4px;
 	--border-radius-md: 5px;
+	--border-radius-lg: 6px;
 
 	/* ── Layout ── */
 	--sidebar-width: 232px;
 	--content-min-width: 320px;
+	--input-height: 36px;
+	--sign-in-form-width: 384px;
 }
