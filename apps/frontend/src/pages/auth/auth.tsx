@@ -1,9 +1,9 @@
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
-	useAppSelector,
 	useCallback,
 	useLocation,
+	useNavigate,
 } from "~/libs/hooks/hooks.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
 import { type UserSignUpRequestDto } from "~/modules/users/users.js";
@@ -12,9 +12,7 @@ import { SignInForm, SignUpForm } from "./components/components.js";
 
 const Auth: React.FC = () => {
 	const dispatch = useAppDispatch();
-	const { dataStatus } = useAppSelector(({ auth }) => ({
-		dataStatus: auth.dataStatus,
-	}));
+	const navigate = useNavigate();
 	const { pathname } = useLocation();
 
 	const handleSignInSubmit = useCallback((): void => {
@@ -23,9 +21,16 @@ const Auth: React.FC = () => {
 
 	const handleSignUpSubmit = useCallback(
 		(payload: UserSignUpRequestDto): void => {
-			void dispatch(authActions.signUp(payload));
+			void (async (): Promise<void> => {
+				try {
+					await dispatch(authActions.signUp(payload)).unwrap();
+					await navigate(AppRoute.ROOT);
+				} catch {
+					// Server-side errors: toast/notification (error handling frontend ticket)
+				}
+			})();
 		},
-		[dispatch],
+		[dispatch, navigate],
 	);
 
 	const getScreen = (screen: string): React.JSX.Element => {
@@ -36,12 +41,7 @@ const Auth: React.FC = () => {
 		return <SignInForm onSubmit={handleSignInSubmit} />;
 	};
 
-	return (
-		<>
-			state: {dataStatus}
-			{getScreen(pathname)}
-		</>
-	);
+	return <>{getScreen(pathname)}</>;
 };
 
 export { Auth };
