@@ -1,8 +1,8 @@
 import { config } from "~/libs/modules/config/config.js";
 
-import { BaseToken } from "./base-token.module.js";
+import { TokenService } from "./base-token.module.js";
 
-const token = new BaseToken(config.ENV.AUTH.JWT_SECRET);
+const token = new TokenService(config.ENV.AUTH.JWT_SECRET);
 
 export { token };
-export { type Token } from "./libs/types/types.js";
+export { type TokenServiceInterface } from "./libs/types/types.js";

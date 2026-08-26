@@ -1,13 +1,16 @@
-// Add create(payload)
-// Add verify(token)
 import { jwtVerify, SignJWT } from "jose";
 
-import { type Token, type TokenPayload } from "./libs/types/types.js";
+import {
+	AuthErrorMessage,
+	JWT_ALGORITHM,
+	JWT_EXPIRATION_TIME,
+} from "./libs/constants/constants.js";
+import {
+	type TokenPayload,
+	type TokenServiceInterface,
+} from "./libs/types/types.js";
 
-const JWT_ALGORITHM = "HS256";
-const JWT_EXPIRATION_TIME = "24h";
-
-class BaseToken implements Token {
+class TokenService implements TokenServiceInterface {
 	private secret: Uint8Array;
 
 	public constructor(secret: string) {
@@ -26,17 +29,21 @@ class BaseToken implements Token {
 	}
 
 	public async verify(token: string): Promise<TokenPayload> {
-		const { payload } = await jwtVerify(token, this.secret, {
-			algorithms: [JWT_ALGORITHM],
-		});
-		const { userId } = payload;
+		try {
+			const { payload } = await jwtVerify(token, this.secret, {
+				algorithms: [JWT_ALGORITHM],
+			});
+			const { userId } = payload;
 
-		if (typeof userId !== "number") {
-			throw new TypeError("Token payload does not contain a valid user id.");
+			if (typeof userId !== "number") {
+				throw new TypeError(AuthErrorMessage.INVALID_TOKEN_PAYLOAD);
+			}
+
+			return payload as TokenPayload;
+		} catch {
+			throw new Error(AuthErrorMessage.INVALID_TOKEN);
 		}
-
-		return payload as TokenPayload;
 	}
 }
 
-export { BaseToken };
+export { TokenService };
