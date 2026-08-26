@@ -8,9 +8,9 @@ import { type UserRepository } from "~/modules/users/user.repository.js";
 
 import { UserErrorMessage } from "./libs/enums/enums.js";
 import {
+	type UserGetAllItemResponseDto,
 	type UserGetAllResponseDto,
 	type UserSignUpRequestDto,
-	type UserSignUpResponseDto,
 } from "./libs/types/types.js";
 
 class UserService implements Service {
@@ -28,7 +28,7 @@ class UserService implements Service {
 
 	public async create(
 		payload: UserSignUpRequestDto,
-	): Promise<UserSignUpResponseDto> {
+	): Promise<UserGetAllItemResponseDto> {
 		const salt = this.encryption.generateSalt();
 		const hash = await this.encryption.hash(payload.password, salt);
 
@@ -41,9 +41,7 @@ class UserService implements Service {
 				}),
 			);
 
-			const token = ""; // TODO: pending JWT service (#5)
-
-			return { token, user: item.toObject() };
+			return item.toObject();
 		} catch (error) {
 			if (error instanceof UniqueViolationError) {
 				throw new HTTPError({
