@@ -1,0 +1,80 @@
+.sign-in__container {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: var(--sign-in-form-width);
+	padding: 32px 28px 28px;
+	background: var(--color-background);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--border-radius-lg);
+}
+
+.sign-in__logo-container {
+	display: flex;
+	gap: var(--space-xs);
+	align-items: center;
+	width: 100%;
+}
+
+.sign-in__logo-icon {
+	display: inline-grid;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	background: var(--color-accent);
+	border-radius: var(--border-radius-sm);
+}
+
+.sign-in__logo-text {
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-md);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-tight);
+	color: var(--color-text-primary);
+}
+
+.sign-in__form-container {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.sign-in__form-title {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-3xl);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-compact);
+	color: var(--color-text-primary);
+}
+
+.sign-in__form {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.sign-in__form-footer {
+	font-family: var(--font-family-ui);
+	font-size: var(--font-size-sm);
+	line-height: var(--line-height-relaxed);
+	color: var(--color-text-secondary);
+	text-align: center;
+}
+
+.sign-in__form-footer-link a {
+	color: var(--color-link);
+	text-decoration: underline;
+	text-decoration-color: color-mix(
+		in oklab,
+		var(--color-link) 45%,
+		transparent
+	);
+	text-underline-offset: 2px;
+}
+
+.sign-in__form-footer-link a:hover {
+	color: var(--color-link-hover);
+	text-decoration-color: currentcolor;
+}

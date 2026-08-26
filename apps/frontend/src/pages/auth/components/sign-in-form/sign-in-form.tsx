@@ -8,6 +8,8 @@ import {
 
 import { DEFAULT_SIGN_IN_PAYLOAD } from "./libs/constants.js";
 
+import styles from "./styles.module.css";
+
 // Replace sign up with sign in
 type Properties = {
 	onSubmit: (payload: UserSignUpRequestDto) => void;
@@ -27,16 +29,34 @@ const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 	);
 
 	return (
-		<div>
-			<div>
-				<span>
-					<svg></svg>
+		<div className={styles["sign-in__container"]}>
+			<div className={styles["sign-in__logo-container"]}>
+				<span className={styles["sign-in__logo-icon"]}>
+					<svg data-dc-tpl="30" height="14" viewBox="0 0 48 48" width="14">
+						<path
+							d="M7 12 L41 8.5 L39.5 17 L8.5 19.5 Z"
+							data-dc-tpl="31"
+							fill="var(--color-primary-contrast)"
+						></path>
+						<path
+							d="M19.5 15.5 L29 14.5 L26 42 L22.5 42 Z"
+							data-dc-tpl="32"
+							fill="var(--color-primary-contrast)"
+						></path>
+						<circle
+							cx="33.5"
+							cy="38.5"
+							data-dc-tpl="33"
+							fill="var(--color-primary-contrast)"
+							r="3.4"
+						></circle>
+					</svg>
 				</span>
-				<span>Transcripta</span>
+				<span className={styles["sign-in__logo-text"]}>Transcripta</span>
 			</div>
-			<div>
-				<h1>Sign In</h1>
-				<form onSubmit={handleFormSubmit}>
+			<div className={styles["sign-in__form-container"]}>
+				<h1 className={styles["sign-in__form-title"]}>Sign In</h1>
+				<form onSubmit={handleFormSubmit} className={styles["sign-in__form"]}>
 					<Input
 						control={control}
 						errors={errors}
@@ -53,9 +73,11 @@ const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 					/>
 					<Button label="Sign in" type="submit" />
 				</form>
-				<div>
+				<div className={styles["sign-in__form-footer"]}>
 					{"No account yet? "}
-					<Link to={AppRoute.SIGN_UP}>Create one</Link>
+					<span className={styles["sign-in__form-footer-link"]}>
+						<Link to={AppRoute.SIGN_UP}>Create one</Link>
+					</span>
 				</div>
 			</div>
 		</div>
