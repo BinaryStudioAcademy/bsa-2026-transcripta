@@ -2,7 +2,7 @@
  * @type {import('prettier').Config}
  */
 
-const config =  {
+const config = {
 	arrowParens: "always",
 	bracketSpacing: true,
 	printWidth: 80,
