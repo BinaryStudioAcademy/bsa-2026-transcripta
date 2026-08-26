@@ -41,7 +41,7 @@ const Auth: React.FC = () => {
 		return <SignInForm onSubmit={handleSignInSubmit} />;
 	};
 
-	return <>{getScreen(pathname)}</>;
+	return getScreen(pathname);
 };
 
 export { Auth };
