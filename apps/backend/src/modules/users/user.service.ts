@@ -1,8 +1,12 @@
+import { HTTPCode, HTTPError } from "@transcripta/shared";
+import { UniqueViolationError } from "objection";
+
 import { type BaseEncryption } from "~/libs/modules/encryption/base-encryption.module.js";
 import { type Service } from "~/libs/types/types.js";
 import { UserEntity } from "~/modules/users/user.entity.js";
 import { type UserRepository } from "~/modules/users/user.repository.js";
 
+import { UserErrorMessage } from "./libs/enums/enums.js";
 import {
 	type UserGetAllResponseDto,
 	type UserSignUpRequestDto,
@@ -28,15 +32,27 @@ class UserService implements Service {
 		const salt = this.encryption.generateSalt();
 		const hash = await this.encryption.hash(payload.password, salt);
 
-		const item = await this.userRepository.create(
-			UserEntity.initializeNew({
-				email: payload.email,
-				passwordHash: hash,
-				passwordSalt: salt,
-			}),
-		);
+		try {
+			const item = await this.userRepository.create(
+				UserEntity.initializeNew({
+					email: payload.email,
+					passwordHash: hash,
+					passwordSalt: salt,
+				}),
+			);
 
-		return item.toObject();
+			const token = ""; // TODO: pending JWT service (#5)
+
+			return { token, user: item.toObject() };
+		} catch (error) {
+			if (error instanceof UniqueViolationError) {
+				throw new HTTPError({
+					message: UserErrorMessage.USER_EMAIL_IN_USE,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+			throw error;
+		}
 	}
 
 	public delete(): ReturnType<Service["delete"]> {
