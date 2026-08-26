@@ -1,7 +1,6 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-const SALT_LENGTH = 16;
-const KEY_LENGTH = 64;
+import { KEY_LENGTH, SALT_LENGTH } from "./libs/constants/constants.js";
 
 class BaseEncryption {
 	public compare(
