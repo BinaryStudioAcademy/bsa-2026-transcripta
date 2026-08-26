@@ -20,5 +20,6 @@ docs/demo/.cache
 # superpowers brainstorm sessions
 .superpowers/
 
-# local Claude Code settings
-.claude/
+# Claude Code: share agents/skills; keep per-developer and scratch local
+.claude/settings.local.json
+.claude/feature-scratch/

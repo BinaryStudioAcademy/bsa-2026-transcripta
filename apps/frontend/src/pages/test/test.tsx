@@ -23,13 +23,18 @@ const MODEL_OPTIONS = [
 	},
 	{
 		isDisabled: false,
-		label: "Claude Sonnet 4.6 (direct API)",
-		value: "anthropic-direct:claude-sonnet-4-6",
+		label: "Claude Sonnet 4.6 (Bedrock)",
+		value: "us.anthropic.claude-sonnet-4-6",
 	},
 	{
-		isDisabled: true,
-		label: "Claude Sonnet 4.6 (Bedrock — needs a subscription)",
-		value: "us.anthropic.claude-sonnet-4-6",
+		isDisabled: false,
+		label: "Claude Sonnet 4.5 (Bedrock)",
+		value: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	},
+	{
+		isDisabled: false,
+		label: "Claude Sonnet 4.6 (direct API)",
+		value: "anthropic-direct:claude-sonnet-4-6",
 	},
 ];
 
@@ -107,8 +112,9 @@ const Test: React.FC = () => {
 				payload.append("prompt", prompt);
 
 				try {
+					// ORIGIN_URL already carries the /api/v1 prefix.
 					const response = await fetch(
-						`${config.ENV.API.ORIGIN_URL}/api/v1/test/transcribe`,
+						`${config.ENV.API.ORIGIN_URL}/test/transcribe`,
 						{ body: payload, method: "POST" },
 					);
 

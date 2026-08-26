@@ -13,17 +13,35 @@ resource "aws_ecr_repository" "backend" {
 resource "aws_ecr_lifecycle_policy" "backend" {
   repository = aws_ecr_repository.backend.name
 
+  # Two rules, because a single `tagStatus = "any"` rule leaves untagged layers
+  # behind: every push moves `latest` off the previous image and ECR will not
+  # rank those untagged leftovers against the tagged ones. That is how 23 images
+  # accumulated under a "keep last 5" policy.
   policy = jsonencode({
-    rules = [{
-      rulePriority = 1
-      description  = "keep last 5 images, expire older ones"
-      selection = {
-        tagStatus   = "any"
-        countType   = "imageCountMoreThan"
-        countNumber = 5
-      }
-      action = { type = "expire" }
-    }]
+    rules = [
+      {
+        rulePriority = 1
+        description  = "expire untagged images after a day"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 1
+        }
+        action = { type = "expire" }
+      },
+      {
+        rulePriority = 2
+        description  = "keep the last 5 tagged images"
+        selection = {
+          tagStatus      = "tagged"
+          tagPatternList = ["*"]
+          countType      = "imageCountMoreThan"
+          countNumber    = 5
+        }
+        action = { type = "expire" }
+      },
+    ]
   })
 }
 
