@@ -7,13 +7,6 @@ type Properties = {
 	label?: string;
 };
 
-/**
- * Full-screen overlay that centers a Loader. Visibility is controlled
- * by the caller: `{dataStatus === DataStatus.PENDING && <LoaderOverlay />}`.
- *
- * @example <LoaderOverlay label="Loading users" />
- */
-
 const LoaderOverlay: React.FC<Properties> = ({
 	label = "Loading",
 }: Properties) => (

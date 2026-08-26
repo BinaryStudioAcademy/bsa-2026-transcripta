@@ -9,13 +9,6 @@ type Properties = {
 	size?: ValueOf<typeof LoaderSize>;
 };
 
-/**
- * CSS spinner with a continuous rotation. Accessible via role="status"
- * plus a visually hidden label.
- *
- * @example <Loader label="Loading transcripts" size={LoaderSize.SMALL} />
- */
-
 const Loader: React.FC<Properties> = ({
 	label = "Loading",
 	size = LoaderSize.MEDIUM,
