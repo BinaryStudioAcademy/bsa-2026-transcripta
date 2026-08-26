@@ -3,6 +3,8 @@ import { BaseHTTPApi } from "~/libs/modules/api/api.js";
 import { type HTTP } from "~/libs/modules/http/http.js";
 import { type Storage } from "~/libs/modules/storage/storage.js";
 import {
+	UserSignInRequestDto,
+	UserSignInResponseDto,
 	type UserSignUpRequestDto,
 	type UserSignUpResponseDto,
 } from "~/modules/users/users.js";
@@ -20,10 +22,9 @@ class AuthApi extends BaseHTTPApi {
 		super({ baseUrl, http, path: APIPath.AUTH, storage });
 	}
 
-	// Replace sign up with sign in
 	public async signIn(
-		payload: UserSignUpRequestDto,
-	): Promise<UserSignUpResponseDto> {
+		payload: UserSignInRequestDto,
+	): Promise<UserSignInResponseDto> {
 		const response = await this.load(
 			this.getFullEndpoint(AuthApiPath.SIGN_IN, {}),
 			{
@@ -34,7 +35,7 @@ class AuthApi extends BaseHTTPApi {
 			},
 		);
 
-		return await response.json<UserSignUpResponseDto>();
+		return await response.json<UserSignInResponseDto>();
 	}
 
 	public async signUp(

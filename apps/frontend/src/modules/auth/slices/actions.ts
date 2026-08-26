@@ -2,16 +2,17 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 import {
+	UserSignInRequestDto,
+	UserSignInResponseDto,
 	type UserSignUpRequestDto,
 	type UserSignUpResponseDto,
 } from "~/modules/users/users.js";
 
 import { name as sliceName } from "./auth.slice.js";
 
-// Replace sign up with sign in
 const signIn = createAsyncThunk<
-	UserSignUpResponseDto,
-	UserSignUpRequestDto,
+	UserSignInResponseDto,
+	UserSignInRequestDto,
 	AsyncThunkConfig
 >(`${sliceName}/sign-in`, (loginPayload, { extra }) => {
 	const { authApi } = extra;

@@ -2,23 +2,21 @@ import { Button, Input, Link } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
 import {
-	UserSignUpRequestDto,
-	userSignUpValidationSchema,
+	UserSignInRequestDto,
+	userSignInValidationSchema,
 } from "~/modules/users/users.js";
 
 import { DEFAULT_SIGN_IN_PAYLOAD } from "./libs/constants.js";
-
 import styles from "./styles.module.css";
 
-// Replace sign up with sign in
 type Properties = {
-	onSubmit: (payload: UserSignUpRequestDto) => void;
+	onSubmit: (payload: UserSignInRequestDto) => void;
 };
 
 const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
-	const { control, errors, handleSubmit } = useAppForm<UserSignUpRequestDto>({
+	const { control, errors, handleSubmit } = useAppForm<UserSignInRequestDto>({
 		defaultValues: DEFAULT_SIGN_IN_PAYLOAD,
-		validationSchema: userSignUpValidationSchema,
+		validationSchema: userSignInValidationSchema,
 	});
 
 	const handleFormSubmit = useCallback(
@@ -56,7 +54,7 @@ const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 			</div>
 			<div className={styles["sign-in__form-container"]}>
 				<h1 className={styles["sign-in__form-title"]}>Sign In</h1>
-				<form onSubmit={handleFormSubmit} className={styles["sign-in__form"]}>
+				<form className={styles["sign-in__form"]} onSubmit={handleFormSubmit}>
 					<Input
 						control={control}
 						errors={errors}

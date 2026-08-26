@@ -8,7 +8,10 @@ import {
 	useLocation,
 } from "~/libs/hooks/hooks.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
-import { type UserSignUpRequestDto } from "~/modules/users/users.js";
+import {
+	UserSignInRequestDto,
+	type UserSignUpRequestDto,
+} from "~/modules/users/users.js";
 
 import { SignInForm, SignUpForm } from "./components/components.js";
 
@@ -21,8 +24,7 @@ const Auth: React.FC = () => {
 	const navigate = useNavigate();
 
 	const handleSignInSubmit = useCallback(
-		// Replace sign up with sign in
-		(payload: UserSignUpRequestDto): void => {
+		(payload: UserSignInRequestDto): void => {
 			void dispatch(authActions.signIn(payload))
 				.unwrap()
 				.then(() => navigate(AppRoute.ROOT))
