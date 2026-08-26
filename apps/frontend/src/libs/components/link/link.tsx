@@ -12,4 +12,4 @@ const Link: React.FC<Properties> = ({ children, to }: Properties) => (
 	<NavLink to={to}>{children}</NavLink>
 );
 
-export { Link };
+export { /** @public */ Link };

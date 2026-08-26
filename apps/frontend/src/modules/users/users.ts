@@ -13,9 +13,9 @@ const userApi = new UserApi({
 export { userApi };
 export {
 	type UserGetAllItemResponseDto,
-	type UserGetAllResponseDto,
+	/** @public */ type UserGetAllResponseDto,
 	type UserSignUpRequestDto,
 	type UserSignUpResponseDto,
 } from "./libs/types/types.js";
 export { userSignUpValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
-export { actions, reducer } from "./slices/users.js";
+export { /** @public */ actions, reducer } from "./slices/users.js";
