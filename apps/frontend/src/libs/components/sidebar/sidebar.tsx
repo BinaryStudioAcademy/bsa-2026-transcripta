@@ -16,11 +16,8 @@ const Sidebar: React.FC = () => {
 
 	const handleSignOut = useCallback((): void => {
 		dispatch(authActions.logout());
-		storage.drop(StorageKey.TOKEN).catch(() => {});
-		const result = navigate(AppRoute.SIGN_IN);
-		if (result) {
-			result.catch(() => {});
-		}
+		void storage.drop(StorageKey.TOKEN);
+		void Promise.resolve(navigate(AppRoute.SIGN_IN));
 	}, [dispatch, navigate]);
 
 	return (
