@@ -25,8 +25,9 @@ const Auth: React.FC = () => {
 				try {
 					await dispatch(authActions.signUp(payload)).unwrap();
 					await navigate(AppRoute.ROOT);
-				} catch {
-					// Server-side errors: toast/notification (error handling frontend ticket)
+				} catch (error) {
+					// Toast for API errors is a separate ticket: [FE] Error handling #7
+					console.error(error);
 				}
 			})();
 		},
