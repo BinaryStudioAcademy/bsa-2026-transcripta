@@ -6,6 +6,12 @@ import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import { type Config, type EnvironmentSchema } from "./libs/types/types.js";
 
+const DEV_JWT_SECRET = "dev-only-insecure-secret";
+const DEV_JWT_SECRET_WARNING =
+	"JWT_SECRET is using the development fallback — set it in your .env for anything but local development.";
+const DEV_JWT_SECRET_PRODUCTION_ERROR =
+	"JWT_SECRET cannot default to the development value in production — set JWT_SECRET in the environment.";
+
 class BaseConfig implements Config {
 	private logger: Logger;
 
@@ -26,6 +32,9 @@ class BaseConfig implements Config {
 
 		this.ENV = this.envSchema.getProperties();
 		this.logger.info(".env file found and successfully parsed!");
+
+		this.assertProductionJwtSecret();
+		this.warnOnDevJwtSecret();
 	}
 
 	private get envSchema(): LibraryConfig<EnvironmentSchema> {
@@ -52,7 +61,7 @@ class BaseConfig implements Config {
 			},
 			AUTH: {
 				JWT_SECRET: {
-					default: null,
+					default: DEV_JWT_SECRET,
 					doc: "Secret used to sign JWT tokens",
 					env: "JWT_SECRET",
 					format: String,
@@ -99,6 +108,20 @@ class BaseConfig implements Config {
 				},
 			},
 		});
+	}
+
+	private assertProductionJwtSecret(): void {
+		const isProduction = this.ENV.APP.ENVIRONMENT === AppEnvironment.PRODUCTION;
+
+		if (isProduction && this.ENV.AUTH.JWT_SECRET === DEV_JWT_SECRET) {
+			throw new Error(DEV_JWT_SECRET_PRODUCTION_ERROR);
+		}
+	}
+
+	private warnOnDevJwtSecret(): void {
+		if (this.ENV.AUTH.JWT_SECRET === DEV_JWT_SECRET) {
+			this.logger.warn(DEV_JWT_SECRET_WARNING);
+		}
 	}
 }
 
