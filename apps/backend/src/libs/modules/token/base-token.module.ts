@@ -1,9 +1,9 @@
 import { jwtVerify, SignJWT } from "jose";
 
 import {
-	AuthErrorMessage,
 	JWT_ALGORITHM,
 	JWT_EXPIRATION_TIME,
+	TokenErrorMessage,
 } from "./libs/constants/constants.js";
 import {
 	type TokenPayload,
@@ -36,12 +36,12 @@ class TokenService implements TokenServiceInterface {
 			const { userId } = payload;
 
 			if (typeof userId !== "number") {
-				throw new TypeError(AuthErrorMessage.INVALID_TOKEN_PAYLOAD);
+				throw new TypeError(TokenErrorMessage.INVALID_TOKEN_PAYLOAD);
 			}
 
 			return payload as TokenPayload;
 		} catch {
-			throw new Error(AuthErrorMessage.INVALID_TOKEN);
+			throw new Error(TokenErrorMessage.INVALID_TOKEN);
 		}
 	}
 }

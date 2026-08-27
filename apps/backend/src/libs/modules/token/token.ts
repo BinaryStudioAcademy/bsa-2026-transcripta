@@ -4,5 +4,9 @@ import { TokenService } from "./base-token.module.js";
 
 const token = new TokenService(config.ENV.AUTH.JWT_SECRET);
 
+export { TokenErrorMessage } from "./libs/constants/constants.js";
 export { token };
-export { type TokenServiceInterface } from "./libs/types/types.js";
+export {
+	type TokenPayload,
+	type TokenServiceInterface,
+} from "./libs/types/types.js";

@@ -12,18 +12,19 @@ it.
 
 ## Decided
 
-| Question                             | Decision                                                             | Where it lives                                                                                   |
-| ------------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| How is a blank page recognised?      | `sharp().stats()` on the greyscale channel, threshold in the preset  | [02](02-data-pipeline.md#detecting-a-blank-page)                                                 |
-| Who counts retries — BullMQ or us?   | Us. Jobs registered with `attempts: 1`, `page.attempts` is the truth | [02](02-data-pipeline.md#retries-one-counter-not-two)                                            |
-| Who sets `document.status = 'done'`? | The verify handler, in the same transaction as the confirmation      | [02](02-data-pipeline.md#who-sets-documentstatus--done)                                          |
-| Is the transcription cache cleaned?  | No, and that is deliberate. `last_hit_at` is there for a later TTL   | [04](04-database.md#51-the-cache-is-never-cleaned-and-that-is-a-decision)                        |
-| Does `Ctrl+Z` roll back the lexicon? | No. The page returns to `transcribed`, the words stay                | [06](06-verification-ui.md#ctrlz-does-not-roll-back-the-lexicon)                                 |
-| How does a user create a preset?     | Built-in templates + text fields. JSON Schema is never hand-edited   | [06](06-verification-ui.md#the-preset-editor)                                                    |
-| Where does the auth guard attach?    | A `preHandler` added together with `params`/`query` validation       | [08](08-template-gaps.md#3-only-request-bodies-are-validated)                                    |
-| Is poppler an npm dependency?        | No, a system package. Needs a line in the Dockerfile                 | [08](08-template-gaps.md#7-there-is-no-infrastructure-for-our-pipeline)                          |
-| Which password hashing library?      | None. `node:crypto` `scrypt` matches the existing columns            | [08](08-template-gaps.md#1-registration-creates-a-user-without-a-password)                       |
-| Which JWT library?                   | `jose`, because ESM-native, standalone, usable from AuthService      | [08](08-template-gaps.md#2-there-is-no-sign-in-and-no-jwt--but-the-frontend-already-expects-one) |
+| Question                                  | Decision                                                             | Where it lives                                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| How is a blank page recognised?           | `sharp().stats()` on the greyscale channel, threshold in the preset  | [02](02-data-pipeline.md#detecting-a-blank-page)                                                 |
+| Who counts retries — BullMQ or us?        | Us. Jobs registered with `attempts: 1`, `page.attempts` is the truth | [02](02-data-pipeline.md#retries-one-counter-not-two)                                            |
+| Who sets `document.status = 'done'`?      | The verify handler, in the same transaction as the confirmation      | [02](02-data-pipeline.md#who-sets-documentstatus--done)                                          |
+| Is the transcription cache cleaned?       | No, and that is deliberate. `last_hit_at` is there for a later TTL   | [04](04-database.md#51-the-cache-is-never-cleaned-and-that-is-a-decision)                        |
+| Does `Ctrl+Z` roll back the lexicon?      | No. The page returns to `transcribed`, the words stay                | [06](06-verification-ui.md#ctrlz-does-not-roll-back-the-lexicon)                                 |
+| How does a user create a preset?          | Built-in templates + text fields. JSON Schema is never hand-edited   | [06](06-verification-ui.md#the-preset-editor)                                                    |
+| Where does the auth guard attach?         | A `preHandler` added together with `params`/`query` validation       | [08](08-template-gaps.md#3-only-request-bodies-are-validated)                                    |
+| Is poppler an npm dependency?             | No, a system package. Needs a line in the Dockerfile                 | [08](08-template-gaps.md#7-there-is-no-infrastructure-for-our-pipeline)                          |
+| Which password hashing library?           | None. `node:crypto` `scrypt` matches the existing columns            | [08](08-template-gaps.md#1-registration-creates-a-user-without-a-password)                       |
+| Which JWT library?                        | `jose`, because ESM-native, standalone, usable from AuthService      | [08](08-template-gaps.md#2-there-is-no-sign-in-and-no-jwt--but-the-frontend-already-expects-one) |
+| CSS Modules or global CSS for components? | CSS Modules per component, global file only for design tokens        | [`readme.md`](../readme.md) → §5.2.2                                                             |
 
 Three of these were not questions but defects, and they are fixed in place:
 thumbnails were never generated although the schema, the S3 layout and the API
