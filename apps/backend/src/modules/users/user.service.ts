@@ -15,7 +15,6 @@ import {
 
 class UserService implements Service {
 	private encryption: BaseEncryption;
-
 	private userRepository: UserRepository;
 
 	public constructor(
@@ -67,6 +66,10 @@ class UserService implements Service {
 		return {
 			items: items.map((item) => item.toObject()),
 		};
+	}
+
+	public async findByEmail(email: string): Promise<null | UserEntity> {
+		return await this.userRepository.findByEmail(email);
 	}
 
 	public update(): ReturnType<Service["update"]> {
