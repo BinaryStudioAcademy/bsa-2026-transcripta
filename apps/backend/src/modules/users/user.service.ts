@@ -2,36 +2,32 @@ import { HTTPCode, HTTPError } from "@transcripta/shared";
 import { UniqueViolationError } from "objection";
 
 import { type BaseEncryption } from "~/libs/modules/encryption/base-encryption.module.js";
-import { type TokenServiceInterface } from "~/libs/modules/token/token.js";
 import { type Service } from "~/libs/types/types.js";
 import { UserEntity } from "~/modules/users/user.entity.js";
 import { type UserRepository } from "~/modules/users/user.repository.js";
 
 import { UserErrorMessage } from "./libs/enums/enums.js";
 import {
+	type UserGetAllItemResponseDto,
 	type UserGetAllResponseDto,
 	type UserSignUpRequestDto,
-	type UserSignUpResponseDto,
 } from "./libs/types/types.js";
 
 class UserService implements Service {
 	private encryption: BaseEncryption;
-	private token: TokenServiceInterface;
 	private userRepository: UserRepository;
 
 	public constructor(
 		userRepository: UserRepository,
 		encryption: BaseEncryption,
-		token: TokenServiceInterface,
 	) {
 		this.userRepository = userRepository;
 		this.encryption = encryption;
-		this.token = token;
 	}
 
 	public async create(
 		payload: UserSignUpRequestDto,
-	): Promise<UserSignUpResponseDto> {
+	): Promise<UserGetAllItemResponseDto> {
 		const salt = this.encryption.generateSalt();
 		const hash = await this.encryption.hash(payload.password, salt);
 
@@ -44,10 +40,7 @@ class UserService implements Service {
 				}),
 			);
 
-			const user = item.toObject();
-			const token = await this.token.create({ userId: user.id });
-
-			return { token, user };
+			return item.toObject();
 		} catch (error) {
 			if (error instanceof UniqueViolationError) {
 				throw new HTTPError({

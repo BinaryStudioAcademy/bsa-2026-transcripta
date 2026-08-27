@@ -62,10 +62,13 @@ class AuthService {
 		};
 	}
 
-	public signUp(
+	public async signUp(
 		userRequestDto: UserSignUpRequestDto,
 	): Promise<UserSignUpResponseDto> {
-		return this.userService.create(userRequestDto);
+		const user = await this.userService.create(userRequestDto);
+		const token = await this.token.create({ userId: user.id });
+
+		return { token, user };
 	}
 }
 
