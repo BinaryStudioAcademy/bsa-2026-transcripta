@@ -1,6 +1,8 @@
+import { UserGetAllItemResponseDto } from "./user-get-all-item-response-dto.type.js";
+
 type UserSignUpResponseDto = {
-	email: string;
-	id: number;
+	token: string;
+	user: UserGetAllItemResponseDto;
 };
 
 export { type UserSignUpResponseDto };

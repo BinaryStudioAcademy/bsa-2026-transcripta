@@ -1,0 +1,11 @@
+# Shared Codex CLI config for Transcripta, committed so the whole team gets
+# the same settings (sandbox, MCP, hooks, model, reasoning defaults) after
+# `git pull`. Codex only loads this file once the repo is marked trusted —
+# that trust decision is per-developer and lives in each person's own global
+# Codex config, so it is intentionally NOT set from inside this file. See
+# docs/13-codex.md for the one-time "trust this project" step.
+#
+# Subagent definitions live under .codex/agents/*.toml (matched by their own
+# `name` field when spawned) and are not registered here. Nothing else needs
+# to be configured in this file yet. Per-developer/local overrides belong in
+# your own `~/.codex/config.toml` or CODEX_HOME, never in this file.
