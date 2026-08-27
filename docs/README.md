@@ -95,6 +95,7 @@ processing pipeline.
 | [10-infra.md](10-infra.md)                     | One EC2 host, two S3 buckets, what it costs and how to switch it off     |
 | [11-how-we-work.md](11-how-we-work.md)         | **The board, the releases, who moves what — start here as a newcomer**   |
 | [12-claude-code.md](12-claude-code.md)         | Shared Claude Code agent (`code-review`) and skill (`feature-assistant`) |
+| [13-codex.md](13-codex.md)                     | Shared Codex CLI agent (`code-review`) and skill (`feature-assistant`)   |
 
 ## Diagrams
 
