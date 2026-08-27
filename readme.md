@@ -227,7 +227,17 @@ pull` — no extra setup. Usage of the `code-review` agent and the
 `feature-assistant` skill:
 [docs/12-claude-code.md](docs/12-claude-code.md).
 
-### 7.6 Codex
+### 7.6 AI Intended Usage
+
+AI is meant to support research and reference, not to write your code for you. Contributors should stay in control of what actually lands in the codebase, use AI to investigate and propose, then review and apply changes yourself.
+
+When you use AI to help with a task, expect its output in three parts:
+
+- Research — what it found in the codebase relevant to your request: files, modules, existing patterns, and any constraints that affect the approach.
+- References — links to the relevant files and lines in this repo (path:line), plus any external docs (library APIs, RFCs) that back up the suggested approach.
+- Code snippets — illustrative, non-applied examples of the proposed change (diff-style or fenced code blocks). These should not be written into the working tree — they're presented in the response only, for a human to review and apply.
+
+### 7.7 Codex
 
 Shared helpers live in [`.codex/`](.codex/) (agent config) and
 [`.agents/skills/feature-assistant/`](.agents/skills/feature-assistant/)
