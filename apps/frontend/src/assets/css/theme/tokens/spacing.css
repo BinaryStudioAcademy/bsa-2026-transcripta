@@ -11,14 +11,14 @@
 	--sp-16: 64px;
 	--sp-20: 80px;
 	--sp-24: 96px;
-	--ctl-sm: 28px; /* dense inline controls */
-	--ctl-md: 32px; /* work-screen default control height */
-	--ctl-lg: 36px; /* prominent work-screen controls */
-	--ctl-landing: 44px; /* landing CTAs only */
-	--r-xs: 2px; /* checkboxes, marks */
-	--r-sm: 3px; /* chips, kbd, small cells */
-	--r-md: 4px; /* buttons, inputs */
-	--r-lg: 6px; /* cards, dialogs, dropzone — the maximum radius anywhere */
-	--sidebar-w: 232px; /* app-shell sidebar */
-	--ring-w: 2px; /* focus ring width, never thinner */
+	--ctl-sm: 28px;
+	--ctl-md: 32px;
+	--ctl-lg: 36px;
+	--ctl-landing: 44px;
+	--r-xs: 2px;
+	--r-sm: 3px;
+	--r-md: 4px;
+	--r-lg: 6px;
+	--sidebar-w: 232px;
+	--ring-w: 2px;
 }
