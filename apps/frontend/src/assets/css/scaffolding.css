@@ -70,13 +70,13 @@ body {
 }
 
 .test-page__stats dt {
-	font-size: 12px;
-	color: #6b665f;
+	font-size: var(--fs-xs);
+	color: var(--text-2);
 }
 
 .test-page__stats dd {
 	margin: 0;
-	font-size: 18px;
+	font-size: var(--fs-lg);
 }
 
 .test-page__text {
