@@ -11,15 +11,16 @@ for the pages that follow.
 
 ### 1.1 Useful Links
 
-| Where                                                                    | What for                                                           |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| [Project board](https://github.com/orgs/BinaryStudioAcademy/projects/39) | Epics, user stories and tasks                                      |
-| [docs/README.md](docs/README.md)                                         | Documentation entry point, implementation order                    |
-| [docs/07-how-it-works.md](docs/07-how-it-works.md)                       | How the app works, in plain words                                  |
-| [docs/08-template-gaps.md](docs/08-template-gaps.md)                     | **What the template already has, what is a stub, what is missing** |
-| [docs/09-open-questions.md](docs/09-open-questions.md)                   | **What is still undecided before implementation starts**           |
-| [docs/12-claude-code.md](docs/12-claude-code.md)                         | Shared Claude Code agent and skill (after `git pull`)              |
-| [diagrams/README.md](docs/diagrams/README.md)                            | Seven diagrams with walkthroughs                                   |
+| Where                                                                    | What for                                                                |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [Project board](https://github.com/orgs/BinaryStudioAcademy/projects/39) | Epics, user stories and tasks                                           |
+| [docs/README.md](docs/README.md)                                         | Documentation entry point, implementation order                         |
+| [docs/07-how-it-works.md](docs/07-how-it-works.md)                       | How the app works, in plain words                                       |
+| [docs/08-template-gaps.md](docs/08-template-gaps.md)                     | **What the template already has, what is a stub, what is missing**      |
+| [docs/09-open-questions.md](docs/09-open-questions.md)                   | **What is still undecided before implementation starts**                |
+| [docs/12-claude-code.md](docs/12-claude-code.md)                         | Shared Claude Code agent and skill (after `git pull`)                   |
+| [docs/13-codex.md](docs/13-codex.md)                                     | Shared Codex CLI agent and skill (after `git pull` + trusting the repo) |
+| [diagrams/README.md](docs/diagrams/README.md)                            | Seven diagrams with walkthroughs                                        |
 
 ## 2. Domain
 
@@ -225,6 +226,15 @@ Shared helpers live in [`.claude/`](.claude/) and are available after `git
 pull` — no extra setup. Usage of the `code-review` agent and the
 `feature-assistant` skill:
 [docs/12-claude-code.md](docs/12-claude-code.md).
+
+### 7.6 Codex
+
+Shared helpers live in [`.codex/`](.codex/) (agent config) and
+[`.agents/skills/feature-assistant/`](.agents/skills/feature-assistant/)
+(skill). Available after `git pull`, but Codex additionally requires marking
+the repo trusted once per machine before it loads them. Usage of the
+`code-review` agent and the `feature-assistant` skill:
+[docs/13-codex.md](docs/13-codex.md).
 
 ## 8. Deployment
 
