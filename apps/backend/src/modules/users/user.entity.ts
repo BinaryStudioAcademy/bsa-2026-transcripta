@@ -62,6 +62,16 @@ class UserEntity implements Entity {
 		});
 	}
 
+	public getPasswordCredentials(): {
+		passwordHash: string;
+		passwordSalt: string;
+	} {
+		return {
+			passwordHash: this.passwordHash,
+			passwordSalt: this.passwordSalt,
+		};
+	}
+
 	public toNewObject(): {
 		email: string;
 		passwordHash: string;

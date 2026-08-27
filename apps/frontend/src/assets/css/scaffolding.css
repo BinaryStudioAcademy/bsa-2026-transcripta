@@ -8,9 +8,9 @@ body {
 	min-width: 320px;
 	min-height: 100vh;
 	margin: 0;
-	font-family: Arial, sans-serif;
-	font-size: 14px;
-	line-height: 1.5;
+	font-family: var(--font-ui);
+	font-size: var(--fs-md);
+	line-height: var(--lh-ui);
 }
 
 #root {
@@ -39,7 +39,7 @@ body {
 }
 
 .test-page__hint {
-	color: #6b665f;
+	color: var(--text-2);
 }
 
 .test-page__form {
@@ -56,8 +56,8 @@ body {
 
 .test-page__error {
 	padding: 8px 12px;
-	color: #b3261e;
-	background: #fce8e6;
+	color: var(--danger-text);
+	background: var(--danger-tint);
 	border-radius: 4px;
 }
 
@@ -65,25 +65,25 @@ body {
 	display: flex;
 	gap: 24px;
 	padding: 12px;
-	background: #f2f0ec;
+	background: var(--surface-2);
 	border-radius: 4px;
 }
 
 .test-page__stats dt {
-	font-size: 12px;
-	color: #6b665f;
+	font-size: var(--fs-xs);
+	color: var(--text-2);
 }
 
 .test-page__stats dd {
 	margin: 0;
-	font-size: 18px;
+	font-size: var(--fs-lg);
 }
 
 .test-page__text {
 	padding: 12px;
 	overflow-x: auto;
 	white-space: pre-wrap;
-	background: #ffffff;
-	border: 1px solid #e5e2db;
+	background: var(--surface);
+	border: 1px solid var(--hairline);
 	border-radius: 4px;
 }

@@ -28,6 +28,11 @@ indent_size = unset
 # even enforces it. Tabs here would fight the standard tooling.
 [*.{tf,hcl,sh}]
 indent_style = space
+
+# TOML has no tab convention, and Codex agent definitions embed indented
+# multi-line strings that read better as spaces.
+[*.toml]
+indent_style = space
 indent_size = unset
 
 [Dockerfile]

@@ -1,0 +1,3 @@
+const JWT_EXPIRATION_TIME = "24h";
+
+export { JWT_EXPIRATION_TIME };
