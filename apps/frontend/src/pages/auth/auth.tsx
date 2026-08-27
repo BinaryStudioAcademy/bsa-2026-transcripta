@@ -25,7 +25,7 @@ const Auth: React.FC = () => {
 				try {
 					await dispatch(authActions.signUp(payload)).unwrap();
 					await navigate(AppRoute.ROOT);
-				} catch (error) {
+				} catch {
 					// Toast for API errors is a separate ticket: [FE] Error handling #7
 				}
 			})();
