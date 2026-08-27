@@ -1,3 +1,4 @@
+import { HTTPCode, HTTPError } from "@transcripta/shared";
 import { jwtVerify, SignJWT } from "jose";
 
 import {
@@ -41,7 +42,10 @@ class TokenService implements TokenServiceInterface {
 
 			return payload as TokenPayload;
 		} catch {
-			throw new Error(TokenErrorMessage.INVALID_TOKEN);
+			throw new HTTPError({
+				message: TokenErrorMessage.INVALID_TOKEN,
+				status: HTTPCode.UNAUTHORIZED,
+			});
 		}
 	}
 }
