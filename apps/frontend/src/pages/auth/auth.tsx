@@ -27,7 +27,6 @@ const Auth: React.FC = () => {
 					await navigate(AppRoute.ROOT);
 				} catch (error) {
 					// Toast for API errors is a separate ticket: [FE] Error handling #7
-					console.error(error);
 				}
 			})();
 		},
