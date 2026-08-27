@@ -22,3 +22,8 @@
 	outline: 2px solid var(--color-accent);
 	outline-offset: 1px;
 }
+
+.button:active {
+	background-color: var(--color-accent-active);
+	transform: translateY(1px);
+}
