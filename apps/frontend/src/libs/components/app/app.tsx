@@ -19,7 +19,7 @@ const App: React.FC = () => {
 	return (
 		<>
 			<div>
-				<Header />
+				{isRoot && <Header />}
 				<main>
 					<RouterOutlet />
 				</main>
