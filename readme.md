@@ -76,6 +76,8 @@ apart with a single `APP_MODE` environment variable.
 #### 5.2.2 Folder Structure
 
 1. assets - static assets (images, global styles)
+   - global theme tokens live in `assets/css/theme/`; components are styled
+     with CSS Modules (`*.module.css`) colocated with the component
 2. libs - shared libraries and utilities
 
    2.1 components - plain react components
