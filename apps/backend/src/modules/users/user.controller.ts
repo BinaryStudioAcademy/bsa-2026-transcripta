@@ -1,5 +1,5 @@
 import { APIPath } from "~/libs/enums/enums.js";
-import { authGuard } from "~/libs/modules/auth/auth-guard.js";
+import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
 	type APIHandlerResponse,
 	BaseController,

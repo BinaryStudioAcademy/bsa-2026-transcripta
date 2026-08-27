@@ -13,7 +13,7 @@ type DefaultApiHandlerOptions = {
 	body?: unknown;
 	params?: unknown;
 	query?: unknown;
-	user?: null | TokenPayload;
+	user?: TokenPayload;
 };
 
 export { type APIHandlerOptions };

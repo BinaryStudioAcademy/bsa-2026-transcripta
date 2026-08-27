@@ -2,23 +2,15 @@ import { HTTPCode, HTTPError } from "@transcripta/shared";
 import { type preHandlerAsyncHookHandler } from "fastify";
 
 import {
-	AuthErrorMessage,
-	token,
+	TokenErrorMessage,
 	type TokenServiceInterface,
 } from "~/libs/modules/token/token.js";
 
-const BEARER_AUTHORIZATION_PATTERN = /^Bearer\s+(?<token>\S+)$/i;
-
-const extractBearerToken = (authorizationHeader: string): null | string => {
-	return (
-		BEARER_AUTHORIZATION_PATTERN.exec(authorizationHeader)?.groups?.["token"] ??
-		null
-	);
-};
+import { extractBearerToken } from "./libs/helpers/helpers.js";
 
 const createUnauthorizedError = (): HTTPError => {
 	return new HTTPError({
-		message: AuthErrorMessage.INVALID_TOKEN,
+		message: TokenErrorMessage.INVALID_TOKEN,
 		status: HTTPCode.UNAUTHORIZED,
 	});
 };
@@ -47,6 +39,4 @@ const createAuthGuard = (
 	};
 };
 
-const authGuard = createAuthGuard(token);
-
-export { authGuard };
+export { createAuthGuard };

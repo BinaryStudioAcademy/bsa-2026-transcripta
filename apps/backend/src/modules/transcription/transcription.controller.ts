@@ -1,4 +1,3 @@
-import { authGuard } from "~/libs/modules/auth/auth-guard.js";
 import {
 	type APIHandlerOptions,
 	type APIHandlerResponse,
@@ -43,7 +42,6 @@ class TranscriptionController extends BaseController {
 				),
 			method: "POST",
 			path: "/transcribe",
-			preHandler: authGuard,
 		});
 	}
 
