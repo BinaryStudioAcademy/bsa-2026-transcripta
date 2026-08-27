@@ -50,6 +50,14 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			AUTH: {
+				JWT_SECRET: {
+					default: null,
+					doc: "Secret used to sign JWT tokens",
+					env: "JWT_SECRET",
+					format: String,
+				},
+			},
 			BEDROCK: {
 				MODEL_ID: {
 					default: "us.amazon.nova-pro-v1:0",
