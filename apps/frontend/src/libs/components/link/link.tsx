@@ -19,4 +19,4 @@ const Link: React.FC<Properties> = ({
 	</NavLink>
 );
 
-export { /** @public */ Link };
+export { Link };

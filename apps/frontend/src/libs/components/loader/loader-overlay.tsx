@@ -15,4 +15,4 @@ const LoaderOverlay: React.FC<Properties> = ({
 	</div>
 );
 
-export { LoaderOverlay };
+export { /** @public */ LoaderOverlay };
