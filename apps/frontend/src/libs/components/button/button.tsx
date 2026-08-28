@@ -3,7 +3,6 @@ import styles from "./styles.module.css";
 type Properties = {
 	isDisabled?: boolean;
 	isFluid?: boolean;
-	// isLoading?: boolean;
 	isPrimary?: boolean;
 	label: string;
 	type?: "button" | "submit";
