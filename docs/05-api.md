@@ -15,7 +15,7 @@ this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(documentId) });
 // '/api/v1/documents/:id' + { id: '47' } -> '/api/v1/documents/47'
 ```
 
-19 routes over 16 distinct paths in total. That is the entire backend.
+20 routes over 17 distinct paths in total. That is the entire backend.
 
 **Where everything is declared.** Prefixes live in the `APIPath` enum
 (`packages/shared`), which currently holds only `AUTH` and `USERS`; we add
@@ -52,6 +52,8 @@ list below needs its own block — 19 blocks that nobody will write for us.
 | -------- | -------------------------------- | ---------------------------------------------- |
 | `POST`   | `/api/v1/auth/sign-up`           | Registration. **Skeleton exists, no hashing**  |
 | `POST`   | `/api/v1/auth/sign-in`           | Sign-in, returns a JWT. **Does not exist yet** |
+|          |                                  |                                                |
+| `GET`    | `/api/v1/users/me`               | Get current authenticated user                 |
 |          |                                  |                                                |
 | `GET`    | `/api/v1/documents`              | List of documents                              |
 | `POST`   | `/api/v1/documents`              | Create + get an upload link                    |

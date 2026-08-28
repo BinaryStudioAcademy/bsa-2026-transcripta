@@ -56,8 +56,23 @@ class UserService implements Service {
 		return Promise.resolve(true);
 	}
 
-	public find(): ReturnType<Service["find"]> {
-		return Promise.resolve(null);
+	public async find(id: null | number): Promise<UserGetAllItemResponseDto> {
+		const userNotFoundError = new HTTPError({
+			message: UserErrorMessage.USER_NOT_FOUND,
+			status: HTTPCode.UNAUTHORIZED,
+		});
+
+		if (id === null) {
+			throw userNotFoundError;
+		}
+
+		const user = await this.userRepository.findById(id);
+
+		if (user === null) {
+			throw userNotFoundError;
+		}
+
+		return user.toObject();
 	}
 
 	public async findAll(): Promise<UserGetAllResponseDto> {
