@@ -69,7 +69,7 @@ const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 						name="password"
 						type="password"
 					/>
-					<Button label="Sign in" type="submit" />
+					<Button isFluid isPrimary label="Sign in" type="submit" />
 				</form>
 				<div className={styles["sign-in__form-footer"]}>
 					{"No account yet? "}
