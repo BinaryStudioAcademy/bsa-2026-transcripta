@@ -166,7 +166,12 @@ const { actions, name, reducer } = createSlice({
 		// handler. We store the previous page state so there is something to undo.
 		verifyOptimistic(state, action: PayloadAction<VerifyRequestDto>) {
 			const page = state.byId[action.payload.pageId];
-			state.rollback[action.payload.pageId] = page.status;
+			// Everything the optimistic step changes goes in here, or the rollback
+			// will restore half the state. It is an object for exactly that reason.
+			state.rollback[action.payload.pageId] = {
+				cursorPageNo: state.cursorPageNo,
+				status: page.status,
+			};
 			page.status = action.payload.action;
 			state.cursorPageNo += 1;
 		},
@@ -179,7 +184,10 @@ const { actions, name, reducer } = createSlice({
 		});
 		builder.addCase(verifyPage.rejected, (state, { meta, payload }) => {
 			const { pageId } = meta.arg;
-			state.byId[pageId].status = state.rollback[pageId]; // rollback
+			const previous = state.rollback[pageId];
+
+			state.byId[pageId].status = previous.status;
+			state.cursorPageNo = previous.cursorPageNo;
 			delete state.rollback[pageId];
 			state.dataStatus = DataStatus.REJECTED;
 			state.lastError = payload;
@@ -193,9 +201,15 @@ keypress; the thunk follows. Put the optimistic update inside the thunk and it
 runs a microtask later — during fast `Enter` bursts the UI visibly stutters.
 
 **The `rollback` map has to be maintained by hand.** This is exactly what
-`patch.undo()` would give you in RTK Query. Without the saved previous status
+`patch.undo()` would give you in RTK Query. Without the saved previous state
 there is nowhere to roll back to: `rejected` knows only the thunk's argument,
 not what the state held before it.
+
+**Store an object, not a bare status.** The optimistic step changes the page
+status _and_ the cursor, so restoring only the status leaves the user one page
+further along than the page they verified — and every subsequent failure
+compounds it. Keeping the whole snapshot in one entry means the next field
+added optimistically cannot be silently forgotten.
 
 **The error code is read from `HTTPError`, not from the response.**
 `BaseHTTPApi` parses the body itself and throws an `HTTPError` with `status`,
