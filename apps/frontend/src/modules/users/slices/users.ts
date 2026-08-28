@@ -1,1 +1,1 @@
-export { /** @public */ actions, reducer } from "./users.slice.js";
+export { reducer } from "./users.slice.js";
