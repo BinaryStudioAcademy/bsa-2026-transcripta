@@ -1,0 +1,18 @@
+:root {
+	--font-display: "Fraunces", georgia, "Times New Roman", serif;
+	--font-ui: "Inter", system-ui, -apple-system, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+	--fs-2xs: 11px;
+	--fs-xs: 12px;
+	--fs-sm: 13px;
+	--fs-md: 14px;
+	--fs-lg: 16px;
+	--fs-xl: 20px;
+	--fs-2xl: 26px;
+	--fs-3xl: 34px;
+	--fs-display: 52px;
+	--lh-tight: 1.15;
+	--lh-ui: 1.45;
+	--lh-read: 1.65;
+	--ls-caps: 0.75px; /* was as 0.07em in design system, but have no em and rem restriction */
+}

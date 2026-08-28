@@ -1,4 +1,5 @@
-import { Button, Input } from "~/libs/components/components.js";
+import { Button, Input, Link } from "~/libs/components/components.js";
+import { AppRoute } from "~/libs/enums/enums.js";
 import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
 import {
 	type UserSignUpRequestDto,
@@ -26,7 +27,7 @@ const SignUpForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 
 	return (
 		<>
-			<h3>Sign Up</h3>
+			<h1>Sign Up</h1>
 			<form onSubmit={handleFormSubmit}>
 				<p>
 					<Input
@@ -35,7 +36,7 @@ const SignUpForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 						label="Email"
 						name="email"
 						placeholder="Enter your email"
-						type="text"
+						type="email"
 					/>
 				</p>
 				<p>
@@ -45,11 +46,14 @@ const SignUpForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 						label="Password"
 						name="password"
 						placeholder="Enter your password"
-						type="text"
+						type="password"
 					/>
 				</p>
 				<Button label="Sign up" type="submit" />
 			</form>
+			<p>
+				Already have an account? <Link to={AppRoute.SIGN_IN}>Sign in</Link>
+			</p>
 		</>
 	);
 };
