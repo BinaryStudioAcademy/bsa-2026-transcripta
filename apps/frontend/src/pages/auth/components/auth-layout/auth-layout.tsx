@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Link } from "~/libs/components/components.js";
+import { Link, LogoIcon } from "~/libs/components/components.js";
 import { type AppRoute } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 
@@ -44,24 +44,7 @@ const AuthLayout: React.FC<Properties> = ({
 			<div className={styles["auth-page__container"]}>
 				<div className={styles["auth-card"]}>
 					<div className={styles["auth-card__logo-container"]}>
-						<span className={styles["auth-card__logo-icon"]}>
-							<svg height="14" viewBox="0 0 48 48" width="14">
-								<path
-									d="M7 12 L41 8.5 L39.5 17 L8.5 19.5 Z"
-									fill="var(--on-accent)"
-								></path>
-								<path
-									d="M19.5 15.5 L29 14.5 L26 42 L22.5 42 Z"
-									fill="var(--on-accent)"
-								></path>
-								<circle
-									cx="33.5"
-									cy="38.5"
-									fill="var(--on-accent)"
-									r="3.4"
-								></circle>
-							</svg>
-						</span>
+						<LogoIcon size="small" />
 						<span className={styles["auth-card__logo-text"]}>Transcripta</span>
 					</div>
 					<div className={styles["auth-card__form-container"]}>
