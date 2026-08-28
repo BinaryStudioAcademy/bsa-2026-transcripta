@@ -1,0 +1,54 @@
+.button {
+	height: var(--ctl-lg);
+	padding: 0 var(--fs-md);
+	font-family: var(--font-ui);
+	font-size: var(--fs-md);
+	font-weight: 500;
+	line-height: var(--lh-tight);
+	cursor: pointer;
+	user-select: none;
+	border: none;
+	border-radius: var(--r-md);
+}
+
+.button:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+.button:active {
+	transform: translateY(1px);
+}
+
+.button--basic {
+	color: var(--text-2);
+	background-color: transparent;
+}
+
+.button--basic:hover,
+.button--basic:active {
+	color: var(--text);
+	background-color: var(--surface-2);
+}
+
+.button--primary {
+	color: var(--on-accent);
+	background-color: var(--accent);
+}
+
+.button--primary:hover {
+	background-color: var(--accent-hover);
+}
+
+.button--primary:active {
+	background-color: var(--accent-active);
+}
+
+.button--fluid {
+	width: 100%;
+}
+
+.button--disabled {
+	pointer-events: none;
+	cursor: default;
+}
