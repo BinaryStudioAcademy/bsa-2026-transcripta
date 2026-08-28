@@ -16,7 +16,7 @@ const initialState: State = {
 	users: [],
 };
 
-const { name, reducer } = createSlice({
+const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		builder.addCase(loadAll.pending, (state) => {
 			state.dataStatus = DataStatus.PENDING;
@@ -34,4 +34,4 @@ const { name, reducer } = createSlice({
 	reducers: {},
 });
 
-export { name, reducer };
+export { actions, name, reducer };
