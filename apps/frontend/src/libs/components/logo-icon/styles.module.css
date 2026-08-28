@@ -1,0 +1,27 @@
+.logo-icon {
+	display: inline-grid;
+	place-items: center;
+	background-color: var(--accent);
+}
+
+.sm {
+	width: 20px;
+	height: 20px;
+	border-radius: var(--r-md);
+}
+
+.sm svg {
+	width: 14px;
+	height: 14px;
+}
+
+.md {
+	width: 26px;
+	height: 26px;
+	border-radius: 5px;
+}
+
+.md svg {
+	width: 18px;
+	height: 18px;
+}
