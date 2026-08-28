@@ -1,7 +1,7 @@
 type Service<T = unknown> = {
 	create(payload: unknown): Promise<T>;
 	delete(): Promise<boolean>;
-	find(id: null | number): Promise<T>;
+	find(id: number): Promise<T>;
 	findAll(): Promise<{
 		items: T[];
 	}>;
