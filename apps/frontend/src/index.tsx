@@ -10,6 +10,7 @@ import {
 import { AppRoute } from "~/libs/enums/enums.js";
 import { store } from "~/libs/modules/store/store.js";
 import { Auth } from "~/pages/auth/auth.jsx";
+import { Documents } from "~/pages/documents/documents.jsx";
 import { Test } from "~/pages/test/test.jsx";
 
 createRoot(document.querySelector("#root") as HTMLElement).render(
@@ -20,7 +21,7 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 					{
 						children: [
 							{
-								element: "Root",
+								element: <Documents />,
 								path: AppRoute.ROOT,
 							},
 							{
