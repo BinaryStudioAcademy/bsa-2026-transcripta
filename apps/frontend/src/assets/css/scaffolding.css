@@ -118,16 +118,6 @@ body {
 	padding: 4px 8px 14px;
 }
 
-.sidebar__brand-tile {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 26px;
-	height: 26px;
-	background: var(--accent);
-	border-radius: 5px;
-}
-
 .sidebar__brand-wordmark {
 	font:
 		600 16px/1 var(--font-display),
