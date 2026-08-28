@@ -8,15 +8,21 @@ import { configureStore } from "@reduxjs/toolkit";
 import { AppEnvironment } from "~/libs/enums/enums.js";
 import { type Config } from "~/libs/modules/config/config.js";
 import { authApi, reducer as authReducer } from "~/modules/auth/auth.js";
+import {
+	documentApi,
+	reducer as documentsReducer,
+} from "~/modules/documents/documents.js";
 import { userApi, reducer as usersReducer } from "~/modules/users/users.js";
 
 type ExtraArguments = {
 	authApi: typeof authApi;
+	documentApi: typeof documentApi;
 	userApi: typeof userApi;
 };
 
 type RootReducer = {
 	auth: ReturnType<typeof authReducer>;
+	documents: ReturnType<typeof documentsReducer>;
 	users: ReturnType<typeof usersReducer>;
 };
 
@@ -41,6 +47,7 @@ class Store {
 			},
 			reducer: {
 				auth: authReducer,
+				documents: documentsReducer,
 				users: usersReducer,
 			},
 		});
@@ -49,6 +56,7 @@ class Store {
 	public get extraArguments(): ExtraArguments {
 		return {
 			authApi,
+			documentApi,
 			userApi,
 		};
 	}
