@@ -34,18 +34,18 @@ const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 						<path
 							d="M7 12 L41 8.5 L39.5 17 L8.5 19.5 Z"
 							data-dc-tpl="31"
-							fill="var(--color-primary-contrast)"
+							fill="var(--on-accent)"
 						></path>
 						<path
 							d="M19.5 15.5 L29 14.5 L26 42 L22.5 42 Z"
 							data-dc-tpl="32"
-							fill="var(--color-primary-contrast)"
+							fill="var(--on-accent)"
 						></path>
 						<circle
 							cx="33.5"
 							cy="38.5"
 							data-dc-tpl="33"
-							fill="var(--color-primary-contrast)"
+							fill="var(--on-accent)"
 							r="3.4"
 						></circle>
 					</svg>

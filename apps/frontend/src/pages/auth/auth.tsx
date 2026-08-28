@@ -1,5 +1,3 @@
-import { useNavigate } from "react-router-dom";
-
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -19,7 +17,6 @@ const Auth: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
-	const navigate = useNavigate();
 
 	const handleSignInSubmit = useCallback(
 		(payload: UserSignInRequestDto): void => {

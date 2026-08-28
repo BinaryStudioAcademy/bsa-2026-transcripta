@@ -1,18 +1,18 @@
 .button {
-	height: var(--input-height);
-	padding: 0 var(--space-lg);
-	font-family: var(--font-family-ui);
-	font-size: var(--font-size-base);
-	font-weight: var(--font-weight-medium);
-	line-height: var(--line-height-tight);
+	height: var(--ctl-lg);
+	padding: 0 var(--fs-md);
+	font-family: var(--font-ui);
+	font-size: var(--fs-md);
+	font-weight: 500;
+	line-height: var(--lh-tight);
 	cursor: pointer;
 	user-select: none;
 	border: none;
-	border-radius: var(--border-radius-sm);
+	border-radius: var(--r-md);
 }
 
 .button:focus-visible {
-	outline: 2px solid var(--color-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
@@ -21,27 +21,27 @@
 }
 
 .button--basic {
-	color: var(--color-text-secondary);
+	color: var(--text-2);
 	background-color: transparent;
 }
 
 .button--basic:hover,
 .button--basic:active {
-	color: var(--color-text-primary);
-	background-color: var(--color-background-hover);
+	color: var(--text);
+	background-color: var(--surface-2);
 }
 
 .button--primary {
-	color: var(--color-text-contrast);
-	background-color: var(--color-accent);
+	color: var(--on-accent);
+	background-color: var(--accent);
 }
 
 .button--primary:hover {
-	background-color: var(--color-accent-hover);
+	background-color: var(--accent-hover);
 }
 
 .button--primary:active {
-	background-color: var(--color-accent-active);
+	background-color: var(--accent-active);
 }
 
 .button--fluid {

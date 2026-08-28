@@ -32,7 +32,9 @@ const Input = <T extends FieldValues>({
 	const error = errors[name]?.message;
 	const hasError = Boolean(error);
 
-	const inputClassName = `${styles["input"] as string} ${hasError ? (styles["input--error"] as string) : ""}`;
+	const inputClassName = [styles["input"], hasError && styles["input--error"]]
+		.filter(Boolean)
+		.join(" ");
 
 	return (
 		<label className={styles["label"]}>
