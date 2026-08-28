@@ -13,6 +13,7 @@ import styles from "./styles.module.css";
 type Properties<T extends FieldValues> = {
 	control: Control<T, null>;
 	errors: FieldErrors<T>;
+	helperText?: string;
 	label: string;
 	name: FieldPath<T>;
 	placeholder?: string;
@@ -22,6 +23,7 @@ type Properties<T extends FieldValues> = {
 const Input = <T extends FieldValues>({
 	control,
 	errors,
+	helperText,
 	label,
 	name,
 	placeholder = "",
@@ -31,6 +33,7 @@ const Input = <T extends FieldValues>({
 
 	const error = errors[name]?.message;
 	const hasError = Boolean(error);
+	const hasHelperText = Boolean(helperText) && !hasError;
 
 	const inputClassName = [styles["input"], hasError && styles["input--error"]]
 		.filter(Boolean)
@@ -47,6 +50,9 @@ const Input = <T extends FieldValues>({
 			/>
 			{hasError && (
 				<span className={styles["error-text"]}>{error as string}</span>
+			)}
+			{hasHelperText && (
+				<span className={styles["helper-text"]}>{helperText}</span>
 			)}
 		</label>
 	);

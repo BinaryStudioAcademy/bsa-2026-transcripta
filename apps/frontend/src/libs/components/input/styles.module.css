@@ -27,6 +27,10 @@
 	border-radius: var(--r-md);
 }
 
+.input::placeholder {
+	color: var(--text-3);
+}
+
 .input:hover {
 	border-color: var(--text-3);
 }
@@ -47,4 +51,13 @@
 	font-size: var(--fs-sm);
 	line-height: var(--lh-ui);
 	color: var(--danger-text);
+}
+
+.helper-text {
+	margin-top: 6px;
+	font-family: var(--font-ui);
+	font-size: var(--fs-xs);
+	font-weight: 400;
+	line-height: 1.4;
+	color: var(--text-3);
 }
