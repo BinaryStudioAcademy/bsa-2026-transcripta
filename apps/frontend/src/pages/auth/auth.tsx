@@ -6,7 +6,10 @@ import {
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
-import { type UserSignUpRequestDto } from "~/modules/users/users.js";
+import {
+	UserSignInRequestDto,
+	type UserSignUpRequestDto,
+} from "~/modules/users/users.js";
 
 import { SignInForm, SignUpForm } from "./components/components.js";
 
@@ -15,9 +18,18 @@ const Auth: React.FC = () => {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 
-	const handleSignInSubmit = useCallback((): void => {
-		// handle sign in
-	}, []);
+	const handleSignInSubmit = useCallback(
+		(payload: UserSignInRequestDto): void => {
+			void dispatch(authActions.signIn(payload))
+				.unwrap()
+				.then(() => navigate(AppRoute.ROOT))
+				.catch((error: unknown) => {
+					// eslint-disable-next-line no-console
+					console.error(error);
+				});
+		},
+		[dispatch, navigate],
+	);
 
 	const handleSignUpSubmit = useCallback(
 		(payload: UserSignUpRequestDto): void => {

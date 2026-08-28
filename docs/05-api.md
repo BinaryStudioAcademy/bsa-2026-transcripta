@@ -15,7 +15,7 @@ this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(documentId) });
 // '/api/v1/documents/:id' + { id: '47' } -> '/api/v1/documents/47'
 ```
 
-19 routes over 16 distinct paths in total. That is the entire backend.
+20 routes over 17 distinct paths in total. That is the entire backend.
 
 **Where everything is declared.** Prefixes live in the `APIPath` enum
 (`packages/shared`), which currently holds only `AUTH` and `USERS`; we add
@@ -53,6 +53,8 @@ list below needs its own block — 19 blocks that nobody will write for us.
 | `POST`   | `/api/v1/auth/sign-up`           | Registration. **Skeleton exists, no hashing**  |
 | `POST`   | `/api/v1/auth/sign-in`           | Sign-in, returns a JWT. **Does not exist yet** |
 |          |                                  |                                                |
+| `GET`    | `/api/v1/users/me`               | Get current authenticated user                 |
+|          |                                  |                                                |
 | `GET`    | `/api/v1/documents`              | List of documents                              |
 | `POST`   | `/api/v1/documents`              | Create + get an upload link                    |
 | `GET`    | `/api/v1/documents/:id`          | Details + progress                             |
@@ -74,6 +76,37 @@ list below needs its own block — 19 blocks that nobody will write for us.
 |          |                                  |                                                |
 | `POST`   | `/api/v1/documents/:id/export`   | Request an export                              |
 | `GET`    | `/api/v1/exports/:id`            | Collect the link                               |
+
+---
+
+## `GET /api/v1/documents`
+
+Requires a valid JWT. Returns only documents owned by the authenticated user,
+sorted by `created_at` descending (newest first). No pagination in release 1.
+
+```jsonc
+// response 200
+{
+	"items": [
+		{
+			"id": 2,
+			"title": "Birth records, Kharkiv county, 1892",
+			"status": "draft",
+			"pageCount": 0,
+			"createdAt": "2026-08-28T08:15:00.000Z",
+		},
+		{
+			"id": 1,
+			"title": "Parish register of Dykanka, 1887",
+			"status": "processing",
+			"pageCount": 300,
+			"createdAt": "2026-08-07T10:00:00.000Z",
+		},
+	],
+}
+```
+
+An empty library is still `200` with `{ "items": [] }`.
 
 ---
 

@@ -1,5 +1,7 @@
 import { APIPath } from "~/libs/enums/enums.js";
+import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
+	APIHandlerOptions,
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
@@ -35,6 +37,14 @@ class UserController extends BaseController {
 			handler: () => this.findAll(),
 			method: "GET",
 			path: UsersApiPath.ROOT,
+			preHandler: authGuard,
+		});
+
+		this.addRoute({
+			handler: this.findById.bind(this),
+			method: "GET",
+			path: UsersApiPath.ME,
+			preHandler: authGuard,
 		});
 	}
 
@@ -56,6 +66,35 @@ class UserController extends BaseController {
 	private async findAll(): Promise<APIHandlerResponse> {
 		return {
 			payload: await this.userService.findAll(),
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /users/me:
+	 *   get:
+	 *     summary: Get current authenticated user
+	 *     description: Returns current user email and id
+	 *     security:
+	 *       - bearerAuth: []
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: "#/components/schemas/User"
+	 *       401:
+	 *         description: Unauthorized
+	 */
+	private async findById(
+		options: APIHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		const userId = options.user?.userId;
+
+		return {
+			payload: await this.userService.find(userId || null),
 			status: HTTPCode.OK,
 		};
 	}
