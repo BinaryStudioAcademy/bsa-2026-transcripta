@@ -101,7 +101,7 @@ to dig deeper.
 | In Progress       | the developer            | someone is writing this now            |
 | Blocked           | the developer            | stuck on a dependency or a question    |
 | PR Review         | the developer            | PR is open, waiting for review         |
-| Ready for Testing | lead                     | all tasks of the story are done        |
+| Ready for Testing | the developer            | all tasks of the story are done        |
 | In Testing        | QA                       | QA is checking the end-to-end scenario |
 | Done              | QA / the developer       | finished                               |
 
