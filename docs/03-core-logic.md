@@ -249,8 +249,10 @@ function extractEntities(text, structured, preset): Entity[] {
 	}
 
 	// 2. Capitalised words not at the start of a sentence — a heuristic.
+	//    `other`, not a kind of its own: the heuristic cannot tell a surname
+	//    from a place, and `lexicon_kind` has no value for "probably a name".
 	for (const m of text.matchAll(/(?<![.!?]\s)\b[A-Z][a-z']{2,}/g)) {
-		out.push({ kind: "proper_noun", value: m[0] });
+		out.push({ kind: "other", value: m[0] });
 	}
 
 	return dedupe(out);
