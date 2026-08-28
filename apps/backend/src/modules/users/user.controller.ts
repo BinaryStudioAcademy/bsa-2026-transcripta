@@ -1,4 +1,5 @@
 import { APIPath } from "~/libs/enums/enums.js";
+import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
 	type APIHandlerResponse,
 	BaseController,
@@ -35,6 +36,7 @@ class UserController extends BaseController {
 			handler: () => this.findAll(),
 			method: "GET",
 			path: UsersApiPath.ROOT,
+			preHandler: authGuard,
 		});
 	}
 
