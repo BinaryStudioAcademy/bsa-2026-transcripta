@@ -4,6 +4,10 @@ import { config } from "dotenv";
 import { AppEnvironment } from "~/libs/enums/enums.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
+import {
+	DEVELOPMENT_JWT_SECRET,
+	DevelopmentJwtSecretMessage,
+} from "./libs/constants/constants.js";
 import { type Config, type EnvironmentSchema } from "./libs/types/types.js";
 
 class BaseConfig implements Config {
@@ -26,6 +30,9 @@ class BaseConfig implements Config {
 
 		this.ENV = this.envSchema.getProperties();
 		this.logger.info(".env file found and successfully parsed!");
+
+		this.assertProductionJwtSecret();
+		this.warnOnDevJwtSecret();
 	}
 
 	private get envSchema(): LibraryConfig<EnvironmentSchema> {
@@ -52,7 +59,7 @@ class BaseConfig implements Config {
 			},
 			AUTH: {
 				JWT_SECRET: {
-					default: null,
+					default: DEVELOPMENT_JWT_SECRET,
 					doc: "Secret used to sign JWT tokens",
 					env: "JWT_SECRET",
 					format: String,
@@ -99,6 +106,20 @@ class BaseConfig implements Config {
 				},
 			},
 		});
+	}
+
+	private assertProductionJwtSecret(): void {
+		const isProduction = this.ENV.APP.ENVIRONMENT === AppEnvironment.PRODUCTION;
+
+		if (isProduction && this.ENV.AUTH.JWT_SECRET === DEVELOPMENT_JWT_SECRET) {
+			throw new Error(DevelopmentJwtSecretMessage.PRODUCTION_ERROR);
+		}
+	}
+
+	private warnOnDevJwtSecret(): void {
+		if (this.ENV.AUTH.JWT_SECRET === DEVELOPMENT_JWT_SECRET) {
+			this.logger.warn(DevelopmentJwtSecretMessage.WARNING);
+		}
 	}
 }
 
