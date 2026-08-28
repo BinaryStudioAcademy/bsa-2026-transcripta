@@ -1,0 +1,34 @@
+import { APIPath, ContentType } from "~/libs/enums/enums.js";
+import { BaseHTTPApi } from "~/libs/modules/api/api.js";
+import { type HTTP } from "~/libs/modules/http/http.js";
+import { type Storage } from "~/libs/modules/storage/storage.js";
+
+import { DocumentsApiPath } from "./libs/enums/enums.js";
+import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
+
+type Constructor = {
+	baseUrl: string;
+	http: HTTP;
+	storage: Storage;
+};
+
+class DocumentApi extends BaseHTTPApi {
+	public constructor({ baseUrl, http, storage }: Constructor) {
+		super({ baseUrl, http, path: APIPath.DOCUMENTS, storage });
+	}
+
+	public async getAll(): Promise<DocumentGetAllResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.ROOT, {}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: "GET",
+			},
+		);
+
+		return await response.json<DocumentGetAllResponseDto>();
+	}
+}
+
+export { DocumentApi };
