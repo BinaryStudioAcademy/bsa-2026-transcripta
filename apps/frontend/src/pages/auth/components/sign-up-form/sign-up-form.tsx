@@ -1,4 +1,4 @@
-import { Button, Input, Link } from "~/libs/components/components.js";
+import { Button, Input } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
 import {
@@ -6,6 +6,8 @@ import {
 	userSignUpValidationSchema,
 } from "~/modules/users/users.js";
 
+import { AuthLayout } from "../auth-layout/auth-layout.js";
+import authLayoutStyles from "../auth-layout/styles.module.css";
 import { DEFAULT_SIGN_UP_PAYLOAD } from "./libs/constants.js";
 
 type Properties = {
@@ -26,35 +28,36 @@ const SignUpForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 	);
 
 	return (
-		<>
-			<h1>Sign Up</h1>
-			<form onSubmit={handleFormSubmit}>
-				<p>
-					<Input
-						control={control}
-						errors={errors}
-						label="Email"
-						name="email"
-						placeholder="Enter your email"
-						type="email"
-					/>
-				</p>
-				<p>
-					<Input
-						control={control}
-						errors={errors}
-						label="Password"
-						name="password"
-						placeholder="Enter your password"
-						type="password"
-					/>
-				</p>
-				<Button label="Sign up" type="submit" />
+		<AuthLayout
+			description="Turn scanned handwritten pages into verified text."
+			footerText="Already have an account?"
+			linkRoute={AppRoute.SIGN_IN}
+			linkText="Sign in"
+			title="Create your account"
+		>
+			<form
+				className={authLayoutStyles["auth-card__form"]}
+				onSubmit={handleFormSubmit}
+			>
+				<Input
+					control={control}
+					errors={errors}
+					label="Email"
+					name="email"
+					placeholder="you@archive.org"
+					type="email"
+				/>
+				<Input
+					control={control}
+					errors={errors}
+					helperText="At least 8 characters."
+					label="Password"
+					name="password"
+					type="password"
+				/>
+				<Button isFluid isPrimary label="Create account" type="submit" />
 			</form>
-			<p>
-				Already have an account? <Link to={AppRoute.SIGN_IN}>Sign in</Link>
-			</p>
-		</>
+		</AuthLayout>
 	);
 };
 

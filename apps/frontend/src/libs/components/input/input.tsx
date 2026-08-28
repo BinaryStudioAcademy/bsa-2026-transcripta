@@ -8,9 +8,12 @@ import {
 
 import { useFormController } from "~/libs/hooks/hooks.js";
 
+import styles from "./styles.module.css";
+
 type Properties<T extends FieldValues> = {
 	control: Control<T, null>;
 	errors: FieldErrors<T>;
+	helperText?: string;
 	label: string;
 	name: FieldPath<T>;
 	placeholder?: string;
@@ -20,6 +23,7 @@ type Properties<T extends FieldValues> = {
 const Input = <T extends FieldValues>({
 	control,
 	errors,
+	helperText,
 	label,
 	name,
 	placeholder = "",
@@ -29,12 +33,27 @@ const Input = <T extends FieldValues>({
 
 	const error = errors[name]?.message;
 	const hasError = Boolean(error);
+	const hasHelperText = Boolean(helperText) && !hasError;
+
+	const inputClassName = [styles["input"], hasError && styles["input--error"]]
+		.filter(Boolean)
+		.join(" ");
 
 	return (
-		<label>
-			<span>{label}</span>
-			<input {...field} placeholder={placeholder} type={type} />
-			{hasError && <span>{error as string}</span>}
+		<label className={styles["label"]}>
+			<span className={styles["label-text"]}>{label}</span>
+			<input
+				{...field}
+				className={inputClassName}
+				placeholder={placeholder}
+				type={type}
+			/>
+			{hasError && (
+				<span className={styles["error-text"]}>{error as string}</span>
+			)}
+			{hasHelperText && (
+				<span className={styles["helper-text"]}>{helperText}</span>
+			)}
 		</label>
 	);
 };
