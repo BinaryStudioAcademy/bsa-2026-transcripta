@@ -1,5 +1,6 @@
 import { type BaseEncryption } from "~/libs/modules/encryption/base-encryption.module.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
+import { type TokenServiceInterface } from "~/libs/modules/token/token.js";
 import {
 	type UserSignInRequestDto,
 	type UserSignInResponseDto,
@@ -8,13 +9,21 @@ import {
 } from "~/modules/users/libs/types/types.js";
 import { type UserService } from "~/modules/users/user.service.js";
 
+import { AuthErrorMessage } from "./libs/enums/auth-error-message.enum.js";
+
 class AuthService {
 	private encryption: BaseEncryption;
+	private token: TokenServiceInterface;
 	private userService: UserService;
 
-	public constructor(userService: UserService, encryption: BaseEncryption) {
+	public constructor(
+		userService: UserService,
+		encryption: BaseEncryption,
+		token: TokenServiceInterface,
+	) {
 		this.userService = userService;
 		this.encryption = encryption;
+		this.token = token;
 	}
 
 	public async signIn(
@@ -24,7 +33,7 @@ class AuthService {
 
 		if (!userEntity) {
 			throw new HTTPError({
-				message: "Invalid email or password",
+				message: AuthErrorMessage.INVALID_CREDENTIALS,
 				status: HTTPCode.UNAUTHORIZED,
 			});
 		}
@@ -39,24 +48,27 @@ class AuthService {
 
 		if (!isValidPassword) {
 			throw new HTTPError({
-				message: "invalid email or password",
+				message: AuthErrorMessage.INVALID_CREDENTIALS,
 				status: HTTPCode.UNAUTHORIZED,
 			});
 		}
 
-		// This can be modified once the #5 JWT token service task is done
-		const token = "IMAGINARY_TOKEN";
+		const user = userEntity.toObject();
+		const token = await this.token.create({ userId: user.id });
 
 		return {
 			token,
-			user: userEntity.toObject(),
+			user,
 		};
 	}
 
-	public signUp(
+	public async signUp(
 		userRequestDto: UserSignUpRequestDto,
 	): Promise<UserSignUpResponseDto> {
-		return this.userService.create(userRequestDto);
+		const user = await this.userService.create(userRequestDto);
+		const token = await this.token.create({ userId: user.id });
+
+		return { token, user };
 	}
 }
 

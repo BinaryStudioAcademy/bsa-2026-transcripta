@@ -22,9 +22,9 @@ variable "instance_type" {
 }
 
 variable "root_volume_gb" {
-  description = "Root EBS size. Holds the OS, Docker images and the Postgres data volume; survives stop/start."
+  description = "Root EBS size. Holds the OS, Docker images and the Postgres data volume; survives stop/start. 15 GB ran out once: every deploy leaves the previous ~220 MB image behind and a full disk locks out SSM, so the box becomes unreachable."
   type        = number
-  default     = 15
+  default     = 30
 }
 
 variable "allowed_ssh_cidr" {

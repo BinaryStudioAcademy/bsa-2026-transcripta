@@ -44,6 +44,15 @@ Epic: Authentication & Access Control          the area
 
 We do not use the word "feature" — the middle level is a story.
 
+**When a story is worth having.** A story earns its place when it groups two or
+more tasks that make no sense apart — typically a backend half and a frontend
+half — and reads as one sentence at the demo. If it would hold a single task,
+skip it and hang the task straight off the epic: an empty layer is one more
+click between the epic and the work, and the `As a …, I want …` sentence starts
+sounding forced. A useful smell test: if the "I want" half is something the user
+never actually thinks about — "I want my document split into pages" — it is a
+step inside someone else's story, not a story.
+
 Prefixes: `[BE]` backend, `[FE]` frontend, `[QA]` testing, `[Setup]` tooling
 and access.
 

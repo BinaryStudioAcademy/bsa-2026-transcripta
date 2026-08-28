@@ -11,14 +11,16 @@ for the pages that follow.
 
 ### 1.1 Useful Links
 
-| Where                                                                    | What for                                                           |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| [Project board](https://github.com/orgs/BinaryStudioAcademy/projects/39) | Epics, user stories and tasks                                      |
-| [docs/README.md](docs/README.md)                                         | Documentation entry point, implementation order                    |
-| [docs/07-how-it-works.md](docs/07-how-it-works.md)                       | How the app works, in plain words                                  |
-| [docs/08-template-gaps.md](docs/08-template-gaps.md)                     | **What the template already has, what is a stub, what is missing** |
-| [docs/09-open-questions.md](docs/09-open-questions.md)                   | **What is still undecided before implementation starts**           |
-| [diagrams/README.md](docs/diagrams/README.md)                            | Seven diagrams with walkthroughs                                   |
+| Where                                                                    | What for                                                                |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [Project board](https://github.com/orgs/BinaryStudioAcademy/projects/39) | Epics, user stories and tasks                                           |
+| [docs/README.md](docs/README.md)                                         | Documentation entry point, implementation order                         |
+| [docs/07-how-it-works.md](docs/07-how-it-works.md)                       | How the app works, in plain words                                       |
+| [docs/08-template-gaps.md](docs/08-template-gaps.md)                     | **What the template already has, what is a stub, what is missing**      |
+| [docs/09-open-questions.md](docs/09-open-questions.md)                   | **What is still undecided before implementation starts**                |
+| [docs/12-claude-code.md](docs/12-claude-code.md)                         | Shared Claude Code agent and skill (after `git pull`)                   |
+| [docs/13-codex.md](docs/13-codex.md)                                     | Shared Codex CLI agent and skill (after `git pull` + trusting the repo) |
+| [diagrams/README.md](docs/diagrams/README.md)                            | Seven diagrams with walkthroughs                                        |
 
 ## 2. Domain
 
@@ -74,6 +76,8 @@ apart with a single `APP_MODE` environment variable.
 #### 5.2.2 Folder Structure
 
 1. assets - static assets (images, global styles)
+   - global theme tokens live in `assets/css/theme/`; components are styled
+     with CSS Modules (`*.module.css`) colocated with the component
 2. libs - shared libraries and utilities
 
    2.1 components - plain react components
@@ -217,6 +221,32 @@ Note that an issue title and its pull request title are **not** the same: the
 issue reads `[FE] Sign-in flow`, while the pull request must follow 7.1 —
 `TSA-1: Add sign-in flow to the frontend`. Danger checks the pull request title,
 never the issue title.
+
+### 7.5 Claude Code
+
+Shared helpers live in [`.claude/`](.claude/) and are available after `git
+pull` — no extra setup. Usage of the `code-review` agent and the
+`feature-assistant` skill:
+[docs/12-claude-code.md](docs/12-claude-code.md).
+
+### 7.6 AI Intended Usage
+
+AI is meant to support research and reference, not to write your code for you. Contributors should stay in control of what actually lands in the codebase, use AI to investigate and propose, then review and apply changes yourself.
+
+When you use AI to help with a task, expect its output in three parts:
+
+- Research — what it found in the codebase relevant to your request: files, modules, existing patterns, and any constraints that affect the approach.
+- References — links to the relevant files and lines in this repo (path:line), plus any external docs (library APIs, RFCs) that back up the suggested approach.
+- Code snippets — illustrative, non-applied examples of the proposed change (diff-style or fenced code blocks). These should not be written into the working tree — they're presented in the response only, for a human to review and apply.
+
+### 7.7 Codex
+
+Shared helpers live in [`.codex/`](.codex/) (agent config) and
+[`.agents/skills/feature-assistant/`](.agents/skills/feature-assistant/)
+(skill). Available after `git pull`, but Codex additionally requires marking
+the repo trusted once per machine before it loads them. Usage of the
+`code-review` agent and the `feature-assistant` skill:
+[docs/13-codex.md](docs/13-codex.md).
 
 ## 8. Deployment
 

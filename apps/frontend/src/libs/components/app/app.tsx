@@ -1,6 +1,10 @@
 import reactLogo from "~/assets/img/react.svg";
-import { Link, RouterOutlet } from "~/libs/components/components.js";
-import { AppRoute } from "~/libs/enums/enums.js";
+import {
+	Link,
+	LoaderOverlay,
+	RouterOutlet,
+} from "~/libs/components/components.js";
+import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -18,6 +22,7 @@ const App: React.FC = () => {
 	}));
 
 	const isRoot = pathname === AppRoute.ROOT;
+	const isLoading = isRoot && dataStatus === DataStatus.PENDING;
 
 	useEffect(() => {
 		if (isRoot) {
@@ -27,6 +32,7 @@ const App: React.FC = () => {
 
 	return (
 		<>
+			{isLoading && <LoaderOverlay label="Loading users" />}
 			<img alt="logo" className="App-logo" src={reactLogo} width="30" />
 
 			<ul className="App-navigation-list">

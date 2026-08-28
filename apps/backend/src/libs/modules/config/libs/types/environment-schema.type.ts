@@ -7,6 +7,9 @@ type EnvironmentSchema = {
 		HOST: string;
 		PORT: number;
 	};
+	AUTH: {
+		JWT_SECRET: string;
+	};
 	BEDROCK: {
 		MODEL_ID: string;
 		REGION: string;

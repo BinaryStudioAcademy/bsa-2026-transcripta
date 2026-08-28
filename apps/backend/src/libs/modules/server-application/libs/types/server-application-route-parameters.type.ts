@@ -1,4 +1,8 @@
-import { type FastifyReply, type FastifyRequest } from "fastify";
+import {
+	type FastifyReply,
+	type FastifyRequest,
+	type preHandlerAsyncHookHandler,
+} from "fastify";
 
 import { type HTTPMethod } from "~/libs/modules/http/http.js";
 import { type ValidationSchema } from "~/libs/types/types.js";
@@ -10,8 +14,11 @@ type ServerApplicationRouteParameters = {
 	) => Promise<void> | void;
 	method: HTTPMethod;
 	path: string;
+	preHandler?: preHandlerAsyncHookHandler;
 	validation?: {
 		body?: ValidationSchema;
+		params?: ValidationSchema;
+		query?: ValidationSchema;
 	};
 };
 

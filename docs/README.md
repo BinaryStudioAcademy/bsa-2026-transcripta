@@ -80,20 +80,22 @@ processing pipeline.
 
 ## Documents
 
-| File                                           | About                                                                   |
-| ---------------------------------------------- | ----------------------------------------------------------------------- |
-| [00-overview.md](00-overview.md)               | What this is, why, and for which documents                              |
-| [01-architecture.md](01-architecture.md)       | Monolith, components, stack, repository layout                          |
-| [02-data-pipeline.md](02-data-pipeline.md)     | **The file's path, step by step**                                       |
-| [03-core-logic.md](03-core-logic.md)           | **Context learning: how it works and how not to ruin it**               |
-| [04-database.md](04-database.md)               | 9 tables and why exactly these                                          |
-| [05-api.md](05-api.md)                         | 19 routes — the entire backend                                          |
-| [06-verification-ui.md](06-verification-ui.md) | The screen where the user lives                                         |
-| [07-how-it-works.md](07-how-it-works.md)       | **How the whole app works in plain words — from file to export**        |
-| [08-template-gaps.md](08-template-gaps.md)     | **What the repository has, what is a stub, what is missing**            |
-| [09-open-questions.md](09-open-questions.md)   | **What is not decided yet: columns without rules, undescribed screens** |
-| [10-infra.md](10-infra.md)                     | One EC2 host, two S3 buckets, what it costs and how to switch it off    |
-| [11-how-we-work.md](11-how-we-work.md)         | **The board, the releases, who moves what — start here as a newcomer**  |
+| File                                           | About                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------ |
+| [00-overview.md](00-overview.md)               | What this is, why, and for which documents                               |
+| [01-architecture.md](01-architecture.md)       | Monolith, components, stack, repository layout                           |
+| [02-data-pipeline.md](02-data-pipeline.md)     | **The file's path, step by step**                                        |
+| [03-core-logic.md](03-core-logic.md)           | **Context learning: how it works and how not to ruin it**                |
+| [04-database.md](04-database.md)               | 9 tables and why exactly these                                           |
+| [05-api.md](05-api.md)                         | 19 routes — the entire backend                                           |
+| [06-verification-ui.md](06-verification-ui.md) | The screen where the user lives                                          |
+| [07-how-it-works.md](07-how-it-works.md)       | **How the whole app works in plain words — from file to export**         |
+| [08-template-gaps.md](08-template-gaps.md)     | **What the repository has, what is a stub, what is missing**             |
+| [09-open-questions.md](09-open-questions.md)   | **What is not decided yet: columns without rules, undescribed screens**  |
+| [10-infra.md](10-infra.md)                     | One EC2 host, two S3 buckets, what it costs and how to switch it off     |
+| [11-how-we-work.md](11-how-we-work.md)         | **The board, the releases, who moves what — start here as a newcomer**   |
+| [12-claude-code.md](12-claude-code.md)         | Shared Claude Code agent (`code-review`) and skill (`feature-assistant`) |
+| [13-codex.md](13-codex.md)                     | Shared Codex CLI agent (`code-review`) and skill (`feature-assistant`)   |
 
 ## Diagrams
 
