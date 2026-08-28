@@ -150,20 +150,29 @@ class BaseServerApplication implements ServerApplication {
 
 	private initValidationCompiler(): void {
 		this.app.setValidatorCompiler<ValidationSchema>(({ schema }) => {
-			return <T, R = ReturnType<ValidationSchema["parse"]>>(data: T): R => {
-				return schema.parse(data) as R;
+			return (data: unknown) => {
+				const result = schema.safeParse(data);
+
+				if (!result.success) {
+					return { error: result.error };
+				}
+
+				return { value: result.data as unknown };
 			};
 		});
 	}
-
 	public addRoute(parameters: ServerApplicationRouteParameters): void {
-		const { handler, method, path, validation } = parameters;
+		const { handler, method, path, preHandler, validation } = parameters;
+		const preHandlers = preHandler ? [preHandler] : [];
 
 		this.app.route({
 			handler,
 			method,
+			preHandler: preHandlers,
 			schema: {
 				body: validation?.body,
+				params: validation?.params,
+				querystring: validation?.query,
 			},
 			url: path,
 		});
