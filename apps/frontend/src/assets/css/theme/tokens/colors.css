@@ -1,0 +1,95 @@
+:root {
+	/* — Paper ramp (warm neutrals, ivory → ink). The entire neutral world lives here; never cool grey. — */
+	--paper-100: #fffdf8;
+	--paper-200: #f6f1e7;
+	--paper-300: #efe7d8;
+	--paper-400: #e8e0d0;
+	--paper-500: #d5cab3;
+	--paper-600: #b0a488;
+	--paper-700: #8c8168;
+	--paper-800: #6b6254;
+	--paper-900: #211c14;
+
+	/* — Seal ramp (accent red, base #B23A2F). Means ACTION: primary buttons, links, focus, lexicon marks. Never used for errors. — */
+	--seal-100: oklch(95.5% 0.015 30deg);
+	--seal-200: oklch(90% 0.04 30deg);
+	--seal-300: oklch(81% 0.075 30deg);
+	--seal-400: oklch(69% 0.115 30deg);
+	--seal-500: oklch(54.5% 0.146 30deg);
+	--seal-600: oklch(49% 0.14 30deg);
+	--seal-700: oklch(43% 0.12 30deg);
+	--seal-800: oklch(36% 0.095 30deg);
+	--seal-900: oklch(29% 0.07 30deg);
+
+	/* — Moss ramp (success, base #4A7C59). Confirmed pages, done documents. — */
+	--moss-100: oklch(95% 0.02 152deg);
+	--moss-200: oklch(89% 0.045 152deg);
+	--moss-300: oklch(79% 0.07 152deg);
+	--moss-400: oklch(66% 0.085 152deg);
+	--moss-500: oklch(54% 0.083 152deg);
+	--moss-600: oklch(47% 0.075 150deg);
+	--moss-700: oklch(40% 0.065 150deg);
+	--moss-800: oklch(33% 0.05 150deg);
+	--moss-900: oklch(27% 0.04 150deg);
+
+	/* — Amber ramp (warning/budget, base #B7791F). Budget nearing limit, degraded-but-working. — */
+	--amber-100: oklch(96% 0.02 80deg);
+	--amber-200: oklch(90% 0.05 80deg);
+	--amber-300: oklch(81% 0.09 78deg);
+	--amber-400: oklch(71% 0.12 74deg);
+	--amber-500: oklch(61.5% 0.123 72deg);
+	--amber-600: oklch(53% 0.11 70deg);
+	--amber-700: oklch(45% 0.09 70deg);
+	--amber-800: oklch(37% 0.07 70deg);
+	--amber-900: oklch(29% 0.05 70deg);
+
+	/* — Error ramp (failure, base carmine — COOLER and darker than seal; hue 13 vs 30). Means FAILURE: failed pages, destructive, hard stops. Never the seal red. — */
+	--err-100: oklch(94.5% 0.02 13deg);
+	--err-200: oklch(88% 0.05 13deg);
+	--err-300: oklch(77% 0.09 13deg);
+	--err-400: oklch(63% 0.13 13deg);
+	--err-500: oklch(47% 0.145 13deg);
+	--err-600: oklch(42% 0.135 13deg);
+	--err-700: oklch(37% 0.115 13deg);
+	--err-800: oklch(31% 0.09 13deg);
+	--err-900: oklch(25% 0.07 13deg);
+
+	/* — Semantic aliases, light theme. Components reference ONLY these. — */
+	--bg: var(--paper-200);
+	--surface: var(--paper-100);
+	--surface-2: var(--paper-300);
+	--text: var(--paper-900);
+	--text-2: var(--paper-800);
+	--text-3: var(--paper-700);
+	--hairline: var(--paper-400);
+	--hairline-strong: var(--paper-500);
+	--accent: var(--seal-500);
+	--accent-hover: var(--seal-600);
+	--accent-active: var(--seal-700);
+	--accent-tint: var(--seal-100);
+	--accent-text: var(--seal-700);
+	--on-accent: var(--paper-100);
+	--link: var(--seal-600);
+	--ring: var(--seal-500);
+	--ok: var(--moss-500);
+	--ok-tint: var(--moss-100);
+	--ok-text: var(--moss-700);
+	--warn: var(--amber-500);
+	--warn-tint: var(--amber-100);
+	--warn-text: var(--amber-700);
+	--danger: var(--err-500);
+	--danger-hover: var(--err-600);
+	--danger-active: var(--err-700);
+	--danger-tint: var(--err-100);
+	--danger-text: var(--err-700);
+	--on-danger: var(--paper-100);
+	--mark-bg: var(--seal-100);
+	--mark-underline: var(--seal-400);
+	--tip-bg: var(--paper-900);
+	--tip-text: var(--paper-100);
+	--kbd-face: var(--paper-100);
+	--kbd-edge: var(--paper-500);
+	--scrim: oklch(25% 0.02 60deg / 42%);
+	--shadow-pop: 0 4px 16px oklch(30% 0.03 60deg / 16%);
+	--shadow-modal: 0 12px 40px oklch(25% 0.03 60deg / 26%);
+}
