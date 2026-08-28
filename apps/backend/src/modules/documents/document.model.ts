@@ -1,9 +1,11 @@
+import { DocumentStatus, type ValueOf } from "@transcripta/shared";
+
 import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
 
-import { type DocumentStatusValue } from "./libs/types/types.js";
+type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
 class DocumentModel extends AbstractModel {
 	public budgetUsd!: string;

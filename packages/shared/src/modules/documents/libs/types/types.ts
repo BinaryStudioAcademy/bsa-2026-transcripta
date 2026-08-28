@@ -1,3 +1,2 @@
-export { type DocumentListItemResponseDto } from "./document-list-item-response-dto.type.js";
-export { type DocumentListResponseDto } from "./document-list-response-dto.type.js";
-export { type DocumentStatusValue } from "./document-status-value.type.js";
+export { type DocumentGetAllItemResponseDto } from "./document-get-all-item-response-dto.type.js";
+export { type DocumentGetAllResponseDto } from "./document-get-all-response-dto.type.js";

@@ -25,9 +25,8 @@ export {
 } from "./libs/types/types.js";
 export { AuthApiPath } from "./modules/auth/auth.js";
 export {
-	type DocumentListItemResponseDto,
-	type DocumentListResponseDto,
-	type DocumentStatusValue,
+	type DocumentGetAllItemResponseDto,
+	type DocumentGetAllResponseDto,
 	DocumentsApiPath,
 	DocumentStatus,
 } from "./modules/documents/documents.js";

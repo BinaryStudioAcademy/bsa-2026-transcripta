@@ -1,7 +1,8 @@
-import {
-	type DocumentListItemResponseDto,
-	type DocumentStatusValue,
-} from "./libs/types/types.js";
+import { DocumentStatus, type ValueOf } from "@transcripta/shared";
+
+import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
+
+type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
 class DocumentEntity {
 	private createdAt: string;
@@ -72,7 +73,7 @@ class DocumentEntity {
 		});
 	}
 
-	public toObject(): DocumentListItemResponseDto {
+	public toObject(): DocumentGetAllItemResponseDto {
 		return {
 			createdAt: this.createdAt,
 			id: this.id,

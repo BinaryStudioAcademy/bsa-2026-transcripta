@@ -1,6 +1,6 @@
 import { type DocumentRepository } from "~/modules/documents/document.repository.js";
 
-import { type DocumentListResponseDto } from "./libs/types/types.js";
+import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
@@ -11,7 +11,7 @@ class DocumentService {
 
 	public async findAllByOwnerId(
 		ownerId: number,
-	): Promise<DocumentListResponseDto> {
+	): Promise<DocumentGetAllResponseDto> {
 		const items = await this.documentRepository.findAllByOwnerId(ownerId);
 
 		return {

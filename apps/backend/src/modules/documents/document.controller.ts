@@ -15,7 +15,7 @@ import { DocumentsApiPath } from "./libs/enums/enums.js";
 /*** @swagger
  * components:
  *    schemas:
- *      DocumentListItem:
+ *      DocumentGetAllItem:
  *        type: object
  *        properties:
  *          id:
@@ -42,13 +42,13 @@ import { DocumentsApiPath } from "./libs/enums/enums.js";
  *          createdAt:
  *            type: string
  *            format: date-time
- *      DocumentListResponse:
+ *      DocumentGetAllResponse:
  *        type: object
  *        properties:
  *          items:
  *            type: array
  *            items:
- *              $ref: "#/components/schemas/DocumentListItem"
+ *              $ref: "#/components/schemas/DocumentGetAllItem"
  */
 type DocumentFindAllOptions = APIHandlerOptions<{
 	user: TokenPayload;
@@ -83,7 +83,7 @@ class DocumentController extends BaseController {
 	 *          content:
 	 *            application/json:
 	 *              schema:
-	 *                $ref: "#/components/schemas/DocumentListResponse"
+	 *                $ref: "#/components/schemas/DocumentGetAllResponse"
 	 */
 	private async findAll(
 		options: DocumentFindAllOptions,
