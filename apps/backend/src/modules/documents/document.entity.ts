@@ -1,15 +1,12 @@
-import { type Entity } from "~/libs/types/types.js";
-
 import {
 	type DocumentListItemResponseDto,
-	DocumentStatus,
 	type DocumentStatusValue,
 } from "./libs/types/types.js";
 
-class DocumentEntity implements Entity {
+class DocumentEntity {
 	private createdAt: string;
 
-	private id: null | number;
+	private id: number;
 
 	private ownerId: number;
 
@@ -31,7 +28,7 @@ class DocumentEntity implements Entity {
 		title,
 	}: {
 		createdAt: string;
-		id: null | number;
+		id: number;
 		ownerId: number;
 		pageCount: number;
 		presetId: null | number;
@@ -75,46 +72,10 @@ class DocumentEntity implements Entity {
 		});
 	}
 
-	public static initializeNew({
-		ownerId,
-		presetId = null,
-		title,
-	}: {
-		ownerId: number;
-		presetId?: null | number;
-		title: string;
-	}): DocumentEntity {
-		return new DocumentEntity({
-			createdAt: "",
-			id: null,
-			ownerId,
-			pageCount: 0,
-			presetId,
-			status: DocumentStatus.DRAFT,
-			title,
-		});
-	}
-
-	public toNewObject(): {
-		ownerId: number;
-		pageCount: number;
-		presetId: null | number;
-		status: DocumentStatusValue;
-		title: string;
-	} {
-		return {
-			ownerId: this.ownerId,
-			pageCount: this.pageCount,
-			presetId: this.presetId,
-			status: this.status,
-			title: this.title,
-		};
-	}
-
 	public toObject(): DocumentListItemResponseDto {
 		return {
 			createdAt: this.createdAt,
-			id: this.id as number,
+			id: this.id,
 			pageCount: this.pageCount,
 			status: this.status,
 			title: this.title,
