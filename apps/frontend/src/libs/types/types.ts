@@ -1,5 +1,9 @@
 export { type AsyncThunkConfig } from "./async-thunk-config.type.js";
 export {
+	type SerializedAppError,
+	type SerializedHTTPError,
+} from "./serialized-app-error.type.js";
+export {
 	type ServerErrorDetail,
 	type ServerErrorResponse,
 	type ValidationSchema,
