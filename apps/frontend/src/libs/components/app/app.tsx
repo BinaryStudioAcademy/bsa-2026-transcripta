@@ -1,4 +1,4 @@
-import { RouterOutlet, Sidebar } from "~/libs/components/components.js";
+import { Header, RouterOutlet, Sidebar } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { useLocation } from "~/libs/hooks/hooks.js";
 import { type ValueOf } from "~/libs/types/types.js";
@@ -21,6 +21,7 @@ const App: React.FC = () => {
 		<div className="app-layout">
 			<Sidebar />
 			<main className="app-main">
+				{pathname === AppRoute.ROOT && <Header />}
 				<RouterOutlet />
 			</main>
 		</div>
