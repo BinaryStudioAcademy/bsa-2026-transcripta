@@ -238,8 +238,8 @@ as they are in the database.
 This is the heart of the system. One job = one page.
 
 ```
-1. check the document is not cancelled or paused
-       if it is → exit, do nothing
+1. check the document is still processing
+       if it is paused, budget-stopped or gone → exit, do nothing
 2. check the document budget
        if exhausted → stop the document, exit
 3. BUILD THE CONTEXT:
@@ -261,8 +261,13 @@ This is the heart of the system. One job = one page.
 ```
 
 Steps 1 and 2 are cheap checks made before spending money. That matters: the
-user pressed "cancel" on a 500-page document, but 400 jobs are already in the
-queue. Without the check every one of them would make a paid call.
+user paused a 500-page document, but 400 jobs are already in the queue. Without
+the check every one of them would make a paid call.
+
+There is no `cancelled` status. A user who wants to stop and keep their work
+uses **pause**; one who wants it gone uses **delete**, which removes the rows
+and the stored files. The worker's check covers both — a paused document exits
+here, and a deleted one has no rows left to write to.
 
 Step 4 is the cache. The key is a hash of `(image + preset + model + context)`.
 If nothing changed, a re-run is free.
