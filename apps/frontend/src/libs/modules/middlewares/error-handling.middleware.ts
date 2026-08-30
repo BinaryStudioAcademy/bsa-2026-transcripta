@@ -22,11 +22,10 @@ errorHandlingMiddleware.startListening({
 		}
 
 		if (error.errorType === ServerErrorType.VALIDATION) {
-			const errorDetails = error.details
+			const validationMessage = error.details
 				.map((detail) => detail.message)
 				.join(". ");
 
-			const validationMessage = `Message: ${error.message}\nDetails: ${errorDetails}`;
 			notification.error(validationMessage);
 		}
 	},
