@@ -1,5 +1,13 @@
-export { DocumentsApiPath, DocumentStatus } from "./libs/enums/enums.js";
 export {
+	DocumentsApiPath,
+	DocumentStatus,
+	DocumentValidationMessage,
+	DocumentValidationRule,
+} from "./libs/enums/enums.js";
+export {
+	type DocumentCreateRequestDto,
+	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 } from "./libs/types/types.js";
+export { DocumentCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";

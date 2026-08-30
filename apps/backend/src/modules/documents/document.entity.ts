@@ -7,13 +7,19 @@ type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 class DocumentEntity {
 	private createdAt: string;
 
-	private id: number;
+	private id: null | number;
 
 	private ownerId: number;
 
 	private pageCount: number;
 
-	private presetId: null | number;
+	private presetId: number;
+
+	private sourceBytes: null | number;
+
+	private sourceKey: null | string;
+
+	private sourceName: null | string;
 
 	private status: DocumentStatusValue;
 
@@ -25,14 +31,20 @@ class DocumentEntity {
 		ownerId,
 		pageCount,
 		presetId,
+		sourceBytes,
+		sourceKey,
+		sourceName,
 		status,
 		title,
 	}: {
 		createdAt: string;
-		id: number;
+		id: null | number;
 		ownerId: number;
 		pageCount: number;
-		presetId: null | number;
+		presetId: number;
+		sourceBytes: null | number;
+		sourceKey: null | string;
+		sourceName: null | string;
 		status: DocumentStatusValue;
 		title: string;
 	}) {
@@ -41,6 +53,9 @@ class DocumentEntity {
 		this.ownerId = ownerId;
 		this.pageCount = pageCount;
 		this.presetId = presetId;
+		this.sourceBytes = sourceBytes;
+		this.sourceKey = sourceKey;
+		this.sourceName = sourceName;
 		this.status = status;
 		this.title = title;
 	}
@@ -51,6 +66,9 @@ class DocumentEntity {
 		ownerId,
 		pageCount,
 		presetId,
+		sourceBytes,
+		sourceKey,
+		sourceName,
 		status,
 		title,
 	}: {
@@ -58,7 +76,10 @@ class DocumentEntity {
 		id: number;
 		ownerId: number;
 		pageCount: number;
-		presetId: null | number;
+		presetId: number;
+		sourceBytes?: null | number;
+		sourceKey?: null | string;
+		sourceName?: null | string;
 		status: DocumentStatusValue;
 		title: string;
 	}): DocumentEntity {
@@ -68,15 +89,69 @@ class DocumentEntity {
 			ownerId,
 			pageCount,
 			presetId,
+			sourceBytes: sourceBytes ?? null,
+			sourceKey: sourceKey ?? null,
+			sourceName: sourceName ?? null,
 			status,
 			title,
 		});
 	}
 
+	public static initializeNew({
+		ownerId,
+		presetId,
+		sourceBytes,
+		sourceKey,
+		sourceName,
+		title,
+	}: {
+		ownerId: number;
+		presetId: number;
+		sourceBytes?: number;
+		sourceKey?: string;
+		sourceName?: string;
+		title: string;
+	}): DocumentEntity {
+		return new DocumentEntity({
+			createdAt: "",
+			id: null,
+			ownerId,
+			pageCount: 0,
+			presetId,
+			sourceBytes: sourceBytes ?? null,
+			sourceKey: sourceKey ?? null,
+			sourceName: sourceName ?? null,
+			status: DocumentStatus.DRAFT,
+			title,
+		});
+	}
+
+	public toNewObject(): {
+		ownerId: number;
+		pageCount: number;
+		presetId: number;
+		sourceBytes: null | number;
+		sourceKey: null | string;
+		sourceName: null | string;
+		status: DocumentStatusValue;
+		title: string;
+	} {
+		return {
+			ownerId: this.ownerId,
+			pageCount: this.pageCount,
+			presetId: this.presetId,
+			sourceBytes: this.sourceBytes,
+			sourceKey: this.sourceKey,
+			sourceName: this.sourceName,
+			status: this.status,
+			title: this.title,
+		};
+	}
+
 	public toObject(): DocumentGetAllItemResponseDto {
 		return {
 			createdAt: this.createdAt,
-			id: this.id,
+			id: this.id as number,
 			pageCount: this.pageCount,
 			status: this.status,
 			title: this.title,

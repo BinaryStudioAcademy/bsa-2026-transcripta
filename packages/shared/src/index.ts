@@ -25,10 +25,15 @@ export {
 } from "./libs/types/types.js";
 export { AuthApiPath } from "./modules/auth/auth.js";
 export {
+	type DocumentCreateRequestDto,
+	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	DocumentCreateValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
+	DocumentValidationMessage,
+	DocumentValidationRule,
 } from "./modules/documents/documents.js";
 export {
 	type UserGetAllItemResponseDto,

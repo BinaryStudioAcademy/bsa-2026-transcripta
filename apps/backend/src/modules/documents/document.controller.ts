@@ -1,3 +1,8 @@
+import {
+	type DocumentCreateRequestDto,
+	DocumentCreateValidationSchema,
+} from "@transcripta/shared";
+
 import { APIPath } from "~/libs/enums/enums.js";
 import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
@@ -14,42 +19,76 @@ import { DocumentsApiPath } from "./libs/enums/enums.js";
 
 /*** @swagger
  * components:
- *    schemas:
- *      DocumentGetAllItem:
- *        type: object
- *        properties:
- *          id:
- *            type: number
- *            format: number
- *            minimum: 1
- *          title:
- *            type: string
- *          status:
- *            type: string
- *            enum:
- *              - draft
- *              - ingesting
- *              - ready
- *              - processing
- *              - paused
- *              - budget_stop
- *              - done
- *              - failed
- *          pageCount:
- *            type: number
- *            format: number
- *            minimum: 0
- *          createdAt:
- *            type: string
- *            format: date-time
- *      DocumentGetAllResponse:
- *        type: object
- *        properties:
- *          items:
- *            type: array
- *            items:
- *              $ref: "#/components/schemas/DocumentGetAllItem"
+ *   schemas:
+ *     DocumentCreateRequest:
+ *       type: object
+ *       properties:
+ *         title:
+ *           type: string
+ *         presetId:
+ *           type: number
+ *           format: number
+ *           minimum: 1
+ *         fileName:
+ *           type: string
+ *         fileBytes:
+ *           type: number
+ *           format: number
+ *           minimum: 1
+ *           maximum: 524288000
+ *     DocumentCreateResponse:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: number
+ *         title:
+ *           type: string
+ *         status:
+ *           type: string
+ *         uploadUrl:
+ *           type: string
+ *         expiresAt:
+ *           type: string
+ *     DocumentGetAllItem:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: number
+ *           format: number
+ *           minimum: 1
+ *         title:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum:
+ *             - draft
+ *             - ingesting
+ *             - ready
+ *             - processing
+ *             - paused
+ *             - budget_stop
+ *             - done
+ *             - failed
+ *         pageCount:
+ *           type: number
+ *           format: number
+ *           minimum: 0
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *     DocumentGetAllResponse:
+ *       type: object
+ *       properties:
+ *         items:
+ *           type: array
+ *           items:
+ *             $ref: "#/components/schemas/DocumentGetAllItem"
  */
+type DocumentCreateOptions = APIHandlerOptions<{
+	body: DocumentCreateRequestDto;
+	user: TokenPayload;
+}>;
+
 type DocumentFindAllOptions = APIHandlerOptions<{
 	user: TokenPayload;
 }>;
@@ -68,6 +107,49 @@ class DocumentController extends BaseController {
 			path: DocumentsApiPath.ROOT,
 			preHandler: authGuard,
 		});
+
+		this.addRoute({
+			handler: (options) => this.create(options as DocumentCreateOptions),
+			method: "POST",
+			path: DocumentsApiPath.ROOT,
+			preHandler: authGuard,
+			validation: {
+				body: DocumentCreateValidationSchema,
+			},
+		});
+	}
+
+	/**
+	 * @swagger
+	 * /documents:
+	 *   post:
+	 *     description: Create a new document and get a presigned upload URL
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: "#/components/schemas/DocumentCreateRequest"
+	 *     responses:
+	 *       201:
+	 *         description: Document created successfully
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: "#/components/schemas/DocumentCreateResponse"
+	 */
+	private async create(
+		options: DocumentCreateOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.create({
+				...options.body,
+				ownerId: options.user.userId,
+			}),
+			status: HTTPCode.CREATED,
+		};
 	}
 
 	/**

@@ -1,0 +1,18 @@
+const MEGABYTE = 1024;
+const GIGABYTE_IN_MEGABYTES = 1024;
+const MAX_FILE_SIZE_MEGABYTES = 500;
+const MAX_FILE_BYTES =
+	MAX_FILE_SIZE_MEGABYTES * MEGABYTE * GIGABYTE_IN_MEGABYTES;
+
+const PDF_FILE_REGEX = /\.pdf$/i;
+
+const DocumentValidationRule = {
+	MAX_FILE_BYTES,
+	MAX_PAGE_COUNT: 500,
+	MIN_PAGE_COUNT: 1,
+	MIN_TITLE_LENGTH: 1,
+	PDF_FILE_REGEX,
+	TOKEN_TIME_LIMIT: 3600,
+} as const;
+
+export { DocumentValidationRule };
