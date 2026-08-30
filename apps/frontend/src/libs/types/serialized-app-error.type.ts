@@ -1,18 +1,12 @@
 import { type SerializedError } from "@reduxjs/toolkit";
-import {
-	type HTTPCode,
-	type ServerErrorDetail,
-	type ServerErrorType,
-	type ValueOf,
-} from "@transcripta/shared";
+
+import { type HTTPError } from "~/libs/modules/http/http.js";
 
 type SerializedAppError = SerializedError | SerializedHTTPError;
 
-type SerializedHTTPError = {
-	details: ServerErrorDetail[];
-	errorType: ValueOf<typeof ServerErrorType>;
-	message: string;
-	status: ValueOf<typeof HTTPCode>;
-};
+type SerializedHTTPError = Pick<
+	HTTPError,
+	"details" | "errorType" | "message" | "status"
+>;
 
-export { type SerializedAppError, type SerializedHTTPError };
+export { type SerializedAppError };
