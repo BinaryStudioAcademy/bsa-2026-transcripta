@@ -4,6 +4,7 @@ import { type Knex } from "knex";
 const TABLE_NAME = "document";
 const DOCUMENT_STATUS_TYPE = "document_status";
 const USERS_TABLE_NAME = "users";
+const PRESET_TABLE_NAME = "preset";
 
 const DEFAULT_BUDGET_USD = 10;
 const DEFAULT_CURSOR_PAGE_NO = 1;
@@ -41,6 +42,10 @@ const UsersColumnName = {
 	ID: "id",
 } as const;
 
+const PresetColumnName = {
+	ID: "id",
+} as const;
+
 const DOCUMENT_STATUS_VALUES = [
 	DocumentStatus.DRAFT,
 	DocumentStatus.INGESTING,
@@ -73,7 +78,11 @@ async function up(knex: Knex): Promise<void> {
 			.notNullable()
 			.references(UsersColumnName.ID)
 			.inTable(USERS_TABLE_NAME);
-		table.integer(ColumnName.PRESET_ID).nullable();
+		table
+			.integer(ColumnName.PRESET_ID)
+			.notNullable()
+			.references(PresetColumnName.ID)
+			.inTable(PRESET_TABLE_NAME);
 		table.text(ColumnName.TITLE).notNullable();
 		table
 			.enu(ColumnName.STATUS, [...DOCUMENT_STATUS_VALUES], {
