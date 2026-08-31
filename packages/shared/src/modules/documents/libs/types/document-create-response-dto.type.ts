@@ -1,5 +1,4 @@
-import { type ValueOf } from "src/libs/types/types.js";
-
+import { type ValueOf } from "../../../../libs/types/types.js";
 import { DocumentStatus } from "../enums/document-status.enum.js";
 
 type DocumentCreateResponseDto = {

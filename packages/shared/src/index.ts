@@ -9,11 +9,11 @@ export { configureString } from "./libs/helpers/helpers.js";
 export { type Config } from "./libs/modules/config/config.js";
 export {
 	type HTTP,
-	type HTTPMethod,
+	type HTTPMethodType,
 	type HTTPOptions,
 	HTTPCode,
 	HTTPHeader,
-	HTTPMethodEnum,
+	HTTPMethod,
 } from "./libs/modules/http/http.js";
 export { type Storage } from "./libs/modules/storage/storage.js";
 export {

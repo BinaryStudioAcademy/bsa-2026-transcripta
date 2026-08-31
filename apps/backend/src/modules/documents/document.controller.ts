@@ -10,7 +10,7 @@ import {
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
-import { HTTPCode, HTTPMethodEnum } from "~/libs/modules/http/http.js";
+import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type TokenPayload } from "~/libs/modules/token/token.js";
 import { type DocumentService } from "~/modules/documents/document.service.js";
@@ -103,14 +103,14 @@ class DocumentController extends BaseController {
 
 		this.addRoute({
 			handler: (options) => this.findAll(options as DocumentFindAllOptions),
-			method: HTTPMethodEnum.GET,
+			method: HTTPMethod.GET,
 			path: DocumentsApiPath.ROOT,
 			preHandler: authGuard,
 		});
 
 		this.addRoute({
 			handler: (options) => this.create(options as DocumentCreateOptions),
-			method: HTTPMethodEnum.POST,
+			method: HTTPMethod.POST,
 			path: DocumentsApiPath.ROOT,
 			preHandler: authGuard,
 			validation: {

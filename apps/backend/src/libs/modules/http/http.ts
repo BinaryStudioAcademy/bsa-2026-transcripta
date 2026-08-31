@@ -1,3 +1,3 @@
-export { HTTPCode, HTTPMethodEnum } from "./libs/enums/enums.js";
+export { HTTPCode, HTTPMethod } from "./libs/enums/enums.js";
 export { HTTPError } from "./libs/exceptions/exceptions.js";
-export { type HTTPMethod } from "./libs/types/types.js";
+export { type HTTPMethodType } from "./libs/types/types.js";

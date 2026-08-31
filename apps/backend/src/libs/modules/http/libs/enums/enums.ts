@@ -1,1 +1,1 @@
-export { HTTPCode, HTTPMethodEnum } from "@transcripta/shared";
+export { HTTPCode, HTTPMethod } from "@transcripta/shared";

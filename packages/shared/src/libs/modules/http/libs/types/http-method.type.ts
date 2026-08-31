@@ -1,3 +1,6 @@
-type HTTPMethod = "GET" | "POST";
+import { type ValueOf } from "../../../../types/types.js";
+import { HTTPMethod } from "../enums/http-method.enum.js";
 
-export { type HTTPMethod };
+type HTTPMethodType = ValueOf<typeof HTTPMethod>;
+
+export { type HTTPMethodType };
