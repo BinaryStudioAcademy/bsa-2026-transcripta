@@ -5,25 +5,27 @@ import { type Config } from "~/libs/modules/config/config.js";
 
 import { SignedUrlConfig } from "./libs/constants/constants.js";
 import {
+	type Storage,
 	type UploadSignedUrlRequest,
 	type UploadSignedUrlResponse,
 } from "./libs/types/types.js";
 
-class BaseStorage {
+class BaseStorage implements Storage {
 	private bucketUploads: string;
 	private client: S3Client;
+	private config: Config;
 
 	public constructor(config: Config) {
-		const {
-			ACCESS_KEY_ID,
-			BUCKET_UPLOADS,
-			ENDPOINT,
-			REGION,
-			SECRET_ACCESS_KEY,
-		} = config.ENV.STORAGE;
+		this.config = config;
+		this.bucketUploads = config.ENV.STORAGE.BUCKET_UPLOADS;
+		this.client = this.initClient();
+	}
 
-		this.bucketUploads = BUCKET_UPLOADS;
-		this.client = new S3Client({
+	private initClient(): S3Client {
+		const { ACCESS_KEY_ID, ENDPOINT, REGION, SECRET_ACCESS_KEY } =
+			this.config.ENV.STORAGE;
+
+		return new S3Client({
 			credentials: {
 				accessKeyId: ACCESS_KEY_ID,
 				secretAccessKey: SECRET_ACCESS_KEY,

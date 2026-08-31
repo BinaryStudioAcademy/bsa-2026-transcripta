@@ -1,9 +1,12 @@
 import { type Knex } from "knex";
 
-const TABLE_NAME = "preset";
-const USERS_TABLE_NAME = "users";
 const PRESET_FAMILY_SEQUENCE = "preset_family_seq";
 const MIN_VERSION = 1;
+
+const TableName = {
+	PRESET: "preset",
+	USERS: "users",
+} as const;
 
 const ColumnName = {
 	CREATED_AT: "created_at",
@@ -32,7 +35,7 @@ const UsersColumnName = {
 } as const;
 
 async function down(knex: Knex): Promise<void> {
-	await knex.schema.dropTableIfExists(TABLE_NAME);
+	await knex.schema.dropTableIfExists(TableName.PRESET);
 	await knex.raw(`DROP SEQUENCE IF EXISTS ${PRESET_FAMILY_SEQUENCE}`);
 }
 
@@ -48,7 +51,7 @@ async function up(knex: Knex): Promise<void> {
 
 	await knex.raw(`CREATE SEQUENCE IF NOT EXISTS ${PRESET_FAMILY_SEQUENCE}`);
 
-	await knex.schema.createTable(TABLE_NAME, (table) => {
+	await knex.schema.createTable(TableName.PRESET, (table) => {
 		table.increments(ColumnName.ID).primary();
 		table
 			.integer(ColumnName.FAMILY_ID)
@@ -59,7 +62,7 @@ async function up(knex: Knex): Promise<void> {
 			.integer(ColumnName.OWNER_ID)
 			.notNullable()
 			.references(UsersColumnName.ID)
-			.inTable(USERS_TABLE_NAME);
+			.inTable(TableName.USERS);
 		table.text(ColumnName.NAME).notNullable();
 		table.text(ColumnName.DESCRIPTION).notNullable().defaultTo("");
 		table.boolean(ColumnName.IS_PUBLIC).notNullable().defaultTo(false);
@@ -87,23 +90,23 @@ async function up(knex: Knex): Promise<void> {
 	});
 
 	await knex.raw(`
-		ALTER TABLE ${TABLE_NAME}
+		ALTER TABLE ${TableName.PRESET}
 		ADD CONSTRAINT preset_version_unique UNIQUE (${ColumnName.FAMILY_ID}, ${ColumnName.VERSION}),
 		ADD CONSTRAINT preset_version_positive CHECK (${ColumnName.VERSION} > 0)
 	`);
 
 	await knex.raw(
-		`CREATE INDEX ${IndexName.FAMILY} ON ${TABLE_NAME} (${ColumnName.FAMILY_ID}, version DESC)`,
+		`CREATE INDEX ${IndexName.FAMILY} ON ${TableName.PRESET} (${ColumnName.FAMILY_ID}, version DESC)`,
 	);
 	await knex.raw(
-		`CREATE INDEX ${IndexName.OWNER} ON ${TABLE_NAME} (${ColumnName.OWNER_ID})`,
+		`CREATE INDEX ${IndexName.OWNER} ON ${TableName.PRESET} (${ColumnName.OWNER_ID})`,
 	);
 	await knex.raw(
-		`CREATE INDEX ${IndexName.PUBLIC} ON ${TABLE_NAME} (${ColumnName.IS_PUBLIC}) WHERE ${ColumnName.IS_PUBLIC}`,
+		`CREATE INDEX ${IndexName.PUBLIC} ON ${TableName.PRESET} (${ColumnName.IS_PUBLIC}) WHERE ${ColumnName.IS_PUBLIC}`,
 	);
 
 	await knex.raw(`
-		CREATE TRIGGER preset_immutable BEFORE UPDATE ON ${TABLE_NAME}
+		CREATE TRIGGER preset_immutable BEFORE UPDATE ON ${TableName.PRESET}
 		FOR EACH ROW EXECUTE FUNCTION forbid_update();
 	`);
 }
