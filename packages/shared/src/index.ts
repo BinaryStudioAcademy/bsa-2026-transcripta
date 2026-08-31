@@ -13,6 +13,7 @@ export {
 	type HTTPOptions,
 	HTTPCode,
 	HTTPHeader,
+	HTTPMethodEnum,
 } from "./libs/modules/http/http.js";
 export { type Storage } from "./libs/modules/storage/storage.js";
 export {
