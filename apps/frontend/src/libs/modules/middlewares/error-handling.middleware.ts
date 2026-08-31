@@ -27,6 +27,7 @@ errorHandlingMiddleware.startListening({
 				.join(". ");
 
 			notification.error(validationMessage);
+			return;
 		}
 		notification.error(error.message);
 	},
