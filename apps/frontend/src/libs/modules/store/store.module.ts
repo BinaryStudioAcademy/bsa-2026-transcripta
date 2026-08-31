@@ -14,6 +14,8 @@ import {
 } from "~/modules/documents/documents.js";
 import { userApi, reducer as usersReducer } from "~/modules/users/users.js";
 
+import { errorHandlingMiddleware } from "../middlewares/middlewares.js";
+
 type ExtraArguments = {
 	authApi: typeof authApi;
 	documentApi: typeof documentApi;
@@ -43,7 +45,7 @@ class Store {
 					thunk: {
 						extraArgument: this.extraArguments,
 					},
-				});
+				}).prepend(errorHandlingMiddleware.middleware);
 			},
 			reducer: {
 				auth: authReducer,
