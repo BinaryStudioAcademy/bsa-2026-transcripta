@@ -6,7 +6,7 @@ import { useAppDispatch, useCallback } from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
 
-import { NAV_ITEMS, PLACEHOLDER_EMAIL } from "./libs/constants.js";
+import { NAV_ITEMS, PLACEHOLDER_EMAIL } from "./libs/constants/constants.js";
 
 const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 	`sidebar__link${isActive ? " sidebar__link--active" : ""}`;
