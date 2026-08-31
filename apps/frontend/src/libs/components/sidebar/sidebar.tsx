@@ -1,6 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
-
-import { LogoIcon } from "~/libs/components/components.js";
+import { Link, LogoIcon } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -17,15 +15,13 @@ const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 
 const Sidebar: React.FC = () => {
 	const dispatch = useAppDispatch();
-	const navigate = useNavigate();
 
 	const user = useAppSelector((state) => state.auth.user);
 
 	const handleSignOut = useCallback((): void => {
 		dispatch(authActions.logout());
 		void storage.drop(StorageKey.TOKEN);
-		void Promise.resolve(navigate(AppRoute.SIGN_IN));
-	}, [dispatch, navigate]);
+	}, [dispatch]);
 
 	return (
 		<aside className="sidebar">
@@ -36,13 +32,9 @@ const Sidebar: React.FC = () => {
 
 			<nav className="sidebar__nav">
 				{NAV_ITEMS.map((item) => (
-					<NavLink
-						className={getLinkClassName}
-						key={item.route}
-						to={item.route}
-					>
+					<Link className={getLinkClassName} key={item.route} to={item.route}>
 						{item.label}
-					</NavLink>
+					</Link>
 				))}
 			</nav>
 
@@ -50,13 +42,13 @@ const Sidebar: React.FC = () => {
 
 			<div className="sidebar__user">
 				<span className="sidebar__user-email">{user?.email}</span>
-				<button
+				<Link
 					className="sidebar__sign-out"
 					onClick={handleSignOut}
-					type="button"
+					to={AppRoute.SIGN_IN}
 				>
 					Sign out
-				</button>
+				</Link>
 			</div>
 		</aside>
 	);
