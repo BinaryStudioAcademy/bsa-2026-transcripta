@@ -4,10 +4,12 @@ import {
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
+import { ForeignKeyViolationError } from "objection";
 
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 
 import { DocumentEntity } from "./document.entity.js";
+import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
 import {
 	DocumentValidationMessage,
@@ -36,50 +38,60 @@ class DocumentService {
 	}: DocumentCreateRequestDto & {
 		ownerId: number;
 	}): Promise<DocumentCreateResponseDto> {
-		if (!fileName.toLowerCase().endsWith(".pdf")) {
+		const preset = (await DocumentModel.knex()
+			.from("preset")
+			.where({ id: presetId })
+			.first()) as undefined | { id: number };
+
+		if (!preset) {
 			throw new HTTPError({
-				message: DocumentValidationMessage.FILE_NAME_INVALID_EXTENSION,
-				status: HTTPCode.UNPROCESSED_ENTITY,
+				message: DocumentValidationMessage.PRESET_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
 			});
 		}
 
-		if (fileBytes > DocumentValidationRule.MAX_FILE_BYTES) {
-			throw new HTTPError({
-				message: DocumentValidationMessage.DOCUMENT_MAX_FILE_BYTES,
-				status: HTTPCode.UNPROCESSED_ENTITY,
+		try {
+			const documentEntity = DocumentEntity.initializeNew({
+				ownerId,
+				presetId,
+				sourceBytes: fileBytes,
+				sourceName: fileName,
+				title,
 			});
+			const createdDocument =
+				await this.documentRepository.create(documentEntity);
+			const document = createdDocument.toObject();
+
+			const sourceKey = `uploads/${document.id.toString()}/original.pdf`;
+
+			await this.documentRepository.updateSourceKey(document.id, sourceKey);
+
+			const { expiresAt, url: uploadUrl } =
+				await this.storage.getUploadSignedUrl({
+					contentType: "application/pdf",
+					expiresInSeconds: DocumentValidationRule.TOKEN_TIME_LIMIT,
+					key: sourceKey,
+				});
+
+			return {
+				expiresAt,
+				id: document.id,
+				status: document.status,
+				uploadUrl,
+			};
+		} catch (error) {
+			if (
+				error instanceof ForeignKeyViolationError &&
+				(error.table === "users" ||
+					Boolean(error.constraint.includes("owner_id")))
+			) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.USER_NOT_FOUND,
+					status: HTTPCode.UNAUTHORIZED,
+				});
+			}
+			throw error;
 		}
-
-		const documentEntity = DocumentEntity.initializeNew({
-			ownerId,
-			presetId,
-			sourceBytes: fileBytes,
-			sourceName: fileName,
-			title,
-		});
-
-		const createdDocument =
-			await this.documentRepository.create(documentEntity);
-		const document = createdDocument.toObject();
-
-		const sourceKey = `uploads/${document.id.toString()}/original.pdf`;
-
-		await this.documentRepository.updateSourceKey(document.id, sourceKey);
-
-		const { expiresAt, url: uploadUrl } = await this.storage.getUploadSignedUrl(
-			{
-				contentType: "application/pdf",
-				expiresInSeconds: DocumentValidationRule.TOKEN_TIME_LIMIT,
-				key: sourceKey,
-			},
-		);
-
-		return {
-			expiresAt,
-			id: document.id,
-			status: document.status,
-			uploadUrl,
-		};
 	}
 
 	public async findAllByOwnerId(

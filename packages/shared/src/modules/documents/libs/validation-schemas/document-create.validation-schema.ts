@@ -14,10 +14,22 @@ type DocumentCreateRequestValidationDto = {
 
 const DocumentCreateValidationSchema = z
 	.object<DocumentCreateRequestValidationDto>({
-		fileBytes: z.number().int().positive(),
-		fileName: z.string().trim().min(DocumentValidationRule.MIN_TITLE_LENGTH, {
-			message: DocumentValidationMessage.FILE_NAME_REQUIRE,
-		}),
+		fileBytes: z
+			.number()
+			.int()
+			.positive()
+			.max(DocumentValidationRule.MAX_FILE_BYTES, {
+				message: DocumentValidationMessage.DOCUMENT_MAX_FILE_BYTES,
+			}),
+		fileName: z
+			.string()
+			.trim()
+			.min(DocumentValidationRule.MIN_TITLE_LENGTH, {
+				message: DocumentValidationMessage.FILE_NAME_REQUIRE,
+			})
+			.regex(DocumentValidationRule.PDF_FILE_REGEX, {
+				message: DocumentValidationMessage.FILE_NAME_INVALID_NAME,
+			}),
 		presetId: z.number().int().positive(),
 		title: z.string().trim().min(DocumentValidationRule.MIN_TITLE_LENGTH, {
 			message: DocumentValidationMessage.TITLE_REQUIRE,
