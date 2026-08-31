@@ -7,27 +7,17 @@ import { type ValueOf } from "~/libs/types/types.js";
 const App: React.FC = () => {
 	const { pathname } = useLocation();
 
-	const isRoot = pathname === AppRoute.ROOT;
-
 	const isAuthPage = AUTH_ROUTES.has(pathname as ValueOf<typeof AppRoute>);
 
 	if (isAuthPage) {
 		return <RouterOutlet />;
 	}
 
-	if (isRoot) {
-		return (
-			<>
-				<Header />
-				<div>Here should be the Landing page</div>
-			</>
-		);
-	}
-
 	return (
 		<div className="app-layout">
 			<Sidebar />
 			<main className="app-main">
+				{pathname === AppRoute.ROOT && <Header />}
 				<RouterOutlet />
 			</main>
 		</div>
