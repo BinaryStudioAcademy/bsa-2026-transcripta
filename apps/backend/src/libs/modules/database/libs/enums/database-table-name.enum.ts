@@ -1,6 +1,8 @@
 const DatabaseTableName = {
 	DOCUMENT: "document",
+	DOCUMENT_PROGRESS: "document_progress",
 	MIGRATIONS: "migrations",
+	PAGE: "page",
 	USERS: "users",
 } as const;
 
