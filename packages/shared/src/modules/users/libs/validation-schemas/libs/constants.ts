@@ -1,3 +1,0 @@
-const STRING_MINIMUN_LENGTH = 1;
-
-export { STRING_MINIMUN_LENGTH };
