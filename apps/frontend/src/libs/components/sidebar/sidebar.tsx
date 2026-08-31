@@ -2,11 +2,15 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 import { LogoIcon } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
-import { useAppDispatch, useCallback } from "~/libs/hooks/hooks.js";
+import {
+	useAppDispatch,
+	useAppSelector,
+	useCallback,
+} from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
 
-import { NAV_ITEMS, PLACEHOLDER_EMAIL } from "./libs/constants/constants.js";
+import { NAV_ITEMS } from "./libs/constants/constants.js";
 
 const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 	`sidebar__link${isActive ? " sidebar__link--active" : ""}`;
@@ -14,6 +18,8 @@ const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 const Sidebar: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+
+	const user = useAppSelector((state) => state.auth.user);
 
 	const handleSignOut = useCallback((): void => {
 		dispatch(authActions.logout());
@@ -43,7 +49,7 @@ const Sidebar: React.FC = () => {
 			<div className="sidebar__spacer" />
 
 			<div className="sidebar__user">
-				<span className="sidebar__user-email">{PLACEHOLDER_EMAIL}</span>
+				<span className="sidebar__user-email">{user?.email}</span>
 				<button
 					className="sidebar__sign-out"
 					onClick={handleSignOut}
