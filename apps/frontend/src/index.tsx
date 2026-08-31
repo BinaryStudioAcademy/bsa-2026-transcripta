@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { ToastContainer } from "react-toastify";
 
 import "~/assets/css/styles.css";
 import {
@@ -47,6 +48,7 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 					},
 				]}
 			/>
+			<ToastContainer />
 		</StoreProvider>
 	</StrictMode>,
 );
