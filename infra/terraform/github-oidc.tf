@@ -74,9 +74,6 @@ data "aws_iam_policy_document" "gha" {
     resources = ["*"]
   }
 
-  # Lets the claude-review workflow read the Anthropic API key from SSM at run
-  # time (the same SecureString the backend reads) instead of a GitHub secret.
-  # Scoped to that one parameter, not /transcripta/*.
   statement {
     sid       = "SsmReadAnthropicKey"
     actions   = ["ssm:GetParameter"]
