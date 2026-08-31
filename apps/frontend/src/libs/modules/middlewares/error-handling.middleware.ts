@@ -28,6 +28,7 @@ errorHandlingMiddleware.startListening({
 
 			notification.error(validationMessage);
 		}
+		notification.error(error.message);
 	},
 	matcher: isRejected,
 });
