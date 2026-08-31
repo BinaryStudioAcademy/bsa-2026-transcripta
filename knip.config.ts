@@ -5,7 +5,7 @@ const config: KnipConfig = {
 	stylelint: ["./stylelint.config.ts"],
 	workspaces: {
 		".": {
-			entry: ["./dangerfile.ts", "./docs/demo/build.js"],
+			entry: ["./dangerfile.ts"],
 			ignore: ["design/**"],
 		},
 		"apps/backend": {
