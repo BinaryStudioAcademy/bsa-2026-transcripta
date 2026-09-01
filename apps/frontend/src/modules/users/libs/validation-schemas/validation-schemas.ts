@@ -1,1 +1,4 @@
-export { userSignUpValidationSchema } from "@transcripta/shared";
+export {
+	userSignInValidationSchema,
+	userSignUpValidationSchema,
+} from "@transcripta/shared";

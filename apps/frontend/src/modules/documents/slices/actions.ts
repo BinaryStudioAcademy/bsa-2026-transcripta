@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
+import { serializeError } from "~/libs/helpers/helpers.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 import {
 	type DocumentGetAllResponseDto,
@@ -12,11 +13,15 @@ const loadAll = createAsyncThunk<
 	DocumentGetAllResponseDto,
 	undefined,
 	AsyncThunkConfig
->(`${sliceName}/load-all`, (_, { extra }) => {
-	const { documentApi } = extra;
+>(
+	`${sliceName}/load-all`,
+	(_, { extra }) => {
+		const { documentApi } = extra;
 
-	return documentApi.getAll();
-});
+		return documentApi.getAll();
+	},
+	{ serializeError },
+);
 
 const loadById = createAsyncThunk<
 	DocumentGetByIdResponseDto,

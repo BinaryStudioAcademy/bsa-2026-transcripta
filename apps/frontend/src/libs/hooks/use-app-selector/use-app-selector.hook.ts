@@ -5,4 +5,4 @@ import { type store } from "~/libs/modules/store/store.js";
 const useAppSelector =
 	useSelector.withTypes<ReturnType<typeof store.instance.getState>>();
 
-export { useAppSelector };
+export { /** @public */ useAppSelector };
