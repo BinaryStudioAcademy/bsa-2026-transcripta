@@ -11,19 +11,19 @@ Google Drive folders:
 
 ## Document categories
 
-| Category                                                                                             | Content                                                                                                                            |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [Letters](https://drive.google.com/drive/folders/10lDsC4VqvdJEZHewtYEQdPFvkiOVm3OL)                  | Personal and school correspondence in English, French, and German.                                                                 |
-| [Lecture notes](https://drive.google.com/drive/folders/1zfsKyv65PUTh4-HQkiJ43Qn68LD9FWqE)            | Student notebooks, law-school notes, and Louis Pasteur's French lecture notes.                                                      |
-| [Lab journals](https://drive.google.com/drive/folders/1Zj2blkyLFPOVzNxOkimxDV1mVL4DT0zD)             | Scientific notes, laboratory records, drawings, and graphs.                                                                        |
-| [Diaries](https://drive.google.com/drive/folders/1QVMluCrqHCUZSRDp2lZAyUTc32ynd8cl)                  | Personal diaries and journals in English and German.                                                                                |
-| [School registers](https://drive.google.com/drive/folders/1gZkTnwbApbqBW_vbD_qzoUbiK2i3-aIx)         | Friends registers and school registers, including an eighth-grade register from 1908–1909.                                         |
-| [Parish and metric books](https://drive.google.com/drive/folders/1pnyk5YoIsFbvz9fmQSnAOl9NNkTnz16w?usp=sharing) | Parish registers and metric books recording births, marriages, and deaths.                                           |
-| [Meeting minutes](https://drive.google.com/drive/folders/15y9UISuxfNrrqromQubEeJy_k_g0pVEM)          | Meeting minutes and institutional records.                                                                                          |
-| [Ledgers](https://drive.google.com/drive/folders/1D6I8EvtSfzFSNw8YK8R1qCOTzy8eDL16)                  | Historical accounting and record-keeping ledgers.                                                                                   |
-| [Contracts and agreements](https://drive.google.com/drive/folders/1anJdjeKAyXOawKRNhABrTYXhiwXUkUac) | Contracts, indentures, and agreements, including documents concerning harvest rights.                                               |
-| [Medical records](https://drive.google.com/drive/folders/1Mj2Ge4Hpz5pL--N5Z7AWcjM4pxfeg028)          | Admission registers, clinical case records, and physicians' prescriptions with transcriptions.                                     |
-| [Manuscripts](https://drive.google.com/drive/folders/1e0whCXNYmWRkRPu5SQoQK9n81ZrCwN6-)              | Greek, Arabic, Chinese, and German manuscripts on astronomical, mathematical, and other subjects.                                  |
+| Category                                                                                                        | Content                                                                                           |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| [Letters](https://drive.google.com/drive/folders/10lDsC4VqvdJEZHewtYEQdPFvkiOVm3OL)                             | Personal and school correspondence in English, French, and German.                                |
+| [Lecture notes](https://drive.google.com/drive/folders/1zfsKyv65PUTh4-HQkiJ43Qn68LD9FWqE)                       | Student notebooks, law-school notes, and Louis Pasteur's French lecture notes.                    |
+| [Lab journals](https://drive.google.com/drive/folders/1Zj2blkyLFPOVzNxOkimxDV1mVL4DT0zD)                        | Scientific notes, laboratory records, drawings, and graphs.                                       |
+| [Diaries](https://drive.google.com/drive/folders/1QVMluCrqHCUZSRDp2lZAyUTc32ynd8cl)                             | Personal diaries and journals in English and German.                                              |
+| [School registers](https://drive.google.com/drive/folders/1gZkTnwbApbqBW_vbD_qzoUbiK2i3-aIx)                    | Friends registers and school registers, including an eighth-grade register from 1908–1909.        |
+| [Parish and metric books](https://drive.google.com/drive/folders/1pnyk5YoIsFbvz9fmQSnAOl9NNkTnz16w?usp=sharing) | Parish registers and metric books recording births, marriages, and deaths.                        |
+| [Meeting minutes](https://drive.google.com/drive/folders/15y9UISuxfNrrqromQubEeJy_k_g0pVEM)                     | Meeting minutes and institutional records.                                                        |
+| [Ledgers](https://drive.google.com/drive/folders/1D6I8EvtSfzFSNw8YK8R1qCOTzy8eDL16)                             | Historical accounting and record-keeping ledgers.                                                 |
+| [Contracts and agreements](https://drive.google.com/drive/folders/1anJdjeKAyXOawKRNhABrTYXhiwXUkUac)            | Contracts, indentures, and agreements, including documents concerning harvest rights.             |
+| [Medical records](https://drive.google.com/drive/folders/1Mj2Ge4Hpz5pL--N5Z7AWcjM4pxfeg028)                     | Admission registers, clinical case records, and physicians' prescriptions with transcriptions.    |
+| [Manuscripts](https://drive.google.com/drive/folders/1e0whCXNYmWRkRPu5SQoQK9n81ZrCwN6-)                         | Greek, Arabic, Chinese, and German manuscripts on astronomical, mathematical, and other subjects. |
 
 ## Edge cases
 
@@ -60,4 +60,3 @@ The datasets are used to:
 Ground-truth files should use names that match their source scans. Manual
 ground truth is prepared without viewing the AI output. JSON ground truth must
 identify the field that contains the reference plain text used for comparison.
-
