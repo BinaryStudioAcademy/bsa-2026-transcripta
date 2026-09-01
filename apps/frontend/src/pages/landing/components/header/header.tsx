@@ -2,6 +2,8 @@ import headerLogo from "~/assets/img/logo.svg";
 import { Link } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
+import "./header.css";
+
 const Header: React.FC = () => {
 	return (
 		<header className="header">
