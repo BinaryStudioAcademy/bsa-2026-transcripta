@@ -1,5 +1,6 @@
 import { type Transaction } from "objection";
 
+import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 
@@ -20,6 +21,24 @@ class DocumentRepository {
 			.returning("*")
 			.execute();
 		return DocumentEntity.initialize(document);
+	}
+
+	public async findAccessiblePreset(
+		presetId: number,
+		ownerId: number,
+		trx?: Transaction,
+	): Promise<undefined | { id: number }> {
+		const preset = (await this.documentModel
+			.query(trx)
+			.knex()
+			.from(DatabaseTableName.PRESET)
+			.where({ id: presetId })
+			.andWhere((builder) => {
+				builder.where({ is_public: true }).orWhere({ owner_id: ownerId });
+			})
+			.first()) as undefined | { id: number };
+
+		return preset;
 	}
 
 	public async findAllByOwnerId(ownerId: number): Promise<DocumentEntity[]> {

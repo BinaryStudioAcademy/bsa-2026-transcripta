@@ -7,7 +7,6 @@ import {
 } from "@transcripta/shared";
 import { ForeignKeyViolationError } from "objection";
 
-import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 
 import { DocumentEntity } from "./document.entity.js";
@@ -38,13 +37,10 @@ class DocumentService {
 	}: DocumentCreateRequestDto & {
 		ownerId: number;
 	}): Promise<DocumentCreateResponseDto> {
-		const preset = (await DocumentModel.knex()
-			.from(DatabaseTableName.PRESET)
-			.where({ id: presetId })
-			.andWhere((builder) => {
-				builder.where({ is_public: true }).orWhere({ owner_id: ownerId });
-			})
-			.first()) as undefined | { id: number };
+		const preset = await this.documentRepository.findAccessiblePreset(
+			presetId,
+			ownerId,
+		);
 
 		if (!preset) {
 			throw new HTTPError({

@@ -2,7 +2,7 @@ import { type Knex } from "knex";
 
 const TABLE_NAME = "preset";
 
-const DEFAULT_PRESET = {
+const DEFAULT_PRESET_DATA = {
 	description:
 		"Parish records of births, marriages and deaths. Cursive, faded ink.",
 	family_id: 1,
@@ -48,7 +48,7 @@ Rules:
 		required: ["records"],
 		type: "object",
 	}),
-	owner_id: 1,
+	owner_id: null,
 	seed_glossary: JSON.stringify([
 		{ kind: "formula", note: "birth record", value: "born and baptised" },
 		{ kind: "formula", note: "", value: "in lawful wedlock" },
@@ -80,26 +80,12 @@ Rules:
 };
 
 async function down(knex: Knex): Promise<void> {
-	await knex("preset").where({ id: 1 }).delete();
+	await knex(TABLE_NAME).where({ name: DEFAULT_PRESET_DATA.name }).delete();
 }
 
 async function up(knex: Knex): Promise<void> {
-	await knex("users")
-		.insert({
-			email: "demo@example.org",
-			id: 1,
-			password_hash: "seed-placeholder-hash",
-			password_salt: "seed-placeholder-salt",
-		})
-		.onConflict("email")
-		.ignore();
-
-	await knex.raw(`
-		SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT max(id) FROM users));
-	`);
-
 	await knex(TABLE_NAME)
-		.insert(DEFAULT_PRESET)
+		.insert(DEFAULT_PRESET_DATA)
 		.onConflict(["family_id", "version"])
 		.ignore();
 

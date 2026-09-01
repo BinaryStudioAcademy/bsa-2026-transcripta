@@ -1,5 +1,6 @@
 const NOT_FOUND_INDEX = -1;
 const START_INDEX = 0;
+const MAX_FILE_NAME_LENGTH = 255;
 
 const sanitizeFileName = (fileName: string): string => {
 	const lastDotIndex = fileName.lastIndexOf(".");
@@ -14,11 +15,9 @@ const sanitizeFileName = (fileName: string): string => {
 
 	const sanitizedName = name
 		.trim()
-		.toLowerCase()
-		.normalize("NFD")
-		.replaceAll(/[\u0300-\u036F]/g, "")
-		.replaceAll(/\s+/g, "-")
-		.replaceAll(/[^a-z0-9-_]/g, "");
+		.replaceAll(/[/\\]/g, "")
+		.replaceAll(/\s+/g, " ")
+		.slice(START_INDEX, MAX_FILE_NAME_LENGTH);
 
 	return `${sanitizedName}${extension}`;
 };

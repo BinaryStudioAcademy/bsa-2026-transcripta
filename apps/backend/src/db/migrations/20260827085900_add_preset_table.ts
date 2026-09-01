@@ -60,7 +60,7 @@ async function up(knex: Knex): Promise<void> {
 		table.integer(ColumnName.VERSION).notNullable().defaultTo(MIN_VERSION);
 		table
 			.integer(ColumnName.OWNER_ID)
-			.notNullable()
+			.nullable()
 			.references(UsersColumnName.ID)
 			.inTable(TableName.USERS);
 		table.text(ColumnName.NAME).notNullable();
