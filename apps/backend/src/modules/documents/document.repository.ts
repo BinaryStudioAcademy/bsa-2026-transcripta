@@ -1,3 +1,5 @@
+import { type Transaction } from "objection";
+
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 
@@ -8,9 +10,12 @@ class DocumentRepository {
 		this.documentModel = documentModel;
 	}
 
-	public async create(entity: DocumentEntity): Promise<DocumentEntity> {
+	public async create(
+		entity: DocumentEntity,
+		trx?: Transaction,
+	): Promise<DocumentEntity> {
 		const document = await this.documentModel
-			.query()
+			.query(trx)
 			.insert(entity.toNewObject())
 			.returning("*")
 			.execute();
@@ -27,9 +32,13 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
-	public async updateSourceKey(id: number, sourceKey: string): Promise<void> {
+	public async updateSourceKey(
+		id: number,
+		sourceKey: string,
+		trx?: Transaction,
+	): Promise<void> {
 		await this.documentModel
-			.query()
+			.query(trx)
 			.patch({ sourceKey })
 			.where({ id })
 			.execute();

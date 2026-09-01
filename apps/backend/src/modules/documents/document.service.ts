@@ -6,15 +6,13 @@ import {
 } from "@transcripta/shared";
 import { ForeignKeyViolationError } from "objection";
 
+import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
-import {
-	DocumentValidationMessage,
-	DocumentValidationRule,
-} from "./libs/enums/enums.js";
+import { DocumentValidationMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
 
 class DocumentService {
@@ -39,8 +37,11 @@ class DocumentService {
 		ownerId: number;
 	}): Promise<DocumentCreateResponseDto> {
 		const preset = (await DocumentModel.knex()
-			.from("preset")
+			.from(DatabaseTableName.PRESET)
 			.where({ id: presetId })
+			.andWhere((builder) => {
+				builder.where({ is_public: true }).orWhere({ owner_id: ownerId });
+			})
 			.first()) as undefined | { id: number };
 
 		if (!preset) {
@@ -51,39 +52,46 @@ class DocumentService {
 		}
 
 		try {
-			const documentEntity = DocumentEntity.initializeNew({
-				ownerId,
-				presetId,
-				sourceBytes: fileBytes,
-				sourceName: fileName,
-				title,
-			});
-			const createdDocument =
-				await this.documentRepository.create(documentEntity);
-			const document = createdDocument.toObject();
-
-			const sourceKey = `uploads/${document.id.toString()}/original.pdf`;
-
-			await this.documentRepository.updateSourceKey(document.id, sourceKey);
-
-			const { expiresAt, url: uploadUrl } =
-				await this.storage.getUploadSignedUrl({
-					contentType: "application/pdf",
-					expiresInSeconds: DocumentValidationRule.TOKEN_TIME_LIMIT,
-					key: sourceKey,
+			return await DocumentModel.transaction(async (trx) => {
+				const documentEntity = DocumentEntity.initializeNew({
+					ownerId,
+					presetId,
+					sourceBytes: fileBytes,
+					sourceName: fileName,
+					title,
 				});
 
-			return {
-				expiresAt,
-				id: document.id,
-				status: document.status,
-				uploadUrl,
-			};
+				const createdDocument = await this.documentRepository.create(
+					documentEntity,
+					trx,
+				);
+				const document = createdDocument.toObject();
+
+				const sourceKey = `uploads/${document.id.toString()}/original.pdf`;
+
+				await this.documentRepository.updateSourceKey(
+					document.id,
+					sourceKey,
+					trx,
+				);
+
+				const { expiresAt, url: uploadUrl } =
+					await this.storage.getUploadSignedUrl({
+						contentType: "application/pdf",
+						key: sourceKey,
+					});
+
+				return {
+					expiresAt,
+					id: document.id,
+					status: document.status,
+					uploadUrl,
+				};
+			});
 		} catch (error) {
 			if (
 				error instanceof ForeignKeyViolationError &&
-				(error.table === "users" ||
-					Boolean(error.constraint.includes("owner_id")))
+				error.constraint === "document_owner_id_foreign"
 			) {
 				throw new HTTPError({
 					message: DocumentValidationMessage.USER_NOT_FOUND,

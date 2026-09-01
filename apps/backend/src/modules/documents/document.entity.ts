@@ -149,9 +149,13 @@ class DocumentEntity {
 	}
 
 	public toObject(): DocumentGetAllItemResponseDto {
+		if (this.id === null) {
+			throw new Error("Document ID is null. Entity must be persisted first.");
+		}
+
 		return {
 			createdAt: this.createdAt,
-			id: this.id as number,
+			id: this.id,
 			pageCount: this.pageCount,
 			status: this.status,
 			title: this.title,

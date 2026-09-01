@@ -34,7 +34,6 @@ export {
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
-	DocumentValidationRule,
 } from "./modules/documents/documents.js";
 export {
 	type UserGetAllItemResponseDto,

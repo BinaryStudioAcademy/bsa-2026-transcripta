@@ -16,7 +16,7 @@ Rules:
 - Mark the illegible as [?] and the completely lost as [...].
 - Keep dates exactly as written, do not convert the calendar.
 - Return an empty cell as null, not as an empty string.`,
-	is_public: false,
+	is_public: true,
 	name: "Parish register, late 19th century",
 	output_schema: JSON.stringify({
 		properties: {
