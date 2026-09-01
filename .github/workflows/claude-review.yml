@@ -38,9 +38,9 @@ jobs:
           echo "value=$value" >> "$GITHUB_OUTPUT"
 
       - uses: anthropics/claude-code-action@v1
-        continue-on-error: true
         with:
           anthropic_api_key: ${{ steps.anthropic-key.outputs.value }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           use_sticky_comment: true
           prompt: |
             You are the automated first-pass reviewer for the Transcripta
