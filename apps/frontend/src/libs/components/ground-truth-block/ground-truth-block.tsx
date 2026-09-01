@@ -1,6 +1,7 @@
-import { AppRoute } from "~/libs/enums/app-route.enum.js";
-import { Link } from "../link/link.js";
+import { Link } from "~/libs/components/components.js";
+import { AppRoute } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
+
 import styles from "./ground-truth-block.module.css";
 
 type Properties = {
@@ -9,6 +10,7 @@ type Properties = {
 	pagesTotal: number;
 	pagesTyped: number;
 };
+
 const GroundTruthBlock: React.FC<Properties> = ({
 	cer,
 	documentId,
@@ -18,10 +20,11 @@ const GroundTruthBlock: React.FC<Properties> = ({
 	return (
 		<>
 			<span>
-				{pagesTyped} of {pagesTotal} pages typed blind
+				<span className={styles["figure"]}>{pagesTyped}</span> of{" "}
+				<span className={styles["figure"]}>{pagesTotal}</span> pages typed blind
 			</span>
 			<p>
-				CER <span className={styles["percent"]}>{cer}%</span> — measured against
+				CER <span className={styles["figure"]}>{cer}%</span> — measured against
 				your blind-typed pages.
 			</p>
 			<Link

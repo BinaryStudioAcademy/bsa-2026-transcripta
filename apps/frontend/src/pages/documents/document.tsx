@@ -16,6 +16,8 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
+import styles from "./document.module.css";
+
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const { document, documentDataStatus } = useAppSelector(({ documents }) => ({
@@ -40,28 +42,41 @@ const Document: React.FC = () => {
 				<>
 					<h1>{document.title}</h1>
 					<StatusChip status={document.status} />
-					<ProgressBar
-						closedPct={document.progress.closedPct}
-						verifiedPct={document.progress.verifiedPct}
-					/>
-					<BudgetIndicator
-						limitUsd={document.budget.limitUsd}
-						spentUsd={document.budget.spentUsd}
-					/>
-					<Link
-						to={configureString(AppRoute.VERIFICATION, {
-							id: String(document.id),
-						})}
-					>
-						Resume at page {document.cursorPageNo}
-					</Link>
-					{document.groundTruth && (
-						<GroundTruthBlock
-							cer={document.groundTruth?.cer}
-							documentId={document.id}
-							pagesTotal={document.groundTruth?.pagesTotal}
-							pagesTyped={document.groundTruth?.pagesTyped}
+
+					<section>
+						<h2>Transcription</h2>
+						<ProgressBar
+							closedPct={document.progress.closedPct}
+							verifiedPct={document.progress.verifiedPct}
 						/>
+						<BudgetIndicator
+							limitUsd={document.budget.limitUsd}
+							spentUsd={document.budget.spentUsd}
+						/>
+					</section>
+
+					<section>
+						<h2>Verification</h2>
+						<Link
+							to={configureString(AppRoute.VERIFICATION, {
+								id: String(document.id),
+							})}
+						>
+							Resume at page{" "}
+							<span className={styles["figure"]}>{document.cursorPageNo}</span>
+						</Link>
+					</section>
+
+					{document.groundTruth && (
+						<section>
+							<h2>Ground truth</h2>
+							<GroundTruthBlock
+								cer={document.groundTruth.cer}
+								documentId={document.id}
+								pagesTotal={document.groundTruth.pagesTotal}
+								pagesTyped={document.groundTruth.pagesTyped}
+							/>
+						</section>
 					)}
 				</>
 			)}

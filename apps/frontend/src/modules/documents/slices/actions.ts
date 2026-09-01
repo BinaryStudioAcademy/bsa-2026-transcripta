@@ -27,9 +27,13 @@ const loadById = createAsyncThunk<
 	DocumentGetByIdResponseDto,
 	number,
 	AsyncThunkConfig
->(`${sliceName}/load-by-id`, (id, { extra }) => {
-	const { documentApi } = extra;
+>(
+	`${sliceName}/load-by-id`,
+	(id, { extra }) => {
+		const { documentApi } = extra;
 
-	return documentApi.getById(id);
-});
+		return documentApi.getById(id);
+	},
+	{ serializeError },
+);
 export { loadAll, loadById };

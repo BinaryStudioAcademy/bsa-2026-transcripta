@@ -1,4 +1,16 @@
-.percent {
+.track {
+	height: 6px;
+	overflow: hidden;
+	background: var(--hairline);
+	border-radius: var(--r-sm);
+}
+
+.fill {
+	height: 100%;
+	background: var(--accent);
+}
+
+.figure {
 	font-family: var(--font-mono);
 	font-variant-numeric: tabular-nums;
 }

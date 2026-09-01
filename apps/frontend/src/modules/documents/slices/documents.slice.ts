@@ -18,8 +18,8 @@ type State = {
 
 const initialState: State = {
 	dataStatus: DataStatus.IDLE,
-	documentDataStatus: DataStatus.IDLE,
 	document: null,
+	documentDataStatus: DataStatus.IDLE,
 	documents: [],
 };
 

@@ -5,8 +5,8 @@ import { type Storage } from "~/libs/modules/storage/storage.js";
 
 import { DocumentsApiPath } from "./libs/enums/enums.js";
 import {
-	type DocumentGetByIdResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
 } from "./libs/types/types.js";
 
 type Constructor = {
