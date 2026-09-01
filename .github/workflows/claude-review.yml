@@ -38,7 +38,6 @@ jobs:
           echo "value=$value" >> "$GITHUB_OUTPUT"
 
       - uses: anthropics/claude-code-action@v1
-        continue-on-error: true
         with:
           anthropic_api_key: ${{ steps.anthropic-key.outputs.value }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -128,6 +127,18 @@ jobs:
             `confirmed: true`). Post one summary comment. Only post to GitHub —
             do not print the review as a chat message.
 
+            Post each finding the moment you have it. Do not gather everything
+            and post at the end: on a large diff you will run out of budget
+            before you get there, and a review nobody can read is worth
+            nothing. A partial review that reached the PR beats a complete one
+            that did not.
+
+            Budget yourself against the size of the diff. Read the substantive
+            files first — the ones carrying logic — and treat barrels, type
+            re-exports and generated files as skim material. If you are running
+            short, post the summary with what you have and say which files you
+            did not reach.
+
             Each finding:
             - Severity: blocker | major | minor | nit
             - Where: path and line
@@ -143,5 +154,5 @@ jobs:
             for human review.
           claude_args: |
             --model claude-sonnet-5
-            --max-turns 20
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"
+            --max-turns 40
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr checks:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Read,Grep,Glob"
