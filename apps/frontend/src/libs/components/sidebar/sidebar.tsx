@@ -6,7 +6,7 @@ import {
 	useCallback,
 } from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
-import { actions as authActions } from "~/modules/auth/auth.js";
+import { actions as authActions, selectUser } from "~/modules/auth/auth.js";
 
 import { NAV_ITEMS } from "./libs/constants/constants.js";
 
@@ -16,7 +16,7 @@ const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 const Sidebar: React.FC = () => {
 	const dispatch = useAppDispatch();
 
-	const user = useAppSelector((state) => state.auth.user);
+	const user = useAppSelector(selectUser);
 
 	const handleSignOut = useCallback((): void => {
 		dispatch(authActions.logout());
