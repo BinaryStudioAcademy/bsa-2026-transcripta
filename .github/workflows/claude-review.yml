@@ -2,7 +2,7 @@ name: claude-review
 
 on:
   pull_request_target:
-    types: [opened, synchronize, ready_for_review]
+    types: [opened, ready_for_review]
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number }}
@@ -130,9 +130,7 @@ jobs:
 
             Before you review, run `gh pr view --comments` and read your own
             earlier reviews on this PR. Never raise a finding that is already
-            there — a re-run must not repeat what a previous run said. If an
-            earlier review exists, review only what changed since it and say in
-            the summary that this is an update rather than a fresh pass.
+            there — a re-run must not repeat what a previous run said.
 
             Post each finding the moment you have it. Do not gather everything
             and post at the end: on a large diff you will run out of budget
