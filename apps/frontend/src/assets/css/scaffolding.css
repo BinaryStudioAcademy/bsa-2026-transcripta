@@ -126,10 +126,6 @@ a:focus-visible {
 	text-decoration: none;
 }
 
-.sidebar__brand:hover {
-	text-decoration: none;
-}
-
 .sidebar__brand-wordmark {
 	font:
 		600 16px/1 var(--font-display),
