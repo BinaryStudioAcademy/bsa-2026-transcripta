@@ -87,22 +87,18 @@ async function up(knex: Knex): Promise<void> {
 			.timestamp(ColumnName.UPDATED_AT, { useTz: true })
 			.notNullable()
 			.defaultTo(knex.fn.now());
+		table.unique([ColumnName.FAMILY_ID, ColumnName.VERSION], {
+			indexName: "preset_version_unique",
+		});
+		table.check("?? > 0", [ColumnName.VERSION], "preset_version_positive");
+		table.index(ColumnName.OWNER_ID, IndexName.OWNER);
+		table.index(ColumnName.IS_PUBLIC, IndexName.PUBLIC, {
+			predicate: knex.whereRaw("is_public"),
+		});
 	});
-
-	await knex.raw(`
-		ALTER TABLE ${TableName.PRESET}
-		ADD CONSTRAINT preset_version_unique UNIQUE (${ColumnName.FAMILY_ID}, ${ColumnName.VERSION}),
-		ADD CONSTRAINT preset_version_positive CHECK (${ColumnName.VERSION} > 0)
-	`);
 
 	await knex.raw(
 		`CREATE INDEX ${IndexName.FAMILY} ON ${TableName.PRESET} (${ColumnName.FAMILY_ID}, version DESC)`,
-	);
-	await knex.raw(
-		`CREATE INDEX ${IndexName.OWNER} ON ${TableName.PRESET} (${ColumnName.OWNER_ID})`,
-	);
-	await knex.raw(
-		`CREATE INDEX ${IndexName.PUBLIC} ON ${TableName.PRESET} (${ColumnName.IS_PUBLIC}) WHERE ${ColumnName.IS_PUBLIC}`,
 	);
 
 	await knex.raw(`

@@ -1,8 +1,8 @@
-import { type HTTPMethodType } from "./http-method.type.js";
+import { type HTTPMethodValue } from "./http-method.type.js";
 
 type HTTPOptions = {
 	headers: Headers;
-	method: HTTPMethodType;
+	method: HTTPMethodValue;
 	payload: BodyInit | null;
 };
 

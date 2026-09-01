@@ -9,7 +9,7 @@ export { configureString } from "./libs/helpers/helpers.js";
 export { type Config } from "./libs/modules/config/config.js";
 export {
 	type HTTP,
-	type HTTPMethodType,
+	type HTTPMethodValue,
 	type HTTPOptions,
 	HTTPCode,
 	HTTPHeader,
