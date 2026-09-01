@@ -4,7 +4,7 @@ import { DocumentStatus } from "../enums/document-status.enum.js";
 type DocumentGetByIdResponseDto = {
 	budget: { limitUsd: string; spentUsd: string; usedPct: number };
 	cursorPageNo: number;
-	groundTruth: { cer: number; pagesTotal: number; pagesTyped: number } | null;
+	groundTruth: null | { cer: number; pagesTotal: number; pagesTyped: number };
 	id: number;
 	pageCount: number;
 	preset: { id: number; name: string; version: number };

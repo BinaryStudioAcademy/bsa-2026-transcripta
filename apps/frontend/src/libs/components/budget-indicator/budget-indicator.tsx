@@ -1,5 +1,6 @@
-import styles from "./budget-indicator.module.css";
 import { formatMoney } from "~/libs/helpers/helpers.js";
+
+import styles from "./budget-indicator.module.css";
 
 type Properties = {
 	limitUsd: string;

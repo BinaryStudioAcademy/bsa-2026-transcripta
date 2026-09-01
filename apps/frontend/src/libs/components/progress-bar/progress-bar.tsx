@@ -11,7 +11,10 @@ const ProgressBar: React.FC<Properties> = ({
 }: Properties) => (
 	<div>
 		<div className={styles["track"]}>
-			<div className={styles["fill"]} style={{ width: `${closedPct}%` }} />
+			<div
+				className={styles["fill"]}
+				style={{ width: `${String(closedPct)}%` }}
+			/>
 		</div>
 		<span className={styles["figure"]}>{verifiedPct}%</span>
 	</div>

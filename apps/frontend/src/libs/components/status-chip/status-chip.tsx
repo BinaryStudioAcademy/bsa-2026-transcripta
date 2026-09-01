@@ -1,5 +1,4 @@
 import { type ValueOf } from "~/libs/types/types.js";
-
 import { DocumentStatus } from "~/modules/documents/documents.js";
 
 type Properties = {
