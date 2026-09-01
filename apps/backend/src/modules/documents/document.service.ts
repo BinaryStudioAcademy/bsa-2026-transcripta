@@ -1,4 +1,5 @@
 import {
+	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	HTTPCode,
@@ -12,6 +13,7 @@ import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js"
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
+import { DOCUMENT_OWNER_ID_FOREIGN } from "./libs/constants/constant.js";
 import { DocumentValidationMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
 
@@ -77,7 +79,7 @@ class DocumentService {
 
 				const { expiresAt, url: uploadUrl } =
 					await this.storage.getUploadSignedUrl({
-						contentType: "application/pdf",
+						contentType: ContentType.PDF,
 						key: sourceKey,
 					});
 
@@ -91,7 +93,7 @@ class DocumentService {
 		} catch (error) {
 			if (
 				error instanceof ForeignKeyViolationError &&
-				error.constraint === "document_owner_id_foreign"
+				error.constraint === DOCUMENT_OWNER_ID_FOREIGN
 			) {
 				throw new HTTPError({
 					message: DocumentValidationMessage.USER_NOT_FOUND,

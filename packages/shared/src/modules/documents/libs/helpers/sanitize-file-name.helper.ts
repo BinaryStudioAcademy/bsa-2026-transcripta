@@ -8,7 +8,9 @@ const sanitizeFileName = (fileName: string): string => {
 	const name = hasExtension
 		? fileName.slice(START_INDEX, lastDotIndex)
 		: fileName;
-	const extension = hasExtension ? fileName.slice(lastDotIndex) : "";
+	const extension = hasExtension
+		? fileName.slice(lastDotIndex).toLowerCase()
+		: "";
 
 	const sanitizedName = name
 		.trim()
