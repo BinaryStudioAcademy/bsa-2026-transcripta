@@ -27,6 +27,7 @@ export { AuthApiPath } from "./modules/auth/auth.js";
 export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
 	DocumentsApiPath,
 	DocumentStatus,
 } from "./modules/documents/documents.js";
