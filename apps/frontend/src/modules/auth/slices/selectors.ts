@@ -1,6 +1,4 @@
-import { type store } from "~/libs/modules/store/store.js";
-
-type RootState = ReturnType<typeof store.instance.getState>;
+import { type RootState } from "~/libs/types/types.js";
 
 const selectUser = (state: RootState) => state.auth.user;
 
