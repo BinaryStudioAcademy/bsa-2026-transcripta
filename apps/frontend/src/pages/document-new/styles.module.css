@@ -23,7 +23,7 @@
 	color: var(--text);
 }
 
-.upload-form {
+.upload-screen {
 	flex: 1 1 0%;
 	padding: var(--sp-8);
 	overflow: auto;
@@ -72,6 +72,48 @@
 .dropzone__link:hover {
 	color: var(--accent-active);
 	text-decoration-color: currentcolor;
+}
+
+.dropzone_button {
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+	justify-content: center;
+	height: var(--ctl-md);
+	padding: 0 14px;
+	font: 500 var(--fs-sm) / 1 var(--font-ui);
+	color: var(--text);
+	text-decoration: none;
+	cursor: pointer;
+	user-select: none;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--r-md);
+}
+
+.dropzone_button:focus-visible {
+	outline: var(--ring-w) solid var(--ring);
+	outline-offset: 1px;
+}
+
+.dropzone_button--sm {
+	height: var(--ctl-sm);
+	padding: 0 10px;
+	font-size: var(--fs-xs);
+}
+
+.dropzone_button--secondary {
+	background: var(--surface);
+	border-color: var(--hairline-strong);
+}
+
+.dropzone_button--secondary:hover:not(:disabled) {
+	background: var(--surface-2);
+}
+
+.dropzone_button--secondary:active:not(:disabled) {
+	background: var(--surface-2);
+	transform: translateY(1px);
 }
 
 .dropzone b {
