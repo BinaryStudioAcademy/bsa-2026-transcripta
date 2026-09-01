@@ -45,7 +45,7 @@ const SignUpForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 					label="Email"
 					name="email"
 					placeholder="you@archive.org"
-					type="email"
+					type="text"
 				/>
 				<Input
 					control={control}
