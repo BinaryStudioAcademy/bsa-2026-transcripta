@@ -106,11 +106,6 @@
 	text-decoration-color: currentcolor;
 }
 
-.auth-card__form-footer-link a:focus-visible {
-	outline: var(--ring-w) solid var(--ring);
-	outline-offset: 1px;
-}
-
 .auth-page__footer-text {
 	margin: 0;
 	font-family: var(--font-ui);

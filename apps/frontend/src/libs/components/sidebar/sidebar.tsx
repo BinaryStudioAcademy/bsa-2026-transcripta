@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
-import { LogoIcon } from "~/libs/components/components.js";
+import { Link, LogoIcon } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { useAppDispatch, useCallback } from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
@@ -23,10 +23,10 @@ const Sidebar: React.FC = () => {
 
 	return (
 		<aside className="sidebar">
-			<div className="sidebar__brand">
+			<Link className="sidebar__brand" to={AppRoute.ROOT}>
 				<LogoIcon size="medium" />
 				<span className="sidebar__brand-wordmark">Transcripta</span>
-			</div>
+			</Link>
 
 			<nav className="sidebar__nav">
 				{NAV_ITEMS.map((item) => (
