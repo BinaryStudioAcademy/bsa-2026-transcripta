@@ -34,6 +34,7 @@ const reactConfig = {
 	rules: {
 		...react.configs["jsx-runtime"].rules,
 		...react.configs["recommended"].rules,
+		"react/prop-types": ["off"],
 		"react/jsx-no-bind": ["error", { ignoreRefs: true }],
 		"react/react-in-jsx-scope": ["off"],
 	},
