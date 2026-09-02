@@ -133,7 +133,7 @@ async function up(knex: Knex): Promise<void> {
 	await knex.raw(`
 	CREATE INDEX ${IndexName.DOC_NO} ON ${TABLE_NAME} (${ColumnName.DOCUMENT_ID}, ${ColumnName.PAGE_NO});
 	CREATE INDEX ${IndexName.STATUS} ON ${TABLE_NAME} (${ColumnName.DOCUMENT_ID}, ${ColumnName.STATUS});
-	CREATE INDEX ${IndexName.STUCK} ON ${TABLE_NAME} (${ColumnName.UPDATED_AT}) WHERE ${ColumnName.STATUS} IN ('queued', 'transcribing');
+	CREATE INDEX ${IndexName.STUCK} ON ${TABLE_NAME} (${ColumnName.UPDATED_AT}) WHERE ${ColumnName.STATUS} IN (${PageStatus.QUEUED}, ${PageStatus.TRANSCRIBING});
 	`);
 
 	await knex.raw(`

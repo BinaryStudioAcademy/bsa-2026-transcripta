@@ -7,4 +7,5 @@ class PageRepository {
 		this.pageModel = pageModel;
 	}
 }
+
 export { PageRepository };

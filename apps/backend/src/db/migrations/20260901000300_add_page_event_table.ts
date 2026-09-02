@@ -66,18 +66,17 @@ async function up(knex: Knex): Promise<void> {
 			.references(TranscriptionColumnName.ID)
 			.inTable(TRANSCRIPTION_TABLE_NAME)
 			.onDelete("CASCADE");
-
 		table.text(ColumnName.EVENT).notNullable();
 		table
 			.integer(ColumnName.ACTOR_ID)
 			.nullable()
 			.references(UsersColumnName.ID)
 			.inTable(USERS_TABLE_NAME);
-
-		table.jsonb(ColumnName.DETAILS).notNullable().defaultTo("'{}'::jsonb");
-
+		table
+			.jsonb(ColumnName.DETAILS)
+			.notNullable()
+			.defaultTo(knex.raw("'{}'::jsonb"));
 		table.integer(ColumnName.DURATION_MS).nullable();
-
 		table
 			.timestamp(ColumnName.CREATED_AT, { useTz: true })
 			.notNullable()
