@@ -4,15 +4,17 @@ import { DataStatus } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { type UserGetAllItemResponseDto } from "~/modules/users/users.js";
 
-import { signIn, signUp } from "./actions.js";
+import { restoreSession, signIn, signUp } from "./actions.js";
 
 type State = {
 	dataStatus: ValueOf<typeof DataStatus>;
+	isInitialized: boolean;
 	user: null | UserGetAllItemResponseDto;
 };
 
 const initialState: State = {
 	dataStatus: DataStatus.IDLE,
+	isInitialized: false,
 	user: null,
 };
 
@@ -30,6 +32,19 @@ const { actions, name, reducer } = createSlice({
 		);
 		builder.addMatcher(isAnyOf(signIn.rejected, signUp.rejected), (state) => {
 			state.dataStatus = DataStatus.REJECTED;
+			state.user = null;
+		});
+		builder.addCase(restoreSession.pending, (state) => {
+			state.isInitialized = false;
+		});
+
+		builder.addCase(restoreSession.fulfilled, (state, action) => {
+			state.isInitialized = true;
+			state.user = action.payload;
+		});
+
+		builder.addCase(restoreSession.rejected, (state) => {
+			state.isInitialized = true;
 			state.user = null;
 		});
 	},
