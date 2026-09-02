@@ -18,7 +18,7 @@ class DocumentModel extends AbstractModel {
 
 	public pageCount!: number;
 
-	public presetId!: null | number;
+	public presetId!: number;
 
 	public sourceBytes!: null | number;
 

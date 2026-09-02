@@ -1,17 +1,12 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, type NavLinkProps } from "react-router-dom";
 
-type Properties = {
+type Properties = Omit<NavLinkProps, "children" | "to"> & {
 	children: React.ReactNode;
-	className?: string;
 	to: string;
 };
 
-const Link: React.FC<Properties> = ({
-	children,
-	className = "",
-	to,
-}: Properties) => (
-	<NavLink className={className} to={to}>
+const Link: React.FC<Properties> = ({ children, to, ...rest }) => (
+	<NavLink to={to} {...rest}>
 		{children}
 	</NavLink>
 );
