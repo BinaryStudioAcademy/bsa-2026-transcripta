@@ -1,9 +1,9 @@
-import type { Knex } from "knex";
+import { type Knex } from "knex";
 
 const TABLE_NAME = "transcription_cache";
 
+const FUNCTION_NAME = "touch_updated_at";
 const TRIGGER_NAME = "cache_touch";
-const TOUCH_UPDATED_AT_FUNCTION_NAME = "touch_updated_at";
 
 const DEFAULT_INPUT_TOKEN = 0;
 const DEFAULT_OUTPUT_TOKEN = 0;
@@ -67,7 +67,7 @@ async function up(knex: Knex): Promise<void> {
 	CREATE TRIGGER ${TRIGGER_NAME}
 	BEFORE UPDATE ON ${TABLE_NAME}
 	FOR EACH ROW
-	EXECUTE FUNCTION ${TOUCH_UPDATED_AT_FUNCTION_NAME}()`);
+	EXECUTE FUNCTION ${FUNCTION_NAME}()`);
 }
 
 export { down, up };
