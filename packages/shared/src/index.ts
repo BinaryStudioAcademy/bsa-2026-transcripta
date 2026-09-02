@@ -29,7 +29,6 @@ export {
 	type DocumentGetAllResponseDto,
 	DocumentsApiPath,
 	DocumentStatus,
-	PageStatus,
 } from "./modules/documents/documents.js";
 export {
 	type UserGetAllItemResponseDto,

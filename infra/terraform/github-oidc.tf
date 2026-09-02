@@ -73,6 +73,23 @@ data "aws_iam_policy_document" "gha" {
     actions   = ["ssm:GetCommandInvocation", "ssm:ListCommandInvocations"]
     resources = ["*"]
   }
+
+  statement {
+    sid       = "SsmReadAnthropicKey"
+    actions   = ["ssm:GetParameter"]
+    resources = ["arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/anthropic-api-key"]
+  }
+
+  statement {
+    sid       = "SsmDecryptAnthropicKey"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["ssm.${data.aws_region.current.name}.amazonaws.com"]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "gha" {

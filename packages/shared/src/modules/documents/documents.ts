@@ -1,8 +1,4 @@
-export {
-	DocumentsApiPath,
-	DocumentStatus,
-	PageStatus,
-} from "./libs/enums/enums.js";
+export { DocumentsApiPath, DocumentStatus } from "./libs/enums/enums.js";
 export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
