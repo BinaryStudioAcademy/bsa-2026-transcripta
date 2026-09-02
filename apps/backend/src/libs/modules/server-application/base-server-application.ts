@@ -3,7 +3,6 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import swagger, { type StaticDocumentSpec } from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { AuthErrorMessage } from "@transcripta/shared";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { Redis } from "ioredis";
 import { existsSync } from "node:fs";
@@ -12,6 +11,7 @@ import { fileURLToPath } from "node:url";
 
 import { ServerErrorType } from "~/libs/enums/enums.js";
 import { type ValidationError } from "~/libs/exceptions/exceptions.js";
+import { AuthRateLimitErrorMessage } from "~/libs/modules/auth/libs/enums/enums.js";
 import { type Config } from "~/libs/modules/config/config.js";
 import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
@@ -66,7 +66,7 @@ class BaseServerApplication implements ServerApplication {
 	private initApp(): void {
 		this.app = Fastify({
 			ignoreTrailingSlash: true,
-			trustProxy: true,
+			trustProxy: 1,
 		});
 	}
 
@@ -241,7 +241,7 @@ class BaseServerApplication implements ServerApplication {
 		await this.app.register(fastifyRateLimit, {
 			errorResponseBuilder: (_request, context) => {
 				throw new HTTPError({
-					message: AuthErrorMessage.TOO_MANY_REQUESTS(context.after),
+					message: AuthRateLimitErrorMessage.TOO_MANY_REQUESTS(context.after),
 					status: HTTPCode.TOO_MANY_REQUESTS,
 				});
 			},
