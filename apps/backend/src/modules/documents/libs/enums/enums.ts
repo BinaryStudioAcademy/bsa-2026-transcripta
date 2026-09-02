@@ -1,1 +1,4 @@
-export { DocumentsApiPath } from "@transcripta/shared";
+export {
+	DocumentsApiPath,
+	DocumentValidationMessage,
+} from "@transcripta/shared";
