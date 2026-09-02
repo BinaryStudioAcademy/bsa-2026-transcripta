@@ -105,6 +105,14 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			REDIS: {
+				CONNECTION_STRING: {
+					default: "redis://localhost:6379",
+					doc: "Redis connection string",
+					env: "REDIS_CONNECTION_STRING",
+					format: String,
+				},
+			},
 			STORAGE: {
 				ACCESS_KEY_ID: {
 					default: "minioadmin",
@@ -134,7 +142,6 @@ class BaseConfig implements Config {
 					default: "minioadmin",
 					doc: "S3 secret access key",
 					env: "STORAGE_SECRET_ACCESS_KEY",
-					format: String,
 				},
 			},
 		});

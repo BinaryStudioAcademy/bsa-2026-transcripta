@@ -1,8 +1,11 @@
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import swagger, { type StaticDocumentSpec } from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import { AuthErrorMessage } from "@transcripta/shared";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { Redis } from "ioredis";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,6 +66,7 @@ class BaseServerApplication implements ServerApplication {
 	private initApp(): void {
 		this.app = Fastify({
 			ignoreTrailingSlash: true,
+			trustProxy: true,
 		});
 	}
 
@@ -162,10 +166,12 @@ class BaseServerApplication implements ServerApplication {
 		});
 	}
 	public addRoute(parameters: ServerApplicationRouteParameters): void {
-		const { handler, method, path, preHandler, validation } = parameters;
+		const { config, handler, method, path, preHandler, validation } =
+			parameters;
 		const preHandlers = preHandler ? [preHandler] : [];
 
 		this.app.route({
+			...(config ? { config } : {}),
 			handler,
 			method,
 			preHandler: preHandlers,
@@ -230,6 +236,19 @@ class BaseServerApplication implements ServerApplication {
 		await this.app.register(fastifyMultipart, {
 			attachFieldsToBody: "keyValues",
 			limits: { fileSize: FILE_SIZE_LIMIT },
+		});
+
+		await this.app.register(fastifyRateLimit, {
+			errorResponseBuilder: (_request, context) => {
+				throw new HTTPError({
+					message: AuthErrorMessage.TOO_MANY_REQUESTS(context.after),
+					status: HTTPCode.TOO_MANY_REQUESTS,
+				});
+			},
+			global: false,
+			redis: new Redis(this.config.ENV.REDIS.CONNECTION_STRING, {
+				maxRetriesPerRequest: null,
+			}),
 		});
 
 		await Promise.all(
