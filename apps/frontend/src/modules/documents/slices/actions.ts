@@ -36,4 +36,5 @@ const loadById = createAsyncThunk<
 	},
 	{ serializeError },
 );
+
 export { loadAll, loadById };

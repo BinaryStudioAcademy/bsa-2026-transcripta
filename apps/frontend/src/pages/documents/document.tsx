@@ -16,19 +16,25 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
-import styles from "./document.module.css";
-
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
-	const { document, documentDataStatus } = useAppSelector(({ documents }) => ({
-		document: documents.document,
-		documentDataStatus: documents.documentDataStatus,
-	}));
+	const { document: currentDocument, documentDataStatus } = useAppSelector(
+		({ documents }) => ({
+			document: documents.document,
+			documentDataStatus: documents.documentDataStatus,
+		}),
+	);
 
 	const { id } = useParams();
 
 	useEffect(() => {
-		void dispatch(documentActions.loadById(Number(id)));
+		const documentId = Number(id);
+
+		if (!Number.isFinite(documentId)) {
+			return;
+		}
+
+		void dispatch(documentActions.loadById(documentId));
 	}, [id, dispatch]);
 
 	const isLoading = documentDataStatus === DataStatus.PENDING;
@@ -37,21 +43,21 @@ const Document: React.FC = () => {
 	return (
 		<>
 			{isLoading && <LoaderOverlay label="Loading document" />}
-			{hasError && <p>Unable to download the document.</p>}
-			{document && (
+			{hasError && <p>Unable to load the document.</p>}
+			{currentDocument && (
 				<>
 					<h1>{document.title}</h1>
-					<StatusChip status={document.status} />
+					<StatusChip status={currentDocument.status} />
 
 					<section>
 						<h2>Transcription</h2>
 						<ProgressBar
-							closedPct={document.progress.closedPct}
-							verifiedPct={document.progress.verifiedPct}
+							closedPct={currentDocument.progress.closedPct}
+							verifiedPct={currentDocument.progress.verifiedPct}
 						/>
 						<BudgetIndicator
-							limitUsd={document.budget.limitUsd}
-							spentUsd={document.budget.spentUsd}
+							limitUsd={currentDocument.budget.limitUsd}
+							spentUsd={currentDocument.budget.spentUsd}
 						/>
 					</section>
 
@@ -59,22 +65,24 @@ const Document: React.FC = () => {
 						<h2>Verification</h2>
 						<Link
 							to={configureString(AppRoute.VERIFICATION, {
-								id: String(document.id),
+								id: String(currentDocument.id),
 							})}
 						>
 							Resume at page{" "}
-							<span className={styles["figure"]}>{document.cursorPageNo}</span>
+							<span className="tabular-figures">
+								{currentDocument.cursorPageNo}
+							</span>
 						</Link>
 					</section>
 
-					{document.groundTruth && (
+					{currentDocument.groundTruth && (
 						<section>
 							<h2>Ground truth</h2>
 							<GroundTruthBlock
-								cer={document.groundTruth.cer}
-								documentId={document.id}
-								pagesTotal={document.groundTruth.pagesTotal}
-								pagesTyped={document.groundTruth.pagesTyped}
+								cer={currentDocument.groundTruth.cer}
+								documentId={currentDocument.id}
+								pagesTotal={currentDocument.groundTruth.pagesTotal}
+								pagesTyped={currentDocument.groundTruth.pagesTyped}
 							/>
 						</section>
 					)}

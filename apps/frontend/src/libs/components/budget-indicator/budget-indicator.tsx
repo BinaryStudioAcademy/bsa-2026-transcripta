@@ -1,7 +1,5 @@
 import { formatMoney } from "~/libs/helpers/helpers.js";
 
-import styles from "./budget-indicator.module.css";
-
 type Properties = {
 	limitUsd: string;
 	spentUsd: string;
@@ -12,7 +10,7 @@ const BudgetIndicator: React.FC<Properties> = ({
 	spentUsd,
 }: Properties) => {
 	return (
-		<span className={styles["money"]}>
+		<span className="tabular-figures">
 			{formatMoney(spentUsd)} / {formatMoney(limitUsd)}
 		</span>
 	);
