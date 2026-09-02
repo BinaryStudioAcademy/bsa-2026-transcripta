@@ -163,17 +163,12 @@ class BaseServerApplication implements ServerApplication {
 			return await response.sendFile("index.html", staticPath);
 		});
 	}
-
 	private initShutdown(): void {
-		process.once("SIGINT", () => {
-			void this.app.close();
-			void this.queueRegistry.close();
-		});
-
-		process.once("SIGTERM", () => {
-			void this.app.close();
-			void this.queueRegistry.close();
-		});
+		for (const signal of ["SIGINT", "SIGTERM"] as const) {
+			process.once(signal, () => {
+				this.shutdown();
+			});
+		}
 	}
 
 	private initValidationCompiler(): void {
@@ -187,6 +182,16 @@ class BaseServerApplication implements ServerApplication {
 
 				return { value: result.data as unknown };
 			};
+		});
+	}
+
+	private shutdown(): void {
+		void this.app.close().catch((error: unknown) => {
+			this.logger.error("Failed to close server.", { error });
+		});
+
+		void this.queueRegistry.close().catch((error: unknown) => {
+			this.logger.error("Failed to close queues.", { error });
 		});
 	}
 

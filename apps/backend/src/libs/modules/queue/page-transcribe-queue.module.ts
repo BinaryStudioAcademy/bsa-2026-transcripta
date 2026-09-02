@@ -1,6 +1,7 @@
 import { type Processor } from "bullmq";
 
-import { type Logger } from "../logger/logger.js";
+import { type Logger } from "~/libs/modules/logger/logger.js";
+
 import { BaseQueue } from "./base-queue.module.js";
 import {
 	PAGE_TRANSCRIBE_JOB_ATTEMPTS,

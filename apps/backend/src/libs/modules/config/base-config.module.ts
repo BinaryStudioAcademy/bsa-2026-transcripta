@@ -148,6 +148,7 @@ class BaseConfig implements Config {
 					default: "minioadmin",
 					doc: "S3 secret access key",
 					env: "STORAGE_SECRET_ACCESS_KEY",
+					format: String,
 				},
 			},
 		});
