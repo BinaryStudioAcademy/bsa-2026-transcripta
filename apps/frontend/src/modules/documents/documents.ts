@@ -11,7 +11,6 @@ const documentApi = new DocumentApi({
 });
 
 export { documentApi };
-export { DocumentStatus } from "./libs/enums/enums.js";
 export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
