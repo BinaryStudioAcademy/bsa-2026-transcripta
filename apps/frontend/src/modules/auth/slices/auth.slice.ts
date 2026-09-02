@@ -20,6 +20,19 @@ const initialState: State = {
 
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
+		builder.addCase(restoreSession.pending, (state) => {
+			state.isInitialized = false;
+		});
+
+		builder.addCase(restoreSession.fulfilled, (state, action) => {
+			state.isInitialized = true;
+			state.user = action.payload;
+		});
+
+		builder.addCase(restoreSession.rejected, (state) => {
+			state.isInitialized = true;
+			state.user = null;
+		});
 		builder.addMatcher(isAnyOf(signIn.pending, signUp.pending), (state) => {
 			state.dataStatus = DataStatus.PENDING;
 		});
@@ -32,19 +45,6 @@ const { actions, name, reducer } = createSlice({
 		);
 		builder.addMatcher(isAnyOf(signIn.rejected, signUp.rejected), (state) => {
 			state.dataStatus = DataStatus.REJECTED;
-			state.user = null;
-		});
-		builder.addCase(restoreSession.pending, (state) => {
-			state.isInitialized = false;
-		});
-
-		builder.addCase(restoreSession.fulfilled, (state, action) => {
-			state.isInitialized = true;
-			state.user = action.payload;
-		});
-
-		builder.addCase(restoreSession.rejected, (state) => {
-			state.isInitialized = true;
 			state.user = null;
 		});
 	},
