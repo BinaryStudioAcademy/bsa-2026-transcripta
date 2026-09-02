@@ -242,7 +242,7 @@ class BaseServerApplication implements ServerApplication {
 			errorResponseBuilder: (_request, context) => {
 				throw new HTTPError({
 					message: AuthRateLimitErrorMessage.TOO_MANY_REQUESTS(context.after),
-					status: HTTPCode.TOO_MANY_REQUESTS,
+					status: HTTPCode.RATE_LIMITED,
 				});
 			},
 			global: false,
