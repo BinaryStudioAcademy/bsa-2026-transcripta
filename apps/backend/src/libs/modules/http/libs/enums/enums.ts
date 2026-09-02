@@ -1,1 +1,1 @@
-export { HTTPCode } from "@transcripta/shared";
+export { HTTPCode, HTTPMethod } from "@transcripta/shared";

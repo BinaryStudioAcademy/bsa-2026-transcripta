@@ -12,3 +12,7 @@ const authApi = new AuthApi({
 
 export { authApi };
 export { actions, reducer } from "./slices/auth.js";
+export {
+	/** @public */ selectIsAuthenticated,
+	selectUser,
+} from "./slices/selectors.js";
