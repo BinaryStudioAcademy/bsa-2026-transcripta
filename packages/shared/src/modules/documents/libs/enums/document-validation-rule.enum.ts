@@ -8,6 +8,7 @@ const MAX_FILE_BYTES =
 const PDF_FILE_REGEX = /^.+\.pdf$/i;
 
 const DocumentValidationRule = {
+	ID_MINIMUM: 1,
 	MAX_FILE_BYTES,
 	MIN_TITLE_LENGTH: 1,
 	PDF_FILE_REGEX,

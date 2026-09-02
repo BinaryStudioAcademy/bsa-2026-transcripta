@@ -14,7 +14,10 @@ import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
 import { DOCUMENT_OWNER_ID_FOREIGN } from "./libs/constants/constant.js";
 import { DocumentValidationMessage } from "./libs/enums/enums.js";
-import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
+import {
+	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
+} from "./libs/types/types.js";
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
@@ -108,6 +111,25 @@ class DocumentService {
 		return {
 			items: items.map((item) => item.toObject()),
 		};
+	}
+
+	public async findById(
+		id: number,
+		ownerId: number,
+	): Promise<DocumentGetByIdResponseDto> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			id,
+			ownerId,
+		);
+
+		if (document === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		return document.toObject();
 	}
 }
 
