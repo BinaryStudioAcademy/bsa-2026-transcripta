@@ -28,10 +28,10 @@ export { AuthApiPath } from "./modules/auth/auth.js";
 export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
-	DocumentCreateValidationSchema,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	DocumentCreateValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
