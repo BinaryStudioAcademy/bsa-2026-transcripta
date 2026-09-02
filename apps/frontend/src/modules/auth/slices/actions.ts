@@ -8,6 +8,7 @@ import {
 	type UserSignInResponseDto,
 	type UserSignUpRequestDto,
 	type UserSignUpResponseDto,
+	type UserGetAllItemResponseDto,
 } from "~/modules/users/users.js";
 
 import { name as sliceName } from "./auth.slice.js";
@@ -47,4 +48,24 @@ const signUp = createAsyncThunk<
 	{ serializeError },
 );
 
-export { signIn, signUp };
+const restoreSession = createAsyncThunk<
+	UserGetAllItemResponseDto | null,
+	void,
+	AsyncThunkConfig
+>(
+	`${sliceName}/restore-session`,
+	async (_, { extra }) => {
+		const { userApi } = extra;
+
+		const token = await storage.get<string>(StorageKey.TOKEN);
+
+		if (!token) {
+			return null;
+		}
+
+		return await userApi.getMe();
+	},
+	{ serializeError },
+);
+
+export { restoreSession, signIn, signUp };
