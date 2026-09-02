@@ -8,8 +8,4 @@ const selectIsAuthenticated = (state: RootState): boolean =>
 const selectIsInitialized = (state: RootState): boolean =>
 	state.auth.isInitialized;
 
-export {
-	/** @public */ selectIsAuthenticated,
-	/** @public */ selectIsInitialized,
-	selectUser,
-};
+export { selectIsAuthenticated, selectIsInitialized, selectUser };

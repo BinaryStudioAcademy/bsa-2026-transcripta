@@ -13,7 +13,7 @@ const authApi = new AuthApi({
 export { authApi };
 export { actions, reducer } from "./slices/auth.js";
 export {
-	/** @public */ selectIsAuthenticated,
-	/** @public */ selectIsInitialized,
+	selectIsAuthenticated,
+	selectIsInitialized,
 	selectUser,
 } from "./slices/selectors.js";
