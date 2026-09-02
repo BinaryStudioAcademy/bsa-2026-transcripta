@@ -14,5 +14,6 @@ export { authApi };
 export { actions, reducer } from "./slices/auth.js";
 export {
 	/** @public */ selectIsAuthenticated,
+	/** @public */ selectIsInitialized,
 	selectUser,
 } from "./slices/selectors.js";
