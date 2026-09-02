@@ -74,7 +74,7 @@ async function up(knex: Knex): Promise<void> {
 			.references(UsersColumnName.ID)
 			.inTable(USERS_TABLE_NAME);
 
-		table.jsonb(ColumnName.DETAILS).notNullable().defaultTo("{}");
+		table.jsonb(ColumnName.DETAILS).notNullable().defaultTo("'{}'::jsonb");
 
 		table.integer(ColumnName.DURATION_MS).nullable();
 
