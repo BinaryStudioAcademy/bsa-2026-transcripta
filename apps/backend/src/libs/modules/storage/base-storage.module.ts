@@ -1,4 +1,8 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+	GetObjectCommand,
+	PutObjectCommand,
+	S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { type Config } from "~/libs/modules/config/config.js";
@@ -11,12 +15,14 @@ import {
 } from "./libs/types/types.js";
 
 class BaseStorage implements Storage {
+	private bucketPages: string;
 	private bucketUploads: string;
 	private client: S3Client;
 	private config: Config;
 
 	public constructor(config: Config) {
 		this.config = config;
+		this.bucketPages = config.ENV.STORAGE.BUCKET_PAGES;
 		this.bucketUploads = config.ENV.STORAGE.BUCKET_UPLOADS;
 		this.client = this.initClient();
 	}
@@ -33,6 +39,17 @@ class BaseStorage implements Storage {
 			endpoint: ENDPOINT,
 			forcePathStyle: true,
 			region: REGION,
+		});
+	}
+
+	public async getReadSignedUrl(key: string): Promise<string> {
+		const command = new GetObjectCommand({
+			Bucket: this.bucketPages,
+			Key: key,
+		});
+
+		return await getSignedUrl(this.client, command, {
+			expiresIn: SignedUrlConfig.SECONDS_IN_HOUR,
 		});
 	}
 

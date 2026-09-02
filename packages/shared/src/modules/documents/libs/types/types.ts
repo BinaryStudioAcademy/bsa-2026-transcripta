@@ -4,3 +4,5 @@ export { type DocumentGetAllItemResponseDto } from "./document-get-all-item-resp
 export { type DocumentGetAllResponseDto } from "./document-get-all-response-dto.type.js";
 export { type DocumentGetByIdParametersDto } from "./document-get-by-id-parameters-dto.type.js";
 export { type DocumentGetByIdResponseDto } from "./document-get-by-id-response-dto.type.js";
+export { type DocumentGetPagesQueryDto } from "./document-get-pages-query-dto.type.js";
+export { type DocumentGetPagesResponseDto } from "./document-get-pages-response-dto.type.js";

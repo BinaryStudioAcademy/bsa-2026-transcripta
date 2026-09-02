@@ -32,11 +32,15 @@ export {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetPagesQueryDto,
+	type DocumentGetPagesResponseDto,
 	DocumentCreateValidationSchema,
 	DocumentGetByIdParametersValidationSchema,
+	DocumentGetPagesQueryValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
+	PageStatus,
 } from "./modules/documents/documents.js";
 export {
 	type UserGetAllItemResponseDto,

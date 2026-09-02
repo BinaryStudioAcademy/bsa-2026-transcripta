@@ -4,6 +4,7 @@ import {
 } from "./types.js";
 
 type Storage = {
+	getReadSignedUrl(key: string): Promise<string>;
 	getUploadSignedUrl(
 		options: UploadSignedUrlRequest,
 	): Promise<UploadSignedUrlResponse>;
