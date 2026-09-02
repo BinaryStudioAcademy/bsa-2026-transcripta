@@ -1,9 +1,11 @@
-import type { Knex } from "knex";
+import { type Knex } from "knex";
 
 const TABLE_NAME = "transcription";
 const PAGE_TABLE_NAME = "page";
 const DOCUMENT_TABLE_NAME = "document";
-const PRESET_TABLE_NAME = "preset";
+
+const FUNCTION_NAME = "touch_updated_at";
+const TRIGGER_NAME = "transcription_touch";
 
 const DEFAULT_INPUT_TOKEN = 0;
 const DEFAULT_OUTPUT_TOKEN = 0;
@@ -49,11 +51,8 @@ const DocumentsColumnName = {
 	ID: "id",
 } as const;
 
-const PresetsColumnName = {
-	ID: "id",
-} as const;
-
 async function down(knex: Knex): Promise<void> {
+	await knex.raw(`DROP TRIGGER IF EXISTS ${TRIGGER_NAME} ON ${TABLE_NAME}`);
 	await knex.schema.dropTableIfExists(TABLE_NAME);
 }
 
@@ -72,11 +71,7 @@ async function up(knex: Knex): Promise<void> {
 			.references(DocumentsColumnName.ID)
 			.inTable(DOCUMENT_TABLE_NAME)
 			.onDelete("CASCADE");
-		table
-			.integer(ColumnName.PRESET_ID)
-			.notNullable()
-			.references(PresetsColumnName.ID)
-			.inTable(PRESET_TABLE_NAME);
+		table.integer(ColumnName.PRESET_ID).nullable();
 		table.text(ColumnName.TEXT).notNullable().defaultTo("");
 		table.jsonb(ColumnName.STRUCTURED).nullable();
 		table.text(ColumnName.EDITED_TEXT).nullable();
@@ -137,6 +132,12 @@ async function up(knex: Knex): Promise<void> {
 		COMMENT ON COLUMN ${TABLE_NAME}.${ColumnName.CONTEXT_USED} IS
 		'A snapshot of the context. Main query: find pages whose context contained a wrong word - context_used -> ''lexiconIds'' @> to_jsonb(id)'
 		`);
+
+	await knex.raw(`
+	CREATE TRIGGER ${TRIGGER_NAME}
+	BEFORE UPDATE ON ${TABLE_NAME}
+	FOR EACH ROW
+	EXECUTE FUNCTION ${FUNCTION_NAME}()`);
 }
 
 export { down, up };
