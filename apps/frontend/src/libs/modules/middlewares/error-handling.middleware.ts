@@ -3,10 +3,10 @@ import { HTTPCode, ServerErrorType } from "@transcripta/shared";
 
 import { notification } from "~/libs/modules/notification/notification.js";
 import { SerializedAppError } from "~/libs/types/serialized-app-error.type.js";
-
-import { DEFAULT_ERROR_MESSAGE } from "./libs/constants/constants.js";
-import { storage, StorageKey } from "../storage/storage.js";
 import { actions } from "~/modules/auth/auth.js";
+
+import { storage, StorageKey } from "../storage/storage.js";
+import { DEFAULT_ERROR_MESSAGE } from "./libs/constants/constants.js";
 
 const errorHandlingMiddleware = createListenerMiddleware();
 
