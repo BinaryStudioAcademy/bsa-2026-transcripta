@@ -7,10 +7,10 @@ import "./header.css";
 const Header: React.FC = () => {
 	return (
 		<header className="header">
-			<span className="header-brand">
+			<Link className="header-brand" to={AppRoute.ROOT}>
 				<img alt="Transcripta logo" className="header-logo" src={headerLogo} />
 				<span className="header-title">Transcripta</span>
-			</span>
+			</Link>
 
 			<nav aria-label="Main navigation" className="header-nav">
 				<ul className="header-nav__list">
