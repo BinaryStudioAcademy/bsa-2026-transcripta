@@ -38,6 +38,7 @@ const { actions, name, reducer } = createSlice({
 	reducers: {
 		logout(state) {
 			state.dataStatus = DataStatus.IDLE;
+			state.user = null;
 		},
 	},
 });
