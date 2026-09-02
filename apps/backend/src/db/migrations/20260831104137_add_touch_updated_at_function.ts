@@ -1,4 +1,4 @@
-import type { Knex } from "knex";
+import { type Knex } from "knex";
 
 const FUNCTION_NAME = "touch_updated_at";
 
