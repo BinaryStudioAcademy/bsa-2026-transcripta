@@ -2,12 +2,15 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	DocumentStatus,
 	HTTPCode,
 	HTTPError,
+	type ValueOf,
 } from "@transcripta/shared";
 import { ForeignKeyViolationError } from "objection";
 
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
+import { StorageBucket } from "~/libs/modules/storage/storage.js";
 
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
@@ -15,6 +18,11 @@ import { type DocumentRepository } from "./document.repository.js";
 import { DOCUMENT_OWNER_ID_FOREIGN } from "./libs/constants/constant.js";
 import { DocumentValidationMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
+
+type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
+
+const NON_DELETABLE_DOCUMENT_STATUSES: ReadonlySet<DocumentStatusValue> =
+	new Set([DocumentStatus.INGESTING, DocumentStatus.PROCESSING]);
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
@@ -98,6 +106,42 @@ class DocumentService {
 			}
 			throw error;
 		}
+	}
+
+	public async delete(id: number, ownerId: number): Promise<void> {
+		await DocumentModel.transaction(async (trx) => {
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					id,
+					ownerId,
+					trx,
+				);
+
+			if (!document) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			if (NON_DELETABLE_DOCUMENT_STATUSES.has(document.toObject().status)) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_ACTIVE,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.UPLOADS,
+				prefix: `uploads/${id.toString()}/`,
+			});
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.PAGES,
+				prefix: `pages/${id.toString()}/`,
+			});
+
+			await this.documentRepository.deleteById(id, trx);
+		});
 	}
 
 	public async findAllByOwnerId(
