@@ -5,15 +5,19 @@ import { ToastContainer } from "react-toastify";
 import "~/assets/css/styles.css";
 import {
 	App,
+	ProtectedRoute,
 	RouterProvider,
 	StoreProvider,
 } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { store } from "~/libs/modules/store/store.js";
+import { restoreSession } from "./modules/auth/slices/actions.js";
 import { Auth } from "~/pages/auth/auth.jsx";
 import { Documents } from "~/pages/documents/documents.jsx";
 import { NotFound } from "~/pages/not-found/not-found.jsx";
 import { Test } from "~/pages/test/test.jsx";
+
+store.instance.dispatch(restoreSession());
 
 createRoot(document.querySelector("#root") as HTMLElement).render(
 	<StrictMode>
@@ -35,8 +39,13 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 								path: AppRoute.SIGN_UP,
 							},
 							{
-								element: <Test />,
-								path: AppRoute.TEST,
+								children: [
+									{
+										element: <Test />,
+										path: AppRoute.TEST,
+									},
+								],
+								element: <ProtectedRoute />,
 							},
 						],
 						element: <App />,
