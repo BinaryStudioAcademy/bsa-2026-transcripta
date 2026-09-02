@@ -25,10 +25,10 @@ const Sidebar: React.FC = () => {
 
 	return (
 		<aside className="sidebar">
-			<div className="sidebar__brand">
+			<Link className="sidebar__brand" to={AppRoute.ROOT}>
 				<LogoIcon size="medium" />
 				<span className="sidebar__brand-wordmark">Transcripta</span>
-			</div>
+			</Link>
 
 			<nav className="sidebar__nav">
 				{NAV_ITEMS.map((item) => (
