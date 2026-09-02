@@ -6,6 +6,7 @@ import { type ValidationSchema } from "~/libs/types/types.js";
 import { type APIHandler } from "./api-handler.type.js";
 
 type ControllerRouteParameters = {
+	config?: Record<string, unknown>;
 	handler: APIHandler;
 	method: HTTPMethod;
 	path: string;

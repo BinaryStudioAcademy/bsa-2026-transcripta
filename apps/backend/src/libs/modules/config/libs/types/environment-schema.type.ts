@@ -20,6 +20,9 @@ type EnvironmentSchema = {
 		POOL_MAX: number;
 		POOL_MIN: number;
 	};
+	REDIS: {
+		CONNECTION_STRING: string;
+	};
 };
 
 export { type EnvironmentSchema };

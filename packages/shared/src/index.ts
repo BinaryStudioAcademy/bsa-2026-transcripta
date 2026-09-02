@@ -23,7 +23,7 @@ export {
 	type ValidationSchema,
 	type ValueOf,
 } from "./libs/types/types.js";
-export { AuthApiPath } from "./modules/auth/auth.js";
+export { AuthApiPath, AuthErrorMessage } from "./modules/auth/auth.js";
 export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,

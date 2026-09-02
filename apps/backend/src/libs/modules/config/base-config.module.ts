@@ -105,6 +105,14 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			REDIS: {
+				CONNECTION_STRING: {
+					default: "redis://localhost:6379",
+					doc: "Redis connection string",
+					env: "REDIS_CONNECTION_STRING",
+					format: String,
+				},
+			},
 		});
 	}
 

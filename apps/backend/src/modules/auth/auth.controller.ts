@@ -1,4 +1,5 @@
 import { APIPath } from "~/libs/enums/enums.js";
+import { AUTH_RATE_LIMIT } from "~/libs/modules/auth/libs/constants/constants.js";
 import {
 	type APIHandlerOptions,
 	type APIHandlerResponse,
@@ -25,6 +26,12 @@ class AuthController extends BaseController {
 		this.authService = authService;
 
 		this.addRoute({
+			config: {
+				rateLimit: {
+					max: AUTH_RATE_LIMIT.MAX_ATTEMPTS,
+					timeWindow: AUTH_RATE_LIMIT.TIME_WINDOW,
+				},
+			},
 			handler: (options) =>
 				this.signUp(
 					options as APIHandlerOptions<{
@@ -39,6 +46,12 @@ class AuthController extends BaseController {
 		});
 
 		this.addRoute({
+			config: {
+				rateLimit: {
+					max: AUTH_RATE_LIMIT.MAX_ATTEMPTS,
+					timeWindow: AUTH_RATE_LIMIT.TIME_WINDOW,
+				},
+			},
 			handler: (options) =>
 				this.signIn(
 					options as APIHandlerOptions<{
