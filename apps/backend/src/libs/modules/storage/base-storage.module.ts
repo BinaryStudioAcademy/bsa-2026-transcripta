@@ -12,7 +12,7 @@ import {
 	DELETE_OBJECTS_BATCH_SIZE,
 	SignedUrlConfig,
 } from "./libs/constants/constants.js";
-import { StorageBucket } from "./libs/enums/enums.js";
+import { StorageBucket, StorageErrorMessage } from "./libs/enums/enums.js";
 import {
 	type DeleteByPrefixRequest,
 	type Storage,
@@ -55,7 +55,7 @@ class BaseStorage implements Storage {
 			);
 
 			if (response.Errors?.length) {
-				throw new Error("Failed to delete one or more storage objects.");
+				throw new Error(StorageErrorMessage.DELETE_OBJECTS_FAILED);
 			}
 		}
 	}
@@ -91,7 +91,7 @@ class BaseStorage implements Storage {
 				}),
 			);
 
-			for (let object of response.Contents ?? []) {
+			for (const object of response.Contents ?? []) {
 				if (object.Key) {
 					keys.push(object.Key);
 				}
@@ -100,7 +100,9 @@ class BaseStorage implements Storage {
 			continuationToken = response.NextContinuationToken;
 
 			if (response.IsTruncated && !continuationToken) {
-				throw new Error("Storage listing did not return a continuation token.");
+				throw new Error(
+					StorageErrorMessage.LIST_OBJECTS_MISSING_CONTINUATION_TOKEN,
+				);
 			}
 		} while (continuationToken);
 
