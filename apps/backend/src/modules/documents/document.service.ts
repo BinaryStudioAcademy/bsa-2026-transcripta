@@ -65,13 +65,14 @@ class DocumentService {
 			const downloadResult = await this.storage.downloadToTempFolder(sourceKey);
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
-		} catch {
-			await this.documentRepository.setError(
-				documentId,
-				DocumentErrorMessage.DOWNLOAD_FAILED,
-			);
+		} catch (error) {
+			const catchedErrorMessage =
+				error instanceof Error ? error.message : String(error);
+			const finalErrorMessage = `${DocumentErrorMessage.DOWNLOAD_FAILED}: ${catchedErrorMessage}`;
+
+			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
-				message: DocumentErrorMessage.DOWNLOAD_FAILED,
+				message: finalErrorMessage,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
@@ -109,13 +110,14 @@ class DocumentService {
 			});
 			imageKey = uploadResult.imageKey;
 			thumbnailKey = uploadResult.thumbnailKey;
-		} catch {
-			await this.documentRepository.setError(
-				documentId,
-				DocumentErrorMessage.PAGE_UPLOAD_FAILED,
-			);
+		} catch (error) {
+			const catchedErrorMessage =
+				error instanceof Error ? error.message : String(error);
+			const finalErrorMessage = `${DocumentErrorMessage.PAGE_UPLOAD_FAILED}: ${catchedErrorMessage}`;
+
+			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
-				message: DocumentErrorMessage.PAGE_UPLOAD_FAILED,
+				message: finalErrorMessage,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
@@ -215,9 +217,11 @@ class DocumentService {
 		};
 	}
 
-	public async ingest(documentId: number): Promise<void> {
-		const document =
-			await this.documentRepository.findByIdWithPreset(documentId);
+	public async ingest(documentId: number, userId: number): Promise<void> {
+		const document = await this.documentRepository.findWithPreset(
+			documentId,
+			userId,
+		);
 
 		if (!document) {
 			throw new HTTPError({
@@ -226,12 +230,20 @@ class DocumentService {
 			});
 		}
 
+		const documentObject = document.toObjectWithPreset();
+
+		if (documentObject.status === DocumentStatus.INGESTING) {
+			throw new HTTPError({
+				message: DocumentErrorMessage.CURRENTLY_INGESTING,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
+
 		await this.documentRepository.updateStatus(
 			documentId,
 			DocumentStatus.INGESTING,
 		);
 
-		const documentObject = document.toObjectWithPreset();
 		const { clear, filePath } = await this.downloadDocument(
 			documentId,
 			documentObject.sourceKey,
@@ -285,14 +297,16 @@ class DocumentService {
 				throw error;
 			}
 
-			const message = error instanceof Error ? error.message : String(error);
+			const catchedErrorMessage =
+				error instanceof Error ? error.message : String(error);
+			const finalErrorMessage = `${DocumentErrorMessage.INGEST_FAILED}: ${catchedErrorMessage}`;
 
 			await this.documentRepository.setError(
 				documentId,
-				`${DocumentErrorMessage.INGEST_FAILED}: ${message}`,
+				`${DocumentErrorMessage.INGEST_FAILED}: ${finalErrorMessage}`,
 			);
 			throw new HTTPError({
-				message: `${DocumentErrorMessage.INGEST_FAILED}: ${message}`,
+				message: `${DocumentErrorMessage.INGEST_FAILED}: ${finalErrorMessage}`,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		} finally {

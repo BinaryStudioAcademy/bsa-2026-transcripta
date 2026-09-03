@@ -1,5 +1,6 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
+import { DocumentErrorMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
@@ -155,7 +156,7 @@ class DocumentEntity {
 			pageCount: this.pageCount,
 			presetId: this.presetId,
 			sourceBytes: this.sourceBytes,
-			sourceKey: this.sourceKey as string,
+			sourceKey: this.sourceKey,
 			sourceName: this.sourceName,
 			status: this.status,
 			title: this.title,
@@ -166,12 +167,16 @@ class DocumentEntity {
 		if (this.id === null) {
 			throw new Error("Document ID is null. Entity must be persisted first.");
 		}
+		if (this.sourceKey === null) {
+			throw new Error(DocumentErrorMessage.NO_SOURCE_KEY);
+		}
 
 		return {
 			createdAt: this.createdAt,
 			id: this.id,
+			ownerId: this.ownerId,
 			pageCount: this.pageCount,
-			sourceKey: this.sourceKey as string,
+			sourceKey: this.sourceKey,
 			status: this.status,
 			title: this.title,
 		};
@@ -180,9 +185,13 @@ class DocumentEntity {
 	public toObjectWithPreset(): DocumentGetAllItemResponseDto & {
 		preset: Preset;
 	} {
+		if (this.preset === null) {
+			throw new Error(DocumentErrorMessage.NO_PRESET);
+		}
+
 		return {
 			...this.toObject(),
-			preset: this.preset as Preset,
+			preset: this.preset,
 		};
 	}
 }

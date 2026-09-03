@@ -187,7 +187,7 @@ class DocumentController extends BaseController {
 	/**
 	 * @swagger
 	 * /documents/{id}/ingest:
-	 *    get:
+	 *    post:
 	 *      description: Ingest a PDF document - split it into pages
 	 *      security:
 	 *        - bearerAuth: []
@@ -200,9 +200,10 @@ class DocumentController extends BaseController {
 			params: {
 				id: number;
 			};
+			user: TokenPayload;
 		}>,
 	): Promise<APIHandlerResponse> {
-		await this.documentService.ingest(options.params.id);
+		await this.documentService.ingest(options.params.id, options.user.userId);
 
 		return {
 			payload: null,

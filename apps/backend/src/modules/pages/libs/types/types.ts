@@ -1,1 +1,1 @@
-export { ValueOf } from "@transcripta/shared";
+export { type ValueOf } from "@transcripta/shared";

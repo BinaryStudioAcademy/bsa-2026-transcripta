@@ -1,5 +1,5 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
-import { Model, RelationMappings } from "objection";
+import { Model, type RelationMappings } from "objection";
 
 import {
 	AbstractModel,
@@ -7,12 +7,13 @@ import {
 } from "~/libs/modules/database/database.js";
 
 import { PresetModel } from "../presets/presets.js";
+import { DocumentRelationName } from "./libs/enums/enums.js";
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
 class DocumentModel extends AbstractModel {
 	static readonly relationMappings: RelationMappings = {
-		preset: {
+		[DocumentRelationName.PRESET]: {
 			join: {
 				from: `${DatabaseTableName.DOCUMENT}.preset_id`,
 				to: `${DatabaseTableName.PRESET}.id`,

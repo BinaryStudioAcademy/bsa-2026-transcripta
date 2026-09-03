@@ -6,11 +6,11 @@ import sharp, { type Sharp } from "sharp";
 
 import {
 	BLANK_STDEV_THRESHOLD,
+	NORMALIZED_QUALITY,
 	NORMALIZED_WIDTH,
 	PDFTOPPM_TIMEOUT,
-	THUMBNAIL_WIDTH,
-	NORMALIZED_QUALITY,
 	THUMBNAIL_QUALITY,
+	THUMBNAIL_WIDTH,
 } from "./libs/constants/constants.js";
 import { type PDFPageProcessor as IPDFPageProcessor } from "./libs/types/types.js";
 
@@ -47,7 +47,7 @@ class PDFPageProcessor implements IPDFPageProcessor {
 		return `${pngPath}.png`;
 	}
 
-	private async createNormilized(source: Sharp): Promise<Buffer> {
+	private async createNormalized(source: Sharp): Promise<Buffer> {
 		const normalized = await source
 			.clone()
 			.resize({ width: NORMALIZED_WIDTH, withoutEnlargement: true })
@@ -109,8 +109,10 @@ class PDFPageProcessor implements IPDFPageProcessor {
 
 		try {
 			const source = this.sharpImage(pngPath);
-			const pageImage = await this.createNormilized(source);
-			const pageThumbnail = await this.createThumbnail(source);
+			const [pageImage, pageThumbnail] = await Promise.all([
+				this.createNormalized(source),
+				this.createThumbnail(source),
+			]);
 			const isBlank = await this.isBlankPage(
 				pageImage,
 				blankStdevThreshold ?? BLANK_STDEV_THRESHOLD,

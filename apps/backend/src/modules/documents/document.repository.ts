@@ -1,11 +1,11 @@
 import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
-import { ValueOf } from "~/libs/types/types.js";
+import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 
-import { DocumentStatus } from "./libs/types/types.js";
+import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
 
 class DocumentRepository {
 	private documentModel: typeof DocumentModel;
@@ -54,12 +54,14 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
-	public async findByIdWithPreset(id: number): Promise<DocumentEntity | null> {
+	public async findWithPreset(
+		id: number,
+		userId: number,
+	): Promise<DocumentEntity | null> {
 		const document = await this.documentModel
 			.query()
-			.findById(id)
-			.withGraphFetched(DatabaseTableName.PRESET)
-			.execute();
+			.findOne({ id, ownerId: userId })
+			.withGraphFetched(DocumentRelationName.PRESET);
 
 		return document ? DocumentEntity.initialize(document) : null;
 	}
