@@ -1,6 +1,13 @@
 import React, { ChangeEvent, useCallback, useRef, useState } from "react";
 
-import { useAppDispatch } from "~/libs/hooks/hooks.js";
+import { AppRoute } from "~/libs/enums/app-route.enum.js";
+import { DataStatus } from "~/libs/enums/data-status.enum.js";
+import { configureString } from "~/libs/helpers/helpers.js";
+import {
+	useAppDispatch,
+	useAppSelector,
+	useNavigate,
+} from "~/libs/hooks/hooks.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
@@ -9,7 +16,9 @@ import {
 import type { ScreenState, UploadFormValues } from "./libs/types.js";
 
 import { UploadForm } from "./components/upload-form/upload-form.js";
-import { FIRST_FILE_INDEX } from "./libs/constants.js";
+import { UploadProgress } from "./components/upload-progress/upload-progress.js";
+import { FIRST_FILE_INDEX, ZERO_UPLOAD_PROGRESS } from "./libs/constants.js";
+import { uploadFile } from "./libs/upload-file.js";
 import { validateFile } from "./libs/validate-file.js";
 import styles from "./styles.module.css";
 
@@ -17,21 +26,85 @@ const DocumentNew: React.FC = () => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [rejection, setRejection] = useState<null | string>(null);
-
-	const dispatch = useAppDispatch();
-
-	const getScreenState = (): ScreenState => {
-		if (rejection) {
-			return "rejected";
-		}
-		if (selectedFile) {
-			return "selected";
-		}
-
-		return "rest";
-	};
+	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
+	const [isUploading, setIsUploading] = useState(false);
+	const [isUploaded, setIsUploaded] = useState(false);
 
 	const fileInputReference = useRef<HTMLInputElement>(null);
+
+	const navigate = useNavigate();
+	const dispatch = useAppDispatch();
+
+	const { createDataStatus, createdDocument } = useAppSelector(
+		({ documents }) => ({
+			createDataStatus: documents.createDataStatus,
+			createdDocument: documents.createdDocument,
+		}),
+	);
+
+	const handleUpload = useCallback(
+		(values: UploadFormValues) => {
+			if (!selectedFile) {
+				return;
+			}
+
+			const payload: DocumentCreateRequestDto = {
+				fileBytes: selectedFile.size,
+				fileName: selectedFile.name,
+				presetId: values.presetId,
+				title: values.title,
+			};
+
+			setIsUploading(true);
+
+			void dispatch(documentActions.create(payload))
+				.unwrap()
+				.then((response) => {
+					return uploadFile({
+						file: selectedFile,
+						onProgress: setUploadProgress,
+						uploadUrl: response.uploadUrl,
+					}).then(() => response);
+				})
+				.then(() => {
+					setIsUploading(false);
+					setIsUploaded(true);
+				})
+				.catch((error: unknown) => {
+					setIsUploading(false);
+					// eslint-disable-next-line no-console
+					console.error(error);
+				});
+		},
+		[selectedFile, dispatch],
+	);
+
+	const handleCancelUpload = useCallback(() => {
+		setIsUploading(false);
+		setIsUploaded(false);
+		resetSelection();
+		// TODO: decide and implement what to do if user uploaded document to S3 and cancelled before ingesting
+	}, []);
+
+	const handleProcessDocument = useCallback(() => {
+		if (!createdDocument) {
+			return;
+		}
+
+		void dispatch(documentActions.ingest(createdDocument.id))
+			.unwrap()
+			.then(() => {
+				return navigate(
+					configureString(AppRoute.DOCUMENT, {
+						id: String(createdDocument.id),
+					}),
+				);
+			})
+			.catch((error: unknown) => {
+				// eslint-disable-next-line no-console
+				console.error(error);
+			});
+	}, [createdDocument, dispatch, navigate]);
 
 	const handleDragOver = useCallback(
 		(event: React.DragEvent<HTMLDivElement>) => {
@@ -105,34 +178,24 @@ const DocumentNew: React.FC = () => {
 		}
 	};
 
-	const handleUpload = useCallback(
-		(values: UploadFormValues) => {
-			if (!selectedFile) {
-				return;
-			}
+	const getScreenState = (): ScreenState => {
+		if (rejection) {
+			return "rejected";
+		}
+		if (isUploading) {
+			return "uploading";
+		}
+		if (selectedFile) {
+			return "selected";
+		}
 
-			const payload: DocumentCreateRequestDto = {
-				fileBytes: selectedFile.size,
-				fileName: selectedFile.name,
-				presetId: values.presetId,
-				title: values.title,
-			};
-
-			void dispatch(documentActions.create(payload))
-				.unwrap()
-				.then(() => {
-					// eslint-disable-next-line no-console
-					console.log("POST request made, response received");
-				})
-				.catch((error: unknown) => {
-					// eslint-disable-next-line no-console
-					console.error(error);
-				});
-		},
-		[selectedFile, dispatch],
-	);
+		return "rest";
+	};
 
 	const screenState = getScreenState();
+
+	const isSubmitting = createDataStatus === DataStatus.PENDING;
+	const isFormDisabled = isSubmitting || isUploading || isUploaded;
 
 	return (
 		<div className={styles["new-document-page"]}>
@@ -198,12 +261,25 @@ const DocumentNew: React.FC = () => {
 						</div>
 					)}
 
-					{screenState === "selected" && (
-						<UploadForm
-							onChangeFile={handleChangeFile}
-							onSubmit={handleUpload}
-						></UploadForm>
-					)}
+					{(screenState === "selected" || screenState === "uploading") &&
+						selectedFile && (
+							<>
+								<UploadProgress
+									fileName={selectedFile.name}
+									fileSize={String(selectedFile.size)}
+									percent={uploadProgress}
+								/>
+								<UploadForm
+									fileName={selectedFile.name}
+									isSubmitting={isFormDisabled}
+									isUploaded={isUploaded}
+									onCancelUpload={handleCancelUpload}
+									onChangeFile={handleChangeFile}
+									onProcessDocument={handleProcessDocument}
+									onSubmit={handleUpload}
+								/>
+							</>
+						)}
 				</div>
 			</main>
 		</div>

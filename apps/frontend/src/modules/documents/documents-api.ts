@@ -65,6 +65,15 @@ class DocumentApi extends BaseHTTPApi {
 
 		return await response.json<DocumentGetByIdResponseDto>();
 	}
+
+	public async ingest(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(`${DocumentsApiPath.$ID}/ingest`, {
+				id: String(id),
+			}),
+			{ contentType: ContentType.JSON, hasAuth: true, method: HTTPMethod.POST },
+		);
+	}
 }
 
 export { DocumentApi };

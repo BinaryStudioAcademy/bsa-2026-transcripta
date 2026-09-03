@@ -25,6 +25,16 @@ const create = createAsyncThunk<
 	{ serializeError },
 );
 
+const ingest = createAsyncThunk<undefined, number, AsyncThunkConfig>(
+	`${sliceName}/ingest`,
+	async (id, { extra }) => {
+		const { documentApi } = extra;
+
+		await documentApi.ingest(id);
+	},
+	{ serializeError },
+);
+
 const loadAll = createAsyncThunk<
 	DocumentGetAllResponseDto,
 	undefined,
@@ -53,4 +63,4 @@ const loadById = createAsyncThunk<
 	{ serializeError },
 );
 
-export { create, loadAll, loadById };
+export { create, ingest, loadAll, loadById };
