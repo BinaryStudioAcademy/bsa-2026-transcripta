@@ -12,6 +12,7 @@ import {
 	THUMBNAIL_QUALITY,
 	THUMBNAIL_WIDTH,
 } from "./libs/constants/constants.js";
+import { ErrorMessage } from "./libs/enums/enums.js";
 import { type PDFPageProcessor as IPDFPageProcessor } from "./libs/types/types.js";
 
 const execAsync = promisify(execFile);
@@ -90,7 +91,7 @@ class PDFPageProcessor implements IPDFPageProcessor {
 		const pageCount = match?.groups?.["count"];
 
 		if (!pageCount) {
-			throw new Error("Failed to get page count");
+			throw new Error(ErrorMessage.FAILED_TO_GET_PAGE_COUNT);
 		}
 
 		return Number(pageCount);
