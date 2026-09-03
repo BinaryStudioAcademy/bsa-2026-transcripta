@@ -1,4 +1,10 @@
-import { Header, Hero, Loop, Problem } from "./components/components.js";
+import {
+	Header,
+	Hero,
+	HowItWorks,
+	Loop,
+	Problem,
+} from "./components/components.js";
 
 const Landing: React.FC = () => {
 	return (
@@ -6,6 +12,7 @@ const Landing: React.FC = () => {
 			<Header />
 			<Hero />
 			<Problem />
+			<HowItWorks />
 			<Loop />
 		</>
 	);
