@@ -11,6 +11,7 @@ import {
 import { AppRoute } from "~/libs/enums/enums.js";
 import { store } from "~/libs/modules/store/store.js";
 import { Auth } from "~/pages/auth/auth.jsx";
+import { Document } from "~/pages/documents/document.jsx";
 import { Documents } from "~/pages/documents/documents.jsx";
 import { NotFound } from "~/pages/not-found/not-found.jsx";
 import { Test } from "~/pages/test/test.jsx";
@@ -33,6 +34,10 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 							{
 								element: <Auth />,
 								path: AppRoute.SIGN_UP,
+							},
+							{
+								element: <Document />,
+								path: AppRoute.DOCUMENT,
 							},
 							{
 								element: <Test />,

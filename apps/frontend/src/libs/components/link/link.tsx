@@ -1,10 +1,8 @@
 import { NavLink, type NavLinkProps } from "react-router-dom";
 
-import { type AppRoute } from "~/libs/enums/enums.js";
-import { type ValueOf } from "~/libs/types/types.js";
-
-type Properties = Omit<NavLinkProps, "to"> & {
-	to: ValueOf<typeof AppRoute>;
+type Properties = Omit<NavLinkProps, "children" | "to"> & {
+	children: React.ReactNode;
+	to: string;
 };
 
 const Link: React.FC<Properties> = ({ children, to, ...rest }) => (

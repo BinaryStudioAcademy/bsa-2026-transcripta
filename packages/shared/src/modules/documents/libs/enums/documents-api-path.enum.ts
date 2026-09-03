@@ -1,4 +1,5 @@
 const DocumentsApiPath = {
+	$ID: "/:id",
 	ROOT: "/",
 } as const;
 

@@ -6,7 +6,10 @@ import { type HTTP } from "~/libs/modules/http/http.js";
 import { type Storage } from "~/libs/modules/storage/storage.js";
 
 import { DocumentsApiPath } from "./libs/enums/enums.js";
-import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
+import {
+	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
+} from "./libs/types/types.js";
 
 type Constructor = {
 	baseUrl: string;
@@ -30,6 +33,19 @@ class DocumentApi extends BaseHTTPApi {
 		);
 
 		return await response.json<DocumentGetAllResponseDto>();
+	}
+
+	public async getById(id: number): Promise<DocumentGetByIdResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: "GET",
+			},
+		);
+
+		return await response.json<DocumentGetByIdResponseDto>();
 	}
 }
 
