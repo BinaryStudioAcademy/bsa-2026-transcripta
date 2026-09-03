@@ -38,7 +38,7 @@ const App: React.FC = () => {
 		return <RouterOutlet />;
 	}
 
-	if (!isAuthenticated) {
+	if (!isAuthenticated && pathname === AppRoute.ROOT) {
 		return <Landing />;
 	}
 
