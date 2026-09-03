@@ -1,20 +1,24 @@
 import React, { ChangeEvent, useCallback, useRef, useState } from "react";
 
-import type { ScreenState } from "./libs/types.js";
+import { useAppDispatch } from "~/libs/hooks/hooks.js";
+import {
+	actions as documentActions,
+	type DocumentCreateRequestDto,
+} from "~/modules/documents/documents.js";
+
+import type { ScreenState, UploadFormValues } from "./libs/types.js";
 
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { FIRST_FILE_INDEX } from "./libs/constants.js";
 import { validateFile } from "./libs/validate-file.js";
 import styles from "./styles.module.css";
 
-const handleUpload = (): void => {
-	// TODO: need wiring real upload flow
-};
-
 const DocumentNew: React.FC = () => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [rejection, setRejection] = useState<null | string>(null);
+
+	const dispatch = useAppDispatch();
 
 	const getScreenState = (): ScreenState => {
 		if (rejection) {
@@ -100,6 +104,33 @@ const DocumentNew: React.FC = () => {
 			fileInputReference.current.value = "";
 		}
 	};
+
+	const handleUpload = useCallback(
+		(values: UploadFormValues) => {
+			if (!selectedFile) {
+				return;
+			}
+
+			const payload: DocumentCreateRequestDto = {
+				fileBytes: selectedFile.size,
+				fileName: selectedFile.name,
+				presetId: values.presetId,
+				title: values.title,
+			};
+
+			void dispatch(documentActions.create(payload))
+				.unwrap()
+				.then(() => {
+					// eslint-disable-next-line no-console
+					console.log("POST request made, response received");
+				})
+				.catch((error: unknown) => {
+					// eslint-disable-next-line no-console
+					console.error(error);
+				});
+		},
+		[selectedFile, dispatch],
+	);
 
 	const screenState = getScreenState();
 

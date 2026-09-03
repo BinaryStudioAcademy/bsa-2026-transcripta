@@ -3,15 +3,17 @@ import { Select } from "~/libs/components/select/select.js";
 import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
 
 import {
+	DEFAULT_PRESET_ID,
 	DEFAULT_PRESET_INDEX,
 	MOCK_PRESET_OPTIONS,
 } from "../../libs/constants.js";
 import { type UploadFormValues } from "../../libs/types.js";
+import { uploadFormValidationSchema } from "../../libs/validation-schemas/validation-schemas.js";
 import styles from "./styles.module.css";
 
 type Properties = {
 	onChangeFile: () => void;
-	onSubmit: () => void;
+	onSubmit: (values: UploadFormValues) => void;
 	presetOptions?: typeof MOCK_PRESET_OPTIONS;
 };
 
@@ -22,9 +24,10 @@ const UploadForm: React.FC<Properties> = ({
 }: Properties) => {
 	const { control, errors, handleSubmit } = useAppForm<UploadFormValues>({
 		defaultValues: {
-			presetId: presetOptions[DEFAULT_PRESET_INDEX]?.id ?? DEFAULT_PRESET_INDEX,
+			presetId: presetOptions[DEFAULT_PRESET_INDEX]?.id ?? DEFAULT_PRESET_ID,
 			title: "",
 		},
+		validationSchema: uploadFormValidationSchema,
 	});
 
 	const handleFormSubmit = useCallback(
