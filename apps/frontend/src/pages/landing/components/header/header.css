@@ -11,7 +11,7 @@
 
 .header-brand {
 	display: inline-flex;
-	gap: 10px;
+	gap: var(--sp-3);
 	align-items: center;
 	color: var(--text);
 	text-decoration: none;
@@ -23,12 +23,12 @@
 }
 
 .header-title {
-	font: 600 18px / 1 var(--font-display);
+	font: 600 var(--fs-xl) / 1 var(--font-display);
 }
 
 .header-nav__list {
 	display: flex;
-	gap: 28px;
+	gap: var(--sp-7);
 	align-items: center;
 	padding: 0;
 	margin: 0;

@@ -5,7 +5,7 @@
 	gap: var(--sp-16);
 	align-items: center;
 	max-width: 1240px;
-	padding: var(--sp-24) var(--sp-16) 104px;
+	padding: var(--sp-24) var(--sp-16) var(--sp-26);
 	margin: 0 auto;
 }
 
@@ -17,14 +17,14 @@
 
 .hero__description {
 	max-width: 490px;
-	margin: 22px 0 var(--sp-8);
-	font: 400 17px / var(--lh-read) var(--font-ui);
+	margin: var(--sp-6) 0 var(--sp-8);
+	font: 400 var(--fs-lg-plus) / var(--lh-read) var(--font-ui);
 	color: var(--text-2);
 }
 
 .hero__actions {
 	display: flex;
-	gap: 14px;
+	gap: var(--sp-3);
 	align-items: center;
 }
 
@@ -40,7 +40,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 14px;
+	margin-bottom: var(--sp-3);
 }
 
 .hero__document-title {
@@ -57,7 +57,7 @@
 .hero__document {
 	display: grid;
 	grid-template-columns: 170px 1fr;
-	gap: 18px;
+	gap: var(--sp-5);
 	align-items: stretch;
 }
 
@@ -79,7 +79,7 @@
 .hero__transcription {
 	align-self: center;
 	margin: 0;
-	font: 400 14.5px / var(--lh-read) var(--font-ui);
+	font: 400 var(--fs-md-plus) / var(--lh-read) var(--font-ui);
 }
 
 .hero__transcription div {
@@ -90,7 +90,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding-top: 14px;
+	padding-top: var(--sp-3);
 	margin-top: var(--sp-4);
 	border-top: 1px solid var(--hairline);
 }

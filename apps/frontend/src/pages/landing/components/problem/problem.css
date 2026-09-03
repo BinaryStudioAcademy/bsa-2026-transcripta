@@ -1,5 +1,5 @@
 .problem {
-	padding: 84px var(--sp-16) 92px;
+	padding: var(--sp-21) var(--sp-16) var(--sp-23);
 	border-top: 1px solid var(--hairline);
 }
 
@@ -11,7 +11,7 @@
 .problem__title {
 	max-width: 640px;
 	margin: 0 0 var(--sp-10);
-	font: 600 30px / 1.25 var(--font-display);
+	font: 600 30px / var(--lh-card-title) var(--font-display);
 	text-wrap: balance;
 }
 
@@ -30,19 +30,19 @@
 
 .problem__card-title {
 	margin: 0 0 var(--sp-2);
-	font: 600 19px / 1.25 var(--font-display);
+	font: 600 var(--fs-xl) / var(--lh-card-title) var(--font-display);
 }
 
 .problem__card-description {
 	margin: 0;
-	font: 400 13.5px / var(--lh-read) var(--font-ui);
+	font: 400 var(--fs-md-half) / var(--lh-read) var(--font-ui);
 	color: var(--text-2);
 }
 
 .problem__conclusion {
 	max-width: 620px;
 	margin: var(--sp-10) 0 0;
-	font: 400 17px / 1.55 var(--font-ui);
+	font: 400 var(--fs-lg-plus) / var(--lh-conclusion) var(--font-ui);
 }
 
 .problem__conclusion strong {

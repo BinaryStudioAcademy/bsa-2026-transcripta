@@ -6,7 +6,7 @@
 
 .cta__title {
 	margin: 0 0 var(--sp-3);
-	font: 600 36px / var(--lh-tight) var(--font-display);
+	font: 600 var(--fs-3xl-plus) / var(--lh-tight) var(--font-display);
 }
 
 .cta__description {

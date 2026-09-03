@@ -1,5 +1,5 @@
 .how-it-works {
-	padding: 84px var(--sp-16) 92px;
+	padding: var(--sp-21) var(--sp-16) var(--sp-23);
 	border-top: 1px solid var(--hairline);
 }
 
@@ -9,8 +9,8 @@
 }
 
 .how-it-works__title {
-	margin: 0 0 36px;
-	font: 600 32px / 1.2 var(--font-display);
+	margin: 0 0 var(--sp-9);
+	font: 600 32px / var(--lh-heading) var(--font-display);
 }
 
 .how-it-works__steps {
@@ -23,7 +23,7 @@
 	grid-template-columns: 48px 1fr;
 	gap: var(--sp-4);
 	align-items: baseline;
-	padding: 15px 0;
+	padding: var(--sp-4) 0;
 	border-bottom: 1px solid var(--hairline);
 }
 
@@ -37,29 +37,29 @@
 }
 
 .how-it-works__step-text {
-	font: 400 var(--fs-lg) / 1.5 var(--font-ui);
+	font: 400 var(--fs-lg) / var(--lh-body-wide) var(--font-ui);
 }
 
 .how-it-works__step-text--controls {
 	display: inline-flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: var(--sp-1);
 	align-items: center;
 }
 
 .how-it-works__step-content {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: var(--sp-1);
 }
 
 .how-it-works__step-highlight {
-	font: 500 var(--fs-lg) / 1.5 var(--font-ui);
+	font: 500 var(--fs-lg) / var(--lh-body-wide) var(--font-ui);
 	color: var(--accent-text);
 }
 
 .how-it-works__step-note {
-	font: italic 500 var(--fs-md) / 1.4 var(--font-display);
+	font: italic 500 var(--fs-md) / var(--lh-compact) var(--font-display);
 	color: var(--accent-text);
 }
 
@@ -72,7 +72,7 @@
 }
 
 .how-it-works__summary-item {
-	font: 400 15px / 1.4 var(--font-ui);
+	font: 400 var(--fs-md-plus) / var(--lh-compact) var(--font-ui);
 	color: var(--text);
 }
 
@@ -81,7 +81,7 @@
 }
 
 .how-it-works__summary-value {
-	font-size: 24px;
+	font-size: var(--sp-6);
 }
 
 .how-it-works__summary-value--highlight {
