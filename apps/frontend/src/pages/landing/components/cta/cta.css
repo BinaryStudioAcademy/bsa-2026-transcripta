@@ -1,16 +1,16 @@
 .cta {
-	padding: 96px 64px;
+	padding: var(--sp-24) var(--sp-16);
 	text-align: center;
 	border-top: 1px solid var(--hairline);
 }
 
 .cta__title {
-	margin: 0 0 12px;
-	font: 600 36px/1.15 var(--font-display);
+	margin: 0 0 var(--sp-3);
+	font: 600 36px / var(--lh-tight) var(--font-display);
 }
 
 .cta__description {
-	margin: 0 0 32px;
-	font: 400 15px/1.6 var(--font-ui);
+	margin: 0 0 var(--sp-8);
+	font: 400 15px / var(--lh-read) var(--font-ui);
 	color: var(--text-2);
 }

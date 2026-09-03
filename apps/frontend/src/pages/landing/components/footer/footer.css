@@ -2,7 +2,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 26px 64px;
+	padding: 26px var(--sp-16);
 	border-top: 1px solid var(--hairline);
 }
 
@@ -14,16 +14,16 @@
 
 .footer__logo {
 	display: block;
-	width: 20px;
-	height: 20px;
+	width: var(--sp-5);
+	height: var(--sp-5);
 }
 
 .footer__brand-name {
-	font: 600 15px/1 var(--font-display);
+	font: 600 15px / 1 var(--font-display);
 	color: var(--text);
 }
 
 .footer__copyright {
-	font-size: 11px;
+	font-size: var(--fs-2xs);
 	color: var(--text-3);
 }

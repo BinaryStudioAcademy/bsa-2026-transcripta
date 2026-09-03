@@ -1,5 +1,5 @@
 .how-it-works {
-	padding: 84px 64px 92px;
+	padding: 84px var(--sp-16) 92px;
 	border-top: 1px solid var(--hairline);
 }
 
@@ -10,7 +10,7 @@
 
 .how-it-works__title {
 	margin: 0 0 36px;
-	font: 600 32px/1.2 var(--font-display);
+	font: 600 32px / 1.2 var(--font-display);
 }
 
 .how-it-works__steps {
@@ -21,14 +21,14 @@
 .how-it-works__step {
 	display: grid;
 	grid-template-columns: 48px 1fr;
-	gap: 16px;
+	gap: var(--sp-4);
 	align-items: baseline;
 	padding: 15px 0;
 	border-bottom: 1px solid var(--hairline);
 }
 
 .how-it-works__step-number {
-	font-size: 13px;
+	font-size: var(--fs-sm);
 	color: var(--text-3);
 }
 
@@ -37,7 +37,7 @@
 }
 
 .how-it-works__step-text {
-	font: 400 16px/1.5 var(--font-ui);
+	font: 400 var(--fs-lg) / 1.5 var(--font-ui);
 }
 
 .how-it-works__step-text--controls {
@@ -54,25 +54,25 @@
 }
 
 .how-it-works__step-highlight {
-	font: 500 16px/1.5 var(--font-ui);
+	font: 500 var(--fs-lg) / 1.5 var(--font-ui);
 	color: var(--accent-text);
 }
 
 .how-it-works__step-note {
-	font: italic 500 14px/1.4 var(--font-display);
+	font: italic 500 var(--fs-md) / 1.4 var(--font-display);
 	color: var(--accent-text);
 }
 
 .how-it-works__summary {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 20px;
+	gap: var(--sp-5);
 	align-items: baseline;
-	margin-top: 40px;
+	margin-top: var(--sp-10);
 }
 
 .how-it-works__summary-item {
-	font: 400 15px/1.4 var(--font-ui);
+	font: 400 15px / 1.4 var(--font-ui);
 	color: var(--text);
 }
 
@@ -89,6 +89,6 @@
 }
 
 .how-it-works__summary-vs {
-	font: italic 400 14px var(--font-display);
+	font: italic 400 var(--fs-md) var(--font-display);
 	color: var(--text-3);
 }

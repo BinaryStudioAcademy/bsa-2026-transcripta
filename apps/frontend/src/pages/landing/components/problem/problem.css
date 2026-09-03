@@ -1,5 +1,5 @@
 .problem {
-	padding: 84px 64px 92px;
+	padding: 84px var(--sp-16) 92px;
 	border-top: 1px solid var(--hairline);
 }
 
@@ -10,39 +10,39 @@
 
 .problem__title {
 	max-width: 640px;
-	margin: 0 0 40px;
-	font: 600 30px/1.25 var(--font-display);
+	margin: 0 0 var(--sp-10);
+	font: 600 30px / 1.25 var(--font-display);
 	text-wrap: balance;
 }
 
 .problem__cards {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	gap: 20px;
+	gap: var(--sp-5);
 }
 
 .problem__card {
-	padding: 24px;
+	padding: var(--sp-6);
 	background: var(--surface);
 	border: 1px solid var(--hairline);
 	border-radius: var(--r-lg);
 }
 
 .problem__card-title {
-	margin: 0 0 8px;
-	font: 600 19px/1.25 var(--font-display);
+	margin: 0 0 var(--sp-2);
+	font: 600 19px / 1.25 var(--font-display);
 }
 
 .problem__card-description {
 	margin: 0;
-	font: 400 13.5px/1.6 var(--font-ui);
+	font: 400 13.5px / var(--lh-read) var(--font-ui);
 	color: var(--text-2);
 }
 
 .problem__conclusion {
 	max-width: 620px;
-	margin: 40px 0 0;
-	font: 400 17px/1.55 var(--font-ui);
+	margin: var(--sp-10) 0 0;
+	font: 400 17px / 1.55 var(--font-ui);
 }
 
 .problem__conclusion strong {
