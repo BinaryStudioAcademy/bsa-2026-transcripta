@@ -31,7 +31,7 @@ class QueueRegistry {
 		this.logger = logger;
 		this.queues = queues;
 
-		this.connection.on(ConnectionEvents.ERROR, (error) => {
+		this.connection.on(ConnectionEvents.ERROR, (error: Error) => {
 			this.logger.error("Redis connection error.", {
 				error: error.message,
 			});
