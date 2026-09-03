@@ -1,0 +1,41 @@
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg: var(--paper-900);
+    --surface: var(--paper-800);
+    --surface-2: var(--paper-700);
+    --text: var(--paper-100);
+    --text-2: var(--paper-200);
+    --text-3: var(--paper-300);
+    --hairline: var(--paper-700);
+    --hairline-strong: var(--paper-600);
+    --accent: var(--seal-400);
+    --accent-hover: var(--seal-300);
+    --accent-active: var(--seal-200);
+    --accent-tint: var(--seal-900);
+    --accent-text: var(--seal-200);
+    --on-accent: var(--paper-900);
+    --link: var(--seal-400);
+    --ring: var(--seal-400);
+    --ok: var(--moss-400);
+    --ok-tint: var(--moss-900);
+    --ok-text: var(--moss-200);
+    --warn: var(--amber-400);
+    --warn-tint: var(--amber-900);
+    --warn-text: var(--amber-200);
+    --danger: var(--err-400);
+    --danger-hover: var(--err-300);
+    --danger-active: var(--err-200);
+    --danger-tint: var(--err-900);
+    --danger-text: var(--err-200);
+    --on-danger: var(--paper-900);
+    --mark-bg: var(--seal-800);
+    --mark-underline: var(--seal-500);
+    --tip-bg: var(--paper-100);
+    --tip-text: var(--paper-900);
+    --kbd-face: var(--paper-800);
+    --kbd-edge: var(--paper-600);
+    --scrim: oklch(10% 0.02 60deg / 65%);
+    --shadow-pop: 0 4px 16px oklch(10% 0.03 60deg / 40%);
+    --shadow-modal: 0 12px 40px oklch(5% 0.03 60deg / 60%);
+}
