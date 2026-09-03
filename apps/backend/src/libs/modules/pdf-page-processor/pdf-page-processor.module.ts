@@ -9,7 +9,8 @@ import {
 	NORMALIZED_WIDTH,
 	PDFTOPPM_TIMEOUT,
 	THUMBNAIL_WIDTH,
-	WEBP_QUALITY,
+	NORMALIZED_QUALITY,
+	THUMBNAIL_QUALITY,
 } from "./libs/constants/constants.js";
 import { type PDFPageProcessor as IPDFPageProcessor } from "./libs/types/types.js";
 
@@ -50,7 +51,7 @@ class PDFPageProcessor implements IPDFPageProcessor {
 		const normalized = await source
 			.clone()
 			.resize({ width: NORMALIZED_WIDTH, withoutEnlargement: true })
-			.webp({ quality: WEBP_QUALITY })
+			.webp({ quality: NORMALIZED_QUALITY })
 			.toBuffer();
 
 		return normalized;
@@ -60,7 +61,7 @@ class PDFPageProcessor implements IPDFPageProcessor {
 		const thumbnail = await source
 			.clone()
 			.resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true })
-			.webp({ quality: WEBP_QUALITY })
+			.webp({ quality: THUMBNAIL_QUALITY })
 			.toBuffer();
 
 		return thumbnail;

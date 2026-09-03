@@ -1,0 +1,3 @@
+const THUMBNAIL_QUALITY = 70;
+
+export { THUMBNAIL_QUALITY };

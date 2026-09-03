@@ -1,3 +1,3 @@
-const THUMBNAIL_WIDTH = 512;
+const THUMBNAIL_WIDTH = 256;
 
 export { THUMBNAIL_WIDTH };
