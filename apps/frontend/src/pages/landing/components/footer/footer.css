@@ -1,0 +1,29 @@
+.footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 26px 64px;
+	border-top: 1px solid var(--hairline);
+}
+
+.footer__brand {
+	display: inline-flex;
+	gap: 10px;
+	align-items: center;
+}
+
+.footer__logo {
+	display: block;
+	width: 20px;
+	height: 20px;
+}
+
+.footer__brand-name {
+	font: 600 15px/1 var(--font-display);
+	color: var(--text);
+}
+
+.footer__copyright {
+	font-size: 11px;
+	color: var(--text-3);
+}

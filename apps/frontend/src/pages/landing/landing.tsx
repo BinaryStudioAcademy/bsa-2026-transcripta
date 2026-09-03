@@ -1,6 +1,7 @@
 import {
 	CTA,
 	DocumentTypes,
+	Footer,
 	Header,
 	Hero,
 	HowItWorks,
@@ -18,6 +19,7 @@ const Landing: React.FC = () => {
 			<Loop />
 			<DocumentTypes />
 			<CTA />
+			<Footer />
 		</>
 	);
 };
