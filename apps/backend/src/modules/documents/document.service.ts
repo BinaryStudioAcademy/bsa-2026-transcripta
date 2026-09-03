@@ -66,9 +66,9 @@ class DocumentService {
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
-			const catchedErrorMessage =
+			const caughtErrorMessage =
 				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.DOWNLOAD_FAILED}: ${catchedErrorMessage}`;
+			const finalErrorMessage = `${DocumentErrorMessage.DOWNLOAD_FAILED}: ${caughtErrorMessage}`;
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
@@ -111,9 +111,9 @@ class DocumentService {
 			imageKey = uploadResult.imageKey;
 			thumbnailKey = uploadResult.thumbnailKey;
 		} catch (error) {
-			const catchedErrorMessage =
+			const caughtErrorMessage =
 				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.PAGE_UPLOAD_FAILED}: ${catchedErrorMessage}`;
+			const finalErrorMessage = `${DocumentErrorMessage.PAGE_UPLOAD_FAILED}: ${caughtErrorMessage}`;
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
@@ -297,9 +297,9 @@ class DocumentService {
 				throw error;
 			}
 
-			const catchedErrorMessage =
+			const caughtErrorMessage =
 				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.INGEST_FAILED}: ${catchedErrorMessage}`;
+			const finalErrorMessage = `${DocumentErrorMessage.INGEST_FAILED}: ${caughtErrorMessage}`;
 
 			await this.documentRepository.setError(
 				documentId,
