@@ -1,0 +1,51 @@
+.problem {
+	padding: 84px 64px 92px;
+	border-top: 1px solid var(--hairline);
+}
+
+.problem__container {
+	max-width: 1112px;
+	margin: 0 auto;
+}
+
+.problem__title {
+	max-width: 640px;
+	margin: 0 0 40px;
+	font: 600 30px/1.25 var(--font-display);
+	text-wrap: balance;
+}
+
+.problem__cards {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+}
+
+.problem__card {
+	padding: 24px;
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+}
+
+.problem__card-title {
+	margin: 0 0 8px;
+	font: 600 19px/1.25 var(--font-display);
+}
+
+.problem__card-description {
+	margin: 0;
+	font: 400 13.5px/1.6 var(--font-ui);
+	color: var(--text-2);
+}
+
+.problem__conclusion {
+	max-width: 620px;
+	margin: 40px 0 0;
+	font: 400 17px/1.55 var(--font-ui);
+}
+
+.problem__conclusion strong {
+	font-weight: 600;
+	color: var(--accent-text);
+}
