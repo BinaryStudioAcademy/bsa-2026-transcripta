@@ -25,6 +25,7 @@ import {
 	type ServerApplicationRouteParameters,
 } from "./libs/types/types.js";
 
+const DEFAULT_VALIDATION_ERROR_MESSAGE = "Validation failed";
 const MEGABYTE = 1_048_576;
 const FILE_SIZE_LIMIT_MB = 20;
 const FILE_SIZE_LIMIT = FILE_SIZE_LIMIT_MB * MEGABYTE;
@@ -82,7 +83,7 @@ class BaseServerApplication implements ServerApplication {
 							path: issue.path,
 						})),
 						errorType: ServerErrorType.VALIDATION,
-						message: error.message,
+						message: DEFAULT_VALIDATION_ERROR_MESSAGE,
 					};
 
 					return reply.status(HTTPCode.UNPROCESSED_ENTITY).send(response);
