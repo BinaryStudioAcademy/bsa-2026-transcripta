@@ -4,7 +4,13 @@ import path from "node:path";
 import { promisify } from "node:util";
 import sharp, { type Sharp } from "sharp";
 
-import { BLANK_STDEV_THRESHOLD } from "./libs/constants/constants.js";
+import {
+	BLANK_STDEV_THRESHOLD,
+	NORMALIZED_WIDTH,
+	PDFTOPPM_TIMEOUT,
+	THUMBNAIL_WIDTH,
+	WEBP_QUALITY,
+} from "./libs/constants/constants.js";
 import { type PDFPageProcessor as IPDFPageProcessor } from "./libs/types/types.js";
 
 const execAsync = promisify(execFile);
@@ -33,7 +39,7 @@ class PDFPageProcessor implements IPDFPageProcessor {
 				pngPath,
 			],
 			{
-				timeout: 60_000,
+				timeout: PDFTOPPM_TIMEOUT,
 			},
 		);
 
@@ -43,8 +49,8 @@ class PDFPageProcessor implements IPDFPageProcessor {
 	private async createNormilized(source: Sharp): Promise<Buffer> {
 		const normalized = await source
 			.clone()
-			.resize({ width: 2048, withoutEnlargement: true })
-			.webp({ quality: 85 })
+			.resize({ width: NORMALIZED_WIDTH, withoutEnlargement: true })
+			.webp({ quality: WEBP_QUALITY })
 			.toBuffer();
 
 		return normalized;
@@ -53,8 +59,8 @@ class PDFPageProcessor implements IPDFPageProcessor {
 	private async createThumbnail(source: Sharp): Promise<Buffer> {
 		const thumbnail = await source
 			.clone()
-			.resize({ width: 512, withoutEnlargement: true })
-			.webp({ quality: 85 })
+			.resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true })
+			.webp({ quality: WEBP_QUALITY })
 			.toBuffer();
 
 		return thumbnail;
