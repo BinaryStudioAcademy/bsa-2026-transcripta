@@ -20,8 +20,8 @@ const HowItWorks: React.FC = () => {
 						<span className="how-it-works__step-number tnum">02</span>
 
 						<span className="how-it-works__step-text">
-							Pick the preset "19th-century parish register" — or create your
-							own
+							Pick the preset &ldquo;19th-century parish register&rdquo; — or
+							create your own
 						</span>
 					</li>
 
