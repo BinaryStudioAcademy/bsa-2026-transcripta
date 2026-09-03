@@ -1,4 +1,5 @@
 import {
+	DocumentTypes,
 	Header,
 	Hero,
 	HowItWorks,
@@ -14,6 +15,7 @@ const Landing: React.FC = () => {
 			<Problem />
 			<HowItWorks />
 			<Loop />
+			<DocumentTypes />
 		</>
 	);
 };
