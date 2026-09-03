@@ -27,7 +27,10 @@ const Header: React.FC = () => {
 					</li>
 
 					<li>
-						<Link className="header-link__btn" to={AppRoute.SIGN_UP}>
+						<Link
+							className="tx-btn tx-btn--primary tx-btn--lg"
+							to={AppRoute.SIGN_UP}
+						>
 							Sign up
 						</Link>
 					</li>

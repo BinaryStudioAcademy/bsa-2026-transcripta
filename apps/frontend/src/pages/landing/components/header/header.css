@@ -44,25 +44,3 @@
 .header-link:hover {
 	color: var(--accent-active);
 }
-
-.header-link__btn {
-	display: inline-flex;
-	gap: 6px;
-	align-items: center;
-	justify-content: center;
-	width: 88px;
-	height: var(--ctl-lg);
-	padding: 0 18px;
-	font: 500 var(--fs-sm) / 1 var(--font-ui);
-	color: var(--on-accent);
-	text-decoration: none;
-	cursor: pointer;
-	user-select: none;
-	background: var(--accent);
-	border: none;
-	border-radius: var(--r-md);
-}
-
-.header-link__btn:hover {
-	background: var(--accent-hover);
-}
