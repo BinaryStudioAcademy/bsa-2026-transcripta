@@ -18,6 +18,7 @@ import {
 	TMPDIR_PREFIX,
 	TMPFILE_NAME,
 } from "./libs/constants/constants.js";
+import { ContentType } from "./libs/enums/enums.js";
 import { addLeadingZeros } from "./libs/helpers/helpers.js";
 import {
 	type Storage,
@@ -134,11 +135,13 @@ class BaseStorage implements Storage {
 		const imageCommand = new PutObjectCommand({
 			Body: pageImage,
 			Bucket: this.bucketPages,
+			ContentType: ContentType.WEBP,
 			Key: imageKey,
 		});
 		const thumbnailCommand = new PutObjectCommand({
 			Body: pageThumbnail,
 			Bucket: this.bucketPages,
+			ContentType: ContentType.WEBP,
 			Key: thumbnailKey,
 		});
 
