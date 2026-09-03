@@ -1,12 +1,17 @@
 export { App } from "./app/app.js";
+export { BudgetIndicator } from "./budget-indicator/budget-indicator.js";
 export { Button } from "./button/button.js";
+export { GroundTruthBlock } from "./ground-truth-block/ground-truth-block.js";
 export { Header } from "./header/header.js";
 export { Input } from "./input/input.js";
 export { Link } from "./link/link.js";
-export { /** @public */ LoaderOverlay } from "./loader/loader-overlay.js";
+export { LoaderOverlay } from "./loader/loader-overlay.js";
 export { Loader } from "./loader/loader.js";
 export { LogoIcon } from "./logo-icon/logo-icon.js";
+export { ProgressBar } from "./progress-bar/progress-bar.js";
+export { ProtectedRoute } from "./protected-route/protected-route.js";
 export { RouterProvider } from "./router-provider/router-provider.js";
 export { Sidebar } from "./sidebar/sidebar.js";
+export { StatusChip } from "./status-chip/status-chip.js";
 export { Provider as StoreProvider } from "react-redux";
 export { Outlet as RouterOutlet } from "react-router-dom";
