@@ -3,8 +3,7 @@ import { HTTPCode, ServerErrorType } from "@transcripta/shared";
 
 import { notification } from "~/libs/modules/notification/notification.js";
 import { SerializedAppError } from "~/libs/types/serialized-app-error.type.js";
-import { actions } from "~/modules/auth/auth.js";
-import { restoreSession } from "~/modules/auth/slices/actions.js";
+import { actions as authActions } from "~/modules/auth/auth.js";
 
 import { storage, StorageKey } from "../storage/storage.js";
 import { DEFAULT_ERROR_MESSAGE } from "./libs/constants/constants.js";
@@ -20,12 +19,12 @@ errorHandlingMiddleware.startListening({
 		const error = action.error as SerializedAppError;
 
 		if (
-			action.type === restoreSession.rejected.type &&
+			action.type === authActions.restoreSession.rejected.type &&
 			"status" in error &&
 			error.status === HTTPCode.UNAUTHORIZED
 		) {
 			await storage.drop(StorageKey.TOKEN);
-			listenerApi.dispatch(actions.logout());
+			listenerApi.dispatch(authActions.logout());
 
 			return;
 		}

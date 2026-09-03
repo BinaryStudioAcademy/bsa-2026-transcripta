@@ -13,8 +13,10 @@ import {
 	useLocation,
 } from "~/libs/hooks/hooks.js";
 import { type ValueOf } from "~/libs/types/types.js";
-import { selectIsInitialized } from "~/modules/auth/auth.js";
-import { restoreSession } from "~/modules/auth/slices/actions.js";
+import {
+	actions as authActions,
+	selectIsInitialized,
+} from "~/modules/auth/auth.js";
 
 const App: React.FC = () => {
 	const { pathname } = useLocation();
@@ -23,7 +25,7 @@ const App: React.FC = () => {
 	const isAuthPage = AUTH_ROUTES.has(pathname as ValueOf<typeof AppRoute>);
 
 	useEffect(() => {
-		void dispatch(restoreSession());
+		void dispatch(authActions.restoreSession());
 	}, [dispatch]);
 
 	if (!isInitialized) {
