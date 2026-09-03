@@ -13,13 +13,15 @@ import {
 	type DocumentCreateRequestDto,
 } from "~/modules/documents/documents.js";
 
-import type { ScreenState, UploadFormValues } from "./libs/types.js";
-
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
-import { FIRST_FILE_INDEX, ZERO_UPLOAD_PROGRESS } from "./libs/constants.js";
-import { uploadFile } from "./libs/upload-file.js";
-import { validateFile } from "./libs/validate-file.js";
+import {
+	FIRST_FILE_INDEX,
+	ZERO_UPLOAD_PROGRESS,
+} from "./libs/constants/constants.js";
+import { uploadFile } from "./libs/helpers/upload-file.js";
+import { validateFile } from "./libs/helpers/validate-file.js";
+import { type ScreenState, type UploadFormValues } from "./libs/types.js";
 import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {
@@ -266,7 +268,7 @@ const DocumentNew: React.FC = () => {
 							<>
 								<UploadProgress
 									fileName={selectedFile.name}
-									fileSize={String(selectedFile.size)}
+									fileSize={selectedFile.size}
 									percent={uploadProgress}
 								/>
 								<UploadForm

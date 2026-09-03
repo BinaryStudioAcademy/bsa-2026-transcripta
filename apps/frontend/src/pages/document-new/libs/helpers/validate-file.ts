@@ -1,10 +1,9 @@
-import type { FileValidationResult } from "./types.js";
-
 import {
 	DEFAULT_FILE_REJECTION_REASON,
 	FIRST_ISSUE_INDEX,
-} from "./constants.js";
-import { fileValidationSchema } from "./validation-schemas/validation-schemas.js";
+} from "../constants/constants.js";
+import { type FileValidationResult } from "../types.js";
+import { fileValidationSchema } from "../validation-schemas/validation-schemas.js";
 
 const validateFile = (file: File): FileValidationResult => {
 	const result = fileValidationSchema.safeParse({
