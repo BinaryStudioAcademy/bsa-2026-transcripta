@@ -66,7 +66,6 @@ class BaseServerApplication implements ServerApplication {
 	private initApp(): void {
 		this.app = Fastify({
 			ignoreTrailingSlash: true,
-			trustProxy: 1,
 		});
 	}
 
