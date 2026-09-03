@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import "~/assets/css/styles.css";
 import {
 	App,
+	ProtectedRoute,
 	RouterProvider,
 	StoreProvider,
 } from "~/libs/components/components.js";
@@ -24,10 +25,6 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 					{
 						children: [
 							{
-								element: <Documents />,
-								path: AppRoute.ROOT,
-							},
-							{
 								element: <Auth />,
 								path: AppRoute.SIGN_IN,
 							},
@@ -36,12 +33,21 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 								path: AppRoute.SIGN_UP,
 							},
 							{
-								element: <Document />,
-								path: AppRoute.DOCUMENT,
-							},
-							{
-								element: <Test />,
-								path: AppRoute.TEST,
+								children: [
+									{
+										element: <Documents />,
+										path: AppRoute.ROOT,
+									},
+									{
+										element: <Document />,
+										path: AppRoute.DOCUMENT,
+									},
+									{
+										element: <Test />,
+										path: AppRoute.TEST,
+									},
+								],
+								element: <ProtectedRoute />,
 							},
 						],
 						element: <App />,
