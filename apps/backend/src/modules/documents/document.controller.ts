@@ -10,6 +10,7 @@ import {
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
+import { type APIHandler } from "~/libs/modules/controller/libs/types/types.js";
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type TokenPayload } from "~/libs/modules/token/token.js";
@@ -117,6 +118,13 @@ class DocumentController extends BaseController {
 				body: DocumentCreateValidationSchema,
 			},
 		});
+
+		this.addRoute({
+			handler: (this.ingest as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.INGEST,
+			preHandler: authGuard,
+		});
 	}
 
 	/**
@@ -172,6 +180,32 @@ class DocumentController extends BaseController {
 	): Promise<APIHandlerResponse> {
 		return {
 			payload: await this.documentService.findAllByOwnerId(options.user.userId),
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/ingest:
+	 *    get:
+	 *      description: Ingest a PDF document - split it into pages
+	 *      security:
+	 *        - bearerAuth: []
+	 *      responses:
+	 *        200:
+	 *          description: Successful operation
+	 */
+	private async ingest(
+		options: APIHandlerOptions<{
+			params: {
+				id: number;
+			};
+		}>,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.ingest(options.params.id);
+
+		return {
+			payload: null,
 			status: HTTPCode.OK,
 		};
 	}
