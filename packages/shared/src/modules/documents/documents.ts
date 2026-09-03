@@ -8,7 +8,7 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
-  type DocumentGetByIdResponseDto,
+	type DocumentGetByIdResponseDto,
 	type DocumentIdRequestDto,
 } from "./libs/types/types.js";
 export {

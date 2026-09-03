@@ -30,7 +30,7 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
-  type DocumentGetByIdResponseDto,
+	type DocumentGetByIdResponseDto,
 	type DocumentIdRequestDto,
 	DocumentCreateValidationSchema,
 	DocumentIdValidationSchema,
