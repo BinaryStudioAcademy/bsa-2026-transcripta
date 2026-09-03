@@ -246,7 +246,7 @@ class BaseServerApplication implements ServerApplication {
 				});
 			},
 			global: false,
-			redis: new Redis(this.config.ENV.REDIS.CONNECTION_STRING, {
+			redis: new Redis(this.config.ENV.REDIS.URL, {
 				maxRetriesPerRequest: null,
 			}),
 		});

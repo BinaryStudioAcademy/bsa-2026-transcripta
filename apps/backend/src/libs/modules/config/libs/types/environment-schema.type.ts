@@ -21,7 +21,7 @@ type EnvironmentSchema = {
 		POOL_MIN: number;
 	};
 	REDIS: {
-		CONNECTION_STRING: string;
+		URL: string;
 	};
 	STORAGE: {
 		ACCESS_KEY_ID: string;
