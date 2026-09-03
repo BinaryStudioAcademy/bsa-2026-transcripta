@@ -25,12 +25,13 @@ const create = createAsyncThunk<
 	{ serializeError },
 );
 
-const ingest = createAsyncThunk<undefined, number, AsyncThunkConfig>(
+const ingest = createAsyncThunk<number, number, AsyncThunkConfig>(
 	`${sliceName}/ingest`,
 	async (id, { extra }) => {
 		const { documentApi } = extra;
 
 		await documentApi.ingest(id);
+		return id;
 	},
 	{ serializeError },
 );
