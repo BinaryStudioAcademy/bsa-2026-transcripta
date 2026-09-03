@@ -5,6 +5,7 @@ type DocumentGetAllItemResponseDto = {
 	createdAt: string;
 	id: number;
 	pageCount: number;
+	sourceKey: string;
 	status: ValueOf<typeof DocumentStatus>;
 	title: string;
 };
