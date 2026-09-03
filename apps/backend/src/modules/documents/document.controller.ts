@@ -128,7 +128,7 @@ class DocumentController extends BaseController {
 		this.addRoute({
 			handler: (options) => this.delete(options as DocumentDeleteOptions),
 			method: HTTPMethod.DELETE,
-			path: DocumentsApiPath.ID,
+			path: DocumentsApiPath.$ID,
 			preHandler: authGuard,
 			validation: {
 				params: DocumentIdValidationSchema,
