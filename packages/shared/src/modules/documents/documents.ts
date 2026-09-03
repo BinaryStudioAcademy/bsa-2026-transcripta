@@ -8,5 +8,6 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
 } from "./libs/types/types.js";
 export { DocumentCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
