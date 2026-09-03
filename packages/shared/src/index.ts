@@ -30,11 +30,13 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
 	DocumentCreateValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
 } from "./modules/documents/documents.js";
+export { PageStatus } from "./modules/pages/pages.js";
 export {
 	type UserGetAllItemResponseDto,
 	type UserGetAllResponseDto,

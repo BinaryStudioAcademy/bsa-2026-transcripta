@@ -71,6 +71,11 @@ samp {
 	clip-path: inset(100%);
 }
 
+.tabular-figures {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
 .test-page {
 	max-width: 900px;
 	padding: 24px;
