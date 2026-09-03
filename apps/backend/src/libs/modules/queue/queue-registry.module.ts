@@ -2,6 +2,11 @@ import { type Redis } from "ioredis";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
+import {
+	ConnectionEvents,
+	ConnectionStatuses,
+	QueueErrorMessage,
+} from "./libs/constants/constants.js";
 import { type QueueLifecycle } from "./libs/types/types.js";
 
 const EMPTY_ERRORS_LENGTH = 0;
@@ -26,7 +31,7 @@ class QueueRegistry {
 		this.logger = logger;
 		this.queues = queues;
 
-		this.connection.on("error", (error) => {
+		this.connection.on(ConnectionEvents.ERROR, (error) => {
 			this.logger.error("Redis connection error.", {
 				error: error.message,
 			});
@@ -44,9 +49,9 @@ class QueueRegistry {
 			}
 		}
 
-		if (this.connection.status === "ready") {
+		if (this.connection.status === ConnectionStatuses.READY) {
 			await this.connection.quit();
-		} else if (this.connection.status !== "end") {
+		} else if (this.connection.status !== ConnectionStatuses.END) {
 			this.connection.disconnect();
 		}
 
@@ -54,7 +59,10 @@ class QueueRegistry {
 		this.logger.info("Redis connection closed.");
 
 		if (errors.length > EMPTY_ERRORS_LENGTH) {
-			throw new AggregateError(errors, "Failed to close queue registry.");
+			throw new AggregateError(
+				errors,
+				QueueErrorMessage.FAILED_TO_CLOSE_REGISTRY,
+			);
 		}
 	}
 
@@ -83,10 +91,7 @@ class QueueRegistry {
 
 			this.connection.disconnect();
 
-			throw new Error(
-				"Redis is unavailable. Check REDIS_URL and make sure Redis is running.",
-				{ cause: error },
-			);
+			throw new Error(QueueErrorMessage.REDIS_UNAVAILABLE, { cause: error });
 		}
 	}
 }

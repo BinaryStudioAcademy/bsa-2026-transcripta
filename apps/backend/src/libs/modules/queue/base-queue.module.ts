@@ -9,6 +9,7 @@ import { type Redis } from "ioredis";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
+import { QueueErrorMessage } from "./libs/constants/constants.js";
 import { type QueueLifecycle } from "./libs/types/types.js";
 
 type Constructor<TData> = {
@@ -36,7 +37,7 @@ class BaseQueue<TData> implements QueueLifecycle {
 
 	protected async addJob(data: TData, options: JobsOptions): Promise<void> {
 		if (!this.queue) {
-			throw new Error("Queue hasn't created!");
+			throw new Error(QueueErrorMessage.QUEUE_NOT_CREATED);
 		}
 
 		await this.queue.add(this.name, data, options);
@@ -44,7 +45,6 @@ class BaseQueue<TData> implements QueueLifecycle {
 
 	public async close(): Promise<void> {
 		await this.worker?.close();
-
 		await this.queue?.close();
 
 		this.worker = null;
