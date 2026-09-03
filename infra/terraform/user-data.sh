@@ -105,6 +105,7 @@ DB_CONNECTION_STRING=postgresql://transcripta:transcripta@postgres:5432/transcri
 DB_DIALECT=pg
 DB_POOL_MIN=2
 DB_POOL_MAX=10
+REDIS_CONNECTION_STRING=redis://redis:6379
 AWS_REGION=us-east-1
 BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0
 ENV
