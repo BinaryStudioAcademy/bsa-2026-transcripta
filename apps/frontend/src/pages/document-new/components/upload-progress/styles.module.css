@@ -1,0 +1,21 @@
+.upload-progress-track {
+	height: 6px;
+	overflow: hidden;
+	background: var(--hairline);
+	border-radius: 3px;
+}
+
+.upload-progress-fill {
+	height: 100%;
+	background: var(--accent);
+}
+
+.upload-progress-cap {
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-top: 6px;
+	font: 400 12px/1.4 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-2);
+}
