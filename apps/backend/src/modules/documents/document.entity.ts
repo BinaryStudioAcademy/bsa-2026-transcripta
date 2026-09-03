@@ -4,6 +4,12 @@ import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
+type Preset = {
+	settings: {
+		blankStdevThreshold?: number;
+	};
+};
+
 class DocumentEntity {
 	private createdAt: string;
 
@@ -12,6 +18,8 @@ class DocumentEntity {
 	private ownerId: number;
 
 	private pageCount: number;
+
+	private preset: null | Preset;
 
 	private presetId: number;
 
@@ -30,6 +38,7 @@ class DocumentEntity {
 		id,
 		ownerId,
 		pageCount,
+		preset,
 		presetId,
 		sourceBytes,
 		sourceKey,
@@ -41,6 +50,7 @@ class DocumentEntity {
 		id: null | number;
 		ownerId: number;
 		pageCount: number;
+		preset?: null | Preset;
 		presetId: number;
 		sourceBytes: null | number;
 		sourceKey: null | string;
@@ -52,6 +62,7 @@ class DocumentEntity {
 		this.id = id;
 		this.ownerId = ownerId;
 		this.pageCount = pageCount;
+		this.preset = preset ?? null;
 		this.presetId = presetId;
 		this.sourceBytes = sourceBytes;
 		this.sourceKey = sourceKey;
@@ -65,6 +76,7 @@ class DocumentEntity {
 		id,
 		ownerId,
 		pageCount,
+		preset,
 		presetId,
 		sourceBytes,
 		sourceKey,
@@ -76,6 +88,7 @@ class DocumentEntity {
 		id: number;
 		ownerId: number;
 		pageCount: number;
+		preset?: Preset;
 		presetId: number;
 		sourceBytes?: null | number;
 		sourceKey?: null | string;
@@ -88,6 +101,7 @@ class DocumentEntity {
 			id,
 			ownerId,
 			pageCount,
+			preset: preset ?? null,
 			presetId,
 			sourceBytes: sourceBytes ?? null,
 			sourceKey: sourceKey ?? null,
@@ -141,7 +155,7 @@ class DocumentEntity {
 			pageCount: this.pageCount,
 			presetId: this.presetId,
 			sourceBytes: this.sourceBytes,
-			sourceKey: this.sourceKey,
+			sourceKey: this.sourceKey as string,
 			sourceName: this.sourceName,
 			status: this.status,
 			title: this.title,
@@ -157,8 +171,18 @@ class DocumentEntity {
 			createdAt: this.createdAt,
 			id: this.id,
 			pageCount: this.pageCount,
+			sourceKey: this.sourceKey as string,
 			status: this.status,
 			title: this.title,
+		};
+	}
+
+	public toObjectWithPreset(): DocumentGetAllItemResponseDto & {
+		preset: Preset;
+	} {
+		return {
+			...this.toObject(),
+			preset: this.preset as Preset,
 		};
 	}
 }
