@@ -68,10 +68,10 @@ class PDFPageProcessor implements IPDFPageProcessor {
 	}
 
 	private async isBlankPage(
-		image: Buffer,
+		source: Sharp,
 		stdevThreshold: number,
 	): Promise<boolean> {
-		const { channels } = await sharp(image).stats();
+		const { channels } = await source.clone().stats();
 		const [grey] = channels;
 
 		return grey !== undefined && grey.stdev <= stdevThreshold;
@@ -109,14 +109,11 @@ class PDFPageProcessor implements IPDFPageProcessor {
 
 		try {
 			const source = this.sharpImage(pngPath);
-			const [pageImage, pageThumbnail] = await Promise.all([
+			const [pageImage, pageThumbnail, isBlank] = await Promise.all([
 				this.createNormalized(source),
 				this.createThumbnail(source),
+				this.isBlankPage(source, blankStdevThreshold ?? BLANK_STDEV_THRESHOLD),
 			]);
-			const isBlank = await this.isBlankPage(
-				pageImage,
-				blankStdevThreshold ?? BLANK_STDEV_THRESHOLD,
-			);
 
 			return {
 				isBlank,
