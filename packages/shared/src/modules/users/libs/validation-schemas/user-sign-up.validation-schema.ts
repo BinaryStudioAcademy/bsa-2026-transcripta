@@ -16,6 +16,9 @@ const userSignUp = z
 			.min(UserValidationRule.EMAIL_MINIMUM_LENGTH, {
 				message: UserValidationMessage.EMAIL_REQUIRE,
 			})
+			.max(UserValidationRule.EMAIL_MAXIMUM_LENGTH, {
+				message: UserValidationMessage.EMAIL_MAXIMUM_LENGTH,
+			})
 			.email({
 				message: UserValidationMessage.EMAIL_WRONG,
 			}),
