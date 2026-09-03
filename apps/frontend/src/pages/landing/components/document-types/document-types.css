@@ -34,7 +34,7 @@
 
 .document-types__card-title {
 	margin: 0 0 var(--sp-2);
-	font: 600 var(--fs-xl) / var(--lh-card-heading) var(--font-display);
+	font: 600 var(--fs-l) / var(--lh-card-heading) var(--font-display);
 	text-wrap: balance;
 }
 
