@@ -1,3 +1,5 @@
+import React from "react";
+
 import { Button, Input } from "~/libs/components/components.js";
 import { Select } from "~/libs/components/select/select.js";
 import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
@@ -7,7 +9,7 @@ import {
 	DEFAULT_PRESET_INDEX,
 	MOCK_PRESET_OPTIONS,
 	PDF_EXTENSION_REGEX,
-} from "../../libs/constants.js";
+} from "../../libs/constants/constants.js";
 import { type UploadFormValues } from "../../libs/types.js";
 import { uploadFormValidationSchema } from "../../libs/validation-schemas/validation-schemas.js";
 import styles from "./styles.module.css";

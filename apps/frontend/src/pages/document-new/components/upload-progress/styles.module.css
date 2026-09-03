@@ -2,7 +2,7 @@
 	height: 6px;
 	overflow: hidden;
 	background: var(--hairline);
-	border-radius: 3px;
+	border-radius: var(--r-sm);
 }
 
 .upload-progress-fill {
@@ -12,10 +12,10 @@
 
 .upload-progress-cap {
 	display: flex;
-	gap: 12px;
+	gap: var(--sp-3);
 	justify-content: space-between;
 	margin-top: 6px;
-	font: 400 12px/1.4 var(--font-mono);
+	font: 400 var(--fs-xs) / 1.4 var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-2);
 }
