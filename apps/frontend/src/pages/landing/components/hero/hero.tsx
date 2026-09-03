@@ -26,9 +26,7 @@ const Hero: React.FC = () => {
 
 					<a
 						className="tx-btn tx-btn--ghost tx-btn--landing"
-						href="https://www.youtube.com/"
-						rel="noopener noreferrer"
-						target="_blank"
+						href="#how-it-works"
 					>
 						See how it works
 					</a>
