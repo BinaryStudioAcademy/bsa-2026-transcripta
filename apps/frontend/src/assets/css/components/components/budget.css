@@ -28,10 +28,6 @@
 	background: var(--ok);
 }
 
-.tx-page-thumb i:nth-child(2n) {
-	width: 86%;
-}
-
 .tx-budget--warn {
 	color: var(--warn-text);
 	background: var(--warn-tint);
