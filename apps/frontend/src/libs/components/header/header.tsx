@@ -1,6 +1,7 @@
-import headerLogo from "~/assets/img/logo.svg";
-import { Link } from "~/libs/components/components.js";
-import { AppRoute } from "~/libs/enums/enums.js";
+import headerLogo from "../../../assets/img/logo.svg";
+import { AppRoute } from "../../../libs/enums/enums.js";
+import { Link } from "../components.js";
+import { ThemeToggle } from "../theme-toggle/theme-toggle.js";
 
 const Header: React.FC = () => {
 	return (
@@ -28,6 +29,10 @@ const Header: React.FC = () => {
 						<Link className="header-link__btn" to={AppRoute.SIGN_UP}>
 							Sign up
 						</Link>
+					</li>
+
+					<li>
+						<ThemeToggle />
 					</li>
 				</ul>
 			</nav>
