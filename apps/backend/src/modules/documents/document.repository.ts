@@ -68,10 +68,10 @@ class DocumentRepository {
 			.findById(id)
 			.where({ ownerId })
 			.forUpdate();
-			
+
 		return document ? DocumentEntity.initialize(document) : null;
 	}
-	
+
 	public async findWithPreset(
 		id: number,
 		userId: number,

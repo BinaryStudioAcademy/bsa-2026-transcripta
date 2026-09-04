@@ -18,7 +18,7 @@ import { type Config } from "~/libs/modules/config/config.js";
 import {
 	DELETE_OBJECTS_BATCH_SIZE,
 	SignedUrlConfig,
-  TMPDIR_PREFIX,
+	TMPDIR_PREFIX,
 	TMPFILE_NAME,
 } from "./libs/constants/constants.js";
 import {
@@ -131,8 +131,8 @@ class BaseStorage implements Storage {
 		const keys = await this.listObjectKeys(bucketName, prefix);
 
 		await this.deleteObjects(bucketName, keys);
-  }
-  
+	}
+
 	public async downloadToTempFolder(sourceKey: string): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;

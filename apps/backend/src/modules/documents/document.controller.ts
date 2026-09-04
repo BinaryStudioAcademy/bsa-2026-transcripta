@@ -134,9 +134,9 @@ class DocumentController extends BaseController {
 			validation: {
 				params: DocumentIdValidationSchema,
 			},
-			});
-      
-      this.addRoute({
+		});
+
+		this.addRoute({
 			handler: (this.ingest as APIHandler).bind(this),
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
