@@ -1,0 +1,107 @@
+.hero {
+	box-sizing: border-box;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--sp-16);
+	align-items: center;
+	max-width: 1240px;
+	padding: var(--sp-24) var(--sp-16) var(--sp-26);
+	margin: 0 auto;
+}
+
+.hero__title {
+	margin: 0;
+	font: 600 var(--fs-display) / var(--lh-tight) var(--font-display);
+	text-wrap: balance;
+}
+
+.hero__description {
+	max-width: 490px;
+	margin: var(--sp-6) 0 var(--sp-8);
+	font: 400 var(--fs-lg-plus) / var(--lh-read) var(--font-ui);
+	color: var(--text-2);
+}
+
+.hero__actions {
+	display: flex;
+	gap: var(--sp-3);
+	align-items: center;
+}
+
+.hero__preview {
+	padding: var(--sp-5);
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+	box-shadow: var(--shadow-pop);
+}
+
+.hero__preview-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--sp-3);
+}
+
+.hero__document-title {
+	font: 600 var(--fs-md) var(--font-display);
+}
+
+.hero__page-info {
+	font-family: var(--font-mono);
+	font-size: var(--fs-2xs);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-3);
+}
+
+.hero__document {
+	display: grid;
+	grid-template-columns: 170px 1fr;
+	gap: var(--sp-5);
+	align-items: stretch;
+}
+
+.hero__scan {
+	overflow: hidden;
+	color: var(--paper-700);
+	background: var(--paper-100)
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0,
+			transparent 23px,
+			var(--paper-300) 23px,
+			var(--paper-300) 24px
+		);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-sm);
+}
+
+.hero__transcription {
+	align-self: center;
+	margin: 0;
+	font: 400 var(--fs-md-plus) / var(--lh-read) var(--font-ui);
+}
+
+.hero__transcription div {
+	display: contents;
+}
+
+.hero__footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: var(--sp-3);
+	margin-top: var(--sp-4);
+	border-top: 1px solid var(--hairline);
+}
+
+.hero__budget {
+	display: inline-flex;
+	gap: var(--sp-2);
+	align-items: center;
+}
+
+.hero__budget-progress {
+	display: block;
+	width: 9.8%;
+}
