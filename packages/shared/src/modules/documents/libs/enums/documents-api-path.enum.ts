@@ -1,6 +1,6 @@
 const DocumentsApiPath = {
-	$ID: "/:id",
-	$ID_PAGES: "/:id/pages",
+	BY_ID: "/:id",
+	BY_ID_PAGES: "/:id/pages",
 	ROOT: "/",
 } as const;
 

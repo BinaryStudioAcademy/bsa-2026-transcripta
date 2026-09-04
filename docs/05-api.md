@@ -11,7 +11,7 @@ On the frontend the same `:parameters` are substituted by `configureString`
 inside `getFullEndpoint` — the second argument is the replacement object:
 
 ```ts
-this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(documentId) });
+this.getFullEndpoint(DocumentsApiPath.BY_ID, { id: String(documentId) });
 // '/api/v1/documents/:id' + { id: '47' } -> '/api/v1/documents/47'
 ```
 

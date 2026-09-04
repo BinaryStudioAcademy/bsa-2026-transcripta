@@ -126,7 +126,7 @@ class DocumentController extends BaseController {
 		this.addRoute({
 			handler: (options) => this.findById(options as DocumentFindByIdOptions),
 			method: HTTPMethod.GET,
-			path: DocumentsApiPath.$ID,
+			path: DocumentsApiPath.BY_ID,
 			preHandler: authGuard,
 			validation: {
 				params: DocumentGetByIdParametersValidationSchema,
@@ -136,7 +136,7 @@ class DocumentController extends BaseController {
 		this.addRoute({
 			handler: (options) => this.findPages(options as DocumentFindPagesOptions),
 			method: HTTPMethod.GET,
-			path: DocumentsApiPath.$ID_PAGES,
+			path: DocumentsApiPath.BY_ID_PAGES,
 			preHandler: authGuard,
 			validation: {
 				params: DocumentGetByIdParametersValidationSchema,
