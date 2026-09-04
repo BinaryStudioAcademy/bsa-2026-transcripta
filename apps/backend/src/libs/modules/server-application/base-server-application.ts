@@ -19,13 +19,13 @@ import {
 	type ValidationSchema,
 } from "~/libs/types/types.js";
 
+import { DEFAULT_VALIDATION_ERROR_MESSAGE } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
 	type ServerApplicationApi,
 	type ServerApplicationRouteParameters,
 } from "./libs/types/types.js";
 
-const DEFAULT_VALIDATION_ERROR_MESSAGE = "Validation failed";
 const MEGABYTE = 1_048_576;
 const FILE_SIZE_LIMIT_MB = 20;
 const FILE_SIZE_LIMIT = FILE_SIZE_LIMIT_MB * MEGABYTE;
