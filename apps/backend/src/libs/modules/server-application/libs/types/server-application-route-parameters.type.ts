@@ -8,6 +8,7 @@ import { type HTTPMethodValue } from "~/libs/modules/http/http.js";
 import { type ValidationSchema } from "~/libs/types/types.js";
 
 type ServerApplicationRouteParameters = {
+	config?: Record<string, unknown>;
 	handler: (
 		request: FastifyRequest,
 		reply: FastifyReply,
