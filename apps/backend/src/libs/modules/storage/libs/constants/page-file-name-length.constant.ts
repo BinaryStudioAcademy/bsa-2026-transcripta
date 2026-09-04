@@ -1,0 +1,3 @@
+const PAGE_FILE_NAME_LENGTH = 6;
+
+export { PAGE_FILE_NAME_LENGTH };

@@ -1,8 +1,15 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
+import { DocumentErrorMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
+
+type Preset = {
+	settings: {
+		blankStdevThreshold?: number;
+	};
+};
 
 class DocumentEntity {
 	private createdAt: string;
@@ -12,6 +19,8 @@ class DocumentEntity {
 	private ownerId: number;
 
 	private pageCount: number;
+
+	private preset: null | Preset;
 
 	private presetId: number;
 
@@ -30,6 +39,7 @@ class DocumentEntity {
 		id,
 		ownerId,
 		pageCount,
+		preset,
 		presetId,
 		sourceBytes,
 		sourceKey,
@@ -41,6 +51,7 @@ class DocumentEntity {
 		id: null | number;
 		ownerId: number;
 		pageCount: number;
+		preset?: null | Preset;
 		presetId: number;
 		sourceBytes: null | number;
 		sourceKey: null | string;
@@ -52,6 +63,7 @@ class DocumentEntity {
 		this.id = id;
 		this.ownerId = ownerId;
 		this.pageCount = pageCount;
+		this.preset = preset ?? null;
 		this.presetId = presetId;
 		this.sourceBytes = sourceBytes;
 		this.sourceKey = sourceKey;
@@ -65,6 +77,7 @@ class DocumentEntity {
 		id,
 		ownerId,
 		pageCount,
+		preset,
 		presetId,
 		sourceBytes,
 		sourceKey,
@@ -76,6 +89,7 @@ class DocumentEntity {
 		id: number;
 		ownerId: number;
 		pageCount: number;
+		preset?: Preset;
 		presetId: number;
 		sourceBytes?: null | number;
 		sourceKey?: null | string;
@@ -88,6 +102,7 @@ class DocumentEntity {
 			id,
 			ownerId,
 			pageCount,
+			preset: preset ?? null,
 			presetId,
 			sourceBytes: sourceBytes ?? null,
 			sourceKey: sourceKey ?? null,
@@ -156,9 +171,29 @@ class DocumentEntity {
 		return {
 			createdAt: this.createdAt,
 			id: this.id,
+			ownerId: this.ownerId,
 			pageCount: this.pageCount,
 			status: this.status,
 			title: this.title,
+		};
+	}
+
+	public toObjectWithPreset(): DocumentGetAllItemResponseDto & {
+		preset: Preset;
+		sourceKey: string;
+	} {
+		if (this.sourceKey === null) {
+			throw new Error(DocumentErrorMessage.NO_SOURCE_KEY);
+		}
+
+		if (this.preset === null) {
+			throw new Error(DocumentErrorMessage.NO_PRESET);
+		}
+
+		return {
+			...this.toObject(),
+			preset: this.preset,
+			sourceKey: this.sourceKey,
 		};
 	}
 }

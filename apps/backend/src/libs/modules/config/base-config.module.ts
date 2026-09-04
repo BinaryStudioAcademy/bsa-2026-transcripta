@@ -122,7 +122,7 @@ class BaseConfig implements Config {
 				},
 				BUCKET_PAGES: {
 					default: "transcripta-pages",
-					doc: "Bucket name for page images and thumbnails",
+					doc: "Bucket name for .webp pages",
 					env: "STORAGE_BUCKET_PAGES",
 					format: String,
 				},

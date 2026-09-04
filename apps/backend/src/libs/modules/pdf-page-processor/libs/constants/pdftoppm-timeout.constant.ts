@@ -1,0 +1,3 @@
+const PDFTOPPM_TIMEOUT = 60_000;
+
+export { PDFTOPPM_TIMEOUT };

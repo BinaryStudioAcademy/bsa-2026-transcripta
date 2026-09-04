@@ -22,6 +22,7 @@ import {
 	type ValidationSchema,
 } from "~/libs/types/types.js";
 
+import { DEFAULT_VALIDATION_ERROR_MESSAGE } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
 	type ServerApplicationApi,
@@ -85,7 +86,7 @@ class BaseServerApplication implements ServerApplication {
 							path: issue.path,
 						})),
 						errorType: ServerErrorType.VALIDATION,
-						message: error.message,
+						message: DEFAULT_VALIDATION_ERROR_MESSAGE,
 					};
 
 					return reply.status(HTTPCode.UNPROCESSED_ENTITY).send(response);

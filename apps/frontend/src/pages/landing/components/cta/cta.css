@@ -1,0 +1,16 @@
+.cta {
+	padding: var(--sp-24) var(--sp-16);
+	text-align: center;
+	border-top: 1px solid var(--hairline);
+}
+
+.cta__title {
+	margin: 0 0 var(--sp-3);
+	font: 600 var(--fs-3xl-plus) / var(--lh-tight) var(--font-display);
+}
+
+.cta__description {
+	margin: 0 0 var(--sp-8);
+	font: 400 15px / var(--lh-read) var(--font-ui);
+	color: var(--text-2);
+}

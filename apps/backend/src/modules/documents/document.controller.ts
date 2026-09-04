@@ -12,6 +12,7 @@ import {
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
+import { type APIHandler } from "~/libs/modules/controller/libs/types/types.js";
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type TokenPayload } from "~/libs/modules/token/token.js";
@@ -132,7 +133,13 @@ class DocumentController extends BaseController {
 			preHandler: authGuard,
 			validation: {
 				params: DocumentIdValidationSchema,
-			},
+			});
+      
+      this.addRoute({
+			handler: (this.ingest as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.INGEST,
+			preHandler: authGuard,
 		});
 	}
 
@@ -222,6 +229,48 @@ class DocumentController extends BaseController {
 	): Promise<APIHandlerResponse> {
 		return {
 			payload: await this.documentService.findAllByOwnerId(options.user.userId),
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/ingest:
+	 *   post:
+	 *     description: Ingest a PDF document - split it into pages
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Document ID
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *       409:
+	 *         description: Document is currently ingesting
+	 *       404:
+	 *         description: Document not found
+	 *       413:
+	 *         description: Document is too large
+	 *       500:
+	 *         description: Other errors
+	 */
+	private async ingest(
+		options: APIHandlerOptions<{
+			params: {
+				id: number;
+			};
+			user: TokenPayload;
+		}>,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.ingest(options.params.id, options.user.userId);
+
+		return {
+			payload: null,
 			status: HTTPCode.OK,
 		};
 	}

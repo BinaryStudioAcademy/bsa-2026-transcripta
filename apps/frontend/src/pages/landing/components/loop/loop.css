@@ -1,0 +1,71 @@
+.loop {
+	padding: var(--sp-21) var(--sp-16) var(--sp-23);
+	border-top: 1px solid var(--hairline);
+}
+
+.loop__container {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--sp-16);
+	align-items: center;
+	max-width: 1112px;
+	margin: 0 auto;
+}
+
+.loop__title {
+	margin: 0;
+	font: 600 32px / var(--lh-heading) var(--font-display);
+}
+
+.loop__description {
+	max-width: 460px;
+	margin: var(--sp-5) 0 0;
+	font: 400 var(--fs-md-plus) / var(--lh-read) var(--font-ui);
+	color: var(--text-2);
+}
+
+.loop__description--secondary {
+	margin-top: var(--sp-3);
+}
+
+.loop__lexicon {
+	padding: var(--sp-6);
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+}
+
+.loop__lexicon-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--sp-4);
+}
+
+.loop__lexicon-title {
+	font: 600 var(--fs-md) var(--font-display);
+}
+
+.loop__lexicon-count {
+	font-size: var(--fs-2xs);
+	color: var(--text-3);
+}
+
+.loop__lexicon-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-3);
+}
+
+.loop__lexicon-item {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	padding-bottom: var(--sp-3);
+	border-bottom: 1px solid var(--hairline);
+}
+
+.loop__lexicon-pages {
+	font-size: var(--fs-xs);
+	color: var(--text-3);
+}

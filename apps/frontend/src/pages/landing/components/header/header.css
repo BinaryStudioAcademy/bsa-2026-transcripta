@@ -2,7 +2,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 20px 64px;
+	padding: var(--sp-5) var(--sp-16);
 	font: 400 var(--fs-md) / var(--lh-ui) var(--font-ui);
 	color: var(--text);
 	background: var(--bg);
@@ -11,7 +11,7 @@
 
 .header-brand {
 	display: inline-flex;
-	gap: 10px;
+	gap: var(--sp-3);
 	align-items: center;
 	color: var(--text);
 	text-decoration: none;
@@ -23,12 +23,12 @@
 }
 
 .header-title {
-	font: 600 18px/1 var(--font-display);
+	font: 600 var(--fs-xl) / 1 var(--font-display);
 }
 
 .header-nav__list {
 	display: flex;
-	gap: 28px;
+	gap: var(--sp-7);
 	align-items: center;
 	padding: 0;
 	margin: 0;
@@ -43,26 +43,4 @@
 
 .header-link:hover {
 	color: var(--accent-active);
-}
-
-.header-link__btn {
-	display: inline-flex;
-	gap: 6px;
-	align-items: center;
-	justify-content: center;
-	width: 88px;
-	height: var(--ctl-lg);
-	padding: 0 18px;
-	font: 500 var(--fs-sm) / 1 var(--font-ui);
-	color: var(--on-accent);
-	text-decoration: none;
-	cursor: pointer;
-	user-select: none;
-	background: var(--accent);
-	border: none;
-	border-radius: var(--r-md);
-}
-
-.header-link__btn:hover {
-	background: var(--accent-hover);
 }
