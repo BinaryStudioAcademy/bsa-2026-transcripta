@@ -2,10 +2,8 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
-	DocumentStatus,
 	HTTPCode,
 	HTTPError,
-	type ValueOf,
 } from "@transcripta/shared";
 import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
@@ -21,6 +19,7 @@ import { type DocumentRepository } from "./document.repository.js";
 import {
 	DOCUMENT_OWNER_ID_FOREIGN,
 	MAX_DOCUMENT_PAGES,
+	NON_DELETABLE_DOCUMENT_STATUSES,
 	PAGES_TO_QUEUE,
 } from "./libs/constants/constants.js";
 import {
@@ -30,11 +29,6 @@ import {
 	PageStatus,
 } from "./libs/enums/enums.js";
 import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
-
-type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
-
-const NON_DELETABLE_DOCUMENT_STATUSES: ReadonlySet<DocumentStatusValue> =
-	new Set([DocumentStatus.INGESTING, DocumentStatus.PROCESSING]);
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
