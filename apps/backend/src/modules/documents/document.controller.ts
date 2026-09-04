@@ -133,6 +133,7 @@ class DocumentController extends BaseController {
 			preHandler: authGuard,
 			validation: {
 				params: DocumentIdValidationSchema,
+			},
 			});
       
       this.addRoute({
