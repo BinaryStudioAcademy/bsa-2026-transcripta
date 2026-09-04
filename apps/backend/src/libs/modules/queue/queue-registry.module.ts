@@ -5,6 +5,7 @@ import { type Logger } from "~/libs/modules/logger/logger.js";
 import {
 	ConnectionEvents,
 	ConnectionStatuses,
+	LoggerMessages,
 	QueueErrorMessage,
 } from "./libs/constants/constants.js";
 import { type QueueLifecycle } from "./libs/types/types.js";
@@ -32,7 +33,7 @@ class QueueRegistry {
 		this.queues = queues;
 
 		this.connection.on(ConnectionEvents.ERROR, (error: Error) => {
-			this.logger.error("Redis connection error.", {
+			this.logger.error(LoggerMessages.REDIS_CONNECTION_ERROR, {
 				error: error.message,
 			});
 		});
@@ -56,7 +57,7 @@ class QueueRegistry {
 		}
 
 		this.isConnected = false;
-		this.logger.info("Redis connection closed.");
+		this.logger.info(LoggerMessages.REDIS_CONNECTION_CLOSED);
 
 		if (errors.length > EMPTY_ERRORS_LENGTH) {
 			throw new AggregateError(
@@ -83,7 +84,7 @@ class QueueRegistry {
 			}
 
 			this.isConnected = true;
-			this.logger.info("Redis connected.");
+			this.logger.info(LoggerMessages.REDIS_CONNECTED);
 		} catch (error) {
 			for (const queue of connectedQueues.toReversed()) {
 				await queue.close().catch(() => null);

@@ -9,7 +9,10 @@ import { type Redis } from "ioredis";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
-import { QueueErrorMessage } from "./libs/constants/constants.js";
+import {
+	LoggerMessages,
+	QueueErrorMessage,
+} from "./libs/constants/constants.js";
 import { type QueueLifecycle } from "./libs/types/types.js";
 
 type Constructor<TData> = {
@@ -50,7 +53,7 @@ class BaseQueue<TData> implements QueueLifecycle {
 		this.worker = null;
 		this.queue = null;
 
-		this.logger.info(`Queue ${this.name} closed.`);
+		this.logger.info(`${LoggerMessages.QUEUE_CLOSED}: ${this.name}`);
 	}
 
 	public async connect(connection: Redis): Promise<void> {
@@ -73,10 +76,22 @@ class BaseQueue<TData> implements QueueLifecycle {
 			this.queue = queue;
 			this.worker = worker;
 
-			this.logger.info(`Queue ${this.name} is ready.`);
+			this.logger.info(`${LoggerMessages.QUEUE_READY}: ${this.name}`);
 		} catch (error) {
-			await worker?.close().catch(() => null);
-			await queue?.close().catch(() => null);
+			await worker?.close().catch((closeError: unknown) => {
+				this.logger.error(LoggerMessages.WORKER_CLOSE_FAILED(this.name), {
+					error: closeError,
+				});
+			});
+			await queue?.close().catch((closeError: unknown) => {
+				this.logger.error(LoggerMessages.QUEUE_CLOSE_FAILED(this.name), {
+					error: closeError,
+				});
+			});
+
+			this.logger.error(LoggerMessages.CONNECTION_FAILED(this.name), {
+				error,
+			});
 
 			throw error;
 		}
