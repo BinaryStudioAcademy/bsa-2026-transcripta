@@ -17,6 +17,9 @@ const userSignUp = z
 			.min(UserValidationRule.EMAIL_MINIMUM_LENGTH, {
 				message: UserValidationMessage.EMAIL_REQUIRE,
 			})
+			.max(UserValidationRule.EMAIL_MAXIMUM_LENGTH, {
+				message: UserValidationMessage.EMAIL_MAXIMUM_LENGTH,
+			})
 			.email({
 				message: UserValidationMessage.EMAIL_WRONG,
 			}),
@@ -28,6 +31,9 @@ const userSignUp = z
 			})
 			.min(UserValidationRule.PASSWORD_MINIMUM_LENGTH, {
 				message: UserValidationMessage.PASSWORD_MINIMUM_LENGTH,
+			})
+			.max(UserValidationRule.PASSWORD_MAXIMUM_LENGTH, {
+				message: UserValidationMessage.PASSWORD_MAXIMUM_LENGTH,
 			}),
 	})
 	.required();
