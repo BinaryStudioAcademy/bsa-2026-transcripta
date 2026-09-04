@@ -9,10 +9,11 @@ export { configureString } from "./libs/helpers/helpers.js";
 export { type Config } from "./libs/modules/config/config.js";
 export {
 	type HTTP,
-	type HTTPMethod,
+	type HTTPMethodValue,
 	type HTTPOptions,
 	HTTPCode,
 	HTTPHeader,
+	HTTPMethod,
 } from "./libs/modules/http/http.js";
 export { type Storage } from "./libs/modules/storage/storage.js";
 export {
@@ -25,11 +26,17 @@ export {
 } from "./libs/types/types.js";
 export { AuthApiPath } from "./modules/auth/auth.js";
 export {
+	type DocumentCreateRequestDto,
+	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
+	DocumentCreateValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
+	DocumentValidationMessage,
 } from "./modules/documents/documents.js";
+export { PageStatus } from "./modules/pages/pages.js";
 export {
 	type UserGetAllItemResponseDto,
 	type UserGetAllResponseDto,

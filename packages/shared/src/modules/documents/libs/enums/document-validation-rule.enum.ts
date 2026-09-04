@@ -1,0 +1,16 @@
+const BYTES_IN_KILOBYTE = 1024;
+const KILOBYTES_IN_MEGABYTE = 1024;
+const MAX_FILE_SIZE_MEGABYTES = 500;
+
+const MAX_FILE_BYTES =
+	MAX_FILE_SIZE_MEGABYTES * KILOBYTES_IN_MEGABYTE * BYTES_IN_KILOBYTE;
+
+const PDF_FILE_REGEX = /^.+\.pdf$/i;
+
+const DocumentValidationRule = {
+	MAX_FILE_BYTES,
+	MIN_TITLE_LENGTH: 1,
+	PDF_FILE_REGEX,
+} as const;
+
+export { DocumentValidationRule };

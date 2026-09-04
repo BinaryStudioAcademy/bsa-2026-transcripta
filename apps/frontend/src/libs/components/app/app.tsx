@@ -1,20 +1,49 @@
-import { Header, RouterOutlet } from "~/libs/components/components.js";
+import { AUTH_ROUTES } from "~/libs/components/app/libs/constants/auth-routes.constant.js";
+import {
+	Header,
+	LoaderOverlay,
+	RouterOutlet,
+	Sidebar,
+} from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
-import { useLocation } from "~/libs/hooks/hooks.js";
+import {
+	useAppDispatch,
+	useAppSelector,
+	useEffect,
+	useLocation,
+} from "~/libs/hooks/hooks.js";
+import { type ValueOf } from "~/libs/types/types.js";
+import {
+	actions as authActions,
+	selectIsInitialized,
+} from "~/modules/auth/auth.js";
 
 const App: React.FC = () => {
 	const { pathname } = useLocation();
-	const isRoot = pathname === AppRoute.ROOT;
+	const dispatch = useAppDispatch();
+	const isInitialized = useAppSelector(selectIsInitialized);
+	const isAuthPage = AUTH_ROUTES.has(pathname as ValueOf<typeof AppRoute>);
+
+	useEffect(() => {
+		void dispatch(authActions.restoreSession());
+	}, [dispatch]);
+
+	if (!isInitialized) {
+		return <LoaderOverlay />;
+	}
+
+	if (isAuthPage) {
+		return <RouterOutlet />;
+	}
 
 	return (
-		<>
-			<div>
-				{isRoot && <Header />}
-				<main>
-					<RouterOutlet />
-				</main>
-			</div>
-		</>
+		<div className="app-layout">
+			<Sidebar />
+			<main className="app-main">
+				{pathname === AppRoute.ROOT && <Header />}
+				<RouterOutlet />
+			</main>
+		</div>
 	);
 };
 

@@ -5,11 +5,16 @@ const config: KnipConfig = {
 	stylelint: ["./stylelint.config.ts"],
 	workspaces: {
 		".": {
-			entry: ["./dangerfile.ts", "./docs/demo/build.js"],
+			entry: ["./dangerfile.ts"],
 			ignore: ["design/**"],
 		},
 		"apps/backend": {
-			entry: ["src/db/migrations/*.ts", "knexfile.ts"],
+			entry: [
+				"src/db/migrations/*.ts",
+				"knexfile.ts",
+				"src/modules/pages/page.model.ts",
+				"src/modules/pages/page.repository.ts",
+			],
 			ignoreDependencies: ["pg"],
 		},
 		"apps/frontend": {},
