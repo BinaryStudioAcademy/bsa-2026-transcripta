@@ -4,6 +4,7 @@ import { DocumentStatus } from "../enums/document-status.enum.js";
 type DocumentGetAllItemResponseDto = {
 	createdAt: string;
 	id: number;
+	ownerId: number;
 	pageCount: number;
 	status: ValueOf<typeof DocumentStatus>;
 	title: string;

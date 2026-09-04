@@ -120,6 +120,12 @@ class BaseConfig implements Config {
 					env: "STORAGE_ACCESS_KEY_ID",
 					format: String,
 				},
+				BUCKET_PAGES: {
+					default: "transcripta-pages",
+					doc: "Bucket name for .webp pages",
+					env: "STORAGE_BUCKET_PAGES",
+					format: String,
+				},
 				BUCKET_UPLOADS: {
 					default: "transcripta-uploads",
 					doc: "Bucket name for PDF uploads",

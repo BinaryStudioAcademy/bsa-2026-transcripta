@@ -1,8 +1,11 @@
 import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
+import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
+
+import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
 
 class DocumentRepository {
 	private documentModel: typeof DocumentModel;
@@ -51,6 +54,34 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
+	public async findWithPreset(
+		id: number,
+		userId: number,
+	): Promise<DocumentEntity | null> {
+		const document = await this.documentModel
+			.query()
+			.findOne({ id, ownerId: userId })
+			.withGraphFetched(DocumentRelationName.PRESET);
+
+		return document ? DocumentEntity.initialize(document) : null;
+	}
+
+	public async setError(id: number, errorMessage: string): Promise<void> {
+		await this.documentModel
+			.query()
+			.patch({ errorMessage, status: DocumentStatus.FAILED })
+			.where({ id })
+			.execute();
+	}
+
+	public async updatePageCount(id: number, pageCount: number): Promise<void> {
+		await this.documentModel
+			.query()
+			.patch({ pageCount })
+			.where({ id })
+			.execute();
+	}
+
 	public async updateSourceKey(
 		id: number,
 		sourceKey: string,
@@ -61,6 +92,13 @@ class DocumentRepository {
 			.patch({ sourceKey })
 			.where({ id })
 			.execute();
+	}
+
+	public async updateStatus(
+		id: number,
+		status: ValueOf<typeof DocumentStatus>,
+	): Promise<void> {
+		await this.documentModel.query().patch({ status }).where({ id }).execute();
 	}
 }
 
