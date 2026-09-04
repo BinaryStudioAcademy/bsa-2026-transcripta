@@ -105,6 +105,14 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			REDIS: {
+				URL: {
+					default: "redis://localhost:6379",
+					doc: "Redis connection string",
+					env: "REDIS_URL",
+					format: String,
+				},
+			},
 			STORAGE: {
 				ACCESS_KEY_ID: {
 					default: "minioadmin",
