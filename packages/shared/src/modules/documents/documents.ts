@@ -10,6 +10,7 @@ export {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 } from "./libs/types/types.js";

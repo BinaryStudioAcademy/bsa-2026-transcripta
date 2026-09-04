@@ -8,10 +8,7 @@ import { type DocumentModel } from "~/modules/documents/document.model.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
-import {
-	type DocumentPageRow,
-	type LexiconRow,
-} from "./libs/types/document-page-row.type.js";
+import { type LexiconRow } from "./libs/types/lexicon-row.type.js";
 
 type DocumentDetailsRow = {
 	budgetUsd: string;
@@ -153,46 +150,6 @@ class DocumentRepository {
 			.first();
 
 		return document?.id ?? null;
-	}
-
-	public async findPagesByDocumentIdAndOwnerId({
-		documentId,
-		from,
-		limit,
-		ownerId,
-	}: {
-		documentId: number;
-		from: number;
-		limit: number;
-		ownerId: number;
-	}): Promise<DocumentPageRow[]> {
-		const pages = await this.documentModel
-			.knex()
-			.select([
-				"p.id",
-				"p.pageNo",
-				"p.status",
-				"p.imageKey",
-				"p.thumbKey",
-				"t.id as transcriptionId",
-				"t.text as transcriptionText",
-				"t.structured as transcriptionStructured",
-				"t.contextUsed as transcriptionContextUsed",
-			])
-			.from(`${DatabaseTableName.PAGE} as p`)
-			.innerJoin(`${DatabaseTableName.DOCUMENT} as d`, "d.id", "p.documentId")
-			.leftJoin(`${DatabaseTableName.TRANSCRIPTION} as t`, (builder) => {
-				builder.on("t.pageId", "p.id").andOnVal("t.isCurrent", true);
-			})
-			.where({
-				"d.id": documentId,
-				"d.ownerId": ownerId,
-			})
-			.andWhere("p.pageNo", ">=", from)
-			.orderBy("p.pageNo", "asc")
-			.limit(limit);
-
-		return pages as DocumentPageRow[];
 	}
 
 	public async updateSourceKey(

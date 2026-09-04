@@ -1,14 +1,6 @@
 import { PageStatus, type ValueOf } from "@transcripta/shared";
 
-type DocumentPageContextWord = {
-	end: number;
-	lexiconId: number;
-	seenOnPages: number;
-	start: number;
-	word: string;
-};
-
-type DocumentPageRow = {
+type PageWithTranscriptionRow = {
 	id: number;
 	imageKey: null | string;
 	pageNo: number;
@@ -20,10 +12,4 @@ type DocumentPageRow = {
 	transcriptionText: null | string;
 };
 
-type LexiconRow = {
-	distinctPages: number;
-	id: number;
-	valueDisplay: string;
-};
-
-export { type DocumentPageContextWord, type DocumentPageRow, type LexiconRow };
+export { type PageWithTranscriptionRow };

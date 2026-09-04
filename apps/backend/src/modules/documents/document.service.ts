@@ -2,6 +2,7 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
 	HTTPCode,
 	HTTPError,
@@ -9,19 +10,18 @@ import {
 import { ForeignKeyViolationError } from "objection";
 
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
+import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
+import { type PageRepository } from "~/modules/pages/page.repository.js";
 
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
 import {
 	DOCUMENT_OWNER_ID_FOREIGN,
+	EMPTY_COLLECTION_LENGTH,
 	NOT_FOUND_INDEX,
 } from "./libs/constants/constants.js";
 import { DocumentValidationMessage } from "./libs/enums/enums.js";
-import {
-	type DocumentPageContextWord,
-	type DocumentPageRow,
-} from "./libs/types/document-page-row.type.js";
 import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
@@ -29,13 +29,16 @@ import {
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
+	private pageRepository: PageRepository;
 	private storage: BaseStorage;
 
 	public constructor(
 		documentRepository: DocumentRepository,
+		pageRepository: PageRepository,
 		storage: BaseStorage,
 	) {
 		this.documentRepository = documentRepository;
+		this.pageRepository = pageRepository;
 		this.storage = storage;
 	}
 
@@ -45,23 +48,35 @@ class DocumentService {
 	}: {
 		lexiconById: Map<number, { distinctPages: number; valueDisplay: string }>;
 		text: string;
-	}): DocumentPageContextWord[] {
-		const contextWords: DocumentPageContextWord[] = [];
+	}): DocumentGetPagesContextWordResponseDto[] {
+		const contextWords: DocumentGetPagesContextWordResponseDto[] = [];
 
 		for (const [lexiconId, lexicon] of lexiconById) {
-			const start = text.indexOf(lexicon.valueDisplay);
+			const { valueDisplay } = lexicon;
 
-			if (start === NOT_FOUND_INDEX) {
+			if (valueDisplay.length === EMPTY_COLLECTION_LENGTH) {
 				continue;
 			}
 
-			contextWords.push({
-				end: start + lexicon.valueDisplay.length,
-				lexiconId,
-				seenOnPages: lexicon.distinctPages,
-				start,
-				word: lexicon.valueDisplay,
-			});
+			let searchFrom = 0;
+
+			while (searchFrom <= text.length) {
+				const start = text.indexOf(valueDisplay, searchFrom);
+
+				if (start === NOT_FOUND_INDEX) {
+					break;
+				}
+
+				contextWords.push({
+					end: start + valueDisplay.length,
+					lexiconId,
+					seenOnPages: lexicon.distinctPages,
+					start,
+					word: valueDisplay,
+				});
+
+				searchFrom = start + valueDisplay.length;
+			}
 		}
 
 		return contextWords;
@@ -80,7 +95,7 @@ class DocumentService {
 		);
 	}
 
-	private collectLexiconIds(pages: DocumentPageRow[]): number[] {
+	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
 		const lexiconIds = new Set<number>();
 
 		for (const page of pages) {
@@ -236,14 +251,11 @@ class DocumentService {
 			});
 		}
 
-		const pages = await this.documentRepository.findPagesByDocumentIdAndOwnerId(
-			{
-				documentId,
-				from,
-				limit,
-				ownerId,
-			},
-		);
+		const pages = await this.pageRepository.findByDocumentId({
+			documentId: ownedDocumentId,
+			from,
+			limit,
+		});
 
 		const lexiconRows = await this.documentRepository.findLexiconByIds(
 			this.collectLexiconIds(pages),
