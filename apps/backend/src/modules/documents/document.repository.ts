@@ -7,7 +7,7 @@ import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 
-import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constant.js";
+import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import {
 	type DocumentPageRow,
 	type LexiconRow,
@@ -22,6 +22,7 @@ type DocumentDetailsRow = {
 	pagesBlank: number;
 	pagesFailed: number;
 	pagesInWork: number;
+	pagesPending: number;
 	pagesReadyToCheck: number;
 	pagesSkipped: number;
 	pagesTotal: number;
@@ -103,6 +104,7 @@ class DocumentRepository {
 				"dp.pagesVerified",
 				"dp.pagesReadyToCheck",
 				"dp.pagesInWork",
+				"dp.pagesPending",
 				"dp.pagesFailed",
 				"dp.pagesBlank",
 				"dp.pagesSkipped",

@@ -3,6 +3,7 @@ type DocumentGetByIdProgressResponseDto = {
 	pagesBlank: number;
 	pagesFailed: number;
 	pagesInWork: number;
+	pagesPending: number;
 	pagesReadyToCheck: number;
 	pagesSkipped: number;
 	pagesTotal: number;

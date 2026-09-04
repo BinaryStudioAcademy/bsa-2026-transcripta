@@ -16,7 +16,7 @@ import { type DocumentRepository } from "./document.repository.js";
 import {
 	DOCUMENT_OWNER_ID_FOREIGN,
 	NOT_FOUND_INDEX,
-} from "./libs/constants/constant.js";
+} from "./libs/constants/constants.js";
 import { DocumentValidationMessage } from "./libs/enums/enums.js";
 import {
 	type DocumentPageContextWord,

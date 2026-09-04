@@ -2,6 +2,29 @@ import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
 import { type DocumentGetByIdResponseDto } from "./libs/types/types.js";
 
+type DocumentDetailsProperties = {
+	budgetUsd: string;
+	closedPct: number;
+	cursorPageNo: number;
+	id: number;
+	pageCount: number;
+	pagesBlank: number;
+	pagesFailed: number;
+	pagesInWork: number;
+	pagesPending: number;
+	pagesReadyToCheck: number;
+	pagesSkipped: number;
+	pagesTotal: number;
+	pagesVerified: number;
+	presetId: number;
+	presetName: string;
+	presetVersion: number;
+	spentUsd: string;
+	status: DocumentStatusValue;
+	title: string;
+	verifiedPct: number;
+};
+
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
 const BUDGET_FRACTION_DIGITS = 2;
@@ -26,6 +49,8 @@ class DocumentDetailsEntity {
 	private pagesFailed: number;
 
 	private pagesInWork: number;
+
+	private pagesPending: number;
 
 	private pagesReadyToCheck: number;
 
@@ -58,6 +83,7 @@ class DocumentDetailsEntity {
 		pagesBlank,
 		pagesFailed,
 		pagesInWork,
+		pagesPending,
 		pagesReadyToCheck,
 		pagesSkipped,
 		pagesTotal,
@@ -69,27 +95,7 @@ class DocumentDetailsEntity {
 		status,
 		title,
 		verifiedPct,
-	}: {
-		budgetUsd: string;
-		closedPct: number;
-		cursorPageNo: number;
-		id: number;
-		pageCount: number;
-		pagesBlank: number;
-		pagesFailed: number;
-		pagesInWork: number;
-		pagesReadyToCheck: number;
-		pagesSkipped: number;
-		pagesTotal: number;
-		pagesVerified: number;
-		presetId: number;
-		presetName: string;
-		presetVersion: number;
-		spentUsd: string;
-		status: DocumentStatusValue;
-		title: string;
-		verifiedPct: number;
-	}) {
+	}: DocumentDetailsProperties) {
 		this.budgetUsd = budgetUsd;
 		this.closedPct = closedPct;
 		this.cursorPageNo = cursorPageNo;
@@ -98,6 +104,7 @@ class DocumentDetailsEntity {
 		this.pagesBlank = pagesBlank;
 		this.pagesFailed = pagesFailed;
 		this.pagesInWork = pagesInWork;
+		this.pagesPending = pagesPending;
 		this.pagesReadyToCheck = pagesReadyToCheck;
 		this.pagesSkipped = pagesSkipped;
 		this.pagesTotal = pagesTotal;
@@ -111,68 +118,10 @@ class DocumentDetailsEntity {
 		this.verifiedPct = verifiedPct;
 	}
 
-	public static initialize({
-		budgetUsd,
-		closedPct,
-		cursorPageNo,
-		id,
-		pageCount,
-		pagesBlank,
-		pagesFailed,
-		pagesInWork,
-		pagesReadyToCheck,
-		pagesSkipped,
-		pagesTotal,
-		pagesVerified,
-		presetId,
-		presetName,
-		presetVersion,
-		spentUsd,
-		status,
-		title,
-		verifiedPct,
-	}: {
-		budgetUsd: string;
-		closedPct: number;
-		cursorPageNo: number;
-		id: number;
-		pageCount: number;
-		pagesBlank: number;
-		pagesFailed: number;
-		pagesInWork: number;
-		pagesReadyToCheck: number;
-		pagesSkipped: number;
-		pagesTotal: number;
-		pagesVerified: number;
-		presetId: number;
-		presetName: string;
-		presetVersion: number;
-		spentUsd: string;
-		status: DocumentStatusValue;
-		title: string;
-		verifiedPct: number;
-	}): DocumentDetailsEntity {
-		return new DocumentDetailsEntity({
-			budgetUsd,
-			closedPct,
-			cursorPageNo,
-			id,
-			pageCount,
-			pagesBlank,
-			pagesFailed,
-			pagesInWork,
-			pagesReadyToCheck,
-			pagesSkipped,
-			pagesTotal,
-			pagesVerified,
-			presetId,
-			presetName,
-			presetVersion,
-			spentUsd,
-			status,
-			title,
-			verifiedPct,
-		});
+	public static initialize(
+		properties: DocumentDetailsProperties,
+	): DocumentDetailsEntity {
+		return new DocumentDetailsEntity(properties);
 	}
 
 	private calculateUsedPct(): number {
@@ -216,6 +165,7 @@ class DocumentDetailsEntity {
 				pagesBlank: this.pagesBlank,
 				pagesFailed: this.pagesFailed,
 				pagesInWork: this.pagesInWork,
+				pagesPending: this.pagesPending,
 				pagesReadyToCheck: this.pagesReadyToCheck,
 				pagesSkipped: this.pagesSkipped,
 				pagesTotal: this.pagesTotal,

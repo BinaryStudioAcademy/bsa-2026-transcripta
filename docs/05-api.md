@@ -160,6 +160,7 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 		"pagesVerified": 46,
 		"pagesReadyToCheck": 5,
 		"pagesInWork": 2,
+		"pagesPending": 244,
 		"pagesFailed": 0,
 		"pagesBlank": 2,
 		"pagesSkipped": 1,
