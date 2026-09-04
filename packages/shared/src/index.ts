@@ -40,7 +40,6 @@ export {
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
-	PageStatus,
 } from "./modules/documents/documents.js";
 export { PageStatus } from "./modules/pages/pages.js";
 export {

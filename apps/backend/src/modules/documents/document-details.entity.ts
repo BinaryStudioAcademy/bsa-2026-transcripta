@@ -203,6 +203,7 @@ class DocumentDetailsEntity {
 				usedPct: this.calculateUsedPct(),
 			},
 			cursorPageNo: this.cursorPageNo,
+			groundTruth: null,
 			id: this.id,
 			pageCount: this.pageCount,
 			preset: {

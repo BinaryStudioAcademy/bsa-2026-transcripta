@@ -2,7 +2,6 @@ export {
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
-	PageStatus,
 } from "./libs/enums/enums.js";
 export {
 	type DocumentCreateRequestDto,

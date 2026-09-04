@@ -1,29 +1,17 @@
-import { type ValueOf } from "@transcripta/shared";
-
-import { Button, LoaderOverlay } from "~/libs/components/components.js";
+import {
+	Button,
+	LoaderOverlay,
+	StatusChip,
+} from "~/libs/components/components.js";
 import { DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useEffect,
 } from "~/libs/hooks/hooks.js";
-import {
-	actions as documentActions,
-	DocumentStatus,
-} from "~/modules/documents/documents.js";
+import { actions as documentActions } from "~/modules/documents/documents.js";
 
 const EMPTY_LENGTH = 0;
-
-const DOCUMENT_STATUS_LABEL: Record<ValueOf<typeof DocumentStatus>, string> = {
-	[DocumentStatus.BUDGET_STOP]: "Budget limit",
-	[DocumentStatus.DONE]: "Done",
-	[DocumentStatus.DRAFT]: "Draft",
-	[DocumentStatus.FAILED]: "Failed",
-	[DocumentStatus.INGESTING]: "Ingesting",
-	[DocumentStatus.PAUSED]: "Paused",
-	[DocumentStatus.PROCESSING]: "Processing",
-	[DocumentStatus.READY]: "Ready",
-};
 
 const Documents: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -69,7 +57,9 @@ const Documents: React.FC = () => {
 						{documents.map((document) => (
 							<tr key={document.id}>
 								<td>{document.title}</td>
-								<td>{DOCUMENT_STATUS_LABEL[document.status]}</td>
+								<td>
+									<StatusChip status={document.status} />
+								</td>
 								<td>{new Date(document.createdAt).toLocaleDateString()}</td>
 								<td>{document.pageCount}</td>
 							</tr>
