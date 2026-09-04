@@ -1,6 +1,4 @@
-import { HTTPMethod } from "@transcripta/shared";
-
-import { APIPath, ContentType } from "~/libs/enums/enums.js";
+import { APIPath, ContentType, HTTPMethod } from "~/libs/enums/enums.js";
 import { BaseHTTPApi } from "~/libs/modules/api/api.js";
 import { type HTTP } from "~/libs/modules/http/http.js";
 import { type Storage } from "~/libs/modules/storage/storage.js";
