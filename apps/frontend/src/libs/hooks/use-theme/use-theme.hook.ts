@@ -19,7 +19,7 @@ const useTheme = (): { theme: string; toggleTheme: () => void } => {
 	});
 
 	useEffect(() => {
-		document.documentElement.dataset["theme"]= theme;
+		document.documentElement.dataset["theme"] = theme;
 		void storage.set(StorageKey.THEME, theme);
 	}, [theme]);
 

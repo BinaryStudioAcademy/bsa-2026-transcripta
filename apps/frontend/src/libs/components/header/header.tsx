@@ -1,5 +1,5 @@
 import headerLogo from "../../../assets/img/logo.svg";
-import { AppRoute } from "../../../libs/enums/enums.js"
+import { AppRoute } from "../../../libs/enums/enums.js";
 import { Link } from "../components.js";
 import { ThemeToggle } from "../theme-toggle/theme-toggle.js";
 
@@ -32,8 +32,8 @@ const Header: React.FC = () => {
 					</li>
 
 					<li>
-                        <ThemeToggle />
-                    </li>
+						<ThemeToggle />
+					</li>
 				</ul>
 			</nav>
 		</header>
