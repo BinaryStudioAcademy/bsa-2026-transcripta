@@ -301,12 +301,9 @@ class DocumentService {
 				error instanceof Error ? error.message : String(error);
 			const finalErrorMessage = `${DocumentErrorMessage.INGEST_FAILED}: ${caughtErrorMessage}`;
 
-			await this.documentRepository.setError(
-				documentId,
-				`${DocumentErrorMessage.INGEST_FAILED}: ${finalErrorMessage}`,
-			);
+			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
-				message: `${DocumentErrorMessage.INGEST_FAILED}: ${finalErrorMessage}`,
+				message: finalErrorMessage,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		} finally {
