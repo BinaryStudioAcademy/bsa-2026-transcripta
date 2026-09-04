@@ -124,26 +124,6 @@ class DocumentService {
 		return [...lexiconIds];
 	}
 
-	private extractLexiconIds(
-		contextUsed: null | Record<string, unknown>,
-	): number[] {
-		const ids = contextUsed?.["lexiconIds"];
-
-		if (!Array.isArray(ids)) {
-			return [];
-		}
-
-		return ids.filter((id): id is number => typeof id === "number");
-	}
-
-	private async getPresignedUrl(key: null | string): Promise<null | string> {
-		if (key === null) {
-			return null;
-		}
-
-		return await this.storage.getReadSignedUrl(key);
-	}
-
 	private async downloadDocument(
 		documentId: number,
 		sourceKey: string,
@@ -171,6 +151,26 @@ class DocumentService {
 		}
 
 		return { clear, filePath };
+	}
+
+	private extractLexiconIds(
+		contextUsed: null | Record<string, unknown>,
+	): number[] {
+		const ids = contextUsed?.["lexiconIds"];
+
+		if (!Array.isArray(ids)) {
+			return [];
+		}
+
+		return ids.filter((id): id is number => typeof id === "number");
+	}
+
+	private async getPresignedUrl(key: null | string): Promise<null | string> {
+		if (key === null) {
+			return null;
+		}
+
+		return await this.storage.getReadSignedUrl(key);
 	}
 
 	private async processPage({
