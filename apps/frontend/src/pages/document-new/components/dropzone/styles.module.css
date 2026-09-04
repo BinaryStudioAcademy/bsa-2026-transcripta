@@ -83,16 +83,6 @@
 	color: var(--text-3);
 }
 
-.dropzone--over {
-	color: var(--accent-text);
-	background: var(--accent-tint);
-	border-color: var(--accent);
-}
-
-.dropzone--over b {
-	color: var(--accent-text);
-}
-
 .dropzone--selected {
 	border-color: var(--hairline-strong);
 	border-style: solid;
@@ -106,6 +96,16 @@
 
 .dropzone--rejected b {
 	color: var(--danger-text);
+}
+
+.dropzone--over {
+	color: var(--accent-text);
+	background: var(--accent-tint);
+	border-color: var(--accent);
+}
+
+.dropzone--over b {
+	color: var(--accent-text);
 }
 
 .dropzone__input--hidden {

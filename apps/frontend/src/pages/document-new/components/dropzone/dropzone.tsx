@@ -76,9 +76,14 @@ const Dropzone: React.FC<Properties> = ({
 			/>
 			{rejection ? (
 				<div
-					className={[styles["dropzone"], styles["dropzone--rejected"]].join(
-						" ",
-					)}
+					className={[
+						styles["dropzone"],
+						styles["dropzone--rejected"],
+						isDragging ? styles["dropzone--over"] : "",
+					].join(" ")}
+					onDragLeave={handleDragLeave}
+					onDragOver={handleDragOver}
+					onDrop={handleDrop}
 				>
 					<b>{rejection}</b>
 					<small>

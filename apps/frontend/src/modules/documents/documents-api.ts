@@ -69,7 +69,12 @@ class DocumentApi extends BaseHTTPApi {
 			this.getFullEndpoint(`${DocumentsApiPath.$ID}/ingest`, {
 				id: String(id),
 			}),
-			{ contentType: ContentType.JSON, hasAuth: true, method: HTTPMethod.POST },
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify({}),
+			},
 		);
 	}
 }

@@ -2,6 +2,7 @@ import React from "react";
 
 import {
 	BYTES_IN_KILOBYTE,
+	FILE_SIZE_FRACTION_DIGITS,
 	KILOBYTES_IN_MEGABYTE,
 } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
@@ -34,7 +35,10 @@ const UploadProgress: React.FC<Properties> = ({
 			<div className={styles["upload-progress-cap"]}>
 				<span>
 					{fileName} ·{" "}
-					{Math.round(fileSize / BYTES_IN_KILOBYTE / KILOBYTES_IN_MEGABYTE)} MB
+					{(fileSize / BYTES_IN_KILOBYTE / KILOBYTES_IN_MEGABYTE).toFixed(
+						FILE_SIZE_FRACTION_DIGITS,
+					)}{" "}
+					MB
 				</span>
 				<span>{percent}%</span>
 			</div>
