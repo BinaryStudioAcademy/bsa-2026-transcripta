@@ -15,7 +15,7 @@ class DocumentModel extends AbstractModel {
 	static readonly relationMappings: RelationMappings = {
 		[DocumentRelationName.PRESET]: {
 			join: {
-				from: `${DatabaseTableName.DOCUMENT}.preset_id`,
+				from: `${DatabaseTableName.DOCUMENT}.presetId`,
 				to: `${DatabaseTableName.PRESET}.id`,
 			},
 			modelClass: PresetModel,
