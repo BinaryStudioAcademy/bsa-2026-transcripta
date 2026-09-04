@@ -1,13 +1,28 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
+import { Model, type RelationMappings } from "objection";
 
 import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
 
+import { PresetModel } from "../presets/presets.js";
+import { DocumentRelationName } from "./libs/enums/enums.js";
+
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
 class DocumentModel extends AbstractModel {
+	static readonly relationMappings: RelationMappings = {
+		[DocumentRelationName.PRESET]: {
+			join: {
+				from: `${DatabaseTableName.DOCUMENT}.presetId`,
+				to: `${DatabaseTableName.PRESET}.id`,
+			},
+			modelClass: PresetModel,
+			relation: Model.BelongsToOneRelation,
+		},
+	};
+
 	public budgetUsd!: string;
 
 	public cursorPageNo!: number;
@@ -17,6 +32,8 @@ class DocumentModel extends AbstractModel {
 	public ownerId!: number;
 
 	public pageCount!: number;
+
+	public preset?: PresetModel;
 
 	public presetId!: number;
 

@@ -2,7 +2,6 @@ export { App } from "./app/app.js";
 export { BudgetIndicator } from "./budget-indicator/budget-indicator.js";
 export { Button } from "./button/button.js";
 export { GroundTruthBlock } from "./ground-truth-block/ground-truth-block.js";
-export { Header } from "./header/header.js";
 export { Input } from "./input/input.js";
 export { Link } from "./link/link.js";
 export { LoaderOverlay } from "./loader/loader-overlay.js";

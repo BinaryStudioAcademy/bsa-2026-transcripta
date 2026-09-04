@@ -1,6 +1,5 @@
 import { AUTH_ROUTES } from "~/libs/components/app/libs/constants/auth-routes.constant.js";
 import {
-	Header,
 	LoaderOverlay,
 	RouterOutlet,
 	Sidebar,
@@ -15,13 +14,16 @@ import {
 import { type ValueOf } from "~/libs/types/types.js";
 import {
 	actions as authActions,
+	selectIsAuthenticated,
 	selectIsInitialized,
 } from "~/modules/auth/auth.js";
+import { Landing } from "~/pages/landing/landing.js";
 
 const App: React.FC = () => {
 	const { pathname } = useLocation();
 	const dispatch = useAppDispatch();
 	const isInitialized = useAppSelector(selectIsInitialized);
+	const isAuthenticated = useAppSelector(selectIsAuthenticated);
 	const isAuthPage = AUTH_ROUTES.has(pathname as ValueOf<typeof AppRoute>);
 
 	useEffect(() => {
@@ -36,11 +38,14 @@ const App: React.FC = () => {
 		return <RouterOutlet />;
 	}
 
+	if (!isAuthenticated && pathname === AppRoute.ROOT) {
+		return <Landing />;
+	}
+
 	return (
 		<div className="app-layout">
 			<Sidebar />
 			<main className="app-main">
-				{pathname === AppRoute.ROOT && <Header />}
 				<RouterOutlet />
 			</main>
 		</div>

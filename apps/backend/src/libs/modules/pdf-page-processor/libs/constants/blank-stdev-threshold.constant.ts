@@ -1,0 +1,3 @@
+const BLANK_STDEV_THRESHOLD = 6;
+
+export { BLANK_STDEV_THRESHOLD };
