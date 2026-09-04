@@ -1,3 +1,3 @@
-type ScreenState = "rejected" | "rest" | "selected" | "uploading";
+type ScreenState = "rest" | "selected" | "uploading";
 
 export { type ScreenState };
