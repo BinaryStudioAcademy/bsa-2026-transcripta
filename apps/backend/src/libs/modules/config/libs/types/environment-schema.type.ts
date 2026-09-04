@@ -25,6 +25,7 @@ type EnvironmentSchema = {
 	};
 	STORAGE: {
 		ACCESS_KEY_ID: string;
+		BUCKET_PAGES: string;
 		BUCKET_UPLOADS: string;
 		ENDPOINT: string;
 		REGION: string;
