@@ -2,6 +2,8 @@ import headerLogo from "~/assets/img/logo.svg";
 import { Link } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
+import "./header.css";
+
 const Header: React.FC = () => {
 	return (
 		<header className="header">
@@ -25,7 +27,10 @@ const Header: React.FC = () => {
 					</li>
 
 					<li>
-						<Link className="header-link__btn" to={AppRoute.SIGN_UP}>
+						<Link
+							className="tx-btn tx-btn--primary tx-btn--lg"
+							to={AppRoute.SIGN_UP}
+						>
 							Sign up
 						</Link>
 					</li>
