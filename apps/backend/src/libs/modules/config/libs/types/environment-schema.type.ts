@@ -20,6 +20,9 @@ type EnvironmentSchema = {
 		POOL_MAX: number;
 		POOL_MIN: number;
 	};
+	REDIS: {
+		URL: string;
+	};
 	STORAGE: {
 		ACCESS_KEY_ID: string;
 		BUCKET_UPLOADS: string;
