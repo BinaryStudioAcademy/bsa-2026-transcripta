@@ -187,13 +187,28 @@ class DocumentController extends BaseController {
 	/**
 	 * @swagger
 	 * /documents/{id}/ingest:
-	 *    post:
-	 *      description: Ingest a PDF document - split it into pages
-	 *      security:
-	 *        - bearerAuth: []
-	 *      responses:
-	 *        200:
-	 *          description: Successful operation
+	 *   post:
+	 *     description: Ingest a PDF document - split it into pages
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Document ID
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *       409:
+	 *         description: Document is currently ingesting
+	 *       404:
+	 *         description: Document not found
+	 *       413:
+	 *         description: Document is too large
+	 *       500:
+	 *         description: Other errors
 	 */
 	private async ingest(
 		options: APIHandlerOptions<{
