@@ -1,14 +1,17 @@
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import swagger, { type StaticDocumentSpec } from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { Redis } from "ioredis";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { ServerErrorType } from "~/libs/enums/enums.js";
 import { type ValidationError } from "~/libs/exceptions/exceptions.js";
+import { AuthRateLimitErrorMessage } from "~/libs/modules/auth/libs/enums/enums.js";
 import { type Config } from "~/libs/modules/config/config.js";
 import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
@@ -163,10 +166,12 @@ class BaseServerApplication implements ServerApplication {
 		});
 	}
 	public addRoute(parameters: ServerApplicationRouteParameters): void {
-		const { handler, method, path, preHandler, validation } = parameters;
+		const { config, handler, method, path, preHandler, validation } =
+			parameters;
 		const preHandlers = preHandler ? [preHandler] : [];
 
 		this.app.route({
+			...(config ? { config } : {}),
 			handler,
 			method,
 			preHandler: preHandlers,
@@ -231,6 +236,19 @@ class BaseServerApplication implements ServerApplication {
 		await this.app.register(fastifyMultipart, {
 			attachFieldsToBody: "keyValues",
 			limits: { fileSize: FILE_SIZE_LIMIT },
+		});
+
+		await this.app.register(fastifyRateLimit, {
+			errorResponseBuilder: (_request, context) => {
+				throw new HTTPError({
+					message: AuthRateLimitErrorMessage.TOO_MANY_REQUESTS(context.after),
+					status: HTTPCode.RATE_LIMITED,
+				});
+			},
+			global: false,
+			redis: new Redis(this.config.ENV.REDIS.URL, {
+				maxRetriesPerRequest: null,
+			}),
 		});
 
 		await Promise.all(
