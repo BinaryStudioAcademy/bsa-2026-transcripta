@@ -92,11 +92,18 @@ const DocumentNew: React.FC = () => {
 
 		void dispatch(documentActions.ingest(createdDocument.id));
 
-		void navigate(
-			configureString(AppRoute.DOCUMENT, {
-				id: String(createdDocument.id),
-			}),
-		);
+		void (async (): Promise<void> => {
+			try {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, {
+						id: String(createdDocument.id),
+					}),
+				);
+			} catch (error: unknown) {
+				// eslint-disable-next-line no-console
+				console.error(error);
+			}
+		})();
 	}, [createdDocument, dispatch, navigate]);
 
 	const acceptFile = useCallback((file: File): void => {
