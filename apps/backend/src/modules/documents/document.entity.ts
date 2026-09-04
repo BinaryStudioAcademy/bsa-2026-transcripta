@@ -167,16 +167,12 @@ class DocumentEntity {
 		if (this.id === null) {
 			throw new Error("Document ID is null. Entity must be persisted first.");
 		}
-		if (this.sourceKey === null) {
-			throw new Error(DocumentErrorMessage.NO_SOURCE_KEY);
-		}
 
 		return {
 			createdAt: this.createdAt,
 			id: this.id,
 			ownerId: this.ownerId,
 			pageCount: this.pageCount,
-			sourceKey: this.sourceKey,
 			status: this.status,
 			title: this.title,
 		};
@@ -184,7 +180,12 @@ class DocumentEntity {
 
 	public toObjectWithPreset(): DocumentGetAllItemResponseDto & {
 		preset: Preset;
+		sourceKey: string;
 	} {
+		if (this.sourceKey === null) {
+			throw new Error(DocumentErrorMessage.NO_SOURCE_KEY);
+		}
+
 		if (this.preset === null) {
 			throw new Error(DocumentErrorMessage.NO_PRESET);
 		}
@@ -192,6 +193,7 @@ class DocumentEntity {
 		return {
 			...this.toObject(),
 			preset: this.preset,
+			sourceKey: this.sourceKey,
 		};
 	}
 }
