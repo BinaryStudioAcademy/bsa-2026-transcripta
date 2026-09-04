@@ -1,7 +1,7 @@
-import { HTTPCode } from "@transcripta/shared";
+import { HTTPCode } from "~/libs/enums/enums.js";
 
-import { PERCENT_MULTIPLIER } from "../constants/constants.js";
-import { type UploadFileOptions } from "../types.js";
+import { PERCENT_MULTIPLIER } from "./libs/constants/constants.js";
+import { type UploadFileOptions } from "./libs/types/types.js";
 
 const uploadFile = ({
 	file,

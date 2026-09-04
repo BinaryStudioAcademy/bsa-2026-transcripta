@@ -1,9 +1,9 @@
+import { fileValidationSchema } from "../validation-schemas/validation-schemas.js";
 import {
 	DEFAULT_FILE_REJECTION_REASON,
 	FIRST_ISSUE_INDEX,
-} from "../constants/constants.js";
-import { type FileValidationResult } from "../types.js";
-import { fileValidationSchema } from "../validation-schemas/validation-schemas.js";
+} from "./libs/constants/constants.js";
+import { type FileValidationResult } from "./libs/types/types.js";
 
 const validateFile = (file: File): FileValidationResult => {
 	const result = fileValidationSchema.safeParse({
@@ -11,16 +11,14 @@ const validateFile = (file: File): FileValidationResult => {
 		fileName: file.name,
 	});
 
-	if (!result.success) {
-		return {
-			isValid: false,
-			reason:
-				result.error.issues[FIRST_ISSUE_INDEX]?.message ??
-				DEFAULT_FILE_REJECTION_REASON,
-		};
-	}
-
-	return { isValid: true };
+	return result.success
+		? { isValid: true }
+		: {
+				isValid: false,
+				reason:
+					result.error.issues[FIRST_ISSUE_INDEX]?.message ??
+					DEFAULT_FILE_REJECTION_REASON,
+			};
 };
 
 export { validateFile };

@@ -13,15 +13,15 @@ import {
 	type DocumentCreateRequestDto,
 } from "~/modules/documents/documents.js";
 
+import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
 import {
 	FIRST_FILE_INDEX,
 	ZERO_UPLOAD_PROGRESS,
 } from "./libs/constants/constants.js";
-import { uploadFile } from "./libs/helpers/upload-file.js";
-import { validateFile } from "./libs/helpers/validate-file.js";
-import { type ScreenState, type UploadFormValues } from "./libs/types.js";
+import { uploadFile, validateFile } from "./libs/helpers/helpers.js";
+import { type ScreenState } from "./libs/types/types.js";
 import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {

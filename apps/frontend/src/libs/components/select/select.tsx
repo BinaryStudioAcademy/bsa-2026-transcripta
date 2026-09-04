@@ -7,6 +7,7 @@ import {
 } from "react-hook-form";
 
 import { useFormController } from "~/libs/hooks/hooks.js";
+import { type SelectOption } from "~/libs/types/types.js";
 
 import styles from "./styles.module.css";
 
@@ -17,11 +18,6 @@ type Properties<T extends FieldValues> = {
 	label: string;
 	name: FieldPath<T>;
 	options: SelectOption[];
-};
-
-type SelectOption = {
-	id: number;
-	name: string;
 };
 
 const Select = <T extends FieldValues>({

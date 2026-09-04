@@ -1,0 +1,2 @@
+const FIRST_FILE_INDEX = 0;
+export { FIRST_FILE_INDEX };

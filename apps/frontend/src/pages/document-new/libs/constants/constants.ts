@@ -1,23 +1,2 @@
-const DEFAULT_FILE_REJECTION_REASON = "This file could not be validated.";
-const DEFAULT_PRESET_ID = 1;
-const DEFAULT_PRESET_INDEX = 0;
-const FIRST_FILE_INDEX = 0;
-const FIRST_ISSUE_INDEX = 0;
-const MOCK_PRESET_OPTIONS = [
-	{ id: 1, name: "Parish register, late 19th century" },
-];
-const PDF_EXTENSION_REGEX = /\.pdf$/i;
-const ZERO_UPLOAD_PROGRESS = 0;
-
-const PERCENT_MULTIPLIER = 100;
-export {
-	DEFAULT_FILE_REJECTION_REASON,
-	DEFAULT_PRESET_ID,
-	DEFAULT_PRESET_INDEX,
-	FIRST_FILE_INDEX,
-	FIRST_ISSUE_INDEX,
-	MOCK_PRESET_OPTIONS,
-	PDF_EXTENSION_REGEX,
-	PERCENT_MULTIPLIER,
-	ZERO_UPLOAD_PROGRESS,
-};
+export { FIRST_FILE_INDEX } from "./first-file-index.constant.js";
+export { ZERO_UPLOAD_PROGRESS } from "./zero-upload-progress.constant.js";

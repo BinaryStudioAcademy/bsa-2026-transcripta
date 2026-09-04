@@ -1,6 +1,9 @@
 import React from "react";
 
-import { BYTES_IN_KILOBYTE, KILOBYTES_IN_MEGABYTE } from "./libs/constants.js";
+import {
+	BYTES_IN_KILOBYTE,
+	KILOBYTES_IN_MEGABYTE,
+} from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
 
 type Properties = {
