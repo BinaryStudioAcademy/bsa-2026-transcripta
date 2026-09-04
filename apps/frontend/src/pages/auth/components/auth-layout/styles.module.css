@@ -67,7 +67,7 @@
 .auth-card__form-title {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: 24px;
+	font-size: var(--fs-xl-2);
 	font-weight: 600;
 	line-height: var(--lh-tight);
 	color: var(--text);
