@@ -4,6 +4,7 @@ import {
 } from "./types.js";
 
 type Storage = {
+	downloadPageImage(key: string): Promise<Buffer>;
 	getUploadSignedUrl(
 		options: UploadSignedUrlRequest,
 	): Promise<UploadSignedUrlResponse>;

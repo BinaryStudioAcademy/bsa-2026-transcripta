@@ -12,3 +12,4 @@ const transcriptionController = new TranscriptionController(
 );
 
 export { transcriptionController };
+export { transcriptionService };
