@@ -235,7 +235,7 @@ class DocumentService {
 		if (documentObject.status === DocumentStatus.INGESTING) {
 			throw new HTTPError({
 				message: DocumentErrorMessage.CURRENTLY_INGESTING,
-				status: HTTPCode.INTERNAL_SERVER_ERROR,
+				status: HTTPCode.CONFLICT,
 			});
 		}
 
