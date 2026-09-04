@@ -4,11 +4,7 @@ const ThemeToggle: React.FC = () => {
 	const { theme, toggleTheme } = useTheme();
 
 	return (
-		<button  
-            aria-label="Toggle theme"
-            onClick={toggleTheme}
-			type="button"
-		>
+		<button aria-label="Toggle theme" onClick={toggleTheme} type="button">
 			{theme === "dark" ? "☀️ Light" : "🌙 Dark"}
 		</button>
 	);
