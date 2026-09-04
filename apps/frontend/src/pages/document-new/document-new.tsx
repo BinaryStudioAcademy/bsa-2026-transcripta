@@ -34,11 +34,11 @@ const DocumentNew: React.FC = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 
-	const { createDataStatus, createdDocument } = useAppSelector(
-		({ documents }) => ({
-			createDataStatus: documents.createDataStatus,
-			createdDocument: documents.createdDocument,
-		}),
+	const createDataStatus = useAppSelector(
+		({ documents }) => documents.createDataStatus,
+	);
+	const createdDocument = useAppSelector(
+		({ documents }) => documents.createdDocument,
 	);
 
 	const handleUpload = useCallback(
@@ -90,19 +90,13 @@ const DocumentNew: React.FC = () => {
 			return;
 		}
 
-		void dispatch(documentActions.ingest(createdDocument.id))
-			.unwrap()
-			.then(() => {
-				return navigate(
-					configureString(AppRoute.DOCUMENT, {
-						id: String(createdDocument.id),
-					}),
-				);
-			})
-			.catch((error: unknown) => {
-				// eslint-disable-next-line no-console
-				console.error(error);
-			});
+		void dispatch(documentActions.ingest(createdDocument.id));
+
+		void navigate(
+			configureString(AppRoute.DOCUMENT, {
+				id: String(createdDocument.id),
+			}),
+		);
 	}, [createdDocument, dispatch, navigate]);
 
 	const acceptFile = useCallback((file: File): void => {
@@ -123,6 +117,7 @@ const DocumentNew: React.FC = () => {
 	const resetSelection = (): void => {
 		setSelectedFile(null);
 		setRejection(null);
+		setUploadProgress(ZERO_UPLOAD_PROGRESS);
 
 		if (fileInputReference.current) {
 			fileInputReference.current.value = "";
