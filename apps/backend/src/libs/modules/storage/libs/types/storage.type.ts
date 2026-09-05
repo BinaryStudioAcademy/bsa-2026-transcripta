@@ -1,9 +1,11 @@
 import {
+	type DeleteByPrefixRequest,
 	type UploadSignedUrlRequest,
 	type UploadSignedUrlResponse,
 } from "./types.js";
 
 type Storage = {
+	deleteByPrefix(options: DeleteByPrefixRequest): Promise<void>;
 	downloadToTempFolder(sourceKey: string): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;
