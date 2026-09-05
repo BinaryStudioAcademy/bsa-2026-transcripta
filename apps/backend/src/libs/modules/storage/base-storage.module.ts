@@ -54,6 +54,17 @@ class BaseStorage implements Storage {
 		});
 	}
 
+	public async downloadPageImage(key: string): Promise<Buffer> {
+		const response = await this.client.send(
+			new GetObjectCommand({
+				Bucket: this.bucketPages,
+				Key: key,
+			}),
+		);
+
+		return Buffer.from((await response.Body?.transformToByteArray()) ?? []);
+	}
+
 	public async downloadToTempFolder(sourceKey: string): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;

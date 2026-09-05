@@ -1,10 +1,11 @@
-import { type AppEnvironment } from "~/libs/enums/enums.js";
+import { type AppEnvironment, type AppMode } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 
 type EnvironmentSchema = {
 	APP: {
 		ENVIRONMENT: ValueOf<typeof AppEnvironment>;
 		HOST: string;
+		MODE: ValueOf<typeof AppMode>;
 		PORT: number;
 	};
 	AUTH: {

@@ -4,6 +4,7 @@ import {
 } from "./types.js";
 
 type Storage = {
+	downloadPageImage(key: string): Promise<Buffer>;
 	downloadToTempFolder(sourceKey: string): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;

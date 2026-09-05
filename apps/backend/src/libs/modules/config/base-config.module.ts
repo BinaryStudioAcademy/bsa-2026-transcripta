@@ -1,7 +1,7 @@
 import convict, { type Config as LibraryConfig } from "convict";
 import { config } from "dotenv";
 
-import { AppEnvironment } from "~/libs/enums/enums.js";
+import { AppEnvironment, AppMode } from "~/libs/enums/enums.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import {
@@ -49,6 +49,12 @@ class BaseConfig implements Config {
 					doc: "Host for server app",
 					env: "HOST",
 					format: String,
+				},
+				MODE: {
+					default: AppMode.ALL,
+					doc: "What this process serves: the API, the background worker, or both",
+					env: "APP_MODE",
+					format: Object.values(AppMode),
 				},
 				PORT: {
 					default: null,
@@ -108,7 +114,7 @@ class BaseConfig implements Config {
 			REDIS: {
 				URL: {
 					default: "redis://localhost:6379",
-					doc: "Redis connection string",
+					doc: "Redis connection string for the job queue",
 					env: "REDIS_URL",
 					format: String,
 				},
@@ -122,7 +128,7 @@ class BaseConfig implements Config {
 				},
 				BUCKET_PAGES: {
 					default: "transcripta-pages",
-					doc: "Bucket name for .webp pages",
+					doc: "Bucket name for page images",
 					env: "STORAGE_BUCKET_PAGES",
 					format: String,
 				},

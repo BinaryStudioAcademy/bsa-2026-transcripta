@@ -1,6 +1,7 @@
 export {
 	APIPath,
 	AppEnvironment,
+	AppMode,
 	ContentType,
 	ServerErrorType,
 } from "./libs/enums/enums.js";
