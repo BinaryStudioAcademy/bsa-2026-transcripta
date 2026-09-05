@@ -1,4 +1,4 @@
-import type { Knex } from "knex";
+import { type Knex } from "knex";
 
 const VIEW_NAME = "verification_speed";
 const PAGE_EVENT_TABLE_NAME = "page_event";
