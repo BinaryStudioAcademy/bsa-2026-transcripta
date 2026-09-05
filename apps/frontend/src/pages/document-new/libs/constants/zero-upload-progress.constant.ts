@@ -1,0 +1,2 @@
+const ZERO_UPLOAD_PROGRESS = 0;
+export { ZERO_UPLOAD_PROGRESS };

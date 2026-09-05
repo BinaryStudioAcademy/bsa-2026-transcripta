@@ -1,0 +1,38 @@
+.new-document-page {
+	display: flex;
+	flex: 1 1 0%;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.page-header {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: space-between;
+	height: 56px;
+	padding: 0 var(--sp-5);
+	border-bottom: 1px solid var(--hairline);
+}
+
+.page-header__title {
+	font-family: var(--font-display);
+	font-size: 22px;
+	font-weight: 600;
+	line-height: var(--lh-tight);
+	color: var(--text);
+}
+
+.upload-screen {
+	flex: 1 1 0%;
+	padding: var(--sp-8);
+	overflow: auto;
+}
+
+.upload-form__container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-5);
+	max-width: 600px;
+	margin: 0 auto;
+}

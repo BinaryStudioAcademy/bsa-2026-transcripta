@@ -1,0 +1,2 @@
+const BYTES_IN_KILOBYTE = 1024;
+export { BYTES_IN_KILOBYTE };

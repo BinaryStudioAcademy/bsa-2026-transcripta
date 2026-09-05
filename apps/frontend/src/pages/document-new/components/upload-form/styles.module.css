@@ -1,0 +1,10 @@
+.upload-form {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.upload-form__actions {
+	display: flex;
+	justify-content: space-between;
+}
