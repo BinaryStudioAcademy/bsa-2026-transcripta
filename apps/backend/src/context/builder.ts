@@ -35,11 +35,6 @@ type LexiconRow = {
 	value_display: string;
 };
 
-type SeedEntry = {
-	note?: string;
-	value?: string;
-};
-
 const ZERO = 0;
 
 const readSettings = (preset: Preset): ContextSettings => {
@@ -61,18 +56,32 @@ const readSettings = (preset: Preset): ContextSettings => {
 	};
 };
 
+/**
+ * The seed glossary can be stored either as plain terms (`string[]`) or as
+ * annotated objects (`{ value, note }[]`) — the merged `PresetModel` allows
+ * both, so render whichever shape the preset holds. Values that are not
+ * strings are skipped rather than stringified.
+ */
 const renderSeedGlossary = (preset: Preset): string => {
-	const glossary = (preset.seedGlossary ?? []) as SeedEntry[];
+	const glossary = preset.seedGlossary ?? [];
 
 	if (glossary.length === ZERO) {
 		return "";
 	}
 
 	const lines = glossary.map((entry) => {
-		const value = entry.value ?? "";
-		const note = entry.note ? ` (${entry.note})` : "";
+		if (typeof entry === "string") {
+			return entry;
+		}
 
-		return `${value}${note}`;
+		const value = entry["value"];
+		const note = entry["note"];
+
+		if (typeof value !== "string") {
+			return "";
+		}
+
+		return typeof note === "string" ? `${value} (${note})` : value;
 	});
 
 	return `<seed>${lines.join("\n")}</seed>`;

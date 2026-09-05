@@ -16,11 +16,13 @@ class PresetModel extends AbstractModel {
 
 	public outputSchema!: Record<string, unknown>;
 
-	public ownerId!: null | number;
+	public ownerId!: number;
 
-	public seedGlossary!: Array<Record<string, string>>;
+	public seedGlossary!: Record<string, unknown>[] | string[];
 
-	public settings!: Record<string, unknown>;
+	public settings!: {
+		blankStdevThreshold?: number;
+	};
 
 	public version!: number;
 
