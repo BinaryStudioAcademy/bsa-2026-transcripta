@@ -91,6 +91,17 @@ class BaseStorage implements Storage {
 		}
 	}
 
+	public async getReadSignedUrl(key: string): Promise<string> {
+		const command = new GetObjectCommand({
+			Bucket: this.bucketPages,
+			Key: key,
+		});
+
+		return await getSignedUrl(this.client, command, {
+			expiresIn: SignedUrlConfig.SECONDS_IN_HOUR,
+		});
+	}
+
 	public async getUploadSignedUrl({
 		contentType,
 		expiresInSeconds = SignedUrlConfig.SECONDS_IN_HOUR,

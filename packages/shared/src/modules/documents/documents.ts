@@ -8,6 +8,14 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetPagesContextWordResponseDto,
+	type DocumentGetPagesQueryDto,
+	type DocumentGetPagesResponseDto,
 } from "./libs/types/types.js";
-export { DocumentCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
+export {
+	DocumentCreateValidationSchema,
+	DocumentGetByIdParametersValidationSchema,
+	DocumentGetPagesQueryValidationSchema,
+} from "./libs/validation-schemas/validation-schemas.js";

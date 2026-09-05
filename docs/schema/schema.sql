@@ -430,6 +430,7 @@ SELECT
   count(p.*) FILTER (WHERE p.status IN ('confirmed','corrected'))::int AS pages_verified,
   count(p.*) FILTER (WHERE p.status = 'transcribed')::int  AS pages_ready_to_check,
   count(p.*) FILTER (WHERE p.status IN ('queued','transcribing'))::int AS pages_in_work,
+  count(p.*) FILTER (WHERE p.status = 'pending')::int       AS pages_pending,
   count(p.*) FILTER (WHERE p.status = 'failed')::int       AS pages_failed,
   count(p.*) FILTER (WHERE p.status = 'blank')::int        AS pages_blank,
   count(p.*) FILTER (WHERE p.status = 'skipped')::int      AS pages_skipped,

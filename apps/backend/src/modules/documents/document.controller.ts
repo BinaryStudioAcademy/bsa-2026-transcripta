@@ -1,6 +1,10 @@
 import {
 	type DocumentCreateRequestDto,
 	DocumentCreateValidationSchema,
+	type DocumentGetByIdParametersDto,
+	DocumentGetByIdParametersValidationSchema,
+	type DocumentGetPagesQueryDto,
+	DocumentGetPagesQueryValidationSchema,
 } from "@transcripta/shared";
 
 import { APIPath } from "~/libs/enums/enums.js";
@@ -94,6 +98,17 @@ type DocumentFindAllOptions = APIHandlerOptions<{
 	user: TokenPayload;
 }>;
 
+type DocumentFindByIdOptions = APIHandlerOptions<{
+	params: DocumentGetByIdParametersDto;
+	user: TokenPayload;
+}>;
+
+type DocumentFindPagesOptions = APIHandlerOptions<{
+	params: DocumentGetByIdParametersDto;
+	query: DocumentGetPagesQueryDto;
+	user: TokenPayload;
+}>;
+
 class DocumentController extends BaseController {
 	private documentService: DocumentService;
 
@@ -107,6 +122,27 @@ class DocumentController extends BaseController {
 			method: HTTPMethod.GET,
 			path: DocumentsApiPath.ROOT,
 			preHandler: authGuard,
+		});
+
+		this.addRoute({
+			handler: (options) => this.findById(options as DocumentFindByIdOptions),
+			method: HTTPMethod.GET,
+			path: DocumentsApiPath.BY_ID,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+			},
+		});
+
+		this.addRoute({
+			handler: (options) => this.findPages(options as DocumentFindPagesOptions),
+			method: HTTPMethod.GET,
+			path: DocumentsApiPath.BY_ID_PAGES,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+				query: DocumentGetPagesQueryValidationSchema,
+			},
 		});
 
 		this.addRoute({
@@ -184,6 +220,84 @@ class DocumentController extends BaseController {
 		};
 	}
 
+	/**
+	 * @swagger
+	 * /documents/{id}:
+	 *    get:
+	 *      description: Returns document details with progress and budget
+	 *      security:
+	 *        - bearerAuth: []
+	 *      parameters:
+	 *        - in: path
+	 *          name: id
+	 *          required: true
+	 *          schema:
+	 *            type: integer
+	 *            minimum: 1
+	 *      responses:
+	 *        200:
+	 *          description: Successful operation
+	 *        404:
+	 *          description: Document not found
+	 */
+	private async findById(
+		options: DocumentFindByIdOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.findById(
+				options.params.id,
+				options.user.userId,
+			),
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/pages:
+	 *    get:
+	 *      description: Returns paginated pages with transcriptions and image URLs
+	 *      security:
+	 *        - bearerAuth: []
+	 *      parameters:
+	 *        - in: path
+	 *          name: id
+	 *          required: true
+	 *          schema:
+	 *            type: integer
+	 *            minimum: 1
+	 *        - in: query
+	 *          name: from
+	 *          required: true
+	 *          schema:
+	 *            type: integer
+	 *            minimum: 1
+	 *        - in: query
+	 *          name: limit
+	 *          required: true
+	 *          schema:
+	 *            type: integer
+	 *            minimum: 1
+	 *            maximum: 50
+	 *      responses:
+	 *        200:
+	 *          description: Successful operation
+	 *        404:
+	 *          description: Document not found
+	 */
+	private async findPages(
+		options: DocumentFindPagesOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.findPages({
+				documentId: options.params.id,
+				from: options.query.from,
+				limit: options.query.limit,
+				ownerId: options.user.userId,
+			}),
+			status: HTTPCode.OK,
+		};
+	}
 	/**
 	 * @swagger
 	 * /documents/{id}/ingest:

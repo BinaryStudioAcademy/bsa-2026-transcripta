@@ -2,6 +2,8 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentGetPagesContextWordResponseDto,
+	type DocumentGetPagesResponseDto,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
@@ -10,14 +12,17 @@ import { ForeignKeyViolationError } from "objection";
 
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
+import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 
-import { PageEntity, PageRepository } from "../pages/pages.js";
+import { PageEntity, type PageRepository } from "../pages/pages.js";
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
 import {
 	DOCUMENT_OWNER_ID_FOREIGN,
+	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
+	NOT_FOUND_INDEX,
 	PAGES_TO_QUEUE,
 } from "./libs/constants/constants.js";
 import {
@@ -26,7 +31,10 @@ import {
 	DocumentValidationMessage,
 	PageStatus,
 } from "./libs/enums/enums.js";
-import { type DocumentGetAllResponseDto } from "./libs/types/types.js";
+import {
+	type DocumentGetAllResponseDto,
+	type DocumentGetByIdResponseDto,
+} from "./libs/types/types.js";
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
@@ -47,8 +55,73 @@ class DocumentService {
 	}) {
 		this.documentRepository = documentRepository;
 		this.pageRepository = pageRepository;
-		this.storage = storage;
 		this.pdfPageProcessor = pdfPageProcessor;
+		this.storage = storage;
+	}
+
+	private buildContextWords({
+		lexiconById,
+		text,
+	}: {
+		lexiconById: Map<number, { distinctPages: number; valueDisplay: string }>;
+		text: string;
+	}): DocumentGetPagesContextWordResponseDto[] {
+		const contextWords: DocumentGetPagesContextWordResponseDto[] = [];
+
+		for (const [lexiconId, lexicon] of lexiconById) {
+			const { valueDisplay } = lexicon;
+
+			if (valueDisplay.length === EMPTY_COLLECTION_LENGTH) {
+				continue;
+			}
+
+			let searchFrom = 0;
+
+			while (searchFrom <= text.length) {
+				const start = text.indexOf(valueDisplay, searchFrom);
+
+				if (start === NOT_FOUND_INDEX) {
+					break;
+				}
+
+				contextWords.push({
+					end: start + valueDisplay.length,
+					lexiconId,
+					seenOnPages: lexicon.distinctPages,
+					start,
+					word: valueDisplay,
+				});
+
+				searchFrom = start + valueDisplay.length;
+			}
+		}
+
+		return contextWords;
+	}
+
+	private buildPageLexiconMap(
+		contextUsed: null | Record<string, unknown>,
+		lexiconById: Map<number, { distinctPages: number; valueDisplay: string }>,
+	): Map<number, { distinctPages: number; valueDisplay: string }> {
+		return new Map(
+			this.extractLexiconIds(contextUsed).flatMap((id) => {
+				const lexicon = lexiconById.get(id);
+
+				return lexicon ? [[id, lexicon] as const] : [];
+			}),
+		);
+	}
+
+	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
+		const lexiconIds = new Set<number>();
+
+		for (const page of pages) {
+			for (const id of this.extractLexiconIds(page.transcriptionContextUsed)) {
+				lexiconIds.add(id);
+			}
+		}
+
+		return [...lexiconIds];
 	}
 
 	private async downloadDocument(
@@ -78,6 +151,26 @@ class DocumentService {
 		}
 
 		return { clear, filePath };
+	}
+
+	private extractLexiconIds(
+		contextUsed: null | Record<string, unknown>,
+	): number[] {
+		const ids = contextUsed?.["lexiconIds"];
+
+		if (!Array.isArray(ids)) {
+			return [];
+		}
+
+		return ids.filter((id): id is number => typeof id === "number");
+	}
+
+	private async getPresignedUrl(key: null | string): Promise<null | string> {
+		if (key === null) {
+			return null;
+		}
+
+		return await this.storage.getReadSignedUrl(key);
 	}
 
 	private async processPage({
@@ -217,6 +310,104 @@ class DocumentService {
 		};
 	}
 
+	public async findById(
+		id: number,
+		ownerId: number,
+	): Promise<DocumentGetByIdResponseDto> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			id,
+			ownerId,
+		);
+
+		if (document === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		return document.toObject();
+	}
+
+	public async findPages({
+		documentId,
+		from,
+		limit,
+		ownerId,
+	}: {
+		documentId: number;
+		from: number;
+		limit: number;
+		ownerId: number;
+	}): Promise<DocumentGetPagesResponseDto> {
+		const ownedDocumentId = await this.documentRepository.findOwnedDocumentId(
+			documentId,
+			ownerId,
+		);
+
+		if (ownedDocumentId === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const pages = await this.pageRepository.findByDocumentId({
+			documentId: ownedDocumentId,
+			from,
+			limit,
+		});
+
+		const lexiconRows = await this.documentRepository.findLexiconByIds(
+			this.collectLexiconIds(pages),
+		);
+		const lexiconById = new Map(
+			lexiconRows.map((row) => [
+				row.id,
+				{
+					distinctPages: row.distinctPages,
+					valueDisplay: row.valueDisplay,
+				},
+			]),
+		);
+
+		const items = await Promise.all(
+			pages.map(async (page) => {
+				const [imageUrl, thumbUrl] = await Promise.all([
+					this.getPresignedUrl(page.imageKey),
+					this.getPresignedUrl(page.thumbKey),
+				]);
+
+				const text = page.transcriptionText ?? "";
+				const pageLexiconById = this.buildPageLexiconMap(
+					page.transcriptionContextUsed,
+					lexiconById,
+				);
+
+				return {
+					id: page.id,
+					imageUrl,
+					pageNo: page.pageNo,
+					status: page.status,
+					thumbUrl,
+					transcription:
+						page.transcriptionId === null
+							? null
+							: {
+									contextWords: this.buildContextWords({
+										lexiconById: pageLexiconById,
+										text,
+									}),
+									id: page.transcriptionId,
+									structured: page.transcriptionStructured,
+									text,
+								},
+				};
+			}),
+		);
+
+		return { items };
+	}
 	public async ingest(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findWithPreset(
 			documentId,

@@ -2,10 +2,37 @@ import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type ValueOf } from "~/libs/types/types.js";
+import { DocumentDetailsEntity } from "~/modules/documents/document-details.entity.js";
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
+import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 
+import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
+import { type LexiconRow } from "./libs/types/lexicon-row.type.js";
+
+type DocumentDetailsRow = {
+	budgetUsd: string;
+	closedPct: number;
+	cursorPageNo: number;
+	id: number;
+	pageCount: number;
+	pagesBlank: number;
+	pagesFailed: number;
+	pagesInWork: number;
+	pagesPending: number;
+	pagesReadyToCheck: number;
+	pagesSkipped: number;
+	pagesTotal: number;
+	pagesVerified: number;
+	presetId: number;
+	presetName: string;
+	presetVersion: number;
+	spentUsd: string;
+	status: ValueOf<typeof DocumentStatus>;
+	title: string;
+	verifiedPct: number;
+};
 
 class DocumentRepository {
 	private documentModel: typeof DocumentModel;
@@ -52,6 +79,78 @@ class DocumentRepository {
 			.execute();
 
 		return documents.map((document) => DocumentEntity.initialize(document));
+	}
+
+	public async findByIdAndOwnerId(
+		id: number,
+		ownerId: number,
+	): Promise<DocumentDetailsEntity | null> {
+		const document = await this.documentModel
+			.knex()
+			.select<DocumentDetailsRow>([
+				"dp.documentId as id",
+				"dp.title",
+				"dp.status",
+				"dp.pageCount",
+				"dp.cursorPageNo",
+				"dp.budgetUsd",
+				"dp.spentUsd",
+				"pr.id as presetId",
+				"pr.name as presetName",
+				"pr.version as presetVersion",
+				"dp.pagesTotal",
+				"dp.pagesVerified",
+				"dp.pagesReadyToCheck",
+				"dp.pagesInWork",
+				"dp.pagesPending",
+				"dp.pagesFailed",
+				"dp.pagesBlank",
+				"dp.pagesSkipped",
+				"dp.verifiedPct",
+				"dp.closedPct",
+			])
+			.from(`${DatabaseTableName.DOCUMENT} as d`)
+			.innerJoin(
+				`${DatabaseTableName.DOCUMENT_PROGRESS} as dp`,
+				"dp.documentId",
+				"d.id",
+			)
+			.innerJoin(`${DatabaseTableName.PRESET} as pr`, "pr.id", "d.presetId")
+			.where({
+				"d.id": id,
+				"d.ownerId": ownerId,
+			})
+			.first();
+
+		if (!document) {
+			return null;
+		}
+
+		return DocumentDetailsEntity.initialize(document);
+	}
+
+	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
+		if (ids.length === EMPTY_COLLECTION_LENGTH) {
+			return [];
+		}
+
+		return await LexiconEntryModel.query()
+			.select("id", "valueDisplay", "distinctPages")
+			.whereIn("id", ids)
+			.castTo<LexiconRow[]>();
+	}
+
+	public async findOwnedDocumentId(
+		id: number,
+		ownerId: number,
+	): Promise<null | number> {
+		const document = await this.documentModel
+			.query()
+			.select("id")
+			.where({ id, ownerId })
+			.first();
+
+		return document?.id ?? null;
 	}
 
 	public async findWithPreset(

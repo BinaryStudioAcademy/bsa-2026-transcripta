@@ -37,7 +37,7 @@ class DocumentApi extends BaseHTTPApi {
 
 	public async getById(id: number): Promise<DocumentGetByIdResponseDto> {
 		const response = await this.load(
-			this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(id) }),
+			this.getFullEndpoint(DocumentsApiPath.BY_ID, { id: String(id) }),
 			{
 				contentType: ContentType.JSON,
 				hasAuth: true,
