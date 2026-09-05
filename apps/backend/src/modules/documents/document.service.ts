@@ -11,7 +11,8 @@ import { ForeignKeyViolationError } from "objection";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 
-import { PageEntity, PageRepository } from "../pages/pages.js";
+import { PageEntity } from "../pages/page.entity.js";
+import { type PageRepository } from "../pages/page.repository.js";
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
