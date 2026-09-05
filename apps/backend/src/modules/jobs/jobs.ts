@@ -7,12 +7,6 @@ import { transcriptionService } from "~/modules/transcription/transcription.js";
 
 import { createTranscribeHandler } from "./transcribe.js";
 
-/**
- * Connects the database (required by every model) and starts consuming
- * `page.transcribe` jobs. BullMQ `attempts: 1` means a thrown or failed job is
- * not retried automatically — a page only records `last_error` and an attempt
- * counter, per TSA-53.
- */
 const startWorker = (): void => {
 	database.connect();
 

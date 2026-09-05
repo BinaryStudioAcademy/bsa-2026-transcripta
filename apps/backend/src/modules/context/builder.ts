@@ -1,8 +1,8 @@
 import { PageStatus } from "@transcripta/shared";
 import { type Knex } from "knex";
 
-import { sha256 } from "~/context/libs/helpers/hash.helper.js";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
+import { sha256 } from "~/modules/context/libs/helpers/hash.helper.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 
 import {
@@ -56,12 +56,6 @@ const readSettings = (preset: Preset): ContextSettings => {
 	};
 };
 
-/**
- * The seed glossary can be stored either as plain terms (`string[]`) or as
- * annotated objects (`{ value, note }[]`) — the merged `PresetModel` allows
- * both, so render whichever shape the preset holds. Values that are not
- * strings are skipped rather than stringified.
- */
 const renderSeedGlossary = (preset: Preset): string => {
 	const glossary = preset.seedGlossary ?? [];
 
@@ -116,11 +110,6 @@ const TOKENS_PER_CHARACTER = 4;
 const estimateTokens = (blocks: string[]): number =>
 	Math.round(blocks.join("\n").length / TOKENS_PER_CHARACTER);
 
-/**
- * Trims by priority, never proportionally: preset instructions and the seed
- * glossary are never cut; the lexicon shrinks first, then the most distant
- * neighbouring pages (docs/03-core-logic.md).
- */
 const fitToBudget = (
 	blocks: string[],
 	blocksByPriority: string[][],
@@ -154,22 +143,16 @@ const buildContext = async ({
 
 	const priorityTiers: string[][] = [];
 
-	// Priority 1: preset instructions — never cut.
 	const instructionsBlock = preset.instructions;
 	if (instructionsBlock) {
 		priorityTiers.push([instructionsBlock]);
 	}
 
-	// Priority 2: seed glossary — never cut.
 	const seedBlock = renderSeedGlossary(preset);
 	if (seedBlock) {
 		priorityTiers.push([seedBlock]);
 	}
 
-	// Priority 3: document lexicon (top-K above the distinct-pages threshold).
-	// The lexicon table is created by the sibling lexicon work (#148); until it
-	// exists, read it defensively so the worker degrades to neighbouring pages
-	// instead of failing the whole transcription.
 	let lexicon: LexiconWord[] = [];
 	let lexiconBlock = "";
 
@@ -202,7 +185,6 @@ const buildContext = async ({
 		priorityTiers.push([lexiconBlock]);
 	}
 
-	// Priority 4: text of the last N confirmed/corrected pages before this one.
 	const neighbourPages = await PageModel.query()
 		.where("documentId", documentId)
 		.where("pageNo", "<", pageNo)

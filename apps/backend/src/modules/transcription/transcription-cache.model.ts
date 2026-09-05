@@ -2,11 +2,6 @@ import { Model } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
-/**
- * The one table that does not extend AbstractModel: its primary key is
- * `cache_key text`, not a numeric `id` (docs/08-template-gaps.md).
- * It deliberately has no foreign keys so it survives document deletion.
- */
 class TranscriptionCacheModel extends Model {
 	public cacheKey!: string;
 

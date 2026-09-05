@@ -25,12 +25,6 @@ type NeighbourPage = {
 	text: string;
 };
 
-/**
- * Nullable on purpose: every nullable/jsonb column in Postgres can come back
- * as null, so callers must branch on absence instead of assuming a value
- * (keeps the `no-unnecessary-condition` checks meaningful). `PresetModel`
- * (already merged on main) is structurally assignable to this shape.
- */
 type Preset = {
 	id: number;
 	instructions: null | string;

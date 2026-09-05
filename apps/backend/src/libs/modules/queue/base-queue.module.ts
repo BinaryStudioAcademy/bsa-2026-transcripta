@@ -17,12 +17,6 @@ type QueueJobPayload = {
 	presetId: number;
 };
 
-/**
- * Wraps the BullMQ producer ({@link Queue}) for `page.transcribe`. It is
- * deliberately small: the queue holds identifiers only, and the worker (the
- * consumer) is started separately so the same queue can serve API or worker
- * mode without a duplicated connection.
- */
 class BaseQueue {
 	private readonly connection: Redis;
 

@@ -1,9 +1,3 @@
-/**
- * USD per 1,000,000 input/output tokens, keyed by the model id prefix.
- * These are placeholders to be calibrated after the first full document
- * (docs/09-open-questions.md); the shape lets pricing be filled in per model
- * without touching the worker.
- */
 const PRICING_PER_MILLION = {
 	amazon: {
 		input: 0.8,

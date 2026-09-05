@@ -1,9 +1,6 @@
 import { DocumentStatus, PageStatus, type ValueOf } from "@transcripta/shared";
 import { type Job } from "bullmq";
 
-import { buildContext } from "~/context/builder.js";
-import { type BuiltContext } from "~/context/libs/types/types.js";
-import { buildUserPrompt } from "~/context/prompt.js";
 import { type Config } from "~/libs/modules/config/config.js";
 import {
 	AbstractModel,
@@ -12,14 +9,17 @@ import {
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type QueueJobPayload } from "~/libs/modules/queue/queue.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
+import { buildContext } from "~/modules/context/builder.js";
+import { type BuiltContext } from "~/modules/context/libs/types/types.js";
+import { buildUserPrompt } from "~/modules/context/prompt.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 import { PresetModel } from "~/modules/presets/preset.model.js";
+import { createOutputValidator } from "~/modules/transcription/libs/helpers/output-validator.helper.js";
+import { calculateTokenCost } from "~/modules/transcription/libs/helpers/pricing.helper.js";
 import { type TranscriptionResponse } from "~/modules/transcription/libs/types/types.js";
 import { TranscriptionCacheModel } from "~/modules/transcription/transcription-cache.model.js";
 import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
-import { createOutputValidator } from "~/transcription/libs/helpers/output-validator.helper.js";
-import { calculateTokenCost } from "~/transcription/libs/helpers/pricing.helper.js";
 
 import { buildCacheKey } from "./libs/helpers/cache-key.helper.js";
 
@@ -232,10 +232,8 @@ const resolveFromCacheOrModel = async (
 		}
 
 		await TranscriptionCacheModel.query()
-			.patch({
-				hitCount: cached.hitCount + ONE,
-				lastHitAt: new Date().toISOString(),
-			})
+			.patch({ lastHitAt: new Date().toISOString() })
+			.increment("hit_count", ONE)
 			.where("cache_key", cacheKey)
 			.execute();
 
@@ -331,7 +329,6 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			text,
 		});
 
-		// The database adds the cost itself — never read+modify+write.
 		await trx.raw(
 			`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
 			[costUsd, documentId],
@@ -360,8 +357,6 @@ const createTranscribeHandler =
 		const document = await DocumentModel.query().findById(documentId);
 		const page = await PageModel.query().findById(pageId);
 
-		// Step 1: cheap guard — never spend on a page whose document is not
-		// transcribing (paused, cancelled/deleted, done, failed...).
 		if (!document || !page || !TRANSCRIBABLE_STATUSES.has(document.status)) {
 			logger.info(
 				`Skip page.transcribe ${String(pageId)}: document not transcribing`,
@@ -370,7 +365,6 @@ const createTranscribeHandler =
 			return;
 		}
 
-		// Step 2: budget before the call — refuse a call we cannot afford.
 		if (isBudgetExhausted(document)) {
 			logger.warn(`Budget exhausted for document ${String(documentId)}`);
 
@@ -394,20 +388,22 @@ const createTranscribeHandler =
 			return;
 		}
 
-		// Step 3: build the context and cache key. The exact model id is part
-		// of the key so a bare id or alias never serves a wrong cached answer.
 		const modelId = config.ENV.BEDROCK.MODEL_ID;
 		const knex = AbstractModel.knex();
 		const context = await buildContext({ documentId, knex, pageNo, preset });
 
+		if (!page.imageSha256) {
+			await recordFailure(pageId, "page_image_sha_missing", page.attempts);
+			return;
+		}
+
 		const cacheKey = buildCacheKey({
 			contextHash: context.contextHash,
-			imageSha256: page.imageSha256 ?? "",
+			imageSha256: page.imageSha256,
 			modelId,
 			presetId: preset.id,
 		});
 
-		// Step 4-6: cache hit (free) or model call with one repair.
 		const resolved = await resolveFromCacheOrModel({
 			cacheKey,
 			config,
@@ -426,7 +422,6 @@ const createTranscribeHandler =
 			return;
 		}
 
-		// Step 7: one transaction — result, cost and status together.
 		const provider = modelId.split(".")[PROVIDER_INDEX] ?? DEFAULT_PROVIDER;
 
 		await storeTranscription({
@@ -450,10 +445,8 @@ const createTranscribeHandler =
 			text: resolved.text,
 		});
 
-		// Step 8: re-check the budget after this very charge.
 		await applyBudgetStopIfExceeded(documentId);
 
-		// Write the model result into the cache so a re-run is free.
 		if (!resolved.fromCache) {
 			try {
 				await TranscriptionCacheModel.query().insert({
@@ -468,8 +461,6 @@ const createTranscribeHandler =
 					text: resolved.text,
 				});
 			} catch (error) {
-				// The cache is an optimization — a concurrent duplicate insert
-				// must never fail an already-stored transcription.
 				logger.warn(`Cache write skipped for page ${String(pageId)}`, {
 					error,
 				});
