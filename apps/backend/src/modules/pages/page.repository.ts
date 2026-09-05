@@ -10,6 +10,13 @@ import {
 import { PageEntity } from "./page.entity.js";
 import { type PageModel } from "./page.model.js";
 
+type UpdatePageVerificationPayload = {
+	pageId: number;
+	status: PageStatusValue;
+	verifiedAt: string;
+	verifiedBy: number;
+};
+
 class PageRepository {
 	private pageModel: typeof PageModel;
 
