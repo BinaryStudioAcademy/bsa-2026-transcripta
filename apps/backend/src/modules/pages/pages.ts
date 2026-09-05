@@ -2,8 +2,8 @@ import { logger } from "~/libs/modules/logger/logger.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { DocumentRepository } from "../documents/document.repository.js";
-import { TranscriptionModel } from "./../transcription/transcription.model.js";
-import { TranscriptionRepository } from "./../transcription/transcription.repository.js";
+import { TranscriptionModel } from "../transcription/transcription.model.js";
+import { TranscriptionRepository } from "../transcription/transcription.repository.js";
 import { PageEventModel } from "./page-event/page-event.model.js";
 import { PageEventRepository } from "./page-event/page-event.repository.js";
 import { PageController } from "./page.controller.js";
