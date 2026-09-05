@@ -1,7 +1,4 @@
-import { PageStatus } from "./libs/enums/enums.js";
-import { type ValueOf } from "./libs/types/types.js";
-
-type PageStatusValue = ValueOf<typeof PageStatus>;
+import { PageStatusValue } from "@transcripta/shared";
 
 class PageEntity {
 	private attempts: number;

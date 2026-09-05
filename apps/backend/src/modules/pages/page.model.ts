@@ -1,11 +1,9 @@
-import { PageStatus, type ValueOf } from "@transcripta/shared";
+import { PageStatusValue } from "@transcripta/shared";
 
 import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
-
-type PageStatusValue = ValueOf<typeof PageStatus>;
 
 class PageModel extends AbstractModel {
 	public attempts!: number;
