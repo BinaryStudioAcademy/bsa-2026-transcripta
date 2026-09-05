@@ -93,7 +93,11 @@ class PageService {
 		const { action, pageId, transcriptionId, userId } = payload;
 		try {
 			return await DocumentModel.transaction(async (trx) => {
-				const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+				const page = await this.pageRepository.findByIdForOwner(
+					pageId,
+					userId,
+					trx,
+				);
 
 				if (!page) {
 					throw new HTTPError({
