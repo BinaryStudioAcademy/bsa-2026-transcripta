@@ -16,6 +16,7 @@ import { type Config } from "~/libs/modules/config/config.js";
 import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
+import { type QueueRegistry } from "~/libs/modules/queue/queue-registry.module.js";
 import {
 	type ServerCommonErrorResponse,
 	type ServerValidationErrorResponse,
@@ -38,6 +39,7 @@ type Constructor = {
 	config: Config;
 	database: Database;
 	logger: Logger;
+	queueRegistry: QueueRegistry;
 	title: string;
 };
 
@@ -52,14 +54,24 @@ class BaseServerApplication implements ServerApplication {
 
 	private logger: Logger;
 
+	private queueRegistry: QueueRegistry;
+
 	private title: string;
 
-	public constructor({ apis, config, database, logger, title }: Constructor) {
+	public constructor({
+		apis,
+		config,
+		database,
+		logger,
+		queueRegistry,
+		title,
+	}: Constructor) {
 		this.title = title;
 		this.config = config;
 		this.logger = logger;
 		this.database = database;
 		this.apis = apis;
+		this.queueRegistry = queueRegistry;
 
 		this.initApp();
 	}
@@ -151,6 +163,13 @@ class BaseServerApplication implements ServerApplication {
 			return await response.sendFile("index.html", staticPath);
 		});
 	}
+	private initShutdown(): void {
+		for (const signal of ["SIGINT", "SIGTERM"] as const) {
+			process.once(signal, () => {
+				this.shutdown();
+			});
+		}
+	}
 
 	private initValidationCompiler(): void {
 		this.app.setValidatorCompiler<ValidationSchema>(({ schema }) => {
@@ -165,6 +184,17 @@ class BaseServerApplication implements ServerApplication {
 			};
 		});
 	}
+
+	private shutdown(): void {
+		void this.app.close().catch((error: unknown) => {
+			this.logger.error("Failed to close server.", { error });
+		});
+
+		void this.queueRegistry.close().catch((error: unknown) => {
+			this.logger.error("Failed to close queues.", { error });
+		});
+	}
+
 	public addRoute(parameters: ServerApplicationRouteParameters): void {
 		const { config, handler, method, path, preHandler, validation } =
 			parameters;
@@ -208,6 +238,8 @@ class BaseServerApplication implements ServerApplication {
 		this.database.connect();
 
 		try {
+			await this.queueRegistry.connect();
+
 			await this.app.listen({
 				host: this.config.ENV.APP.HOST,
 				port: this.config.ENV.APP.PORT,
@@ -218,7 +250,12 @@ class BaseServerApplication implements ServerApplication {
 					this.config.ENV.APP.ENVIRONMENT as string
 				}.`,
 			);
+
+			this.initShutdown();
 		} catch (error) {
+			await this.app.close().catch(() => null);
+			await this.queueRegistry.close().catch(() => null);
+
 			if (error instanceof Error) {
 				this.logger.error(error.message, {
 					cause: error.cause,
