@@ -74,6 +74,18 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async updateCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx?: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ cursorPageNo })
+			.where({ id: documentId })
+			.execute();
+	}
+
 	public async updatePageCount(id: number, pageCount: number): Promise<void> {
 		await this.documentModel
 			.query()
