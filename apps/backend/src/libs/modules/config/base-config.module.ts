@@ -1,7 +1,7 @@
 import convict, { type Config as LibraryConfig } from "convict";
 import { config } from "dotenv";
 
-import { AppEnvironment, AppMode } from "~/libs/enums/enums.js";
+import { AppEnvironment } from "~/libs/enums/enums.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import {
@@ -49,12 +49,6 @@ class BaseConfig implements Config {
 					doc: "Host for server app",
 					env: "HOST",
 					format: String,
-				},
-				MODE: {
-					default: AppMode.ALL,
-					doc: "What this process serves: the API, the background worker, or both",
-					env: "APP_MODE",
-					format: Object.values(AppMode),
 				},
 				PORT: {
 					default: null,

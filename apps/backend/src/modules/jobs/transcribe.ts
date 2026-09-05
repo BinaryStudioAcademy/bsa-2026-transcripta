@@ -7,7 +7,7 @@ import {
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
-import { type QueueJobPayload } from "~/libs/modules/queue/queue.js";
+import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { buildContext } from "~/modules/context/builder.js";
 import { type BuiltContext } from "~/modules/context/libs/types/types.js";
@@ -351,8 +351,8 @@ const applyBudgetStopIfExceeded = async (documentId: number): Promise<void> => {
 
 const createTranscribeHandler =
 	({ config, logger, storage, transcriptionService }: Dependencies) =>
-	async (job: Job<QueueJobPayload>): Promise<void> => {
-		const { documentId, pageId, pageNo, presetId } = job.data;
+	async (job: Job<PageTranscribeJobData>): Promise<void> => {
+		const { documentId, pageId, pageNo } = job.data;
 
 		const document = await DocumentModel.query().findById(documentId);
 		const page = await PageModel.query().findById(pageId);
@@ -381,7 +381,7 @@ const createTranscribeHandler =
 			return;
 		}
 
-		const preset = await PresetModel.query().findById(presetId);
+		const preset = await PresetModel.query().findById(document.presetId);
 
 		if (!preset) {
 			await recordFailure(pageId, "preset_not_found", page.attempts);
@@ -439,7 +439,7 @@ const createTranscribeHandler =
 			modelId,
 			outputTokens: resolved.outputTokens,
 			pageId,
-			presetId,
+			presetId: preset.id,
 			provider,
 			structured: resolved.structured,
 			text: resolved.text,

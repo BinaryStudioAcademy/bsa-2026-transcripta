@@ -1,81 +1,101 @@
 import {
-	Queue as BullQueue,
-	Worker as BullWorker,
 	type Job,
 	type JobsOptions,
-	type WorkerOptions,
+	type Processor,
+	Queue,
+	Worker,
 } from "bullmq";
-import { Redis as IORedis, type Redis } from "ioredis";
+import { type Redis } from "ioredis";
 
-import { type Config } from "~/libs/modules/config/config.js";
+import { type Logger } from "~/libs/modules/logger/logger.js";
 
-type QueueJobName = "page.transcribe";
-type QueueJobPayload = {
-	documentId: number;
-	pageId: number;
-	pageNo: number;
-	presetId: number;
+import {
+	LoggerMessages,
+	QueueErrorMessage,
+} from "./libs/constants/constants.js";
+import { type QueueLifecycle } from "./libs/types/types.js";
+
+type Constructor<TData> = {
+	logger: Logger;
+	name: string;
+	processor: Processor<TData>;
 };
 
-class BaseQueue {
-	private readonly connection: Redis;
+class BaseQueue<TData> implements QueueLifecycle {
+	private logger: Logger;
 
-	private readonly name: QueueJobName;
+	private name: string;
 
-	public readonly queue: BullQueue<QueueJobPayload, void, QueueJobName>;
+	private processor: Processor<TData>;
 
-	public worker: BullWorker<QueueJobPayload> | null = null;
+	private queue: null | Queue<Job<TData>> = null;
 
-	public constructor(
-		config: Config,
-		name: QueueJobName,
-		options?: { connection: Redis },
-	) {
+	private worker: null | Worker<TData, void> = null;
+
+	public constructor({ logger, name, processor }: Constructor<TData>) {
+		this.logger = logger;
 		this.name = name;
-		this.connection =
-			options?.connection ??
-			new IORedis(config.ENV.REDIS.URL, { maxRetriesPerRequest: null });
-		this.queue = new BullQueue<QueueJobPayload, void, QueueJobName>(name, {
-			connection: this.connection,
-		});
+		this.processor = processor;
 	}
 
-	public get queueName(): QueueJobName {
-		return this.name;
-	}
+	protected async addJob(data: TData, options: JobsOptions): Promise<void> {
+		if (!this.queue) {
+			throw new Error(QueueErrorMessage.QUEUE_NOT_CREATED);
+		}
 
-	public async add(
-		payload: QueueJobPayload,
-		options?: JobsOptions,
-	): Promise<Job<QueueJobPayload>> {
-		return await this.queue.add(this.name, payload, options);
+		await this.queue.add(this.name, data, options);
 	}
 
 	public async close(): Promise<void> {
 		await this.worker?.close();
-		await this.queue.close();
-		this.connection.disconnect();
+		await this.queue?.close();
+
+		this.worker = null;
+		this.queue = null;
+
+		this.logger.info(`${LoggerMessages.QUEUE_CLOSED}: ${this.name}`);
 	}
 
-	public startWorker(
-		handler: (job: Job<QueueJobPayload>) => Promise<void>,
-		options?: { concurrency?: number },
-	): void {
-		const workerOptions: WorkerOptions =
-			options && options.concurrency !== undefined
-				? {
-						concurrency: options.concurrency,
-						connection: this.connection,
-					}
-				: { connection: this.connection };
+	public async connect(connection: Redis): Promise<void> {
+		if (this.queue && this.worker) {
+			return;
+		}
 
-		this.worker = new BullWorker<QueueJobPayload>(
-			this.name,
-			handler,
-			workerOptions,
-		);
+		let queue: null | Queue<Job<TData>> = null;
+		let worker: null | Worker<TData, void> = null;
+
+		try {
+			queue = new Queue<Job<TData>>(this.name, {
+				connection,
+			});
+			worker = new Worker<TData>(this.name, this.processor, {
+				connection,
+			});
+			await Promise.all([queue.waitUntilReady(), worker.waitUntilReady()]);
+
+			this.queue = queue;
+			this.worker = worker;
+
+			this.logger.info(`${LoggerMessages.QUEUE_READY}: ${this.name}`);
+		} catch (error) {
+			await worker?.close().catch((closeError: unknown) => {
+				this.logger.error(LoggerMessages.WORKER_CLOSE_FAILED(this.name), {
+					error: closeError,
+				});
+			});
+			await queue?.close().catch((closeError: unknown) => {
+				this.logger.error(LoggerMessages.QUEUE_CLOSE_FAILED(this.name), {
+					error: closeError,
+				});
+			});
+
+			this.logger.error(LoggerMessages.CONNECTION_FAILED(this.name), {
+				error,
+			});
+
+			throw error;
+		}
 	}
 }
 
 export { BaseQueue };
-export { type QueueJobPayload };
