@@ -1,8 +1,12 @@
+import { useState } from "react";
+
 import {
 	BudgetIndicator,
+	ConfirmDialog,
 	GroundTruthBlock,
 	Link,
 	LoaderOverlay,
+	OverflowMenu,
 	ProgressBar,
 	StatusChip,
 } from "~/libs/components/components.js";
@@ -12,18 +16,21 @@ import {
 	useAppDispatch,
 	useAppSelector,
 	useEffect,
+	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
 			documentDataStatus: documents.documentDataStatus,
 		}),
 	);
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 	const { id } = useParams();
 
@@ -40,14 +47,52 @@ const Document: React.FC = () => {
 	const isLoading = documentDataStatus === DataStatus.PENDING;
 	const hasError = documentDataStatus === DataStatus.REJECTED;
 
+	const handleOpenDeleteDialog = (): void => {
+		setIsConfirmOpen(true);
+	};
+
+	const handleCancelDelete = (): void => {
+		setIsConfirmOpen(false);
+	};
+
+	const handleConfirmDelete = async (): Promise<void> => {
+		if (!currentDocument) {
+			return;
+		}
+
+		const resultAction = await dispatch(
+			documentActions.remove(currentDocument.id),
+		);
+
+		setIsConfirmOpen(false);
+
+		// eslint-disable-next-line unicorn/prefer-regexp-test -- this is redux-toolkit's action matcher, not String#match
+		if (documentActions.remove.fulfilled.match(resultAction)) {
+			navigate(AppRoute.DOCUMENTS);
+		}
+	};
+
+	const handleConfirmDeleteClick = (): void => {
+		void handleConfirmDelete();
+	};
+
 	return (
 		<>
 			{isLoading && <LoaderOverlay label="Loading document" />}
 			{hasError && <p>Unable to load the document.</p>}
 			{currentDocument && (
 				<>
-					<h1>{document.title}</h1>
+					<h1>{currentDocument.title}</h1>
 					<StatusChip status={currentDocument.status} />
+					<OverflowMenu
+						items={[
+							{
+								isDanger: true,
+								label: "Delete",
+								onClick: handleOpenDeleteDialog,
+							},
+						]}
+					/>
 
 					<section>
 						<h2>Transcription</h2>
@@ -87,6 +132,15 @@ const Document: React.FC = () => {
 						</section>
 					)}
 				</>
+			)}
+
+			{isConfirmOpen && (
+				<ConfirmDialog
+					description="The transcription goes with it. This can't be undone."
+					onCancel={handleCancelDelete}
+					onConfirm={handleConfirmDeleteClick}
+					title="Delete this document"
+				/>
 			)}
 		</>
 	);

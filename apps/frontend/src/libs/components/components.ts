@@ -1,12 +1,14 @@
 export { App } from "./app/app.js";
 export { BudgetIndicator } from "./budget-indicator/budget-indicator.js";
 export { Button } from "./button/button.js";
+export { ConfirmDialog } from "./confirm-dialog/confirm-dialog.js";
 export { GroundTruthBlock } from "./ground-truth-block/ground-truth-block.js";
 export { Input } from "./input/input.js";
 export { Link } from "./link/link.js";
 export { LoaderOverlay } from "./loader/loader-overlay.js";
 export { Loader } from "./loader/loader.js";
 export { LogoIcon } from "./logo-icon/logo-icon.js";
+export { OverflowMenu } from "./overflow-menu/overflow-menu.js";
 export { ProgressBar } from "./progress-bar/progress-bar.js";
 export { ProtectedRoute } from "./protected-route/protected-route.js";
 export { RouterProvider } from "./router-provider/router-provider.js";

@@ -47,6 +47,17 @@ class DocumentApi extends BaseHTTPApi {
 
 		return await response.json<DocumentGetByIdResponseDto>();
 	}
+
+	public async remove(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.DELETE,
+			},
+		);
+	}
 }
 
 export { DocumentApi };

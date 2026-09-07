@@ -1,10 +1,11 @@
-import { loadAll, loadById } from "./actions.js";
+import { loadAll, loadById, remove } from "./actions.js";
 import { actions } from "./documents.slice.js";
 
 const allActions = {
 	...actions,
 	loadAll,
 	loadById,
+	remove,
 };
 
 export { allActions as actions };

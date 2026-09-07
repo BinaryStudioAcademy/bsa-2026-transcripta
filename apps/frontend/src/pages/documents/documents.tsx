@@ -1,6 +1,10 @@
+import { useState } from "react";
+
 import {
 	Button,
+	ConfirmDialog,
 	LoaderOverlay,
+	OverflowMenu,
 	StatusChip,
 } from "~/libs/components/components.js";
 import { DataStatus } from "~/libs/enums/enums.js";
@@ -19,6 +23,7 @@ const Documents: React.FC = () => {
 		dataStatus: documents.dataStatus,
 		documents: documents.documents,
 	}));
+	const [pendingDeleteId, setPendingDeleteId] = useState<null | number>(null);
 
 	useEffect(() => {
 		void dispatch(documentActions.loadAll());
@@ -26,6 +31,19 @@ const Documents: React.FC = () => {
 
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty = !isLoading && documents.length === EMPTY_LENGTH;
+
+	const handleCancelDelete = (): void => {
+		setPendingDeleteId(null);
+	};
+
+	const handleConfirmDelete = (): void => {
+		if (pendingDeleteId === null) {
+			return;
+		}
+
+		void dispatch(documentActions.remove(pendingDeleteId));
+		setPendingDeleteId(null);
+	};
 
 	return (
 		<>
@@ -51,21 +69,48 @@ const Documents: React.FC = () => {
 							<th>Status</th>
 							<th>Uploaded</th>
 							<th>Pages</th>
+							<th />
 						</tr>
 					</thead>
 					<tbody>
-						{documents.map((document) => (
-							<tr key={document.id}>
-								<td>{document.title}</td>
-								<td>
-									<StatusChip status={document.status} />
-								</td>
-								<td>{new Date(document.createdAt).toLocaleDateString()}</td>
-								<td>{document.pageCount}</td>
-							</tr>
-						))}
+						{documents.map((document) => {
+							const handleDeleteClick = (): void => {
+								setPendingDeleteId(document.id);
+							};
+
+							return (
+								<tr key={document.id}>
+									<td>{document.title}</td>
+									<td>
+										<StatusChip status={document.status} />
+									</td>
+									<td>{new Date(document.createdAt).toLocaleDateString()}</td>
+									<td>{document.pageCount}</td>
+									<td>
+										<OverflowMenu
+											items={[
+												{
+													isDanger: true,
+													label: "Delete",
+													onClick: handleDeleteClick,
+												},
+											]}
+										/>
+									</td>
+								</tr>
+							);
+						})}
 					</tbody>
 				</table>
+			)}
+
+			{pendingDeleteId !== null && (
+				<ConfirmDialog
+					description="The transcription goes with it. This can't be undone."
+					onCancel={handleCancelDelete}
+					onConfirm={handleConfirmDelete}
+					title="Delete this document"
+				/>
 			)}
 		</>
 	);
