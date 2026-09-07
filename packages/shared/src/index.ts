@@ -31,10 +31,12 @@ export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	BYTES_IN_KILOBYTE,
 	DocumentCreateValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
+	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export { PageStatus } from "./modules/pages/pages.js";
 export {
