@@ -1,3 +1,5 @@
+import React from "react";
+
 import styles from "./styles.module.css";
 
 type Properties = {
@@ -5,6 +7,7 @@ type Properties = {
 	isFluid?: boolean;
 	isPrimary?: boolean;
 	label: string;
+	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	type?: "button" | "submit";
 };
 
@@ -13,6 +16,7 @@ const Button: React.FC<Properties> = ({
 	isFluid = false,
 	isPrimary = false,
 	label,
+	onClick,
 	type = "button",
 }: Properties) => {
 	const buttonClassName = [
@@ -25,7 +29,12 @@ const Button: React.FC<Properties> = ({
 		.join(" ");
 
 	return (
-		<button className={buttonClassName} disabled={isDisabled} type={type}>
+		<button
+			className={buttonClassName}
+			disabled={isDisabled}
+			onClick={onClick}
+			type={type}
+		>
 			{label}
 		</button>
 	);

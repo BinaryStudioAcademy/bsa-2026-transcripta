@@ -1,0 +1,2 @@
+const DEFAULT_PRESET_ID = 1;
+export { DEFAULT_PRESET_ID };

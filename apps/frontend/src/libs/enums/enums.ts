@@ -5,5 +5,7 @@ export {
 	APIPath,
 	AppEnvironment,
 	ContentType,
+	HTTPCode,
+	HTTPMethod,
 	ServerErrorType,
 } from "@transcripta/shared";
