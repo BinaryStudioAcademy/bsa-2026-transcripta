@@ -12,6 +12,7 @@ import { ForeignKeyViolationError } from "objection";
 
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
+import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 
 import { PageEntity, type PageRepository } from "../pages/pages.js";
@@ -22,6 +23,7 @@ import {
 	DOCUMENT_OWNER_ID_FOREIGN,
 	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
+	NON_DELETABLE_DOCUMENT_STATUSES,
 	NOT_FOUND_INDEX,
 	PAGES_TO_QUEUE,
 } from "./libs/constants/constants.js";
@@ -298,6 +300,42 @@ class DocumentService {
 			}
 			throw error;
 		}
+	}
+
+	public async delete(id: number, ownerId: number): Promise<void> {
+		await DocumentModel.transaction(async (trx) => {
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					id,
+					ownerId,
+					trx,
+				);
+
+			if (!document) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			if (NON_DELETABLE_DOCUMENT_STATUSES.has(document.toObject().status)) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_ACTIVE,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.UPLOADS,
+				prefix: `uploads/${id.toString()}/`,
+			});
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.PAGES,
+				prefix: `pages/${id.toString()}/`,
+			});
+
+			await this.documentRepository.deleteById(id, trx);
+		});
 	}
 
 	public async findAllByOwnerId(

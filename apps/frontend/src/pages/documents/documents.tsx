@@ -3,11 +3,13 @@ import {
 	LoaderOverlay,
 	StatusChip,
 } from "~/libs/components/components.js";
-import { DataStatus } from "~/libs/enums/enums.js";
+import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
+	useCallback,
 	useEffect,
+	useNavigate,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
@@ -15,6 +17,7 @@ const EMPTY_LENGTH = 0;
 
 const Documents: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { dataStatus, documents } = useAppSelector(({ documents }) => ({
 		dataStatus: documents.dataStatus,
 		documents: documents.documents,
@@ -23,6 +26,12 @@ const Documents: React.FC = () => {
 	useEffect(() => {
 		void dispatch(documentActions.loadAll());
 	}, [dispatch]);
+
+	const handleNewDocument = useCallback((): void => {
+		void (async (): Promise<void> => {
+			await navigate(AppRoute.DOCUMENTS_NEW);
+		})();
+	}, [navigate]);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty = !isLoading && documents.length === EMPTY_LENGTH;
@@ -33,7 +42,7 @@ const Documents: React.FC = () => {
 
 			<h1>Documents</h1>
 
-			<Button label="+ New document" />
+			<Button label="+ New document" onClick={handleNewDocument} />
 
 			{isEmpty && (
 				<div>

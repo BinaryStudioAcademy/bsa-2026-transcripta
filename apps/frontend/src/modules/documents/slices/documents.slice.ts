@@ -3,13 +3,15 @@ import { createSlice } from "@reduxjs/toolkit";
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import {
+	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
 
-import { loadAll, loadById } from "./actions.js";
+import { create, loadAll, loadById } from "./actions.js";
 
 type State = {
+	createdDocument: DocumentCreateResponseDto | null;
 	dataStatus: ValueOf<typeof DataStatus>;
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: ValueOf<typeof DataStatus>;
@@ -18,6 +20,7 @@ type State = {
 };
 
 const initialState: State = {
+	createdDocument: null,
 	dataStatus: DataStatus.IDLE,
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
@@ -27,6 +30,20 @@ const initialState: State = {
 
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
+		builder.addCase(create.pending, (state) => {
+			state.dataStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(create.fulfilled, (state, action) => {
+			state.dataStatus = DataStatus.FULFILLED;
+			state.createdDocument = action.payload;
+		});
+
+		builder.addCase(create.rejected, (state) => {
+			state.dataStatus = DataStatus.REJECTED;
+			state.createdDocument = null;
+		});
+
 		builder.addCase(loadAll.pending, (state) => {
 			state.dataStatus = DataStatus.PENDING;
 		});

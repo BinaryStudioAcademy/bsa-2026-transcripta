@@ -7,3 +7,4 @@ export { type DocumentGetByIdResponseDto } from "./document-get-by-id-response-d
 export { type DocumentGetPagesContextWordResponseDto } from "./document-get-pages-context-word-response-dto.type.js";
 export { type DocumentGetPagesQueryDto } from "./document-get-pages-query-dto.type.js";
 export { type DocumentGetPagesResponseDto } from "./document-get-pages-response-dto.type.js";
+export { type DocumentIdRequestDto } from "./document-id-request-dto.type.js";

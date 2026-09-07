@@ -53,6 +53,10 @@ class DocumentRepository {
 		return DocumentEntity.initialize(document);
 	}
 
+	public async deleteById(id: number, trx: Transaction): Promise<void> {
+		await this.documentModel.query(trx).deleteById(id).execute();
+	}
+
 	public async findAccessiblePreset(
 		presetId: number,
 		ownerId: number,
@@ -127,6 +131,20 @@ class DocumentRepository {
 		}
 
 		return DocumentDetailsEntity.initialize(document);
+	}
+
+	public async findByIdAndOwnerIdForUpdate(
+		id: number,
+		ownerId: number,
+		trx: Transaction,
+	): Promise<DocumentEntity | null> {
+		const document = await this.documentModel
+			.query(trx)
+			.findById(id)
+			.where({ ownerId })
+			.forUpdate();
+
+		return document ? DocumentEntity.initialize(document) : null;
 	}
 
 	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
