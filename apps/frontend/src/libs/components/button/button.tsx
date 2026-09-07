@@ -1,3 +1,5 @@
+import React from "react";
+
 import styles from "./styles.module.css";
 
 type Properties = {
@@ -6,11 +8,14 @@ type Properties = {
 	isFluid?: boolean;
 	isPrimary?: boolean;
 	label: string;
-	onClick?: () => void;
+	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	type?: "button" | "submit";
 };
 
-const getVariantClassName = (isDanger: boolean, isPrimary: boolean): string => {
+const getVariantClassName = (
+	isDanger: boolean,
+	isPrimary: boolean,
+): string | undefined => {
 	if (isDanger) {
 		return styles["button--danger"];
 	}

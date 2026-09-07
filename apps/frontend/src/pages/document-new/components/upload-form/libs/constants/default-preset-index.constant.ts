@@ -1,0 +1,2 @@
+const DEFAULT_PRESET_INDEX = 0;
+export { DEFAULT_PRESET_INDEX };
