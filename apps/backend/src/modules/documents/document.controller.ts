@@ -1,6 +1,7 @@
 import {
 	type DocumentCreateRequestDto,
 	DocumentCreateValidationSchema,
+	DocumentIdValidationSchema,
 } from "@transcripta/shared";
 
 import { APIPath } from "~/libs/enums/enums.js";
@@ -17,6 +18,7 @@ import { type TokenPayload } from "~/libs/modules/token/token.js";
 import { type DocumentService } from "~/modules/documents/document.service.js";
 
 import { DocumentsApiPath } from "./libs/enums/enums.js";
+import { type DocumentDeleteOptions } from "./libs/types/types.js";
 
 /*** @swagger
  * components:
@@ -120,6 +122,16 @@ class DocumentController extends BaseController {
 		});
 
 		this.addRoute({
+			handler: (options) => this.delete(options as DocumentDeleteOptions),
+			method: HTTPMethod.DELETE,
+			path: DocumentsApiPath.$ID,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentIdValidationSchema,
+			},
+		});
+
+		this.addRoute({
 			handler: (this.ingest as APIHandler).bind(this),
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
@@ -157,6 +169,39 @@ class DocumentController extends BaseController {
 				ownerId: options.user.userId,
 			}),
 			status: HTTPCode.CREATED,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}:
+	 *   delete:
+	 *     description: Delete a document owned by the current user
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *     responses:
+	 *       204:
+	 *         description: Document deleted successfully
+	 *       404:
+	 *         description: Document not found
+	 *       409:
+	 *         description: Document is currently ingesting or processing
+	 */
+	private async delete(
+		options: DocumentDeleteOptions,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.delete(options.params.id, options.user.userId);
+
+		return {
+			payload: null,
+			status: HTTPCode.NO_CONTENT,
 		};
 	}
 
