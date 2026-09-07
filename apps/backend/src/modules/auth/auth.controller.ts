@@ -1,10 +1,11 @@
 import { APIPath } from "~/libs/enums/enums.js";
+import { AuthRateLimit } from "~/libs/modules/auth/libs/enums/enums.js";
 import {
 	type APIHandlerOptions,
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
-import { HTTPCode } from "~/libs/modules/http/http.js";
+import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import {
 	type UserSignInRequestDto,
@@ -25,13 +26,19 @@ class AuthController extends BaseController {
 		this.authService = authService;
 
 		this.addRoute({
+			config: {
+				rateLimit: {
+					max: AuthRateLimit.MAX_ATTEMPTS,
+					timeWindow: AuthRateLimit.TIME_WINDOW,
+				},
+			},
 			handler: (options) =>
 				this.signUp(
 					options as APIHandlerOptions<{
 						body: UserSignUpRequestDto;
 					}>,
 				),
-			method: "POST",
+			method: HTTPMethod.POST,
 			path: AuthApiPath.SIGN_UP,
 			validation: {
 				body: userSignUpValidationSchema,
@@ -39,13 +46,19 @@ class AuthController extends BaseController {
 		});
 
 		this.addRoute({
+			config: {
+				rateLimit: {
+					max: AuthRateLimit.MAX_ATTEMPTS,
+					timeWindow: AuthRateLimit.TIME_WINDOW,
+				},
+			},
 			handler: (options) =>
 				this.signIn(
 					options as APIHandlerOptions<{
 						body: UserSignInRequestDto;
 					}>,
 				),
-			method: "POST",
+			method: HTTPMethod.POST,
 			path: AuthApiPath.SIGN_IN,
 			validation: {
 				body: userSignInValidationSchema,

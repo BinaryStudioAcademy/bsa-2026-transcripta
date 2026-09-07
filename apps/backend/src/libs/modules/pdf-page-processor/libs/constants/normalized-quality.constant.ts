@@ -1,0 +1,3 @@
+const NORMALIZED_QUALITY = 85;
+
+export { NORMALIZED_QUALITY };

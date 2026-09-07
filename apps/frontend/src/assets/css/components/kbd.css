@@ -1,0 +1,36 @@
+.tx-kbd {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 22px;
+	height: 21px;
+	padding: 0 6px;
+	font: 500 11px/1 var(--font-mono);
+	color: var(--text-2);
+	background: var(--kbd-face);
+	border: 1px solid var(--kbd-edge);
+	border-radius: 4px;
+	box-shadow: 0 2px 0 var(--kbd-edge);
+}
+
+.tx-kbd.is-down {
+	color: var(--text);
+	background: var(--surface-2);
+	box-shadow: none;
+	transform: translateY(2px);
+}
+
+.tx-kbdrow {
+	display: inline-flex;
+	gap: 14px;
+	align-items: center;
+	font: 400 var(--fs-xs) / 1 var(--font-ui);
+	color: var(--text-2);
+}
+
+.tx-kbdrow > span {
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+}

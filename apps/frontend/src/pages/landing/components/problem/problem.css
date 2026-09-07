@@ -1,0 +1,51 @@
+.problem {
+	padding: var(--sp-21) var(--sp-16) var(--sp-23);
+	border-top: 1px solid var(--hairline);
+}
+
+.problem__container {
+	max-width: 1112px;
+	margin: 0 auto;
+}
+
+.problem__title {
+	max-width: 640px;
+	margin: 0 0 var(--sp-10);
+	font: 600 30px / var(--lh-card-title) var(--font-display);
+	text-wrap: balance;
+}
+
+.problem__cards {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--sp-5);
+}
+
+.problem__card {
+	padding: var(--sp-6);
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+}
+
+.problem__card-title {
+	margin: 0 0 var(--sp-2);
+	font: 600 var(--fs-xl) / var(--lh-card-title) var(--font-display);
+}
+
+.problem__card-description {
+	margin: 0;
+	font: 400 var(--fs-md-half) / var(--lh-read) var(--font-ui);
+	color: var(--text-2);
+}
+
+.problem__conclusion {
+	max-width: 620px;
+	margin: var(--sp-10) 0 0;
+	font: 400 var(--fs-lg-plus) / var(--lh-conclusion) var(--font-ui);
+}
+
+.problem__conclusion strong {
+	font-weight: 600;
+	color: var(--accent-text);
+}

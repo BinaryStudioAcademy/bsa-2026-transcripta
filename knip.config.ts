@@ -9,8 +9,13 @@ const config: KnipConfig = {
 			ignore: ["design/**"],
 		},
 		"apps/backend": {
-			entry: ["src/db/migrations/*.ts", "knexfile.ts"],
-			ignoreDependencies: ["pg"],
+			entry: [
+				"src/db/migrations/*.ts",
+				"knexfile.ts",
+				"src/modules/pages/page.model.ts",
+				"src/modules/pages/page.repository.ts",
+			],
+			ignoreDependencies: [],
 		},
 		"apps/frontend": {
 			// Waiting to be wired up by [FE] Upload a document #73:
@@ -22,7 +27,7 @@ const config: KnipConfig = {
 				"src/libs/hooks/use-zip-processor/**",
 				"src/libs/workers/**",
 			],
-			ignoreDependencies: ["jszip", "pdf-lib"],
+			ignoreDependencies: [],
 		},
 		"packages/shared": {
 			includeEntryExports: true,

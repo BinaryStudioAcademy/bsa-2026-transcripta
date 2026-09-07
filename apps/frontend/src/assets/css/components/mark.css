@@ -1,0 +1,11 @@
+.tx-mark {
+	padding: 0 2px;
+	margin: 0;
+	font: inherit;
+	color: inherit;
+	cursor: help;
+	background: var(--mark-bg);
+	border: none;
+	border-bottom: 1px solid var(--mark-underline);
+	border-radius: var(--r-xs);
+}

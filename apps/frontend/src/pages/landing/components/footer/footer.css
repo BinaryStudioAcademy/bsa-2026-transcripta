@@ -1,0 +1,29 @@
+.footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--sp-7) var(--sp-16);
+	border-top: 1px solid var(--hairline);
+}
+
+.footer__brand {
+	display: inline-flex;
+	gap: var(--sp-3);
+	align-items: center;
+}
+
+.footer__logo {
+	display: block;
+	width: var(--sp-5);
+	height: var(--sp-5);
+}
+
+.footer__brand-name {
+	font: 600 var(--fs-md-plus) / 1 var(--font-display);
+	color: var(--text);
+}
+
+.footer__copyright {
+	font-size: var(--fs-2xs);
+	color: var(--text-3);
+}

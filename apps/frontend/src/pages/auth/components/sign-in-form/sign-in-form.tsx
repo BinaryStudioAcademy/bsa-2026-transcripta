@@ -43,7 +43,7 @@ const SignInForm: React.FC<Properties> = ({ onSubmit }: Properties) => {
 					errors={errors}
 					label="Email"
 					name="email"
-					type="email"
+					type="text"
 				/>
 				<Input
 					control={control}

@@ -105,6 +105,52 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			REDIS: {
+				URL: {
+					default: "redis://localhost:6379",
+					doc: "Redis connection string",
+					env: "REDIS_URL",
+					format: String,
+				},
+			},
+			STORAGE: {
+				ACCESS_KEY_ID: {
+					default: "minioadmin",
+					doc: "S3 access key id",
+					env: "STORAGE_ACCESS_KEY_ID",
+					format: String,
+				},
+				BUCKET_PAGES: {
+					default: "transcripta-pages",
+					doc: "Bucket name for .webp page images and thumbnails",
+					env: "STORAGE_BUCKET_PAGES",
+					format: String,
+				},
+				BUCKET_UPLOADS: {
+					default: "transcripta-uploads",
+					doc: "Bucket name for PDF uploads",
+					env: "STORAGE_BUCKET_UPLOADS",
+					format: String,
+				},
+				ENDPOINT: {
+					default: "http://localhost:9000",
+					doc: "S3/MinIO endpoint URL",
+					env: "STORAGE_ENDPOINT",
+					format: String,
+				},
+				REGION: {
+					default: "us-east-1",
+					doc: "S3 region",
+					env: "STORAGE_REGION",
+					format: String,
+				},
+				SECRET_ACCESS_KEY: {
+					default: "minioadmin",
+					doc: "S3 secret access key",
+					env: "STORAGE_SECRET_ACCESS_KEY",
+					format: String,
+				},
+			},
 		});
 	}
 

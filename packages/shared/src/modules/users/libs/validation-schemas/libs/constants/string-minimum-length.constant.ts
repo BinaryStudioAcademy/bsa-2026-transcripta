@@ -1,0 +1,3 @@
+const STRING_MINIMUM_LENGTH = 1;
+
+export { STRING_MINIMUM_LENGTH };

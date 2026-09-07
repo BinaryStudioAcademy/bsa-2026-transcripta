@@ -4,6 +4,7 @@ import { serializeError } from "~/libs/helpers/helpers.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 import {
+	type UserGetAllItemResponseDto,
 	type UserSignInRequestDto,
 	type UserSignInResponseDto,
 	type UserSignUpRequestDto,
@@ -47,4 +48,24 @@ const signUp = createAsyncThunk<
 	{ serializeError },
 );
 
-export { signIn, signUp };
+const restoreSession = createAsyncThunk<
+	null | UserGetAllItemResponseDto,
+	undefined,
+	AsyncThunkConfig
+>(
+	`${sliceName}/restore-session`,
+	async (_, { extra }) => {
+		const { userApi } = extra;
+
+		const token = await storage.get(StorageKey.TOKEN);
+
+		if (!token) {
+			return null;
+		}
+
+		return await userApi.getMe();
+	},
+	{ serializeError },
+);
+
+export { restoreSession, signIn, signUp };

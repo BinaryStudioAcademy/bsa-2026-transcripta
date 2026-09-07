@@ -1,0 +1,3 @@
+const NORMALIZED_WIDTH = 2048;
+
+export { NORMALIZED_WIDTH };

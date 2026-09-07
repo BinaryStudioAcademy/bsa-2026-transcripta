@@ -67,7 +67,7 @@
 .auth-card__form-title {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: var(--fs-2xl);
+	font-size: var(--fs-xl-2);
 	font-weight: 600;
 	line-height: var(--lh-tight);
 	color: var(--text);
@@ -104,11 +104,6 @@
 .auth-card__form-footer-link a:hover {
 	color: var(--accent-active);
 	text-decoration-color: currentcolor;
-}
-
-.auth-card__form-footer-link a:focus-visible {
-	outline: var(--ring-w) solid var(--ring);
-	outline-offset: 1px;
 }
 
 .auth-page__footer-text {

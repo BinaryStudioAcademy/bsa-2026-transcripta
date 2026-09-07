@@ -1,24 +1,29 @@
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import swagger, { type StaticDocumentSpec } from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { Redis } from "ioredis";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { ServerErrorType } from "~/libs/enums/enums.js";
 import { type ValidationError } from "~/libs/exceptions/exceptions.js";
+import { AuthRateLimitErrorMessage } from "~/libs/modules/auth/libs/enums/enums.js";
 import { type Config } from "~/libs/modules/config/config.js";
 import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
+import { type QueueRegistry } from "~/libs/modules/queue/queue-registry.module.js";
 import {
 	type ServerCommonErrorResponse,
 	type ServerValidationErrorResponse,
 	type ValidationSchema,
 } from "~/libs/types/types.js";
 
+import { DEFAULT_VALIDATION_ERROR_MESSAGE } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
 	type ServerApplicationApi,
@@ -34,6 +39,7 @@ type Constructor = {
 	config: Config;
 	database: Database;
 	logger: Logger;
+	queueRegistry: QueueRegistry;
 	title: string;
 };
 
@@ -48,14 +54,24 @@ class BaseServerApplication implements ServerApplication {
 
 	private logger: Logger;
 
+	private queueRegistry: QueueRegistry;
+
 	private title: string;
 
-	public constructor({ apis, config, database, logger, title }: Constructor) {
+	public constructor({
+		apis,
+		config,
+		database,
+		logger,
+		queueRegistry,
+		title,
+	}: Constructor) {
 		this.title = title;
 		this.config = config;
 		this.logger = logger;
 		this.database = database;
 		this.apis = apis;
+		this.queueRegistry = queueRegistry;
 
 		this.initApp();
 	}
@@ -82,7 +98,7 @@ class BaseServerApplication implements ServerApplication {
 							path: issue.path,
 						})),
 						errorType: ServerErrorType.VALIDATION,
-						message: error.message,
+						message: DEFAULT_VALIDATION_ERROR_MESSAGE,
 					};
 
 					return reply.status(HTTPCode.UNPROCESSED_ENTITY).send(response);
@@ -147,6 +163,13 @@ class BaseServerApplication implements ServerApplication {
 			return await response.sendFile("index.html", staticPath);
 		});
 	}
+	private initShutdown(): void {
+		for (const signal of ["SIGINT", "SIGTERM"] as const) {
+			process.once(signal, () => {
+				this.shutdown();
+			});
+		}
+	}
 
 	private initValidationCompiler(): void {
 		this.app.setValidatorCompiler<ValidationSchema>(({ schema }) => {
@@ -161,11 +184,24 @@ class BaseServerApplication implements ServerApplication {
 			};
 		});
 	}
+
+	private shutdown(): void {
+		void this.app.close().catch((error: unknown) => {
+			this.logger.error("Failed to close server.", { error });
+		});
+
+		void this.queueRegistry.close().catch((error: unknown) => {
+			this.logger.error("Failed to close queues.", { error });
+		});
+	}
+
 	public addRoute(parameters: ServerApplicationRouteParameters): void {
-		const { handler, method, path, preHandler, validation } = parameters;
+		const { config, handler, method, path, preHandler, validation } =
+			parameters;
 		const preHandlers = preHandler ? [preHandler] : [];
 
 		this.app.route({
+			...(config ? { config } : {}),
 			handler,
 			method,
 			preHandler: preHandlers,
@@ -202,6 +238,8 @@ class BaseServerApplication implements ServerApplication {
 		this.database.connect();
 
 		try {
+			await this.queueRegistry.connect();
+
 			await this.app.listen({
 				host: this.config.ENV.APP.HOST,
 				port: this.config.ENV.APP.PORT,
@@ -212,7 +250,12 @@ class BaseServerApplication implements ServerApplication {
 					this.config.ENV.APP.ENVIRONMENT as string
 				}.`,
 			);
+
+			this.initShutdown();
 		} catch (error) {
+			await this.app.close().catch(() => null);
+			await this.queueRegistry.close().catch(() => null);
+
 			if (error instanceof Error) {
 				this.logger.error(error.message, {
 					cause: error.cause,
@@ -230,6 +273,19 @@ class BaseServerApplication implements ServerApplication {
 		await this.app.register(fastifyMultipart, {
 			attachFieldsToBody: "keyValues",
 			limits: { fileSize: FILE_SIZE_LIMIT },
+		});
+
+		await this.app.register(fastifyRateLimit, {
+			errorResponseBuilder: (_request, context) => {
+				throw new HTTPError({
+					message: AuthRateLimitErrorMessage.TOO_MANY_REQUESTS(context.after),
+					status: HTTPCode.RATE_LIMITED,
+				});
+			},
+			global: false,
+			redis: new Redis(this.config.ENV.REDIS.URL, {
+				maxRetriesPerRequest: null,
+			}),
 		});
 
 		await Promise.all(

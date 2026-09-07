@@ -1,0 +1,3 @@
+const MAX_DOCUMENT_PAGES = 500;
+
+export { MAX_DOCUMENT_PAGES };

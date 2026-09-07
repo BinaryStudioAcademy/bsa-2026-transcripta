@@ -1,13 +1,14 @@
 import { type preHandlerAsyncHookHandler } from "fastify";
 
-import { type HTTPMethod } from "~/libs/modules/http/http.js";
+import { type HTTPMethodValue } from "~/libs/modules/http/http.js";
 import { type ValidationSchema } from "~/libs/types/types.js";
 
 import { type APIHandler } from "./api-handler.type.js";
 
 type ControllerRouteParameters = {
+	config?: Record<string, unknown>;
 	handler: APIHandler;
-	method: HTTPMethod;
+	method: HTTPMethodValue;
 	path: string;
 	preHandler?: preHandlerAsyncHookHandler;
 	validation?: {

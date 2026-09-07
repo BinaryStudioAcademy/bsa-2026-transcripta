@@ -3,7 +3,7 @@ import {
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
-import { HTTPCode } from "~/libs/modules/http/http.js";
+import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import { type TranscriptionService } from "./transcription.service.js";
@@ -40,7 +40,7 @@ class TranscriptionController extends BaseController {
 						body: TranscribeBody;
 					}>,
 				),
-			method: "POST",
+			method: HTTPMethod.POST,
 			path: "/transcribe",
 		});
 	}

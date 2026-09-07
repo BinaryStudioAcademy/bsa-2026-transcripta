@@ -1,0 +1,26 @@
+.tx-tip {
+	position: relative;
+}
+
+.tx-tip::after {
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 50%;
+	z-index: 60;
+	display: none;
+	padding: 5px 8px;
+	font: 400 var(--fs-xs) / 1.35 var(--font-ui);
+	color: var(--tip-text);
+	white-space: nowrap;
+	content: attr(data-tip);
+	background: var(--tip-bg);
+	border-radius: var(--r-sm);
+	box-shadow: var(--shadow-pop);
+	transform: translateX(-50%);
+}
+
+.tx-tip:hover::after,
+.tx-tip:focus-visible::after,
+.tx-tip.is-open::after {
+	display: block;
+}

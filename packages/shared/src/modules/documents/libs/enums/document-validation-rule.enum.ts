@@ -1,0 +1,29 @@
+import {
+	BYTES_IN_KILOBYTE,
+	KILOBYTES_IN_MEGABYTE,
+} from "../constants/constants.js";
+
+const MAX_FILE_SIZE_MEGABYTES = 500;
+
+const MAX_FILE_BYTES =
+	MAX_FILE_SIZE_MEGABYTES * KILOBYTES_IN_MEGABYTE * BYTES_IN_KILOBYTE;
+
+const PDF_FILE_REGEX = /^.+\.pdf$/i;
+
+const PAGE_FROM_DEFAULT = 1;
+const PAGE_LIMIT_DEFAULT = 20;
+const PAGE_LIMIT_MAXIMUM = 50;
+
+const DocumentValidationRule = {
+	ID_MINIMUM: 1,
+	MAX_FILE_BYTES,
+	MIN_TITLE_LENGTH: 1,
+	PAGE_FROM_DEFAULT,
+	PAGE_FROM_MINIMUM: 1,
+	PAGE_LIMIT_DEFAULT,
+	PAGE_LIMIT_MAXIMUM,
+	PAGE_LIMIT_MINIMUM: 1,
+	PDF_FILE_REGEX,
+} as const;
+
+export { DocumentValidationRule };

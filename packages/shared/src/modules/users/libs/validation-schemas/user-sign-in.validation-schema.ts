@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { UserValidationMessage, UserValidationRule } from "../enums/enums.js";
+import { STRING_MINIMUM_LENGTH } from "./libs/constants/constants.js";
 
 type UserSignInRequestValidationDto = {
 	email: z.ZodString;
@@ -12,6 +13,7 @@ const userSignIn = z
 		email: z
 			.string()
 			.trim()
+			.toLowerCase()
 			.min(UserValidationRule.EMAIL_MINIMUM_LENGTH, {
 				message: UserValidationMessage.EMAIL_REQUIRE,
 			})
@@ -21,8 +23,11 @@ const userSignIn = z
 		password: z
 			.string()
 			.trim()
-			.min(UserValidationRule.PASSWORD_MINIMUM_LENGTH, {
+			.min(STRING_MINIMUM_LENGTH, {
 				message: UserValidationMessage.PASSWORD_REQUIRE,
+			})
+			.min(UserValidationRule.PASSWORD_MINIMUM_LENGTH, {
+				message: UserValidationMessage.PASSWORD_MINIMUM_LENGTH,
 			}),
 	})
 	.required();

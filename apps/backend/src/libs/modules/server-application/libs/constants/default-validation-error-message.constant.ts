@@ -1,0 +1,3 @@
+const DEFAULT_VALIDATION_ERROR_MESSAGE = "Validation failed";
+
+export { DEFAULT_VALIDATION_ERROR_MESSAGE };

@@ -1,3 +1,4 @@
+import { HTTPMethod } from "@transcripta/shared";
 import { useCallback, useState } from "react";
 
 import { Loader } from "~/libs/components/components.js";
@@ -115,7 +116,7 @@ const Test: React.FC = () => {
 					// ORIGIN_URL already carries the /api/v1 prefix.
 					const response = await fetch(
 						`${config.ENV.API.ORIGIN_URL}/test/transcribe`,
-						{ body: payload, method: "POST" },
+						{ body: payload, method: HTTPMethod.POST },
 					);
 
 					if (!response.ok) {
