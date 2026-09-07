@@ -9,11 +9,12 @@ import { type Transaction, UniqueViolationError } from "objection";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
+import { NUMBER_OF_PAGES_TO_INCREMENT } from "./libs/constants/constants.js";
 import {
-	NUMBER_OF_PAGES_TO_INCREMENT,
-	statusByAction,
-} from "./libs/constants/constants.js";
-import { PageErrorMessage, PageErrorType } from "./libs/enums/enums.js";
+	PageErrorMessage,
+	PageErrorType,
+	StatusByAction,
+} from "./libs/enums/enums.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
@@ -91,6 +92,20 @@ class PageService {
 		payload: VerifyPagePayload,
 	): Promise<VerifyPageResponseDto> {
 		const { action, pageId, transcriptionId, userId } = payload;
+
+		const isCorrection = action === PageVerificationAction.CORRECT;
+
+		const isVerifiedAction = action !== PageVerificationAction.SKIP;
+
+		if (isCorrection && !payload.text) {
+			throw new HTTPError({
+				message: PageErrorMessage.TEXT_REQUIRED_FOR_CORRECTION,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		const status = StatusByAction[action];
+
 		try {
 			return await DocumentModel.transaction(async (trx) => {
 				const page = await this.pageRepository.findByIdForOwner(
@@ -132,17 +147,13 @@ class PageService {
 							documentId: page.documentId,
 							pageId,
 							pageNo: page.pageNo,
-							status: statusByAction[action],
+							status,
 						},
 						trx,
 					);
 				}
 
-				const status = statusByAction[action];
-
-				const verifiedAt = new Date().toISOString();
-
-				if (action === PageVerificationAction.CORRECT) {
+				if (isCorrection) {
 					await this.transcriptionRepository.updateEditedText(
 						transcription.id,
 						payload.text,
@@ -150,12 +161,14 @@ class PageService {
 					);
 				}
 
+				const verifiedAt = isVerifiedAction ? new Date().toISOString() : null;
+
 				await this.pageRepository.updateVerification(
 					{
 						pageId,
 						status,
 						verifiedAt,
-						verifiedBy: userId,
+						verifiedBy: isVerifiedAction ? userId : null,
 					},
 					trx,
 				);
@@ -208,7 +221,7 @@ class PageService {
 					documentId: page.documentId,
 					pageId,
 					pageNo: page.pageNo,
-					status: statusByAction[action],
+					status,
 				});
 			}
 			throw error;
