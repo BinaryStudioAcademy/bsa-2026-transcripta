@@ -3,8 +3,10 @@ import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
-import { type PageWithTranscriptionRow } from "./libs/types/types.js";
-import { type UpdatePageVerificationPayload } from "./libs/types/types.js";
+import {
+	type PageWithTranscriptionRow,
+	type UpdatePageVerificationPayload,
+} from "./libs/types/types.js";
 import { PageEntity } from "./page.entity.js";
 import { type PageModel } from "./page.model.js";
 
@@ -22,6 +24,18 @@ class PageRepository {
 			.returning("*")
 			.execute();
 		return PageEntity.initialize(page);
+	}
+
+	public async findByDocumentAndPageNo(
+		documentId: number,
+		pageNo: number,
+		trx?: Transaction,
+	): Promise<PageModel | undefined> {
+		return await this.pageModel
+			.query(trx)
+			.where({ documentId, pageNo })
+			.first()
+			.execute();
 	}
 
 	public async findByDocumentId({
@@ -54,18 +68,6 @@ class PageRepository {
 			.andWhere("p.pageNo", ">=", from)
 			.orderBy("p.pageNo", "asc")
 			.limit(limit);
-	}
-
-	public async findByDocumentAndPageNo(
-		documentId: number,
-		pageNo: number,
-		trx?: Transaction,
-	): Promise<PageModel | undefined> {
-		return await this.pageModel
-			.query(trx)
-			.where({ documentId, pageNo })
-			.first()
-			.execute();
 	}
 
 	public async findByIdForOwner(
