@@ -1,1 +1,3 @@
-export const MILLION = 1_000_000;
+const MILLION = 1_000_000;
+
+export { MILLION };
