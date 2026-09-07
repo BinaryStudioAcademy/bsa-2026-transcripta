@@ -28,7 +28,9 @@ const Documents: React.FC = () => {
 	}, [dispatch]);
 
 	const handleNewDocument = useCallback((): void => {
-		navigate(AppRoute.DOCUMENTS_NEW);
+		void (async (): Promise<void> => {
+			await navigate(AppRoute.DOCUMENTS_NEW);
+		})();
 	}, [navigate]);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
