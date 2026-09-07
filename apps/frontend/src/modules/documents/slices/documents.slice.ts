@@ -11,7 +11,6 @@ import {
 import { create, loadAll, loadById } from "./actions.js";
 
 type State = {
-	createDataStatus: ValueOf<typeof DataStatus>;
 	createdDocument: DocumentCreateResponseDto | null;
 	dataStatus: ValueOf<typeof DataStatus>;
 	document: DocumentGetByIdResponseDto | null;
@@ -21,7 +20,6 @@ type State = {
 };
 
 const initialState: State = {
-	createDataStatus: DataStatus.IDLE,
 	createdDocument: null,
 	dataStatus: DataStatus.IDLE,
 	document: null,
@@ -33,16 +31,16 @@ const initialState: State = {
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		builder.addCase(create.pending, (state) => {
-			state.createDataStatus = DataStatus.PENDING;
+			state.dataStatus = DataStatus.PENDING;
 		});
 
 		builder.addCase(create.fulfilled, (state, action) => {
-			state.createDataStatus = DataStatus.FULFILLED;
+			state.dataStatus = DataStatus.FULFILLED;
 			state.createdDocument = action.payload;
 		});
 
 		builder.addCase(create.rejected, (state) => {
-			state.createDataStatus = DataStatus.REJECTED;
+			state.dataStatus = DataStatus.REJECTED;
 			state.createdDocument = null;
 		});
 

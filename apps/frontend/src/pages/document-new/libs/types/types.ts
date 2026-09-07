@@ -1,1 +1,1 @@
-export { type ScreenState } from "./screen-type.type.js";
+export { type ScreenStateType } from "./screen-state.type.js";

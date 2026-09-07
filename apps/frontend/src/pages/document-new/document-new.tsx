@@ -18,8 +18,9 @@ import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
 import { ZERO_UPLOAD_PROGRESS } from "./libs/constants/constants.js";
+import { ScreenState } from "./libs/enums/enums.js";
 import { uploadFile, validateFile } from "./libs/helpers/helpers.js";
-import { type ScreenState } from "./libs/types/types.js";
+import { type ScreenStateType } from "./libs/types/types.js";
 import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {
@@ -34,11 +35,8 @@ const DocumentNew: React.FC = () => {
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 
-	const createDataStatus = useAppSelector(
-		({ documents }) => documents.createDataStatus,
-	);
-	const createdDocument = useAppSelector(
-		({ documents }) => documents.createdDocument,
+	const { createdDocument, dataStatus } = useAppSelector(
+		({ documents }) => documents,
 	);
 
 	const handleUpload = useCallback(
@@ -131,20 +129,20 @@ const DocumentNew: React.FC = () => {
 		}
 	};
 
-	const getScreenState = (): ScreenState => {
+	const getScreenState = (): ScreenStateType => {
 		if (isUploading) {
-			return "uploading";
+			return ScreenState.UPLOADING;
 		}
 		if (selectedFile) {
-			return "selected";
+			return ScreenState.SELECTED;
 		}
 
-		return "rest";
+		return ScreenState.REST;
 	};
 
 	const screenState = getScreenState();
 
-	const isSubmitting = createDataStatus === DataStatus.PENDING;
+	const isSubmitting = dataStatus === DataStatus.PENDING;
 	const isFormDisabled = isSubmitting || isUploading || isUploaded;
 
 	return (
@@ -154,7 +152,7 @@ const DocumentNew: React.FC = () => {
 			</header>
 			<main className={styles["upload-screen"]}>
 				<div className={styles["upload-form__container"]}>
-					{screenState === "rest" && (
+					{screenState === ScreenState.REST && (
 						<Dropzone
 							fileInputReference={fileInputReference}
 							onFileSelect={acceptFile}
@@ -162,7 +160,8 @@ const DocumentNew: React.FC = () => {
 						/>
 					)}
 
-					{(screenState === "selected" || screenState === "uploading") &&
+					{(screenState === ScreenState.SELECTED ||
+						screenState === ScreenState.UPLOADING) &&
 						selectedFile && (
 							<>
 								<UploadProgress

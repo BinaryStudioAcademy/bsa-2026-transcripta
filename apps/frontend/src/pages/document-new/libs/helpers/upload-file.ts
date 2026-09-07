@@ -1,6 +1,8 @@
-import { HTTPCode } from "~/libs/enums/enums.js";
+import { HTTPCode, HTTPMethod } from "~/libs/enums/enums.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 
 import { PERCENT_MULTIPLIER } from "./libs/constants/constants.js";
+import { XHREvent } from "./libs/enums/enums.js";
 import { type UploadFileOptions } from "./libs/types/types.js";
 
 const uploadFile = ({
@@ -11,9 +13,9 @@ const uploadFile = ({
 	return new Promise((resolve, reject) => {
 		const xhr = new XMLHttpRequest();
 
-		xhr.open("PUT", uploadUrl);
+		xhr.open(HTTPMethod.PUT, uploadUrl);
 
-		xhr.upload.addEventListener("progress", (event) => {
+		xhr.upload.addEventListener(XHREvent.PROGRESS, (event) => {
 			if (event.lengthComputable) {
 				onProgress(
 					Math.round((event.loaded / event.total) * PERCENT_MULTIPLIER),
@@ -21,16 +23,20 @@ const uploadFile = ({
 			}
 		});
 
-		xhr.addEventListener("load", () => {
+		xhr.addEventListener(XHREvent.LOAD, () => {
 			if (xhr.status === HTTPCode.OK) {
 				resolve();
 			} else {
-				reject(new Error(`Upload failed with status ${String(xhr.status)}`));
+				const message = `Upload failed with status ${String(xhr.status)}`;
+				notification.error(message);
+				reject(new Error(message));
 			}
 		});
 
-		xhr.addEventListener("error", () => {
-			reject(new Error("Upload failed"));
+		xhr.addEventListener(XHREvent.ERROR, () => {
+			const message = "Upload Failed";
+			notification.error(message);
+			reject(new Error(message));
 		});
 
 		xhr.send(file);
