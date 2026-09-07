@@ -1,29 +1,20 @@
 import {
 	PageApiPath,
 	verifyPage,
-	type VerifyPageRequestDto,
+	verifyPageParameters,
 } from "@transcripta/shared";
 
 import { APIPath } from "~/libs/enums/enums.js";
 import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
-	type APIHandlerOptions,
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
-import { type TokenPayload } from "~/libs/modules/token/token.js";
 
+import { type VerifyPageHandlerOptions } from "./libs/types/types.js";
 import { type PageService } from "./page.service.js";
-
-type VerifyPageOptions = APIHandlerOptions<{
-	body: VerifyPageRequestDto;
-	params: {
-		id: number;
-	};
-	user: TokenPayload;
-}>;
 
 class PageController extends BaseController {
 	private pageService: PageService;
@@ -34,12 +25,13 @@ class PageController extends BaseController {
 		this.pageService = pageService;
 
 		this.addRoute({
-			handler: (options) => this.verify(options as VerifyPageOptions),
+			handler: (options) => this.verify(options as VerifyPageHandlerOptions),
 			method: HTTPMethod.POST,
 			path: PageApiPath.VERIFY,
 			preHandler: authGuard,
 			validation: {
 				body: verifyPage,
+				params: verifyPageParameters,
 			},
 		});
 	}
@@ -91,7 +83,7 @@ class PageController extends BaseController {
 	 *         description: Transcription is no longer current
 	 */
 	private async verify(
-		options: VerifyPageOptions,
+		options: VerifyPageHandlerOptions,
 	): Promise<APIHandlerResponse> {
 		return {
 			payload: await this.pageService.verify({

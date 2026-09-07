@@ -1,9 +1,9 @@
 import { PageStatus } from "@transcripta/shared";
 
-const statusByAction = {
+const StatusByAction = {
 	confirm: PageStatus.CONFIRMED,
 	correct: PageStatus.CORRECTED,
 	skip: PageStatus.SKIPPED,
 } as const;
 
-export { statusByAction };
+export { StatusByAction };
