@@ -1,4 +1,8 @@
 export {
+	BYTES_IN_KILOBYTE,
+	KILOBYTES_IN_MEGABYTE,
+} from "./libs/constants/constants.js";
+export {
 	DocumentsApiPath,
 	DocumentStatus,
 	DocumentValidationMessage,
@@ -9,5 +13,9 @@ export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentIdRequestDto,
 } from "./libs/types/types.js";
-export { DocumentCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
+export {
+	DocumentCreateValidationSchema,
+	DocumentIdValidationSchema,
+} from "./libs/validation-schemas/validation-schemas.js";

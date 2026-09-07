@@ -1,5 +1,8 @@
-const BYTES_IN_KILOBYTE = 1024;
-const KILOBYTES_IN_MEGABYTE = 1024;
+import {
+	BYTES_IN_KILOBYTE,
+	KILOBYTES_IN_MEGABYTE,
+} from "../constants/constants.js";
+
 const MAX_FILE_SIZE_MEGABYTES = 500;
 
 const MAX_FILE_BYTES =
