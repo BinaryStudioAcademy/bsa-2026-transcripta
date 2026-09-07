@@ -1,18 +1,12 @@
-import { PageStatus, type PageStatusValue } from "@transcripta/shared";
+import { PageStatus } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
 import { type PageWithTranscriptionRow } from "./libs/types/types.js";
+import { type UpdatePageVerificationPayload } from "./libs/types/types.js";
 import { PageEntity } from "./page.entity.js";
 import { type PageModel } from "./page.model.js";
-
-type UpdatePageVerificationPayload = {
-	pageId: number;
-	status: PageStatusValue;
-	verifiedAt: string;
-	verifiedBy: number;
-};
 
 class PageRepository {
 	private pageModel: typeof PageModel;

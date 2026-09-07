@@ -1,22 +1,10 @@
-import { type PageVerificationActionValue } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
+import {
+	type CreatePageEventPayload,
+	type FindVerificationEventPayload,
+} from "./libs/types/types.js";
 import { type PageEventModel } from "./page-event.model.js";
-
-type CreatePageEventPayload = {
-	actorId: number;
-	documentId: number;
-	durationMs: number;
-	event: PageVerificationActionValue;
-	pageId: number;
-	transcriptionId: number;
-};
-
-type FindVerificationEventPayload = {
-	event: PageVerificationActionValue;
-	pageId: number;
-	transcriptionId: number;
-};
 
 class PageEventRepository {
 	private pageEventModel: typeof PageEventModel;

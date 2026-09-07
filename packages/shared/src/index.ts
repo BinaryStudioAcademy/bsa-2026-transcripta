@@ -55,6 +55,7 @@ export {
 	PageStatus,
 	PageVerificationAction,
 	verifyPage,
+	verifyPageParameters,
 } from "./modules/pages/pages.js";
 export {
 	type UserGetAllItemResponseDto,
