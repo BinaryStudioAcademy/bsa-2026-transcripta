@@ -1,7 +1,6 @@
 import {
 	type DocumentCreateRequestDto,
 	DocumentCreateValidationSchema,
-	type DocumentIdRequestDto,
 	DocumentIdValidationSchema,
 } from "@transcripta/shared";
 
@@ -19,6 +18,7 @@ import { type TokenPayload } from "~/libs/modules/token/token.js";
 import { type DocumentService } from "~/modules/documents/document.service.js";
 
 import { DocumentsApiPath } from "./libs/enums/enums.js";
+import { type DocumentDeleteOptions } from "./libs/types/types.js";
 
 /*** @swagger
  * components:
@@ -89,11 +89,6 @@ import { DocumentsApiPath } from "./libs/enums/enums.js";
  */
 type DocumentCreateOptions = APIHandlerOptions<{
 	body: DocumentCreateRequestDto;
-	user: TokenPayload;
-}>;
-
-type DocumentDeleteOptions = APIHandlerOptions<{
-	params: DocumentIdRequestDto;
 	user: TokenPayload;
 }>;
 
