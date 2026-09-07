@@ -10,6 +10,7 @@ type Storage = {
 		clear: () => Promise<void>;
 		filePath: string;
 	}>;
+	getReadSignedUrl(key: string): Promise<string>;
 	getUploadSignedUrl(
 		options: UploadSignedUrlRequest,
 	): Promise<UploadSignedUrlResponse>;
