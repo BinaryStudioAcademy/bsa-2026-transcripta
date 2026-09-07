@@ -1,6 +1,6 @@
-import { type Preset } from "./libs/types/types.js";
+import { EMPTY_LENGTH } from "@transcripta/shared";
 
-const ZERO = 0;
+import { type Preset } from "./libs/types/types.js";
 
 const buildUserPrompt = (preset: Preset, contextBlocks: string[]): string => {
 	const parts: string[] = [];
@@ -9,7 +9,7 @@ const buildUserPrompt = (preset: Preset, contextBlocks: string[]): string => {
 		parts.push(`<preset>\n${preset.instructions}\n</preset>`);
 	}
 
-	if (contextBlocks.length > ZERO) {
+	if (contextBlocks.length > EMPTY_LENGTH) {
 		parts.push(`<context>\n${contextBlocks.join("\n\n")}\n</context>`);
 	}
 

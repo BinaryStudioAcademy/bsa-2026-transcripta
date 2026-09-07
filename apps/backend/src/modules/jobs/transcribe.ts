@@ -1,4 +1,9 @@
-import { DocumentStatus, PageStatus, type ValueOf } from "@transcripta/shared";
+import {
+	DocumentStatus,
+	EMPTY_LENGTH,
+	PageStatus,
+	type ValueOf,
+} from "@transcripta/shared";
 import { type Job } from "bullmq";
 
 import { type Config } from "~/libs/modules/config/config.js";
@@ -32,7 +37,6 @@ const TRANSCRIBABLE_STATUSES = new Set<ValueOf<typeof DocumentStatus>>([
 	DocumentStatus.PROCESSING,
 	DocumentStatus.READY,
 ]);
-const ZERO = 0;
 
 type CallOutcome = {
 	inputTokens: number;
@@ -161,7 +165,7 @@ const transcribeWithRepair = async (
 
 	let repairNote: string | undefined;
 
-	for (let attempt = ZERO; attempt <= MAX_REPAIR_ATTEMPTS; attempt++) {
+	for (let attempt = EMPTY_LENGTH; attempt <= MAX_REPAIR_ATTEMPTS; attempt++) {
 		const requestPrompt = repairNote
 			? `${prompt}\n\nYour previous output failed the schema. Fix it:\n${repairNote}`
 			: prompt;
@@ -216,7 +220,7 @@ const transcribeWithRepair = async (
 const resolveFromCacheOrModel = async (
 	options: ResolveOptions,
 ): Promise<null | ResolvedTranscription> => {
-	const { cacheKey, context, page, preset } = options;
+	const { cacheKey, config, context, page, preset } = options;
 
 	const cached = await TranscriptionCacheModel.query()
 		.findById(cacheKey)
@@ -238,10 +242,10 @@ const resolveFromCacheOrModel = async (
 			.execute();
 
 		return {
-			costUsd: Number(cached.costUsd),
+			costUsd: EMPTY_LENGTH,
 			fromCache: true,
 			inputTokens: cached.inputTokens,
-			latencyMs: ZERO,
+			latencyMs: EMPTY_LENGTH,
 			outputTokens: cached.outputTokens,
 			structured,
 			text: cached.text,
@@ -275,11 +279,25 @@ const resolveFromCacheOrModel = async (
 	}
 
 	return {
-		costUsd: calculateTokenCost(
+		costUsd: calculateTokenCost({
+			inputTokens: outcome.inputTokens,
 			modelId,
-			outcome.inputTokens,
-			outcome.outputTokens,
-		),
+			outputTokens: outcome.outputTokens,
+			rates: {
+				amazon: {
+					input: config.ENV.PRICING.AMAZON_INPUT,
+					output: config.ENV.PRICING.AMAZON_OUTPUT,
+				},
+				anthropic: {
+					input: config.ENV.PRICING.ANTHROPIC_INPUT,
+					output: config.ENV.PRICING.ANTHROPIC_OUTPUT,
+				},
+				anthropicDirect: {
+					input: config.ENV.PRICING.ANTHROPIC_DIRECT_INPUT,
+					output: config.ENV.PRICING.ANTHROPIC_DIRECT_OUTPUT,
+				},
+			},
+		}),
 		fromCache: false,
 		inputTokens: outcome.inputTokens,
 		latencyMs: outcome.latencyMs,
@@ -390,7 +408,13 @@ const createTranscribeHandler =
 
 		const modelId = config.ENV.BEDROCK.MODEL_ID;
 		const knex = AbstractModel.knex();
-		const context = await buildContext({ documentId, knex, pageNo, preset });
+		const context = await buildContext({
+			documentId,
+			knex,
+			logger,
+			pageNo,
+			preset,
+		});
 
 		if (!page.imageSha256) {
 			await recordFailure(pageId, "page_image_sha_missing", page.attempts);
@@ -452,7 +476,7 @@ const createTranscribeHandler =
 				await TranscriptionCacheModel.query().insert({
 					cacheKey,
 					costUsd: String(resolved.costUsd),
-					hitCount: ZERO,
+					hitCount: EMPTY_LENGTH,
 					inputTokens: resolved.inputTokens,
 					outputTokens: resolved.outputTokens,
 					structured: resolved.structured

@@ -105,6 +105,44 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			PRICING: {
+				AMAZON_INPUT: {
+					default: 0.8,
+					doc: "USD per million input tokens (Amazon Bedrock Nova)",
+					env: "PRICING_AMAZON_INPUT",
+					format: Number,
+				},
+				AMAZON_OUTPUT: {
+					default: 3.2,
+					doc: "USD per million output tokens (Amazon Bedrock Nova)",
+					env: "PRICING_AMAZON_OUTPUT",
+					format: Number,
+				},
+				ANTHROPIC_DIRECT_INPUT: {
+					default: 3,
+					doc: "USD per million input tokens (Anthropic direct)",
+					env: "PRICING_ANTHROPIC_DIRECT_INPUT",
+					format: Number,
+				},
+				ANTHROPIC_DIRECT_OUTPUT: {
+					default: 15,
+					doc: "USD per million output tokens (Anthropic direct)",
+					env: "PRICING_ANTHROPIC_DIRECT_OUTPUT",
+					format: Number,
+				},
+				ANTHROPIC_INPUT: {
+					default: 3,
+					doc: "USD per million input tokens (Anthropic via Bedrock)",
+					env: "PRICING_ANTHROPIC_INPUT",
+					format: Number,
+				},
+				ANTHROPIC_OUTPUT: {
+					default: 15,
+					doc: "USD per million output tokens (Anthropic via Bedrock)",
+					env: "PRICING_ANTHROPIC_OUTPUT",
+					format: Number,
+				},
+			},
 			REDIS: {
 				URL: {
 					default: "redis://localhost:6379",

@@ -1,42 +1,7 @@
-type BuiltContext = {
-	blocks: string[];
-	contextHash: string;
-	tokenEstimate: number;
-	usedLexiconIds: number[];
-	usedPageIds: number[];
-};
-
-type ContextSettings = {
-	lexiconTopK: number;
-	maxContextTokens: number;
-	minDistinctPages: number;
-	neighbourPages: number;
-};
-
-type LexiconWord = {
-	distinctPages: number;
-	id: number;
-	valueDisplay: string;
-};
-
-type NeighbourPage = {
-	id: number;
-	pageNo: number;
-	text: string;
-};
-
-type Preset = {
-	id: number;
-	instructions: null | string;
-	outputSchema: null | Record<string, unknown>;
-	seedGlossary: Array<Record<string, unknown>> | null | string[];
-	settings: null | Record<string, unknown>;
-};
-
-export {
-	type BuiltContext,
-	type ContextSettings,
-	type LexiconWord,
-	type NeighbourPage,
-	type Preset,
-};
+export { type BuildContextOptions } from "./build-context-options.type.js";
+export { type BuiltContext } from "./built-context.type.js";
+export { type ContextSettings } from "./context-settings.type.js";
+export { type LexiconRow } from "./lexicon-row.type.js";
+export { type LexiconWord } from "./lexicon-word.type.js";
+export { type NeighbourPage } from "./neighbour-page.type.js";
+export { type Preset } from "./preset.type.js";

@@ -1,38 +1,34 @@
-const PRICING_PER_MILLION = {
-	amazon: {
-		input: 0.8,
-		output: 3.2,
-	},
-	anthropic: {
-		input: 3,
-		output: 15,
-	},
-	anthropicDirect: {
-		input: 3,
-		output: 15,
-	},
-} as const;
+import { MILLION } from "@transcripta/shared";
 
-const rateForModel = (modelId: string): { input: number; output: number } => {
+import { type PricingRates } from "../types/types.js";
+
+const rateForModel = (
+	rates: PricingRates,
+	modelId: string,
+): { input: number; output: number } => {
 	if (modelId.startsWith("anthropic-direct:")) {
-		return PRICING_PER_MILLION.anthropicDirect;
+		return rates.anthropicDirect;
 	}
 
 	if (modelId.includes(".amazon.") || modelId === "amazon") {
-		return PRICING_PER_MILLION.amazon;
+		return rates.amazon;
 	}
 
-	return PRICING_PER_MILLION.anthropic;
+	return rates.anthropic;
 };
 
-const MILLION = 1_000_000;
-
-const calculateTokenCost = (
-	modelId: string,
-	inputTokens: number,
-	outputTokens: number,
-): number => {
-	const rate = rateForModel(modelId);
+const calculateTokenCost = ({
+	inputTokens,
+	modelId,
+	outputTokens,
+	rates,
+}: {
+	inputTokens: number;
+	modelId: string;
+	outputTokens: number;
+	rates: PricingRates;
+}): number => {
+	const rate = rateForModel(rates, modelId);
 
 	return (
 		(inputTokens / MILLION) * rate.input +

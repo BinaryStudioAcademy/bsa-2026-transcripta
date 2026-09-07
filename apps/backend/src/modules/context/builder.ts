@@ -1,13 +1,16 @@
-import { PageStatus } from "@transcripta/shared";
-import { type Knex } from "knex";
+import { EMPTY_LENGTH, PageStatus } from "@transcripta/shared";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { sha256 } from "~/modules/context/libs/helpers/hash.helper.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 
+import { TOKENS_PER_CHARACTER } from "./libs/constants/constants.js";
+import { DEFAULT_SETTINGS } from "./libs/enums/enums.js";
 import {
+	type BuildContextOptions,
 	type BuiltContext,
 	type ContextSettings,
+	type LexiconRow,
 	type LexiconWord,
 	type NeighbourPage,
 	type Preset,
@@ -15,27 +18,8 @@ import {
 
 const CONTEXT_ELIGIBLE = [PageStatus.CONFIRMED, PageStatus.CORRECTED];
 
-const DEFAULT_SETTINGS: ContextSettings = {
-	lexiconTopK: 100,
-	maxContextTokens: 6000,
-	minDistinctPages: 2,
-	neighbourPages: 3,
-};
-
-type BuildContextOptions = {
-	documentId: number;
-	knex: Knex;
-	pageNo: number;
-	preset: Preset;
-};
-
-type LexiconRow = {
-	distinct_pages: number;
-	id: number;
-	value_display: string;
-};
-
-const ZERO = 0;
+const LEXICON_HEADER = "Words already seen in this document:";
+const NEIGHBOURS_HEADER = "Text of previous pages:";
 
 const readSettings = (preset: Preset): ContextSettings => {
 	const settings = preset.settings ?? {};
@@ -59,7 +43,7 @@ const readSettings = (preset: Preset): ContextSettings => {
 const renderSeedGlossary = (preset: Preset): string => {
 	const glossary = preset.seedGlossary ?? [];
 
-	if (glossary.length === ZERO) {
+	if (glossary.length === EMPTY_LENGTH) {
 		return "";
 	}
 
@@ -81,80 +65,37 @@ const renderSeedGlossary = (preset: Preset): string => {
 	return `<seed>${lines.join("\n")}</seed>`;
 };
 
-const renderLexicon = (words: LexiconWord[]): string => {
-	if (words.length === ZERO) {
-		return "";
-	}
+const renderLexiconWord = (word: LexiconWord): string =>
+	`${word.valueDisplay} (${String(word.distinctPages)} pages)`;
 
-	const lines = words.map(
-		(word) => `${word.valueDisplay} (${String(word.distinctPages)} pages)`,
-	);
+const renderNeighbourPage = (page: NeighbourPage): string =>
+	`[page ${String(page.pageNo)}]\n${page.text}`;
 
-	return `Words already seen in this document:\n${lines.join("\n")}`;
-};
-
-const renderNeighbours = (pages: NeighbourPage[]): string => {
-	if (pages.length === ZERO) {
-		return "";
-	}
-
-	const lines = pages.map(
-		(page) => `[page ${String(page.pageNo)}]\n${page.text}`,
-	);
-
-	return `Text of previous pages:\n${lines.join("\n\n")}`;
-};
-
-const TOKENS_PER_CHARACTER = 4;
-
-const estimateTokens = (blocks: string[]): number =>
-	Math.round(blocks.join("\n").length / TOKENS_PER_CHARACTER);
-
-const fitToBudget = (
-	blocks: string[],
-	blocksByPriority: string[][],
-	maxTokens: number,
-): string[] => {
-	if (estimateTokens(blocks) <= maxTokens) {
-		return blocks;
-	}
-
-	const priorityFitted: string[][] = [];
-
-	for (const tier of blocksByPriority) {
-		const tierBlock = tier.join("\n");
-		const remaining = maxTokens - estimateTokens(priorityFitted.flat());
-
-		if (estimateTokens([tierBlock]) <= remaining) {
-			priorityFitted.push(tier);
-		}
-	}
-
-	return priorityFitted.flat();
-};
+const estimateTokens = (text: string): number =>
+	Math.round(text.length / TOKENS_PER_CHARACTER);
 
 const buildContext = async ({
 	documentId,
 	knex,
+	logger,
 	pageNo,
 	preset,
 }: BuildContextOptions): Promise<BuiltContext> => {
 	const settings = readSettings(preset);
 
-	const priorityTiers: string[][] = [];
+	const fixedBlocks: string[] = [];
 
 	const instructionsBlock = preset.instructions;
 	if (instructionsBlock) {
-		priorityTiers.push([instructionsBlock]);
+		fixedBlocks.push(instructionsBlock);
 	}
 
 	const seedBlock = renderSeedGlossary(preset);
 	if (seedBlock) {
-		priorityTiers.push([seedBlock]);
+		fixedBlocks.push(seedBlock);
 	}
 
 	let lexicon: LexiconWord[] = [];
-	let lexiconBlock = "";
 
 	try {
 		const lexiconRows = (await knex
@@ -174,15 +115,12 @@ const buildContext = async ({
 			id: row.id,
 			valueDisplay: row.value_display,
 		}));
-
-		lexiconBlock = renderLexicon(lexicon);
-	} catch {
+	} catch (error) {
+		logger.warn("Lexicon query failed, transcribing without lexicon", {
+			documentId,
+			error: error instanceof Error ? error.message : String(error),
+		});
 		lexicon = [];
-		lexiconBlock = "";
-	}
-
-	if (lexiconBlock) {
-		priorityTiers.push([lexiconBlock]);
 	}
 
 	const neighbourPages = await PageModel.query()
@@ -210,23 +148,72 @@ const buildContext = async ({
 		}),
 	);
 
-	const neighboursBlock = renderNeighbours(neighbours.filter((n) => n.text));
-	if (neighboursBlock) {
-		priorityTiers.push([neighboursBlock]);
+	const eligibleNeighbours = neighbours.filter((n) => n.text);
+
+	const neighbourSections = eligibleNeighbours.map((page) => ({
+		id: page.id,
+		text: renderNeighbourPage(page),
+	}));
+	const lexiconLines = lexicon.map((word) => ({
+		id: word.id,
+		text: renderLexiconWord(word),
+	}));
+
+	const trimmedLexicon = [...lexiconLines];
+	const trimmedNeighbours = [...neighbourSections];
+
+	const currentEstimate = (): number => {
+		let text = fixedBlocks.join("\n");
+		if (trimmedNeighbours.length > EMPTY_LENGTH) {
+			text += `\n${NEIGHBOURS_HEADER}\n${trimmedNeighbours
+				.map((s) => s.text)
+				.join("\n\n")}`;
+		}
+		if (trimmedLexicon.length > EMPTY_LENGTH) {
+			text += `\n${LEXICON_HEADER}\n${trimmedLexicon
+				.map((l) => l.text)
+				.join("\n")}`;
+		}
+		return Math.round(text.length / TOKENS_PER_CHARACTER);
+	};
+
+	while (
+		currentEstimate() > settings.maxContextTokens &&
+		(trimmedLexicon.length > EMPTY_LENGTH ||
+			trimmedNeighbours.length > EMPTY_LENGTH)
+	) {
+		if (trimmedLexicon.length > EMPTY_LENGTH) {
+			trimmedLexicon.pop();
+		} else {
+			trimmedNeighbours.pop();
+		}
 	}
 
-	const blocks = fitToBudget(
-		priorityTiers.flat(),
-		priorityTiers,
-		settings.maxContextTokens,
-	);
+	const blocks: string[] = [...fixedBlocks];
+
+	let usedLexiconIds: number[] = [];
+	let usedPageIds: number[] = [];
+
+	if (trimmedNeighbours.length > EMPTY_LENGTH) {
+		blocks.push(
+			[NEIGHBOURS_HEADER, ...trimmedNeighbours.map((s) => s.text)].join("\n\n"),
+		);
+		usedPageIds = trimmedNeighbours.map((s) => s.id);
+	}
+
+	if (trimmedLexicon.length > EMPTY_LENGTH) {
+		blocks.push(
+			[LEXICON_HEADER, ...trimmedLexicon.map((l) => l.text)].join("\n"),
+		);
+		usedLexiconIds = trimmedLexicon.map((l) => l.id);
+	}
 
 	return {
 		blocks,
 		contextHash: sha256(blocks.join("\n")),
-		tokenEstimate: estimateTokens(blocks),
-		usedLexiconIds: lexicon.map((word) => word.id),
-		usedPageIds: neighbours.map((page) => page.id),
+		tokenEstimate: estimateTokens(blocks.join("\n")),
+		usedLexiconIds,
+		usedPageIds,
 	};
 };
 
