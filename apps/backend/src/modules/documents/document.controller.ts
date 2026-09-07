@@ -268,17 +268,19 @@ class DocumentController extends BaseController {
 	 *            minimum: 1
 	 *        - in: query
 	 *          name: from
-	 *          required: true
+	 *          required: false
 	 *          schema:
 	 *            type: integer
 	 *            minimum: 1
+	 *            default: 1
 	 *        - in: query
 	 *          name: limit
-	 *          required: true
+	 *          required: false
 	 *          schema:
 	 *            type: integer
 	 *            minimum: 1
 	 *            maximum: 50
+	 *            default: 20
 	 *      responses:
 	 *        200:
 	 *          description: Successful operation

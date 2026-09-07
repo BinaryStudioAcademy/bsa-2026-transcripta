@@ -6,12 +6,12 @@ import {
 } from "../enums/enums.js";
 
 type DocumentGetPagesQueryValidationDto = {
-	from: z.ZodNumber;
-	limit: z.ZodNumber;
+	from: z.ZodDefault<z.ZodNumber>;
+	limit: z.ZodDefault<z.ZodNumber>;
 };
 
-const DocumentGetPagesQueryValidationSchema = z
-	.object<DocumentGetPagesQueryValidationDto>({
+const DocumentGetPagesQueryValidationSchema =
+	z.object<DocumentGetPagesQueryValidationDto>({
 		from: z.coerce
 			.number({
 				invalid_type_error: DocumentValidationMessage.PAGE_FROM_POSITIVE,
@@ -21,7 +21,8 @@ const DocumentGetPagesQueryValidationSchema = z
 			})
 			.min(DocumentValidationRule.PAGE_FROM_MINIMUM, {
 				message: DocumentValidationMessage.PAGE_FROM_POSITIVE,
-			}),
+			})
+			.default(DocumentValidationRule.PAGE_FROM_DEFAULT),
 		limit: z.coerce
 			.number({
 				invalid_type_error: DocumentValidationMessage.PAGE_LIMIT_POSITIVE,
@@ -34,8 +35,8 @@ const DocumentGetPagesQueryValidationSchema = z
 			})
 			.max(DocumentValidationRule.PAGE_LIMIT_MAXIMUM, {
 				message: DocumentValidationMessage.PAGE_LIMIT_MAXIMUM,
-			}),
-	})
-	.required();
+			})
+			.default(DocumentValidationRule.PAGE_LIMIT_DEFAULT),
+	});
 
 export { DocumentGetPagesQueryValidationSchema };

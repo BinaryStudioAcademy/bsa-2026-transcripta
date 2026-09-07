@@ -186,6 +186,9 @@ beside it is `verifiedPct`
 
 ## `GET /api/v1/documents/:id/pages?from=47&limit=5`
 
+Query params `from` and `limit` are optional. Defaults: `from=1`, `limit=20`.
+Without them the first page window is returned; pass both to page further.
+
 ```jsonc
 {
 	"items": [
