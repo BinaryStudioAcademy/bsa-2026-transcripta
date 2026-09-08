@@ -207,6 +207,20 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async updateCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx?: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({
+				cursorPageNo: raw("GREATEST(??, ?)", ["cursor_page_no", cursorPageNo]),
+			})
+			.where({ id: documentId })
+			.execute();
+	}
+
 	public async updateDraftMetadata(
 		id: number,
 		{
@@ -239,20 +253,6 @@ class DocumentRepository {
 			.query(trx)
 			.patch(patchData)
 			.where({ id })
-			.execute();
-	}
-
-	public async updateCursorPageNo(
-		documentId: number,
-		cursorPageNo: number,
-		trx?: Transaction,
-	): Promise<void> {
-		await this.documentModel
-			.query(trx)
-			.patch({
-				cursorPageNo: raw("GREATEST(??, ?)", ["cursor_page_no", cursorPageNo]),
-			})
-			.where({ id: documentId })
 			.execute();
 	}
 

@@ -38,11 +38,16 @@ const Documents: React.FC = () => {
 	const handleResumeUpload = useCallback(
 		(documentId: number) => {
 			return (): void => {
-				Promise.resolve(
-					navigate(AppRoute.DOCUMENTS_NEW, {
-						state: { documentId },
-					}),
-				).catch(() => null);
+				void (async (): Promise<void> => {
+					try {
+						await navigate(AppRoute.DOCUMENTS_NEW, {
+							state: { documentId },
+						});
+					} catch (error: unknown) {
+						// eslint-disable-next-line no-console
+						console.error(error);
+					}
+				})();
 			};
 		},
 		[navigate],
@@ -85,12 +90,11 @@ const Documents: React.FC = () => {
 									<StatusChip status={document.status} />
 									{(document.status === DocumentStatus.DRAFT ||
 										document.status === DocumentStatus.FAILED) && (
-										<button
+										<Button
+											label="Resume upload"
 											onClick={handleResumeUpload(document.id)}
 											type="button"
-										>
-											Resume upload
-										</button>
+										/>
 									)}
 								</td>
 								<td>{new Date(document.createdAt).toLocaleDateString()}</td>

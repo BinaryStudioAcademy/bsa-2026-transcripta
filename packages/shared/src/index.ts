@@ -45,6 +45,7 @@ export {
 	DocumentIdValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
+	DocumentUploadUrlValidationSchema,
 	DocumentValidationMessage,
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";

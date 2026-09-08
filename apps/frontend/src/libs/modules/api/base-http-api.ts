@@ -5,7 +5,6 @@ import {
 	type HTTPCode,
 	HTTPError,
 	HTTPHeader,
-	HTTPOptions,
 } from "~/libs/modules/http/http.js";
 import { type Storage, StorageKey } from "~/libs/modules/storage/storage.js";
 import { type ServerErrorResponse, type ValueOf } from "~/libs/types/types.js";
@@ -105,7 +104,7 @@ class BaseHTTPApi implements HTTPApi {
 
 	public async load(
 		path: string,
-		options: HTTPApiOptions & { signal?: AbortSignal },
+		options: HTTPApiOptions,
 	): Promise<HTTPApiResponse> {
 		const { contentType, hasAuth, method, payload = null, signal } = options;
 
@@ -115,8 +114,8 @@ class BaseHTTPApi implements HTTPApi {
 			headers,
 			method,
 			payload,
-			signal,
-		} as HTTPOptions);
+			...(signal ? { signal } : {}),
+		});
 
 		return (await this.checkResponse(response)) as HTTPApiResponse;
 	}

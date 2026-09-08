@@ -20,7 +20,10 @@ import { Dropzone } from "./components/dropzone/dropzone.js";
 import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
-import { ZERO_UPLOAD_PROGRESS } from "./libs/constants/constants.js";
+import {
+	MAX_RETRIES,
+	ZERO_UPLOAD_PROGRESS,
+} from "./libs/constants/constants.js";
 import {
 	DocumentNotificationMessage,
 	ScreenState,
@@ -124,52 +127,49 @@ const DocumentNew: React.FC = () => {
 			};
 
 			const attemptUpload = async (): Promise<void> => {
-				const { docId, uploadUrl } = await fetchTargetUrl();
+				let { docId, uploadUrl } = await fetchTargetUrl();
 
 				if (!uploadUrl) {
 					return;
 				}
 
-				try {
-					await uploadFile({
-						file: selectedFile,
-						onProgress: setUploadProgress,
-						signal: controller.signal,
-						uploadUrl,
-					});
-				} catch (error: unknown) {
-					const isCancelled =
-						error instanceof Error &&
-						error.message === DocumentNotificationMessage.UPLOAD_CANCELLED;
-					if (isCancelled) {
-						return;
-					}
+				let isSuccess = false;
+				let retryCount = 0;
 
-					const isForbiddenError =
-						(error instanceof UploadError &&
-							error.status === HTTPCode.FORBIDDEN) ||
-						(error instanceof Error &&
-							error.message.includes(String(HTTPCode.FORBIDDEN))) ||
-						(error instanceof Error &&
-							error.message.includes(DocumentNotificationMessage.ABORTED));
-
-					if (isForbiddenError && docId) {
-						notification.error(DocumentNotificationMessage.EXPIRED_LINK);
-
-						const refreshed = await dispatch(
-							documentActions.getUploadUrl({
-								id: docId,
-							}),
-						).unwrap();
-
+				while (!isSuccess) {
+					try {
 						await uploadFile({
 							file: selectedFile,
 							onProgress: setUploadProgress,
 							signal: controller.signal,
-							uploadUrl: refreshed.uploadUrl,
+							uploadUrl,
 						});
-					} else {
-						throw error;
+
+						isSuccess = true;
+					} catch (error: unknown) {
+						if (controller.signal.aborted) {
+							throw new Error(DocumentNotificationMessage.UPLOAD_CANCELLED);
+						}
+
+						const isForbiddenError =
+							error instanceof UploadError &&
+							error.status === HTTPCode.FORBIDDEN;
+
+						if (isForbiddenError && docId && retryCount < MAX_RETRIES) {
+							retryCount++;
+							notification.error(DocumentNotificationMessage.EXPIRED_LINK);
+
+							const refreshed = await dispatch(
+								documentActions.getUploadUrl({
+									id: docId,
+									signal: controller.signal,
+								}),
+							).unwrap();
+
+							uploadUrl = refreshed.uploadUrl;
+						} else {
+							throw error;
+						}
 					}
 				}
 			};
@@ -291,32 +291,25 @@ const DocumentNew: React.FC = () => {
 					)}
 
 					{(screenState === ScreenState.SELECTED ||
-						screenState === ScreenState.UPLOADING) && (
-						<>
-							{selectedFile ? (
+						screenState === ScreenState.UPLOADING) &&
+						selectedFile && (
+							<>
 								<UploadProgress
 									fileName={selectedFile.name}
 									fileSize={selectedFile.size}
 									percent={uploadProgress}
 								/>
-							) : (
-								<Dropzone
-									fileInputReference={fileInputReference}
-									onFileSelect={acceptFile}
-									rejection={rejection}
+								<UploadForm
+									fileName={displayTitle}
+									isSubmitting={isFormDisabled}
+									isUploaded={isUploaded}
+									onCancelUpload={handleCancelUpload}
+									onChangeFile={handleChangeFile}
+									onProcessDocument={handleProcessDocument}
+									onSubmit={handleUpload}
 								/>
-							)}
-							<UploadForm
-								fileName={displayTitle}
-								isSubmitting={isFormDisabled}
-								isUploaded={isUploaded}
-								onCancelUpload={handleCancelUpload}
-								onChangeFile={handleChangeFile}
-								onProcessDocument={handleProcessDocument}
-								onSubmit={handleUpload}
-							/>
-						</>
-					)}
+							</>
+						)}
 				</div>
 			</main>
 		</div>

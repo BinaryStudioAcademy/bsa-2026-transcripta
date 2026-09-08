@@ -8,6 +8,7 @@ import {
 	type DocumentIdRequestDto,
 	DocumentIdValidationSchema,
 	type DocumentUploadUrlRequestDto,
+	DocumentUploadUrlValidationSchema,
 } from "@transcripta/shared";
 
 import { APIPath } from "~/libs/enums/enums.js";
@@ -182,6 +183,7 @@ class DocumentController extends BaseController {
 			path: DocumentsApiPath.UPLOAD_URL,
 			preHandler: authGuard,
 			validation: {
+				body: DocumentUploadUrlValidationSchema,
 				params: DocumentIdValidationSchema,
 			},
 		});

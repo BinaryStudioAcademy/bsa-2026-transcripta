@@ -54,6 +54,10 @@ const uploadFile = ({
 		});
 
 		xhr.addEventListener(XHREvent.ERROR, () => {
+			if (signal?.aborted) {
+				reject(new Error(UploadErrorMessage.UPLOAD_CANCELLED));
+				return;
+			}
 			const message = UploadErrorMessage.NETWORK_OR_ABORTED;
 			reject(new Error(message));
 		});

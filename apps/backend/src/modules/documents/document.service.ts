@@ -117,6 +117,10 @@ class DocumentService {
 		);
 	}
 
+	private buildSourceKey(documentId: number): string {
+		return `uploads/${documentId.toString()}/original.pdf`;
+	}
+
 	private async cleanupAbandonedDraftsForUser(ownerId: number): Promise<void> {
 		const twentyFourHoursAgo = new Date(
 			Date.now() - TWENTY_FOUR_HOURS_IN_MS,
@@ -132,16 +136,16 @@ class DocumentService {
 			const documentId = draft.toObject().id;
 
 			await DocumentModel.transaction(async (trx) => {
-				await this.storage.deleteByPrefix({
-					bucket: StorageBucket.UPLOADS,
-					prefix: `uploads/${documentId.toString()}/`,
-				});
-				await this.storage.deleteByPrefix({
-					bucket: StorageBucket.PAGES,
-					prefix: `pages/${documentId.toString()}/`,
-				});
-
 				await this.documentRepository.deleteById(documentId, trx);
+			});
+
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.UPLOADS,
+				prefix: `uploads/${documentId.toString()}/`,
+			});
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.PAGES,
+				prefix: `pages/${documentId.toString()}/`,
 			});
 		}
 	}
@@ -299,7 +303,7 @@ class DocumentService {
 				);
 				const document = createdDocument.toObject();
 
-				const sourceKey = `uploads/${document.id.toString()}/original.pdf`;
+				const sourceKey = this.buildSourceKey(document.id);
 
 				await this.documentRepository.updateSourceKey(
 					document.id,
@@ -373,7 +377,12 @@ class DocumentService {
 	public async findAllByOwnerId(
 		ownerId: number,
 	): Promise<DocumentGetAllResponseDto> {
-		await this.cleanupAbandonedDraftsForUser(ownerId);
+		try {
+			await this.cleanupAbandonedDraftsForUser(ownerId);
+		} catch (error: unknown) {
+			// eslint-disable-next-line no-console
+			console.error("Failed to clean up abandoned drafts:", error);
+		}
 
 		const items = await this.documentRepository.findAllByOwnerId(ownerId);
 
@@ -529,7 +538,7 @@ class DocumentService {
 				}
 			}
 
-			const sourceKey = `uploads/${id.toString()}/original.pdf`;
+			const sourceKey = this.buildSourceKey(id);
 
 			await this.documentRepository.updateDraftMetadata(
 				id,

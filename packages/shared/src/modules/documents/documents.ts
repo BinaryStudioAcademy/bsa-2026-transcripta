@@ -26,4 +26,5 @@ export {
 	DocumentGetByIdParametersValidationSchema,
 	DocumentGetPagesQueryValidationSchema,
 	DocumentIdValidationSchema,
+	DocumentUploadUrlValidationSchema,
 } from "./libs/validation-schemas/validation-schemas.js";
