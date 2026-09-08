@@ -47,12 +47,12 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 										element: <Test />,
 										path: AppRoute.TEST,
 									},
+									{
+										element: <DocumentNew />,
+										path: AppRoute.DOCUMENTS_NEW,
+									},
 								],
 								element: <ProtectedRoute />,
-							},
-							{
-								element: <DocumentNew />,
-								path: AppRoute.DOCUMENTS_NEW,
 							},
 						],
 						element: <App />,
