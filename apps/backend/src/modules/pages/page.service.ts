@@ -141,13 +141,13 @@ class PageService {
 						trx,
 					);
 
-				if (existingEvent) {
+				if (existingEvent && !isCorrection) {
 					return await this.buildVerifyResponse(
 						{
 							documentId: page.documentId,
 							pageId,
 							pageNo: page.pageNo,
-							status,
+							status: page.status,
 						},
 						trx,
 					);
@@ -173,17 +173,19 @@ class PageService {
 					trx,
 				);
 
-				await this.pageEventRepository.createVerificationEvent(
-					{
-						actorId: userId,
-						documentId: page.documentId,
-						durationMs: payload.durationMs,
-						event: action,
-						pageId,
-						transcriptionId,
-					},
-					trx,
-				);
+				if (!existingEvent) {
+					await this.pageEventRepository.createVerificationEvent(
+						{
+							actorId: userId,
+							documentId: page.documentId,
+							durationMs: payload.durationMs,
+							event: action,
+							pageId,
+							transcriptionId,
+						},
+						trx,
+					);
+				}
 
 				const nextPageNo = page.pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
 
@@ -221,7 +223,7 @@ class PageService {
 					documentId: page.documentId,
 					pageId,
 					pageNo: page.pageNo,
-					status,
+					status: page.status,
 				});
 			}
 			throw error;
