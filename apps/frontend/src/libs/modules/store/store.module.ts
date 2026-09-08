@@ -12,6 +12,7 @@ import {
 	documentApi,
 	reducer as documentsReducer,
 } from "~/modules/documents/documents.js";
+import { pageApi, reducer as pagesReducer } from "~/modules/pages/pages.js";
 import { userApi, reducer as usersReducer } from "~/modules/users/users.js";
 
 import { errorHandlingMiddleware } from "../middlewares/middlewares.js";
@@ -19,12 +20,14 @@ import { errorHandlingMiddleware } from "../middlewares/middlewares.js";
 type ExtraArguments = {
 	authApi: typeof authApi;
 	documentApi: typeof documentApi;
+	pageApi: typeof pageApi;
 	userApi: typeof userApi;
 };
 
 type RootReducer = {
 	auth: ReturnType<typeof authReducer>;
 	documents: ReturnType<typeof documentsReducer>;
+	pages: ReturnType<typeof pagesReducer>;
 	users: ReturnType<typeof usersReducer>;
 };
 
@@ -50,6 +53,7 @@ class Store {
 			reducer: {
 				auth: authReducer,
 				documents: documentsReducer,
+				pages: pagesReducer,
 				users: usersReducer,
 			},
 		});
@@ -59,6 +63,7 @@ class Store {
 		return {
 			authApi,
 			documentApi,
+			pageApi,
 			userApi,
 		};
 	}
