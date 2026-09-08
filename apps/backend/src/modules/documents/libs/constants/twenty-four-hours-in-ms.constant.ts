@@ -1,0 +1,6 @@
+const HOURS = 24;
+const MINUTES = 60;
+const MS = 1000;
+const TWENTY_FOUR_HOURS_IN_MS = HOURS * MINUTES * MINUTES * MS;
+
+export { TWENTY_FOUR_HOURS_IN_MS };

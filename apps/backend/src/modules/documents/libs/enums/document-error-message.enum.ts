@@ -5,6 +5,7 @@ const DocumentErrorMessage = {
 	INGEST_FAILED: "Failed to ingest the document",
 	NO_PRESET: "The document has no preset",
 	NO_SOURCE_KEY: "The document has no source key",
+	NOT_DRAFT: "The document is not in draft status",
 	NOT_FOUND: "Document not found",
 	PAGE_UPLOAD_FAILED: "Failed to upload a page",
 } as const;

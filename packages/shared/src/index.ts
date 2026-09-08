@@ -36,6 +36,8 @@ export {
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentIdRequestDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 	BYTES_IN_KILOBYTE,
 	DocumentCreateValidationSchema,
 	DocumentGetByIdParametersValidationSchema,

@@ -5,7 +5,9 @@ import {
 	DocumentGetByIdParametersValidationSchema,
 	type DocumentGetPagesQueryDto,
 	DocumentGetPagesQueryValidationSchema,
+	type DocumentIdRequestDto,
 	DocumentIdValidationSchema,
+	type DocumentUploadUrlRequestDto,
 } from "@transcripta/shared";
 
 import { APIPath } from "~/libs/enums/enums.js";
@@ -161,6 +163,23 @@ class DocumentController extends BaseController {
 			handler: (options) => this.delete(options as DocumentDeleteOptions),
 			method: HTTPMethod.DELETE,
 			path: DocumentsApiPath.BY_ID,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentIdValidationSchema,
+			},
+		});
+
+		this.addRoute({
+			handler: (options) =>
+				this.getUploadUrl(
+					options as APIHandlerOptions<{
+						body?: DocumentUploadUrlRequestDto;
+						params: DocumentIdRequestDto;
+						user: TokenPayload;
+					}>,
+				),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.UPLOAD_URL,
 			preHandler: authGuard,
 			validation: {
 				params: DocumentIdValidationSchema,
@@ -345,6 +364,71 @@ class DocumentController extends BaseController {
 			status: HTTPCode.OK,
 		};
 	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/upload-url:
+	 *   post:
+	 *     description: Get a fresh presigned upload URL for a draft or failed document
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *         description: Document ID
+	 *     requestBody:
+	 *       required: false
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             properties:
+	 *               title:
+	 *                 type: string
+	 *               presetId:
+	 *                 type: number
+	 *               fileName:
+	 *                 type: string
+	 *               fileBytes:
+	 *                 type: number
+	 *     responses:
+	 *       200:
+	 *         description: Fresh upload URL generated successfully
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 uploadUrl:
+	 *                   type: string
+	 *                 expiresAt:
+	 *                   type: string
+	 *       404:
+	 *         description: Document not found
+	 *       409:
+	 *         description: Document is not in draft or failed status
+	 */
+	private async getUploadUrl(
+		options: APIHandlerOptions<{
+			body?: DocumentUploadUrlRequestDto;
+			params: DocumentIdRequestDto;
+			user: TokenPayload;
+		}>,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.getUploadUrl(
+				options.params.id,
+				options.user.userId,
+				options.body,
+			),
+			status: HTTPCode.OK,
+		};
+	}
+
 	/**
 	 * @swagger
 	 * /documents/{id}/ingest:

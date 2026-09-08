@@ -26,6 +26,7 @@ import {
 	NON_DELETABLE_DOCUMENT_STATUSES,
 	NOT_FOUND_INDEX,
 	PAGES_TO_QUEUE,
+	TWENTY_FOUR_HOURS_IN_MS,
 } from "./libs/constants/constants.js";
 import {
 	DocumentErrorMessage,
@@ -36,6 +37,7 @@ import {
 import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentUploadUrlRequestDto,
 } from "./libs/types/types.js";
 
 class DocumentService {
@@ -112,6 +114,35 @@ class DocumentService {
 				return lexicon ? [[id, lexicon] as const] : [];
 			}),
 		);
+	}
+
+	private async cleanupAbandonedDraftsForUser(ownerId: number): Promise<void> {
+		const twentyFourHoursAgo = new Date(
+			Date.now() - TWENTY_FOUR_HOURS_IN_MS,
+		).toISOString();
+
+		const abandonedDrafts =
+			await this.documentRepository.findDraftsOlderThanByUser(
+				ownerId,
+				twentyFourHoursAgo,
+			);
+
+		for (const draft of abandonedDrafts) {
+			const documentId = draft.toObject().id;
+
+			await DocumentModel.transaction(async (trx) => {
+				await this.storage.deleteByPrefix({
+					bucket: StorageBucket.UPLOADS,
+					prefix: `uploads/${documentId.toString()}/`,
+				});
+				await this.storage.deleteByPrefix({
+					bucket: StorageBucket.PAGES,
+					prefix: `pages/${documentId.toString()}/`,
+				});
+
+				await this.documentRepository.deleteById(documentId, trx);
+			});
+		}
 	}
 
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
@@ -341,6 +372,8 @@ class DocumentService {
 	public async findAllByOwnerId(
 		ownerId: number,
 	): Promise<DocumentGetAllResponseDto> {
+		await this.cleanupAbandonedDraftsForUser(ownerId);
+
 		const items = await this.documentRepository.findAllByOwnerId(ownerId);
 
 		return {
@@ -363,7 +396,6 @@ class DocumentService {
 				status: HTTPCode.NOT_FOUND,
 			});
 		}
-
 		return document.toObject();
 	}
 
@@ -446,6 +478,86 @@ class DocumentService {
 
 		return { items };
 	}
+
+	public async getUploadUrl(
+		id: number,
+		userId: number,
+		payload?: DocumentUploadUrlRequestDto,
+	): Promise<{ expiresAt: string; uploadUrl: string }> {
+		return await DocumentModel.transaction(async (trx) => {
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					id,
+					userId,
+					trx,
+				);
+
+			if (!document) {
+				throw new HTTPError({
+					message: DocumentErrorMessage.NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			const documentObject = document.toObject();
+
+			if (
+				documentObject.status !== DocumentStatus.DRAFT &&
+				documentObject.status !== DocumentStatus.FAILED
+			) {
+				throw new HTTPError({
+					message: DocumentErrorMessage.NOT_DRAFT,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			const currentPresetId = document.getPresetId();
+
+			if (payload?.presetId && payload.presetId !== currentPresetId) {
+				const preset = await this.documentRepository.findAccessiblePreset(
+					payload.presetId,
+					userId,
+					trx,
+				);
+
+				if (!preset) {
+					throw new HTTPError({
+						message: DocumentValidationMessage.PRESET_NOT_FOUND,
+						status: HTTPCode.NOT_FOUND,
+					});
+				}
+			}
+
+			const sourceKey = `uploads/${id.toString()}/original.pdf`;
+
+			await this.documentRepository.updateDraftMetadata(
+				id,
+				{
+					...(payload?.presetId !== undefined && {
+						presetId: payload.presetId,
+					}),
+					...(payload?.fileBytes !== undefined && {
+						sourceBytes: payload.fileBytes,
+					}),
+					sourceKey,
+					...(payload?.fileName !== undefined && {
+						sourceName: payload.fileName,
+					}),
+					...(payload?.title !== undefined && { title: payload.title }),
+				},
+				trx,
+			);
+
+			const { expiresAt, url: uploadUrl } =
+				await this.storage.getUploadSignedUrl({
+					contentType: ContentType.PDF,
+					key: sourceKey,
+				});
+
+			return { expiresAt, uploadUrl };
+		});
+	}
+
 	public async ingest(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findWithPreset(
 			documentId,
