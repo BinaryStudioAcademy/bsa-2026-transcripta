@@ -8,7 +8,6 @@ import {
 
 import { useCallback, useFormController } from "~/libs/hooks/hooks.js";
 
-import { PASSWORD_TRIM_END_INPUT_TYPES } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
 
 type Properties<T extends FieldValues> = {
@@ -19,14 +18,6 @@ type Properties<T extends FieldValues> = {
 	name: FieldPath<T>;
 	placeholder?: string;
 	type?: "email" | "password" | "text";
-};
-
-const getPasswordValue = (value: string, inputType: string): string => {
-	const trimmedStartValue = value.trimStart();
-
-	return PASSWORD_TRIM_END_INPUT_TYPES.has(inputType)
-		? trimmedStartValue.trimEnd()
-		: trimmedStartValue;
 };
 
 const Input = <T extends FieldValues>({
@@ -48,23 +39,6 @@ const Input = <T extends FieldValues>({
 		.filter(Boolean)
 		.join(" ");
 
-	const trimPasswordValue = useCallback((): void => {
-		const value: unknown = field.value;
-
-		if (type === "password" && typeof value === "string") {
-			const trimmedValue = value.trim();
-
-			if (trimmedValue !== value) {
-				field.onChange(trimmedValue);
-			}
-		}
-	}, [field, type]);
-
-	const handleBlur = useCallback((): void => {
-		trimPasswordValue();
-		field.onBlur();
-	}, [field, trimPasswordValue]);
-
 	const handleChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>): void => {
 			if (type !== "password") {
@@ -73,22 +47,9 @@ const Input = <T extends FieldValues>({
 				return;
 			}
 
-			const { nativeEvent } = event;
-			const inputType =
-				nativeEvent instanceof InputEvent ? nativeEvent.inputType : "";
-
-			field.onChange(getPasswordValue(event.target.value, inputType));
+			field.onChange(event.target.value.replaceAll(/\s/g, ""));
 		},
 		[field, type],
-	);
-
-	const handleKeyDown = useCallback(
-		(event: React.KeyboardEvent<HTMLInputElement>): void => {
-			if (event.key === "Enter") {
-				trimPasswordValue();
-			}
-		},
-		[trimPasswordValue],
 	);
 
 	return (
@@ -97,9 +58,7 @@ const Input = <T extends FieldValues>({
 			<input
 				{...field}
 				className={inputClassName}
-				onBlur={handleBlur}
 				onChange={handleChange}
-				onKeyDown={handleKeyDown}
 				placeholder={placeholder}
 				type={type}
 			/>
