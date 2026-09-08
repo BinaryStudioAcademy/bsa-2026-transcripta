@@ -45,6 +45,7 @@ class PageController extends BaseController {
 	 *     parameters:
 	 *       - in: path
 	 *         name: id
+	 *         description: Page ID
 	 *         required: true
 	 *         schema:
 	 *           type: integer
