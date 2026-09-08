@@ -15,6 +15,7 @@ import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
+	useCallback,
 	useEffect,
 	useNavigate,
 	useParams,
@@ -47,15 +48,15 @@ const Document: React.FC = () => {
 	const isLoading = documentDataStatus === DataStatus.PENDING;
 	const hasError = documentDataStatus === DataStatus.REJECTED;
 
-	const handleOpenDeleteDialog = (): void => {
+	const handleOpenDeleteDialog = useCallback((): void => {
 		setIsConfirmOpen(true);
-	};
+	}, []);
 
-	const handleCancelDelete = (): void => {
+	const handleCancelDelete = useCallback((): void => {
 		setIsConfirmOpen(false);
-	};
+	}, []);
 
-	const handleConfirmDelete = async (): Promise<void> => {
+	const handleConfirmDelete = useCallback(async (): Promise<void> => {
 		if (!currentDocument) {
 			return;
 		}
@@ -68,13 +69,14 @@ const Document: React.FC = () => {
 
 		// eslint-disable-next-line unicorn/prefer-regexp-test -- this is redux-toolkit's action matcher, not String#match
 		if (documentActions.remove.fulfilled.match(resultAction)) {
-			navigate(AppRoute.DOCUMENTS);
+			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
+			void navigate(AppRoute.DOCUMENTS);
 		}
-	};
+	}, [currentDocument, dispatch, navigate]);
 
-	const handleConfirmDeleteClick = (): void => {
+	const handleConfirmDeleteClick = useCallback((): void => {
 		void handleConfirmDelete();
-	};
+	}, [handleConfirmDelete]);
 
 	return (
 		<>

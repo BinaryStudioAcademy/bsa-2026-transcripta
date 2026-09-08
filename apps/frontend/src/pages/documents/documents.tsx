@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
 	Button,
@@ -32,18 +32,18 @@ const Documents: React.FC = () => {
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty = !isLoading && documents.length === EMPTY_LENGTH;
 
-	const handleCancelDelete = (): void => {
+	const handleCancelDelete = useCallback((): void => {
 		setPendingDeleteId(null);
-	};
+	}, []);
 
-	const handleConfirmDelete = (): void => {
+	const handleConfirmDelete = useCallback((): void => {
 		if (pendingDeleteId === null) {
 			return;
 		}
 
 		void dispatch(documentActions.remove(pendingDeleteId));
 		setPendingDeleteId(null);
-	};
+	}, [dispatch, pendingDeleteId]);
 
 	return (
 		<>

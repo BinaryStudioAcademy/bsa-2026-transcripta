@@ -69,7 +69,7 @@ class BaseHTTPApi implements HTTPApi {
 	): Promise<Headers> {
 		const headers = new Headers();
 
-		if (payload !== null && payload !== undefined) {
+		if (payload !== null) {
 			headers.append(HTTPHeader.CONTENT_TYPE, contentType);
 		}
 

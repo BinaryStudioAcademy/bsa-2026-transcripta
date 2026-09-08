@@ -1,5 +1,5 @@
 import { Button } from "~/libs/components/components.js";
-import { useEffect } from "~/libs/hooks/hooks.js";
+import { useCallback, useEffect } from "~/libs/hooks/hooks.js";
 
 import styles from "./confirm-dialog.module.css";
 
@@ -32,11 +32,14 @@ const ConfirmDialog: React.FC<Properties> = ({
 		};
 	}, [onCancel]);
 
-	const handleScrimClick = (event: React.MouseEvent<HTMLDivElement>): void => {
-		if (event.target === event.currentTarget) {
-			onCancel();
-		}
-	};
+	const handleScrimClick = useCallback(
+		(event: React.MouseEvent<HTMLDivElement>): void => {
+			if (event.target === event.currentTarget) {
+				onCancel();
+			}
+		},
+		[onCancel],
+	);
 
 	return (
 		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape (handled above) is the keyboard equivalent for dismissing the scrim

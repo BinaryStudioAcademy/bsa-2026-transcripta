@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "./overflow-menu.module.css";
 
@@ -37,14 +37,17 @@ const OverflowMenu: React.FC<Properties> = ({ items }: Properties) => {
 		};
 	}, [isOpen]);
 
-	const handleTriggerClick = (): void => {
+	const handleTriggerClick = useCallback((): void => {
 		setIsOpen((previous) => !previous);
-	};
+	}, []);
 
-	const handleItemClick = (onClick: () => void) => (): void => {
-		onClick();
-		setIsOpen(false);
-	};
+	const handleItemClick = useCallback(
+		(onClick: () => void) => (): void => {
+			onClick();
+			setIsOpen(false);
+		},
+		[],
+	);
 
 	return (
 		<div className={styles["container"]} ref={containerReference}>
