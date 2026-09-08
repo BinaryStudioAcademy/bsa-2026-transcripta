@@ -10,6 +10,7 @@ import {
 	useAppSelector,
 	useEffect,
 	useLocation,
+	useTheme,
 } from "~/libs/hooks/hooks.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import {
@@ -20,6 +21,8 @@ import {
 import { Landing } from "~/pages/landing/landing.js";
 
 const App: React.FC = () => {
+	useTheme();
+
 	const { pathname } = useLocation();
 	const dispatch = useAppDispatch();
 	const isInitialized = useAppSelector(selectIsInitialized);
