@@ -1,8 +1,7 @@
 import { isImageFile } from "./is-image-file.helper.js";
 import { naturalSort } from "./natural-sort.helper.js";
+import { DEFAULT_MAX_PAGES } from "~/pages/document-new/libs/constants/constants.js";
 
-const DEFAULT_MAX_ARCHIVE_SIZE_MB = 300;
-const DEFAULT_MAX_PAGES = 500;
 const PREVIEW_LIMIT = 5;
 const EMPTY_LENGTH = 0;
 const FIRST_INDEX = 0;
@@ -54,6 +53,10 @@ const validateZipContent = (
 		allEntries.push(entry);
 
 		if (isJunkEntry(entry)) {
+			continue;
+		}
+
+		if (entry.endsWith("/")) {
 			continue;
 		}
 
@@ -121,5 +124,4 @@ const validateZipContent = (
 	};
 };
 
-export { DEFAULT_MAX_ARCHIVE_SIZE_MB, DEFAULT_MAX_PAGES, validateZipContent };
-export type { ZipValidationResult };
+export { validateZipContent, type ZipValidationResult };

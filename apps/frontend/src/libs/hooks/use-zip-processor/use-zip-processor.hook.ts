@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+	BYTES_IN_KILOBYTE,
+	KILOBYTES_IN_MEGABYTE,
+} from "@transcripta/shared";
 import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
+import { type ValueOf } from "~/libs/types/types.js";
+import pdfWorker from "~/libs/workers/zip-to-pdf.worker?worker";
 import {
 	DEFAULT_MAX_ARCHIVE_SIZE_MB,
 	DEFAULT_MAX_PAGES,
-} from "~/libs/helpers/validate-zip-content.helper.js";
-import { type ValueOf } from "~/libs/types/types.js";
-import pdfWorker from "~/libs/workers/zip-to-pdf.worker?worker";
-
-const PROGRESS_COMPLETE = 100;
-const BYTES_IN_MEGABYTE = 1_048_576;
+} from "~/pages/document-new/libs/constants/constants.js";
+import { PERCENT_MULTIPLIER } from "~/pages/document-new/libs/helpers/libs/constants/percent-multiplier.constant.js";
 
 type WorkerDoneMessage = {
 	payload: {
@@ -78,6 +80,8 @@ const DEFAULT_STATE: ZipProcessorState = {
 	status: ZipProcessingStatus.IDLE,
 	totalPages: 0,
 };
+
+const BYTES_IN_MEGABYTE = BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE;
 
 const toMegabytes = (bytes: number): number => {
 	return bytes / BYTES_IN_MEGABYTE;
@@ -162,7 +166,7 @@ const useZipProcessor = (options: ZipProcessorOptions): ZipProcessor => {
 					if (isProgressMessage(message)) {
 						const progress = Math.round(
 							(message.payload.processedPages / message.payload.totalPages) *
-								PROGRESS_COMPLETE,
+								PERCENT_MULTIPLIER,
 						);
 
 						setState({
@@ -208,7 +212,7 @@ const useZipProcessor = (options: ZipProcessorOptions): ZipProcessor => {
 						terminateWorker();
 
 						const pdfFile = new File(
-							[message.payload.pdfBytes],
+							[new Uint8Array(message.payload.pdfBytes)],
 							getPdfFileName(file.name),
 							{ type: "application/pdf" },
 						);
@@ -216,7 +220,7 @@ const useZipProcessor = (options: ZipProcessorOptions): ZipProcessor => {
 						setState({
 							...DEFAULT_STATE,
 							processedPages: message.payload.totalPages,
-							progress: PROGRESS_COMPLETE,
+							progress: PERCENT_MULTIPLIER,
 							status: ZipProcessingStatus.DONE,
 							totalPages: message.payload.totalPages,
 						});
