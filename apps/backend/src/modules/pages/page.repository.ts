@@ -1,7 +1,12 @@
+import { PageStatus } from "@transcripta/shared";
+import { type Transaction } from "objection";
+
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
-import { PageStatus } from "./libs/enums/enums.js";
-import { type PageWithTranscriptionRow } from "./libs/types/types.js";
+import {
+	type PageWithTranscriptionRow,
+	type UpdatePageVerificationPayload,
+} from "./libs/types/types.js";
 import { PageEntity } from "./page.entity.js";
 import { type PageModel } from "./page.model.js";
 
@@ -19,6 +24,18 @@ class PageRepository {
 			.returning("*")
 			.execute();
 		return PageEntity.initialize(page);
+	}
+
+	public async findByDocumentAndPageNo(
+		documentId: number,
+		pageNo: number,
+		trx?: Transaction,
+	): Promise<PageModel | undefined> {
+		return await this.pageModel
+			.query(trx)
+			.where({ documentId, pageNo })
+			.first()
+			.execute();
 	}
 
 	public async findByDocumentId({
@@ -53,6 +70,22 @@ class PageRepository {
 			.limit(limit);
 	}
 
+	public async findByIdForOwner(
+		pageId: number,
+		ownerId: number,
+		trx?: Transaction,
+	): Promise<PageModel | undefined> {
+		return await this.pageModel
+			.query(trx)
+			.alias("page")
+			.join(DatabaseTableName.DOCUMENT, "document.id", "page.document_id")
+			.where("page.id", pageId)
+			.where("document.owner_id", ownerId)
+			.select("page.*")
+			.first()
+			.execute();
+	}
+
 	public async findPageNumbersByDocumentId(
 		documentId: number,
 	): Promise<number[]> {
@@ -80,6 +113,19 @@ class PageRepository {
 			.query()
 			.whereIn("id", subquery)
 			.patch({ status: PageStatus.QUEUED })
+			.execute();
+	}
+
+	public async updateVerification(
+		payload: UpdatePageVerificationPayload,
+		trx?: Transaction,
+	): Promise<void> {
+		const { pageId, ...patch } = payload;
+
+		await this.pageModel
+			.query(trx)
+			.patch(patch)
+			.where({ id: pageId })
 			.execute();
 	}
 }
