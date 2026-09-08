@@ -8,13 +8,8 @@ import {
 
 import { useCallback, useFormController } from "~/libs/hooks/hooks.js";
 
+import { PASSWORD_TRIM_END_INPUT_TYPES } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
-
-const PASSWORD_TRIM_END_INPUT_TYPES = new Set([
-	"insertFromDrop",
-	"insertFromPaste",
-	"insertReplacementText",
-]);
 
 type Properties<T extends FieldValues> = {
 	control: Control<T, null>;
@@ -53,7 +48,7 @@ const Input = <T extends FieldValues>({
 		.filter(Boolean)
 		.join(" ");
 
-	const handleBlur = useCallback((): void => {
+	const trimPasswordValue = useCallback((): void => {
 		const value: unknown = field.value;
 
 		if (type === "password" && typeof value === "string") {
@@ -63,9 +58,12 @@ const Input = <T extends FieldValues>({
 				field.onChange(trimmedValue);
 			}
 		}
-
-		field.onBlur();
 	}, [field, type]);
+
+	const handleBlur = useCallback((): void => {
+		trimPasswordValue();
+		field.onBlur();
+	}, [field, trimPasswordValue]);
 
 	const handleChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -84,6 +82,15 @@ const Input = <T extends FieldValues>({
 		[field, type],
 	);
 
+	const handleKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLInputElement>): void => {
+			if (event.key === "Enter") {
+				trimPasswordValue();
+			}
+		},
+		[trimPasswordValue],
+	);
+
 	return (
 		<label className={styles["label"]}>
 			<span className={styles["label-text"]}>{label}</span>
@@ -92,6 +99,7 @@ const Input = <T extends FieldValues>({
 				className={inputClassName}
 				onBlur={handleBlur}
 				onChange={handleChange}
+				onKeyDown={handleKeyDown}
 				placeholder={placeholder}
 				type={type}
 			/>
