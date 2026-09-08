@@ -15,7 +15,8 @@ import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js"
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 
-import { PageEntity, type PageRepository } from "../pages/pages.js";
+import { PageEntity } from "../pages/page.entity.js";
+import { type PageRepository } from "../pages/page.repository.js";
 import { DocumentEntity } from "./document.entity.js";
 import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";

@@ -48,7 +48,17 @@ export {
 	DocumentValidationMessage,
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
-export { PageStatus } from "./modules/pages/pages.js";
+export {
+	type PageStatusValue,
+	type PageVerificationActionValue,
+	type VerifyPageRequestDto,
+	type VerifyPageResponseDto,
+	PageApiPath,
+	PageStatus,
+	PageVerificationAction,
+	verifyPage,
+	verifyPageParameters,
+} from "./modules/pages/pages.js";
 export {
 	type UserGetAllItemResponseDto,
 	type UserGetAllResponseDto,

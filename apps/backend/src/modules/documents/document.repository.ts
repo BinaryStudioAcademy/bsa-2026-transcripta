@@ -1,4 +1,4 @@
-import { type Transaction } from "objection";
+import { raw, type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type ValueOf } from "~/libs/types/types.js";
@@ -239,6 +239,20 @@ class DocumentRepository {
 			.query(trx)
 			.patch(patchData)
 			.where({ id })
+			.execute();
+	}
+
+	public async updateCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx?: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({
+				cursorPageNo: raw("GREATEST(??, ?)", ["cursor_page_no", cursorPageNo]),
+			})
+			.where({ id: documentId })
 			.execute();
 	}
 
