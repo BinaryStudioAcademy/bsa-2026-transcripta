@@ -1,4 +1,4 @@
-import { PageVerificationActionValue } from "@transcripta/shared";
+import { type PageVerificationActionValue } from "@transcripta/shared";
 
 type CreatePageEventPayload = {
 	actorId: number;

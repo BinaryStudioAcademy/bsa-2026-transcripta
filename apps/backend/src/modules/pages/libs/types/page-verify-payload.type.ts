@@ -1,4 +1,4 @@
-import { VerifyPageRequestDto } from "@transcripta/shared";
+import { type VerifyPageRequestDto } from "@transcripta/shared";
 
 type VerifyPagePayload = VerifyPageRequestDto & {
 	pageId: number;

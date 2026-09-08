@@ -1,4 +1,4 @@
-import { DocumentRepository } from "~/modules/documents/document.repository.js";
+import { type DocumentRepository } from "~/modules/documents/document.repository.js";
 import { type TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
 
 import { type PageEventRepository } from "../../page-event/page-event.repository.js";

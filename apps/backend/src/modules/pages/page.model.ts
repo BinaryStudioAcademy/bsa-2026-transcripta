@@ -1,4 +1,4 @@
-import { PageStatusValue } from "@transcripta/shared";
+import { type PageStatusValue } from "@transcripta/shared";
 
 import {
 	AbstractModel,
