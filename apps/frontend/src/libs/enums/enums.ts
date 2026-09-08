@@ -10,4 +10,3 @@ export {
 	HTTPMethod,
 	ServerErrorType,
 } from "@transcripta/shared";
-
