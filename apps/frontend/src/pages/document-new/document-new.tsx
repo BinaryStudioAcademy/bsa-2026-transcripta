@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from "react";
+import { HTTPCode } from "@transcripta/shared";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppRoute } from "~/libs/enums/app-route.enum.js";
 import { DataStatus } from "~/libs/enums/data-status.enum.js";
@@ -6,8 +7,10 @@ import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
+	useLocation,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
@@ -18,9 +21,19 @@ import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
 import { ZERO_UPLOAD_PROGRESS } from "./libs/constants/constants.js";
-import { ScreenState } from "./libs/enums/enums.js";
-import { uploadFile, validateFile } from "./libs/helpers/helpers.js";
-import { type ScreenStateType } from "./libs/types/types.js";
+import {
+	DocumentNotificationMessage,
+	ScreenState,
+} from "./libs/enums/enums.js";
+import {
+	UploadError,
+	uploadFile,
+	validateFile,
+} from "./libs/helpers/helpers.js";
+import {
+	type LocationState,
+	type ScreenStateType,
+} from "./libs/types/types.js";
 import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {
@@ -31,13 +44,38 @@ const DocumentNew: React.FC = () => {
 	const [isUploaded, setIsUploaded] = useState(false);
 
 	const fileInputReference = useRef<HTMLInputElement>(null);
+	const abortControllerReference = useRef<AbortController | null>(null);
+	const createdDocumentIdReference = useRef<null | number>(null);
 
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
+	const location = useLocation();
+	const resumeDocumentId = (location.state as LocationState | null)?.documentId;
 
-	const { createdDocument, dataStatus } = useAppSelector(
-		({ documents }) => documents,
-	);
+	useEffect(() => {
+		const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+			if (isUploading) {
+				event.preventDefault();
+			}
+		};
+
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [isUploading]);
+
+	useEffect(() => {
+		if (resumeDocumentId) {
+			createdDocumentIdReference.current = Number(resumeDocumentId);
+			void dispatch(documentActions.loadById(Number(resumeDocumentId)));
+		}
+	}, [resumeDocumentId, dispatch]);
+
+	const { dataStatus, resumedDocument } = useAppSelector(({ documents }) => ({
+		dataStatus: documents.dataStatus,
+		resumedDocument: documents.document,
+	}));
 
 	const handleUpload = useCallback(
 		(values: UploadFormValues) => {
@@ -45,56 +83,151 @@ const DocumentNew: React.FC = () => {
 				return;
 			}
 
-			const payload: DocumentCreateRequestDto = {
-				fileBytes: selectedFile.size,
-				fileName: selectedFile.name,
-				presetId: values.presetId,
-				title: values.title,
-			};
-
+			const controller = new AbortController();
+			abortControllerReference.current = controller;
 			setIsUploading(true);
 
-			void dispatch(documentActions.create(payload))
-				.unwrap()
-				.then((response) => {
-					return uploadFile({
+			const fetchTargetUrl = async (): Promise<{
+				docId: number;
+				uploadUrl: string;
+			}> => {
+				const activeId = createdDocumentIdReference.current ?? resumeDocumentId;
+
+				if (activeId) {
+					const response = await dispatch(
+						documentActions.getUploadUrl({
+							id: Number(activeId),
+							payload: {
+								fileBytes: selectedFile.size,
+								fileName: selectedFile.name,
+								presetId: values.presetId,
+								title: values.title,
+							},
+							signal: controller.signal,
+						}),
+					).unwrap();
+					return { docId: Number(activeId), uploadUrl: response.uploadUrl };
+				}
+
+				const payload: DocumentCreateRequestDto = {
+					fileBytes: selectedFile.size,
+					fileName: selectedFile.name,
+					presetId: values.presetId,
+					title: values.title,
+				};
+
+				const response = await dispatch(
+					documentActions.create(payload),
+				).unwrap();
+				createdDocumentIdReference.current = response.id;
+				return { docId: response.id, uploadUrl: response.uploadUrl };
+			};
+
+			const attemptUpload = async (): Promise<void> => {
+				const { docId, uploadUrl } = await fetchTargetUrl();
+
+				if (!uploadUrl) {
+					return;
+				}
+
+				try {
+					await uploadFile({
 						file: selectedFile,
 						onProgress: setUploadProgress,
-						uploadUrl: response.uploadUrl,
-					}).then(() => response);
-				})
+						signal: controller.signal,
+						uploadUrl,
+					});
+				} catch (error: unknown) {
+					const isCancelled =
+						error instanceof Error &&
+						error.message === DocumentNotificationMessage.UPLOAD_CANCELLED;
+					if (isCancelled) {
+						return;
+					}
+
+					const isForbiddenError =
+						(error instanceof UploadError &&
+							error.status === HTTPCode.FORBIDDEN) ||
+						(error instanceof Error &&
+							error.message.includes(String(HTTPCode.FORBIDDEN))) ||
+						(error instanceof Error &&
+							error.message.includes(DocumentNotificationMessage.ABORTED));
+
+					if (isForbiddenError && docId) {
+						notification.error(DocumentNotificationMessage.EXPIRED_LINK);
+
+						const refreshed = await dispatch(
+							documentActions.getUploadUrl({
+								id: docId,
+							}),
+						).unwrap();
+
+						await uploadFile({
+							file: selectedFile,
+							onProgress: setUploadProgress,
+							signal: controller.signal,
+							uploadUrl: refreshed.uploadUrl,
+						});
+					} else {
+						throw error;
+					}
+				}
+			};
+
+			void attemptUpload()
 				.then(() => {
+					if (controller.signal.aborted) {
+						return;
+					}
 					setIsUploading(false);
 					setIsUploaded(true);
 				})
 				.catch((error: unknown) => {
 					setIsUploading(false);
-					// eslint-disable-next-line no-console
-					console.error(error);
+					const isCancelled =
+						controller.signal.aborted ||
+						(error instanceof Error &&
+							(error.message === DocumentNotificationMessage.UPLOAD_CANCELLED ||
+								error.name === DocumentNotificationMessage.ABORT_ERROR));
+
+					if (isCancelled) {
+						notification.error(DocumentNotificationMessage.UPLOAD_CANCELLED);
+						return;
+					}
+
+					notification.error(
+						error instanceof Error
+							? error.message
+							: DocumentNotificationMessage.UPLOAD_FAILED,
+					);
 				});
 		},
-		[selectedFile, dispatch],
+		[selectedFile, resumeDocumentId, dispatch],
 	);
 
 	const handleCancelUpload = useCallback(() => {
+		if (abortControllerReference.current) {
+			abortControllerReference.current.abort();
+			abortControllerReference.current = null;
+		}
 		setIsUploading(false);
 		setIsUploaded(false);
-		resetSelection();
-		// TODO: decide and implement what to do if user uploaded document to S3 and cancelled before ingesting
+		setUploadProgress(ZERO_UPLOAD_PROGRESS);
 	}, []);
 
 	const handleProcessDocument = useCallback(() => {
-		if (!createdDocument) {
+		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
+		if (!targetId) {
 			return;
 		}
 
-		void dispatch(documentActions.ingest(createdDocument.id));
+		void dispatch(documentActions.ingest(Number(targetId)));
 
 		void (async (): Promise<void> => {
 			try {
 				await navigate(
 					configureString(AppRoute.DOCUMENT, {
-						id: String(createdDocument.id),
+						id: String(targetId),
 					}),
 				);
 			} catch (error: unknown) {
@@ -102,7 +235,7 @@ const DocumentNew: React.FC = () => {
 				console.error(error);
 			}
 		})();
-	}, [createdDocument, dispatch, navigate]);
+	}, [resumeDocumentId, dispatch, navigate]);
 
 	const acceptFile = useCallback((file: File): void => {
 		const result = validateFile(file);
@@ -116,18 +249,13 @@ const DocumentNew: React.FC = () => {
 	}, []);
 
 	const handleChangeFile = useCallback((): void => {
-		resetSelection();
-	}, []);
-
-	const resetSelection = (): void => {
 		setSelectedFile(null);
 		setRejection(null);
 		setUploadProgress(ZERO_UPLOAD_PROGRESS);
-
 		if (fileInputReference.current) {
 			fileInputReference.current.value = "";
 		}
-	};
+	}, []);
 
 	const getScreenState = (): ScreenStateType => {
 		if (isUploading) {
@@ -141,18 +269,20 @@ const DocumentNew: React.FC = () => {
 	};
 
 	const screenState = getScreenState();
-
 	const isSubmitting = dataStatus === DataStatus.PENDING;
 	const isFormDisabled = isSubmitting || isUploading || isUploaded;
+	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
 
 	return (
 		<div className={styles["new-document-page"]}>
 			<header className={styles["page-header"]}>
-				<h1 className={styles["page-header__title"]}>New document</h1>
+				<h1 className={styles["page-header__title"]}>
+					{resumeDocumentId ? "Resume document upload" : "New document"}
+				</h1>
 			</header>
 			<main className={styles["upload-screen"]}>
 				<div className={styles["upload-form__container"]}>
-					{screenState === ScreenState.REST && (
+					{screenState === "rest" && (
 						<Dropzone
 							fileInputReference={fileInputReference}
 							onFileSelect={acceptFile}
@@ -160,26 +290,32 @@ const DocumentNew: React.FC = () => {
 						/>
 					)}
 
-					{(screenState === ScreenState.SELECTED ||
-						screenState === ScreenState.UPLOADING) &&
-						selectedFile && (
-							<>
+					{(screenState === "selected" || screenState === "uploading") && (
+						<>
+							{selectedFile ? (
 								<UploadProgress
 									fileName={selectedFile.name}
 									fileSize={selectedFile.size}
 									percent={uploadProgress}
 								/>
-								<UploadForm
-									fileName={selectedFile.name}
-									isSubmitting={isFormDisabled}
-									isUploaded={isUploaded}
-									onCancelUpload={handleCancelUpload}
-									onChangeFile={handleChangeFile}
-									onProcessDocument={handleProcessDocument}
-									onSubmit={handleUpload}
+							) : (
+								<Dropzone
+									fileInputReference={fileInputReference}
+									onFileSelect={acceptFile}
+									rejection={rejection}
 								/>
-							</>
-						)}
+							)}
+							<UploadForm
+								fileName={displayTitle}
+								isSubmitting={isFormDisabled}
+								isUploaded={isUploaded}
+								onCancelUpload={handleCancelUpload}
+								onChangeFile={handleChangeFile}
+								onProcessDocument={handleProcessDocument}
+								onSubmit={handleUpload}
+							/>
+						</>
+					)}
 				</div>
 			</main>
 		</div>

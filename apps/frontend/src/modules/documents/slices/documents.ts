@@ -1,9 +1,10 @@
-import { create, ingest, loadAll, loadById } from "./actions.js";
+import { create, getUploadUrl, ingest, loadAll, loadById } from "./actions.js";
 import { actions } from "./documents.slice.js";
 
 const allActions = {
 	...actions,
 	create,
+	getUploadUrl,
 	ingest,
 	loadAll,
 	loadById,

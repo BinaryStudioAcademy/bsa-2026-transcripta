@@ -1,17 +1,38 @@
 import { HTTPCode, HTTPMethod } from "~/libs/enums/enums.js";
-import { notification } from "~/libs/modules/notification/notification.js";
 
 import { PERCENT_MULTIPLIER } from "./libs/constants/constants.js";
-import { XHREvent } from "./libs/enums/enums.js";
+import { UploadErrorMessage, XHREvent } from "./libs/enums/enums.js";
 import { type UploadFileOptions } from "./libs/types/types.js";
+
+class UploadError extends Error {
+	public status: number;
+	public constructor(message: string, status: number) {
+		super(message);
+		this.status = status;
+		this.name = UploadErrorMessage.UPLOAD_NAME;
+	}
+}
 
 const uploadFile = ({
 	file,
 	onProgress,
+	signal,
 	uploadUrl,
 }: UploadFileOptions): Promise<void> => {
 	return new Promise((resolve, reject) => {
+		if (signal?.aborted) {
+			reject(new Error(UploadErrorMessage.UPLOAD_CANCELLED));
+			return;
+		}
+
 		const xhr = new XMLHttpRequest();
+
+		if (signal) {
+			signal.addEventListener(XHREvent.ABORT, () => {
+				xhr.abort();
+				reject(new Error(UploadErrorMessage.UPLOAD_CANCELLED));
+			});
+		}
 
 		xhr.open(HTTPMethod.PUT, uploadUrl);
 
@@ -24,18 +45,16 @@ const uploadFile = ({
 		});
 
 		xhr.addEventListener(XHREvent.LOAD, () => {
-			if (xhr.status === HTTPCode.OK) {
+			if (xhr.status === HTTPCode.OK || xhr.status === HTTPCode.NO_CONTENT) {
 				resolve();
 			} else {
-				const message = `Upload failed with status ${String(xhr.status)}`;
-				notification.error(message);
-				reject(new Error(message));
+				const message = UploadErrorMessage.FAILED_WITH_STATUS(xhr.status);
+				reject(new UploadError(message, xhr.status));
 			}
 		});
 
 		xhr.addEventListener(XHREvent.ERROR, () => {
-			const message = "Upload Failed";
-			notification.error(message);
+			const message = UploadErrorMessage.NETWORK_OR_ABORTED;
 			reject(new Error(message));
 		});
 
@@ -43,4 +62,4 @@ const uploadFile = ({
 	});
 };
 
-export { uploadFile };
+export { UploadError, uploadFile };

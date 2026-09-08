@@ -1,3 +1,5 @@
+import { DocumentStatus } from "@transcripta/shared";
+
 import {
 	Button,
 	LoaderOverlay,
@@ -13,7 +15,7 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
-const EMPTY_LENGTH = 0;
+import { EMPTY_LENGTH } from "./libs/constants/empty-length.constant.js";
 
 const Documents: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -32,6 +34,19 @@ const Documents: React.FC = () => {
 			await navigate(AppRoute.DOCUMENTS_NEW);
 		})();
 	}, [navigate]);
+
+	const handleResumeUpload = useCallback(
+		(documentId: number) => {
+			return (): void => {
+				Promise.resolve(
+					navigate(AppRoute.DOCUMENTS_NEW, {
+						state: { documentId },
+					}),
+				).catch(() => null);
+			};
+		},
+		[navigate],
+	);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty = !isLoading && documents.length === EMPTY_LENGTH;
@@ -68,6 +83,15 @@ const Documents: React.FC = () => {
 								<td>{document.title}</td>
 								<td>
 									<StatusChip status={document.status} />
+									{(document.status === DocumentStatus.DRAFT ||
+										document.status === DocumentStatus.FAILED) && (
+										<button
+											onClick={handleResumeUpload(document.id)}
+											type="button"
+										>
+											Resume upload
+										</button>
+									)}
 								</td>
 								<td>{new Date(document.createdAt).toLocaleDateString()}</td>
 								<td>{document.pageCount}</td>
