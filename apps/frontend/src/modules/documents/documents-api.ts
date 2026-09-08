@@ -80,7 +80,7 @@ class DocumentApi extends BaseHTTPApi {
 
 	public async remove(id: number): Promise<void> {
 		await this.load(
-			this.getFullEndpoint(DocumentsApiPath.$ID, { id: String(id) }),
+			this.getFullEndpoint(DocumentsApiPath.BY_ID, { id: String(id) }),
 			{
 				contentType: ContentType.JSON,
 				hasAuth: true,
