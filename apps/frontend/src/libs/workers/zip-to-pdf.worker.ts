@@ -95,7 +95,19 @@ globalThis.addEventListener(
 					continue;
 				}
 
-				const imageBytes = await file.async("uint8array");
+				let imageBytes: Uint8Array;
+
+				try {
+					imageBytes = await file.async("uint8array");
+				} catch {
+					self.postMessage({
+						message: `The image "${imageName}" could not be read from the archive.`,
+						type: "error",
+					});
+
+					return;
+				}
+
 				let image: PDFImage;
 
 				try {
@@ -132,7 +144,18 @@ globalThis.addEventListener(
 				});
 			}
 
-			const pdfBytes = await pdfDocument.save();
+			let pdfBytes: Uint8Array;
+
+			try {
+				pdfBytes = await pdfDocument.save();
+			} catch {
+				self.postMessage({
+					message: "The PDF document could not be generated.",
+					type: "error",
+				});
+
+				return;
+			}
 
 			self.postMessage({
 				payload: {

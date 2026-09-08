@@ -130,6 +130,8 @@ const useZipProcessor = (options: ZipProcessorOptions): ZipProcessor => {
 
 	const process = useCallback(
 		(file: File): void => {
+			terminateWorker();
+
 			if (toMegabytes(file.size) > DEFAULT_MAX_ARCHIVE_SIZE_MB) {
 				const sizeLimit = String(DEFAULT_MAX_ARCHIVE_SIZE_MB);
 				const message = `Archive exceeds the ${sizeLimit} MB size limit.`;
@@ -144,8 +146,6 @@ const useZipProcessor = (options: ZipProcessorOptions): ZipProcessor => {
 
 				return;
 			}
-
-			terminateWorker();
 
 			const worker: Worker = new pdfWorker();
 
