@@ -1,6 +1,7 @@
+import { DEFAULT_MAX_PAGES } from "~/pages/document-new/libs/constants/constants.js";
+
 import { isImageFile } from "./is-image-file.helper.js";
 import { naturalSort } from "./natural-sort.helper.js";
-import { DEFAULT_MAX_PAGES } from "~/pages/document-new/libs/constants/constants.js";
 
 const PREVIEW_LIMIT = 5;
 const EMPTY_LENGTH = 0;
@@ -124,4 +125,4 @@ const validateZipContent = (
 	};
 };
 
-export { validateZipContent, type ZipValidationResult };
+export { type ZipValidationResult, validateZipContent };
