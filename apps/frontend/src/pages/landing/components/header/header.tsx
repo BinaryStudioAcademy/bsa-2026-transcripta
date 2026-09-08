@@ -1,7 +1,6 @@
-import headerLogo from "../../../assets/img/logo.svg";
-import { AppRoute } from "../../../libs/enums/enums.js";
-import { Link } from "../components.js";
-import { ThemeToggle } from "../theme-toggle/theme-toggle.js";
+import headerLogo from "~/assets/img/logo.svg";
+import { Link, ThemeToggle } from "~/libs/components/components.js";
+import { AppRoute } from "~/libs/enums/enums.js";
 
 import "./header.css";
 
