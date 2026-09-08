@@ -1,0 +1,121 @@
+.documents-page {
+	display: flex;
+	flex-direction: column;
+	min-height: 100%;
+}
+
+.documents-page__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--sp-4) var(--sp-6);
+	border-bottom: 1px solid var(--hairline);
+}
+
+.documents-page__title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: var(--fs-xl-2);
+	font-weight: 600;
+	line-height: var(--lh-tight);
+	color: var(--text);
+}
+
+.documents-page__actions {
+	display: flex;
+	gap: var(--sp-3);
+	align-items: center;
+}
+
+.documents-page__main {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: var(--sp-4);
+	padding: var(--sp-5);
+}
+
+.documents-page__table {
+	grid-template-columns:
+		minmax(0, 1fr) minmax(0, 1fr) minmax(var(--sp-24), auto)
+		minmax(var(--sp-24), auto) auto;
+}
+
+.documents-page__title-cell {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-weight: 500;
+	color: var(--text);
+	white-space: nowrap;
+	background-color: var(--surface);
+}
+
+.documents-page__footer {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: var(--sp-4);
+	align-items: center;
+}
+
+.documents-page__footer-messages {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-1);
+	max-width: 640px;
+}
+
+.documents-page__footer-shortcuts {
+	grid-column: 2;
+	justify-self: end;
+}
+
+.documents-page__status-cell {
+	gap: var(--sp-3);
+}
+
+.documents-page__reread-link {
+	font-size: var(--fs-xs);
+	color: var(--link);
+	white-space: nowrap;
+	text-decoration: underline;
+}
+
+.documents-page__footer-message {
+	margin: 0;
+	font-size: var(--fs-2xs);
+	line-height: var(--lh-body-wide);
+	color: var(--text-3);
+}
+
+.documents-page__empty {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
+	align-items: center;
+	padding: var(--sp-16) var(--sp-5);
+	text-align: center;
+}
+
+.documents-page__empty-title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: var(--fs-l);
+	font-weight: 600;
+	line-height: var(--lh-tight);
+	color: var(--text);
+}
+
+.documents-page__empty-description {
+	max-width: 420px;
+	margin: 0;
+	font-size: var(--fs-md);
+	line-height: var(--lh-ui);
+	color: var(--text-2);
+}
+
+.documents-page__empty-meta {
+	margin: 0;
+	font-size: var(--fs-xs);
+	color: var(--text-3);
+}

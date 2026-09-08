@@ -1,0 +1,36 @@
+.tx-chip {
+	display: inline-flex;
+	gap: var(--sp-2);
+	align-items: center;
+	height: var(--ctl-sm);
+	padding: 0 var(--sp-2);
+	font: 500 var(--fs-xs) / 1 var(--font-ui);
+	color: var(--text-2);
+	white-space: nowrap;
+	background: var(--surface);
+	border: 1px solid var(--hairline-strong);
+	border-radius: var(--r-sm);
+}
+
+.tx-chip__icon {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.tx-chip--ok {
+	color: var(--ok-text);
+	background: var(--ok-tint);
+	border-color: color-mix(in oklab, var(--ok) 55%, transparent);
+}
+
+.tx-chip--warn {
+	color: var(--warn-text);
+	background: var(--warn-tint);
+	border-color: color-mix(in oklab, var(--warn) 55%, transparent);
+}
+
+.tx-chip--danger {
+	color: var(--danger-text);
+	background: var(--danger-tint);
+	border-color: color-mix(in oklab, var(--danger) 55%, transparent);
+}
