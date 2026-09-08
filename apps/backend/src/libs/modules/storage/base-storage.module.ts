@@ -78,13 +78,16 @@ class BaseStorage implements Storage {
 		const { ACCESS_KEY_ID, ENDPOINT, REGION, SECRET_ACCESS_KEY } =
 			this.config.ENV.STORAGE;
 
+		const hasStaticCredentials = Boolean(ACCESS_KEY_ID && SECRET_ACCESS_KEY);
+
 		return new S3Client({
-			credentials: {
-				accessKeyId: ACCESS_KEY_ID,
-				secretAccessKey: SECRET_ACCESS_KEY,
-			},
-			endpoint: ENDPOINT,
-			forcePathStyle: true,
+			...(hasStaticCredentials && {
+				credentials: {
+					accessKeyId: ACCESS_KEY_ID,
+					secretAccessKey: SECRET_ACCESS_KEY,
+				},
+			}),
+			...(ENDPOINT && { endpoint: ENDPOINT, forcePathStyle: true }),
 			region: REGION,
 		});
 	}
@@ -168,6 +171,17 @@ class BaseStorage implements Storage {
 			await clear();
 			throw error;
 		}
+	}
+
+	public async getReadSignedUrl(key: string): Promise<string> {
+		const command = new GetObjectCommand({
+			Bucket: this.buckets[StorageBucket.PAGES],
+			Key: key,
+		});
+
+		return await getSignedUrl(this.client, command, {
+			expiresIn: SignedUrlConfig.SECONDS_IN_HOUR,
+		});
 	}
 
 	public async getUploadSignedUrl({
