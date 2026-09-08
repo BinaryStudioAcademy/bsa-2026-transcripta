@@ -282,7 +282,7 @@ const DocumentNew: React.FC = () => {
 			</header>
 			<main className={styles["upload-screen"]}>
 				<div className={styles["upload-form__container"]}>
-					{screenState === "rest" && (
+					{screenState === ScreenState.REST && (
 						<Dropzone
 							fileInputReference={fileInputReference}
 							onFileSelect={acceptFile}
@@ -290,7 +290,8 @@ const DocumentNew: React.FC = () => {
 						/>
 					)}
 
-					{(screenState === "selected" || screenState === "uploading") && (
+					{(screenState === ScreenState.SELECTED ||
+						screenState === ScreenState.UPLOADING) && (
 						<>
 							{selectedFile ? (
 								<UploadProgress
