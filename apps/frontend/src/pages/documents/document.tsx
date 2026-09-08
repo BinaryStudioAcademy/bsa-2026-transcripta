@@ -56,27 +56,22 @@ const Document: React.FC = () => {
 		setIsConfirmOpen(false);
 	}, []);
 
-	const handleConfirmDelete = useCallback(async (): Promise<void> => {
+	const handleConfirmDelete = useCallback((): void => {
 		if (!currentDocument) {
 			return;
 		}
 
-		const resultAction = await dispatch(
-			documentActions.remove(currentDocument.id),
-		);
-
-		setIsConfirmOpen(false);
-
-		// eslint-disable-next-line unicorn/prefer-regexp-test -- this is redux-toolkit's action matcher, not String#match
-		if (documentActions.remove.fulfilled.match(resultAction)) {
-			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-			void navigate(AppRoute.DOCUMENTS);
-		}
+		void dispatch(documentActions.remove(currentDocument.id))
+			.unwrap()
+			.then(() => {
+				setIsConfirmOpen(false);
+				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
+				void navigate(AppRoute.DOCUMENTS);
+			})
+			.catch(() => {
+				setIsConfirmOpen(false);
+			});
 	}, [currentDocument, dispatch, navigate]);
-
-	const handleConfirmDeleteClick = useCallback((): void => {
-		void handleConfirmDelete();
-	}, [handleConfirmDelete]);
 
 	return (
 		<>
@@ -140,7 +135,7 @@ const Document: React.FC = () => {
 				<ConfirmDialog
 					description="The transcription goes with it. This can't be undone."
 					onCancel={handleCancelDelete}
-					onConfirm={handleConfirmDeleteClick}
+					onConfirm={handleConfirmDelete}
 					title="Delete this document"
 				/>
 			)}

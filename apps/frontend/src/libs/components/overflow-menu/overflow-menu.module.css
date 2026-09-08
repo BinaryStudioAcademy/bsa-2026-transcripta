@@ -5,7 +5,7 @@
 
 .trigger {
 	height: var(--ctl-sm);
-	padding: 0 8px;
+	padding: 0 var(--sp-2);
 	font-size: 15px;
 	color: var(--text-2);
 	letter-spacing: 1px;
