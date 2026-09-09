@@ -50,7 +50,11 @@ const Sidebar: React.FC = () => {
 
 			<div className="sidebar__user">
 				<span className="sidebar__user-email">{user?.email}</span>
-				<button className="sidebar__sign-out" onClick={handleSignOut}>
+				<button
+					className="sidebar__sign-out"
+					onClick={handleSignOut}
+					type="button"
+				>
 					Sign out
 				</button>
 			</div>
