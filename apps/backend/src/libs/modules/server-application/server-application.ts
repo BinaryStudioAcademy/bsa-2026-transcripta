@@ -4,6 +4,7 @@ import { logger } from "~/libs/modules/logger/logger.js";
 import { queueRegistry } from "~/libs/modules/queue/queue.js";
 import { authController } from "~/modules/auth/auth.js";
 import { documentController } from "~/modules/documents/documents.js";
+import { pageController } from "~/modules/pages/pages.js";
 import { transcriptionController } from "~/modules/transcription/transcription.js";
 import { userController } from "~/modules/users/users.js";
 
@@ -17,6 +18,7 @@ const apiV1 = new BaseServerApplicationApi(
 	...documentController.routes,
 	...transcriptionController.routes,
 	...userController.routes,
+	...pageController.routes,
 );
 const serverApplication = new BaseServerApplication({
 	apis: [apiV1],
