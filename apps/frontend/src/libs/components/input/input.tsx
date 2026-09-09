@@ -6,7 +6,7 @@ import {
 	type FieldValues,
 } from "react-hook-form";
 
-import { useFormController } from "~/libs/hooks/hooks.js";
+import { useCallback, useFormController } from "~/libs/hooks/hooks.js";
 
 import styles from "./styles.module.css";
 
@@ -39,12 +39,26 @@ const Input = <T extends FieldValues>({
 		.filter(Boolean)
 		.join(" ");
 
+	const handleChange = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => {
+			if (type !== "password") {
+				field.onChange(event);
+
+				return;
+			}
+
+			field.onChange(event.target.value.replaceAll(/\s/g, ""));
+		},
+		[field, type],
+	);
+
 	return (
 		<label className={styles["label"]}>
 			<span className={styles["label-text"]}>{label}</span>
 			<input
 				{...field}
 				className={inputClassName}
+				onChange={handleChange}
 				placeholder={placeholder}
 				type={type}
 			/>
