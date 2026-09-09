@@ -1,10 +1,9 @@
-import { useState } from "react";
-
 import {
 	BYTES_IN_KILOBYTE,
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
 } from "@transcripta/shared";
+import { useState } from "react";
 
 import {
 	Button,
