@@ -1,10 +1,17 @@
+import type { ZipValidationResult } from "~/libs/types/zip.types.js";
+
+import {
+	EMPTY_LENGTH,
+	FIRST_INDEX,
+} from "~/libs/constants/common.constants.js";
+import {
+	JUNK_PATTERNS,
+	PREVIEW_LIMIT,
+} from "~/libs/constants/zip.constants.js";
 import { DEFAULT_MAX_PAGES } from "~/pages/document-new/libs/constants/constants.js";
-import { EMPTY_LENGTH, FIRST_INDEX } from "~/libs/constants/common.constants.js";
 
 import { isImageFile } from "./is-image-file.helper.js";
 import { naturalSort } from "./natural-sort.helper.js";
-import { PREVIEW_LIMIT, JUNK_PATTERNS } from "~/libs/constants/zip.constants.js";
-import type { ZipArchiveStatus, ZipValidationResult } from "~/libs/types/zip.types.js";
 
 const isJunkEntry = (entry: string): boolean => {
 	return JUNK_PATTERNS.some((pattern) => {
@@ -107,4 +114,6 @@ const validateZipContent = (
 	};
 };
 
-export { type ZipValidationResult, validateZipContent };
+export { validateZipContent };
+
+export { type ZipValidationResult } from "~/libs/types/zip.types.js";

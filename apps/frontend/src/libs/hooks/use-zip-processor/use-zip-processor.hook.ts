@@ -1,8 +1,6 @@
 import { BYTES_IN_KILOBYTE, KILOBYTES_IN_MEGABYTE } from "@transcripta/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { DEFAULT_STATE } from "~/libs/constants/zip-processor.constants.js";
-import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import type {
 	WorkerDoneMessage,
 	WorkerErrorMessage,
@@ -13,6 +11,9 @@ import type {
 	ZipProcessorOptions,
 	ZipProcessorState,
 } from "~/libs/types/zip-processor.types.js";
+
+import { DEFAULT_STATE } from "~/libs/constants/zip-processor.constants.js";
+import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import pdfWorker from "~/libs/workers/zip-to-pdf.worker?worker";
 import {
 	DEFAULT_MAX_ARCHIVE_SIZE_MB,

@@ -1,5 +1,5 @@
-import type { ValueOf } from "~/libs/types/types.js";
 import type { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
+import type { ValueOf } from "~/libs/types/types.js";
 
 type WorkerDoneMessage = {
 	payload: {
@@ -68,6 +68,5 @@ export type {
 	WorkerValidationMessage,
 	ZipProcessor,
 	ZipProcessorOptions,
-	ZipProcessorRejectReason,
 	ZipProcessorState,
 };

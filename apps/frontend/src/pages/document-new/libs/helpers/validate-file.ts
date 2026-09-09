@@ -1,29 +1,24 @@
-import { FILE_NAME_FIELD } from "~/libs/constants/file.constants.js";
-import type { ValidationIssue } from "~/libs/types/validation.types.js";
+import type { FileValidationResult } from "~/libs/types/validation.types.js";
 
-const validateFile = (
-	file: File,
-	allowedTypes: string[],
-	maxSizeBytes: number,
-): ValidationIssue[] => {
-	const issues: ValidationIssue[] = [];
+import { FIRST_INDEX } from "~/libs/constants/common.constants.js";
+import { DEFAULT_FILE_REJECTION_REASON } from "~/libs/constants/file.constants.js";
 
-	if (!allowedTypes.includes(file.type)) {
-		issues.push({
-			message: `File type "${file.type}" is not allowed. Allowed: ${allowedTypes.join(", ")}`,
-			path: [FILE_NAME_FIELD],
-		});
-	}
+import { fileValidationSchema } from "../validation-schemas/validation-schemas.js";
 
-	if (file.size > maxSizeBytes) {
-		const maxSizeMB = maxSizeBytes / (1024 * 1024);
-		issues.push({
-			message: `File size exceeds ${maxSizeMB} MB limit.`,
-			path: [FILE_NAME_FIELD],
-		});
-	}
+const validateFile = (file: File): FileValidationResult => {
+	const result = fileValidationSchema.safeParse({
+		fileBytes: file.size,
+		fileName: file.name,
+	});
 
-	return issues;
+	return result.success
+		? { isValid: true }
+		: {
+				isValid: false,
+				reason:
+					result.error.issues[FIRST_INDEX]?.message ??
+					DEFAULT_FILE_REJECTION_REASON,
+			};
 };
 
 export { validateFile };

@@ -1,5 +1,6 @@
-import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import type { ZipProcessorState } from "~/libs/types/zip-processor.types.js";
+
+import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 
 const DEFAULT_STATE: ZipProcessorState = {
 	error: null,

@@ -1,3 +1,3 @@
-const FILE_NAME_FIELD = "fileName";
+const DEFAULT_FILE_REJECTION_REASON = "Invalid file";
 
-export { FILE_NAME_FIELD };
+export { DEFAULT_FILE_REJECTION_REASON };

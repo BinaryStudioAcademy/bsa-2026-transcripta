@@ -3,16 +3,17 @@
 import JSZip from "jszip";
 import { PDFDocument, type PDFImage } from "pdf-lib";
 
+import {
+	EMPTY_REMAINDER,
+	PAGE_EMBED_BATCH,
+	PNG_EXTENSION,
+	YIELD_DELAY_MS,
+} from "~/libs/constants/zip-to-pdf.constants.js";
 import { isImageFile } from "~/libs/helpers/is-image-file.helper.js";
 import {
 	validateZipContent,
 	type ZipValidationResult,
 } from "~/libs/helpers/validate-zip-content.helper.js";
-
-const PAGE_EMBED_BATCH = 5;
-const YIELD_DELAY_MS = 0;
-const PNG_EXTENSION = ".png";
-const EMPTY_REMAINDER = 0;
 
 type InitMessage = {
 	arrayBuffer: ArrayBuffer;
@@ -42,7 +43,7 @@ const embedImage = async (
 	return await document.embedJpg(bytes);
 };
 
-// eslint-disable-next-line sonarjs/post-message -- This is a dedicated web worker; the embedding page is the only sender, always same-origin, so there is no cross-origin `event.source` to verify.
+// eslint-disable-next-line sonarjs/post-message
 globalThis.addEventListener(
 	"message",
 	(event: MessageEvent<InitMessage>): void => {
@@ -52,7 +53,7 @@ globalThis.addEventListener(
 			let zip: JSZip;
 
 			try {
-				// eslint-disable-next-line sonarjs/no-unsafe-unzip -- Entries are only read into memory to assemble a PDF; nothing is written to disk, so path traversal is not applicable in this browser worker.
+				// eslint-disable-next-line sonarjs/no-unsafe-unzip
 				zip = await JSZip.loadAsync(arrayBuffer);
 			} catch {
 				self.postMessage({

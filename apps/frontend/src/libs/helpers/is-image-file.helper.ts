@@ -1,4 +1,7 @@
-import { EXTENSION_SEPARATOR_OFFSET, IMAGE_EXTENSIONS } from "~/libs/constants/image.constants.js";
+import {
+	EXTENSION_SEPARATOR_OFFSET,
+	IMAGE_EXTENSIONS,
+} from "~/libs/constants/image.constants.js";
 
 const isImageFile = (filename: string): boolean => {
 	const extension = filename

@@ -1,6 +1,5 @@
-type ValidationIssue = {
-	message: string;
-	path: (number | string)[];
-};
+type FileValidationResult =
+	| { isValid: false; reason: string }
+	| { isValid: true };
 
-export type { ValidationIssue };
+export type { FileValidationResult };

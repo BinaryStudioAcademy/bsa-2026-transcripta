@@ -13,4 +13,4 @@ type ZipValidationResult = {
 	status: ZipArchiveStatus;
 };
 
-export type { ZipArchiveStatus, ZipValidationResult };
+export type { ZipValidationResult };
