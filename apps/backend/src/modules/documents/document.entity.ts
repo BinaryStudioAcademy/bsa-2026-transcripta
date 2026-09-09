@@ -1,5 +1,9 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
+import {
+	DEFAULT_BUDGET_USD,
+	DEFAULT_SPENT_USD,
+} from "./libs/constants/constants.js";
 import { DocumentErrorMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
 
@@ -152,7 +156,7 @@ class DocumentEntity {
 		title: string;
 	}): DocumentEntity {
 		return new DocumentEntity({
-			budgetUsd: "10.0000",
+			budgetUsd: DEFAULT_BUDGET_USD,
 			createdAt: "",
 			cursorPageNo: 1,
 			id: null,
@@ -162,7 +166,7 @@ class DocumentEntity {
 			sourceBytes: sourceBytes ?? null,
 			sourceKey: sourceKey ?? null,
 			sourceName: sourceName ?? null,
-			spentUsd: "0.000000",
+			spentUsd: DEFAULT_SPENT_USD,
 			status: DocumentStatus.DRAFT,
 			title,
 		});
