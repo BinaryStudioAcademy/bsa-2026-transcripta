@@ -1,5 +1,5 @@
-import { DataStatus } from "../enums/enums.js";
-import { ValueOf } from "./types.js";
+import { DataStatus } from "~/libs/enums/enums.js";
+import { type ValueOf } from "~/libs/types/types.js";
 
 type DataStatusValue = ValueOf<typeof DataStatus>;
 

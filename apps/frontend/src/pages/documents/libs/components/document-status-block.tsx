@@ -41,14 +41,9 @@ const DocumentStatusBlock: React.FC<Properties> = ({ documentId, status }) => {
 
 			setOptimisticStatus(targetStatus);
 
-			try {
-				await (isPaused
-					? dispatch(documentActions.resume(documentId)).unwrap()
-					: dispatch(documentActions.pause(documentId)).unwrap());
-			} catch (error) {
-				// eslint-disable-next-line no-console
-				console.error(error);
-			}
+			await (isPaused
+				? dispatch(documentActions.resume(documentId)).unwrap()
+				: dispatch(documentActions.pause(documentId)).unwrap());
 		});
 	}, [dispatch, documentId, isPaused, setOptimisticStatus]);
 
