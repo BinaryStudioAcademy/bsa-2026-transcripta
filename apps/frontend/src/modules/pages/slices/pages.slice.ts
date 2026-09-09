@@ -4,7 +4,7 @@ import { type SerializedAppError, type ValueOf } from "~/libs/types/types.js";
 import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/documents.js";
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
-import { verifyPage } from "./actions.js";
+import { loadPages, verifyPage } from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -67,6 +67,23 @@ const { actions, name, reducer } = createSlice({
 				state.rollback[pageId] = undefined;
 			}
 
+			state.dataStatus = DataStatus.REJECTED;
+			state.lastError = action.error;
+		});
+
+		builder.addCase(loadPages.pending, (state) => {
+			state.dataStatus = DataStatus.PENDING;
+			state.lastError = null;
+		});
+
+		builder.addCase(loadPages.fulfilled, (state, action) => {
+			for (const page of action.payload.items) {
+				state.byId[page.id] = page;
+			}
+			state.dataStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(loadPages.rejected, (state, action) => {
 			state.dataStatus = DataStatus.REJECTED;
 			state.lastError = action.error;
 		});
