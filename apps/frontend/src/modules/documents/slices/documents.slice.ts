@@ -1,7 +1,7 @@
 import { createSlice, isAnyOf } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
-import { type ValueOf } from "~/libs/types/types.js";
+import { type DataStatusValue } from "~/libs/types/types.js";
 import {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
@@ -13,11 +13,11 @@ import { create, loadAll, loadById, pause, resume } from "./actions.js";
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
-	dataStatus: ValueOf<typeof DataStatus>;
+	dataStatus: DataStatusValue;
 	document: DocumentGetByIdResponseDto | null;
-	documentDataStatus: ValueOf<typeof DataStatus>;
+	documentDataStatus: DataStatusValue;
 	documents: DocumentGetAllItemResponseDto[];
-	pauseResumeDataStatus: ValueOf<typeof DataStatus>;
+	pauseResumeDataStatus: DataStatusValue;
 	requestedDocumentId: null | number;
 };
 
@@ -78,15 +78,15 @@ const { actions, name, reducer } = createSlice({
 			state.document = null;
 			state.documentDataStatus = DataStatus.REJECTED;
 		});
-		builder.addCase(pause.fulfilled, (state) => {
+		builder.addCase(pause.fulfilled, (state, action) => {
 			state.pauseResumeDataStatus = DataStatus.FULFILLED;
-			if (state.document) {
+			if (state.document && state.document.id === action.payload) {
 				state.document.status = DocumentStatus.PAUSED;
 			}
 		});
-		builder.addCase(resume.fulfilled, (state) => {
+		builder.addCase(resume.fulfilled, (state, action) => {
 			state.pauseResumeDataStatus = DataStatus.FULFILLED;
-			if (state.document) {
+			if (state.document && state.document.id === action.payload) {
 				state.document.status = DocumentStatus.PROCESSING;
 			}
 		});
