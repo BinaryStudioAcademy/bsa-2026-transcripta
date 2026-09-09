@@ -1,8 +1,9 @@
 import { HTTPCode } from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useBlocker } from "react-router-dom";
 
-import { AppRoute } from "~/libs/enums/app-route.enum.js";
-import { DataStatus } from "~/libs/enums/data-status.enum.js";
+import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
+import { AppRoute, BlockerState, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
@@ -55,6 +56,11 @@ const DocumentNew: React.FC = () => {
 	const location = useLocation();
 	const resumeDocumentId = (location.state as LocationState | null)?.documentId;
 
+	const blocker = useBlocker(
+		({ currentLocation, nextLocation }) =>
+			isUploading && currentLocation.pathname !== nextLocation.pathname,
+	);
+
 	useEffect(() => {
 		const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
 			if (isUploading) {
@@ -74,6 +80,21 @@ const DocumentNew: React.FC = () => {
 			void dispatch(documentActions.loadById(Number(resumeDocumentId)));
 		}
 	}, [resumeDocumentId, dispatch]);
+
+	useEffect(() => {
+		if (blocker.state === BlockerState.BLOCKED) {
+			const confirmLeave = globalThis.confirm(UPLOAD_WARNING_MESSAGE);
+
+			if (confirmLeave) {
+				if (abortControllerReference.current) {
+					abortControllerReference.current.abort();
+				}
+				blocker.proceed();
+			} else {
+				blocker.reset();
+			}
+		}
+	}, [blocker]);
 
 	const { dataStatus, resumedDocument } = useAppSelector(({ documents }) => ({
 		dataStatus: documents.dataStatus,
@@ -157,7 +178,7 @@ const DocumentNew: React.FC = () => {
 
 						if (isForbiddenError && docId && retryCount < MAX_RETRIES) {
 							retryCount++;
-							notification.error(DocumentNotificationMessage.EXPIRED_LINK);
+							notification.info(DocumentNotificationMessage.EXPIRED_LINK);
 
 							const refreshed = await dispatch(
 								documentActions.getUploadUrl({
@@ -191,7 +212,7 @@ const DocumentNew: React.FC = () => {
 								error.name === DocumentNotificationMessage.ABORT_ERROR));
 
 					if (isCancelled) {
-						notification.error(DocumentNotificationMessage.UPLOAD_CANCELLED);
+						notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
 						return;
 					}
 

@@ -1,9 +1,11 @@
 import { Link, LogoIcon } from "~/libs/components/components.js";
+import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
+	useLocation,
 } from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
 import { actions as authActions, selectUser } from "~/modules/auth/auth.js";
@@ -15,13 +17,26 @@ const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 
 const Sidebar: React.FC = () => {
 	const dispatch = useAppDispatch();
-
 	const user = useAppSelector(selectUser);
+	const { pathname } = useLocation();
 
-	const handleSignOut = useCallback((): void => {
-		dispatch(authActions.logout());
-		void storage.drop(StorageKey.TOKEN);
-	}, [dispatch]);
+	const handleSignOut = useCallback(
+		(event: React.MouseEvent): void => {
+			if (pathname === AppRoute.DOCUMENTS_NEW) {
+				const confirmLeave = globalThis.confirm(UPLOAD_WARNING_MESSAGE);
+
+				if (!confirmLeave) {
+					event.preventDefault();
+					event.nativeEvent.stopImmediatePropagation();
+					return;
+				}
+			}
+
+			dispatch(authActions.logout());
+			void storage.drop(StorageKey.TOKEN);
+		},
+		[dispatch, pathname],
+	);
 
 	return (
 		<aside className="sidebar">

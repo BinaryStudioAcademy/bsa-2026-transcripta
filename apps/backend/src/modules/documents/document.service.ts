@@ -10,6 +10,7 @@ import {
 import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
@@ -43,22 +44,26 @@ import {
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
+	private logger: Logger;
 	private pageRepository: PageRepository;
 	private pdfPageProcessor: PDFPageProcessor;
 	private storage: BaseStorage;
 
 	public constructor({
 		documentRepository,
+		logger,
 		pageRepository,
 		pdfPageProcessor,
 		storage,
 	}: {
 		documentRepository: DocumentRepository;
+		logger: Logger;
 		pageRepository: PageRepository;
 		pdfPageProcessor: PDFPageProcessor;
 		storage: BaseStorage;
 	}) {
 		this.documentRepository = documentRepository;
+		this.logger = logger;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
 		this.storage = storage;
@@ -380,8 +385,7 @@ class DocumentService {
 		try {
 			await this.cleanupAbandonedDraftsForUser(ownerId);
 		} catch (error: unknown) {
-			// eslint-disable-next-line no-console
-			console.error("Failed to clean up abandoned drafts:", error);
+			this.logger.error(DocumentErrorMessage.DRAFTS_NOT_CLEAN, { error });
 		}
 
 		const items = await this.documentRepository.findAllByOwnerId(ownerId);
