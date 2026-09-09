@@ -221,7 +221,7 @@ class DocumentRepository {
 			.execute();
 	}
 
-	public async updateDraftMetadata(
+public async updateDraftMetadata(
 		id: number,
 		{
 			presetId,
@@ -253,6 +253,18 @@ class DocumentRepository {
 			.query(trx)
 			.patch(patchData)
 			.where({ id })
+			.execute();
+	}
+
+	public async updateOwnedStatus(
+		id: number,
+		ownerId: number,
+		status: ValueOf<typeof DocumentStatus>,
+	): Promise<number> {
+		return await this.documentModel
+			.query()
+			.patch({ status })
+			.where({ id, ownerId })
 			.execute();
 	}
 

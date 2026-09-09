@@ -12,6 +12,7 @@ import { ForeignKeyViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
@@ -39,6 +40,7 @@ import {
 import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentServiceDependencies,
 	type DocumentUploadUrlRequestDto,
 } from "./libs/types/types.js";
 
@@ -46,6 +48,7 @@ class DocumentService {
 	private documentRepository: DocumentRepository;
 	private logger: Logger;
 	private pageRepository: PageRepository;
+	private pageTranscribeQueue: PageTranscribeQueue;
 	private pdfPageProcessor: PDFPageProcessor;
 	private storage: BaseStorage;
 
@@ -53,20 +56,16 @@ class DocumentService {
 		documentRepository,
 		logger,
 		pageRepository,
+		pageTranscribeQueue,
 		pdfPageProcessor,
 		storage,
-	}: {
-		documentRepository: DocumentRepository;
-		logger: Logger;
-		pageRepository: PageRepository;
-		pdfPageProcessor: PDFPageProcessor;
-		storage: BaseStorage;
-	}) {
+}: DocumentServiceDependencies) {
 		this.documentRepository = documentRepository;
 		this.logger = logger;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
 		this.storage = storage;
+		this.pageTranscribeQueue = pageTranscribeQueue;
 	}
 
 	private buildContextWords({
@@ -656,6 +655,69 @@ class DocumentService {
 			});
 		} finally {
 			await clear();
+		}
+	}
+
+	public async pause(documentId: number, userId: number): Promise<void> {
+		const updateRows = await this.documentRepository.updateOwnedStatus(
+			documentId,
+			userId,
+			DocumentStatus.PAUSED,
+		);
+
+		if (!updateRows) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+	}
+
+	public async resume(documentId: number, userId: number): Promise<void> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			documentId,
+			userId,
+		);
+
+		if (!document) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		if (document.toObject().status !== DocumentStatus.PAUSED) {
+			return;
+		}
+
+		const pages = await this.pageRepository.findResumablePages(documentId);
+
+		await this.documentRepository.updateOwnedStatus(
+			documentId,
+			userId,
+			DocumentStatus.PROCESSING,
+		);
+
+		if (pages.length === EMPTY_COLLECTION_LENGTH) {
+			return;
+		}
+
+		const pendingPages = pages
+			.filter((page) => page.toObject().status === PageStatus.PENDING)
+			.map((page) => page.toObject().id);
+
+		if (pendingPages.length > EMPTY_COLLECTION_LENGTH) {
+			await this.pageRepository.markPendingAsQueued(documentId, pendingPages);
+		}
+
+		for (const page of pages) {
+			const { id, pageNo } = page.toObject();
+
+			await this.pageTranscribeQueue.add({
+				documentId,
+				pageId: id,
+				pageNo,
+			});
 		}
 	}
 }

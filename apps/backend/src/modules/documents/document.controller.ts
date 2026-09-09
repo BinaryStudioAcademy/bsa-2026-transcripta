@@ -25,7 +25,10 @@ import { type TokenPayload } from "~/libs/modules/token/token.js";
 import { type DocumentService } from "~/modules/documents/document.service.js";
 
 import { DocumentsApiPath } from "./libs/enums/enums.js";
-import { type DocumentDeleteOptions } from "./libs/types/types.js";
+import {
+	type DocumentDeleteOptions,
+	type DocumentIdHandlerOptions,
+} from "./libs/types/types.js";
 
 /*** @swagger
  * components:
@@ -193,6 +196,26 @@ class DocumentController extends BaseController {
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
 			preHandler: authGuard,
+		});
+
+		this.addRoute({
+			handler: (this.pause as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.PAUSE,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+			},
+		});
+
+		this.addRoute({
+			handler: (this.resume as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.RESUME,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+			},
 		});
 	}
 
@@ -467,6 +490,68 @@ class DocumentController extends BaseController {
 	): Promise<APIHandlerResponse> {
 		await this.documentService.ingest(options.params.id, options.user.userId);
 
+		return {
+			payload: null,
+			status: HTTPCode.OK,
+		};
+	}
+	/**
+	 * @swagger
+	 * /documents/{id}/pause:
+	 *   post:
+	 *     description: Set the document to paused
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Document ID
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *       404:
+	 *         description: Document not found
+	 *       500:
+	 *         description: Other errors
+	 */
+	private async pause(
+		options: DocumentIdHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.pause(options.params.id, options.user.userId);
+		return {
+			payload: null,
+			status: HTTPCode.OK,
+		};
+	}
+	/**
+	 * @swagger
+	 * /documents/{id}/resume:
+	 *   post:
+	 *     description: Back to processing, and re-enqueue what still needs work
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Document ID
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *       404:
+	 *         description: Document not found
+	 *       500:
+	 *         description: Other errors
+	 */
+	private async resume(
+		options: DocumentIdHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.resume(options.params.id, options.user.userId);
 		return {
 			payload: null,
 			status: HTTPCode.OK,
