@@ -4,6 +4,6 @@ export {
 	/** @public */ useAppSelector,
 } from "./use-app-selector/use-app-selector.hook.js";
 export { useTheme } from "./use-theme/use-theme.hook.js";
-export { useCallback, /** @public */ useEffect } from "react";
+export { /** @public */ useCallback, useEffect, useOptimistic } from "react";
 export { useController as useFormController } from "react-hook-form";
 export { useLocation, useNavigate, useParams } from "react-router-dom";

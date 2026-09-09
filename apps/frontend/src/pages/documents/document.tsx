@@ -49,7 +49,7 @@ const Document: React.FC = () => {
 				<>
 					<h1>{currentDocument.title}</h1>
 					<DocumentStatusBlock
-						documentId={Number(id)}
+						documentId={currentDocument.id}
 						status={currentDocument.status}
 					/>
 

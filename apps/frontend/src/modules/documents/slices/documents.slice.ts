@@ -7,9 +7,9 @@ import {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import { create, loadAll, loadById, pause, resume } from "./actions.js";
-import { DocumentStatus } from "../libs/enums/enums.js";
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
