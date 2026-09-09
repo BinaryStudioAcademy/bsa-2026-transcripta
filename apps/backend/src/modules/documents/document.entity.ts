@@ -196,10 +196,13 @@ class DocumentEntity {
 		}
 
 		return {
+			budgetUsd: this.budgetUsd,
 			createdAt: this.createdAt,
+			cursorPageNo: this.cursorPageNo,
 			id: this.id,
 			ownerId: this.ownerId,
 			pageCount: this.pageCount,
+			spentUsd: this.spentUsd,
 			status: this.status,
 			title: this.title,
 		};
