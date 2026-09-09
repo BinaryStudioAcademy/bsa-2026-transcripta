@@ -4,6 +4,7 @@ import { type SerializedAppError, type ValueOf } from "~/libs/types/types.js";
 import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/documents.js";
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
+import { verifyPage } from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -33,6 +34,43 @@ const verificationStatusMap = {
 } as const;
 
 const { actions, name, reducer } = createSlice({
+	extraReducers(builder) {
+		builder.addCase(verifyPage.fulfilled, (state, { payload }) => {
+			state.rollback[payload.pageId] = undefined;
+
+			if (payload.next) {
+				const nextPage = state.byId[payload.next.pageId];
+				if (nextPage) {
+					nextPage.status = payload.next.status;
+					if (nextPage.transcription && payload.next.transcription) {
+						nextPage.transcription.contextWords =
+							payload.next.transcription.contextWords;
+						nextPage.transcription.text = payload.next.transcription.text;
+					}
+				}
+			}
+		});
+
+		builder.addCase(verifyPage.rejected, (state, action) => {
+			const { pageId } = action.meta.arg;
+			const previous = state.rollback[pageId];
+
+			if (!previous) {
+				state.dataStatus = DataStatus.REJECTED;
+				state.lastError = action.error;
+				return;
+			}
+
+			if (state.byId[pageId]) {
+				state.byId[pageId].status = previous.status;
+				state.cursorPageNo = previous.cursorPageNo;
+				state.rollback[pageId] = undefined;
+			}
+
+			state.dataStatus = DataStatus.REJECTED;
+			state.lastError = action.error;
+		});
+	},
 	initialState,
 	name: "pages",
 	reducers: {
