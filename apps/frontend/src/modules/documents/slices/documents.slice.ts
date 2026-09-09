@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, isAnyOf } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
@@ -8,7 +8,8 @@ import {
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
 
-import { create, loadAll, loadById } from "./actions.js";
+import { create, loadAll, loadById, pause, resume } from "./actions.js";
+import { DocumentStatus } from "../libs/enums/enums.js";
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
@@ -16,6 +17,7 @@ type State = {
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: ValueOf<typeof DataStatus>;
 	documents: DocumentGetAllItemResponseDto[];
+	pauseResumeDataStatus: ValueOf<typeof DataStatus>;
 	requestedDocumentId: null | number;
 };
 
@@ -25,6 +27,7 @@ const initialState: State = {
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
 	documents: [],
+	pauseResumeDataStatus: DataStatus.IDLE,
 	requestedDocumentId: null,
 };
 
@@ -74,6 +77,24 @@ const { actions, name, reducer } = createSlice({
 
 			state.document = null;
 			state.documentDataStatus = DataStatus.REJECTED;
+		});
+		builder.addCase(pause.fulfilled, (state) => {
+			state.pauseResumeDataStatus = DataStatus.FULFILLED;
+			if (state.document) {
+				state.document.status = DocumentStatus.PAUSED;
+			}
+		});
+		builder.addCase(resume.fulfilled, (state) => {
+			state.pauseResumeDataStatus = DataStatus.FULFILLED;
+			if (state.document) {
+				state.document.status = DocumentStatus.PROCESSING;
+			}
+		});
+		builder.addMatcher(isAnyOf(pause.pending, resume.pending), (state) => {
+			state.pauseResumeDataStatus = DataStatus.PENDING;
+		});
+		builder.addMatcher(isAnyOf(pause.rejected, resume.rejected), (state) => {
+			state.pauseResumeDataStatus = DataStatus.REJECTED;
 		});
 	},
 	initialState,
