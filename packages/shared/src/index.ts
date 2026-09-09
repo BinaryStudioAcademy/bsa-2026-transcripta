@@ -47,6 +47,7 @@ export {
 	DocumentStatus,
 	DocumentUploadUrlValidationSchema,
 	DocumentValidationMessage,
+	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {

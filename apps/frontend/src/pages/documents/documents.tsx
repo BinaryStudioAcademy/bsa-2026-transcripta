@@ -1,4 +1,9 @@
-import { DocumentStatus } from "@transcripta/shared";
+import {
+	BYTES_IN_KILOBYTE,
+	DocumentStatus,
+	DocumentValidationRule,
+	KILOBYTES_IN_MEGABYTE,
+} from "@transcripta/shared";
 
 import {
 	Button,
@@ -14,8 +19,16 @@ import {
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import {
+	DEFAULT_MAX_ARCHIVE_SIZE_MB,
+	DEFAULT_MAX_PAGES,
+} from "~/pages/document-new/libs/constants/constants.js";
 
 import { EMPTY_LENGTH } from "./libs/constants/empty-length.constant.js";
+
+const DEFAULT_MAX_FILE_SIZE_MB =
+	DocumentValidationRule.MAX_FILE_BYTES /
+	(BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE);
 
 const Documents: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -68,7 +81,10 @@ const Documents: React.FC = () => {
 				<div>
 					<h2>No documents yet</h2>
 					<p>Upload a PDF and start verifying in about a minute.</p>
-					<p>up to 500 MB · up to 500 pages</p>
+					<p>
+						PDFs up to {DEFAULT_MAX_FILE_SIZE_MB} MB, ZIPs up to{" "}
+						{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB, up to {DEFAULT_MAX_PAGES} pages
+					</p>
 				</div>
 			)}
 

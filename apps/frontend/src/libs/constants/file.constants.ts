@@ -1,0 +1,3 @@
+const DEFAULT_FILE_REJECTION_REASON = "Invalid file";
+
+export { DEFAULT_FILE_REJECTION_REASON };

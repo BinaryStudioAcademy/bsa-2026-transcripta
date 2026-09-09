@@ -4,6 +4,7 @@ import { useBlocker } from "react-router-dom";
 
 import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
 import { AppRoute, BlockerState, DataStatus } from "~/libs/enums/enums.js";
+import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
@@ -11,6 +12,7 @@ import {
 	useLocation,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { useZipProcessor } from "~/libs/hooks/use-zip-processor/use-zip-processor.hook.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as documentActions,
@@ -24,6 +26,7 @@ import { UploadProgress } from "./components/upload-progress/upload-progress.js"
 import {
 	MAX_RETRIES,
 	ZERO_UPLOAD_PROGRESS,
+	ZIP_FILE_REGEX,
 } from "./libs/constants/constants.js";
 import {
 	DocumentNotificationMessage,
@@ -42,6 +45,7 @@ import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [selectedArchive, setSelectedArchive] = useState<File | null>(null);
 	const [rejection, setRejection] = useState<null | string>(null);
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
@@ -56,14 +60,39 @@ const DocumentNew: React.FC = () => {
 	const location = useLocation();
 	const resumeDocumentId = (location.state as LocationState | null)?.documentId;
 
+	const handleZipComplete = useCallback((pdfFile: File): void => {
+		setSelectedArchive(null);
+		setSelectedFile(pdfFile);
+	}, []);
+
+	const handleZipError = useCallback((message: string): void => {
+		setSelectedArchive(null);
+		setRejection(message);
+	}, []);
+
+	const {
+		process: processZip,
+		reset: resetZipProcessor,
+		state: zipState,
+	} = useZipProcessor({
+		onComplete: handleZipComplete,
+		onError: handleZipError,
+	});
+
+	const isZipProcessing =
+		zipState.status === ZipProcessingStatus.EXTRACTING ||
+		zipState.status === ZipProcessingStatus.BUILDING;
+
+	const isBusy = isUploading || isZipProcessing;
+
 	const blocker = useBlocker(
 		({ currentLocation, nextLocation }) =>
-			isUploading && currentLocation.pathname !== nextLocation.pathname,
+			isBusy && currentLocation.pathname !== nextLocation.pathname,
 	);
 
 	useEffect(() => {
 		const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
-			if (isUploading) {
+			if (isBusy) {
 				event.preventDefault();
 			}
 		};
@@ -72,7 +101,7 @@ const DocumentNew: React.FC = () => {
 		return () => {
 			window.removeEventListener("beforeunload", handleBeforeUnload);
 		};
-	}, [isUploading]);
+	}, [isBusy]);
 
 	useEffect(() => {
 		if (resumeDocumentId) {
@@ -89,12 +118,13 @@ const DocumentNew: React.FC = () => {
 				if (abortControllerReference.current) {
 					abortControllerReference.current.abort();
 				}
+				resetZipProcessor();
 				blocker.proceed();
 			} else {
 				blocker.reset();
 			}
 		}
-	}, [blocker]);
+	}, [blocker, resetZipProcessor]);
 
 	const { dataStatus, resumedDocument } = useAppSelector(({ documents }) => ({
 		dataStatus: documents.dataStatus,
@@ -212,7 +242,6 @@ const DocumentNew: React.FC = () => {
 								error.name === DocumentNotificationMessage.ABORT_ERROR));
 
 					if (isCancelled) {
-						notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
 						return;
 					}
 
@@ -226,6 +255,18 @@ const DocumentNew: React.FC = () => {
 		[selectedFile, resumeDocumentId, dispatch],
 	);
 
+	const resetSelection = useCallback((): void => {
+		resetZipProcessor();
+		setSelectedFile(null);
+		setSelectedArchive(null);
+		setRejection(null);
+		setUploadProgress(ZERO_UPLOAD_PROGRESS);
+
+		if (fileInputReference.current) {
+			fileInputReference.current.value = "";
+		}
+	}, [resetZipProcessor]);
+
 	const handleCancelUpload = useCallback(() => {
 		if (abortControllerReference.current) {
 			abortControllerReference.current.abort();
@@ -233,8 +274,9 @@ const DocumentNew: React.FC = () => {
 		}
 		setIsUploading(false);
 		setIsUploaded(false);
-		setUploadProgress(ZERO_UPLOAD_PROGRESS);
-	}, []);
+		resetSelection();
+		notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
+	}, [resetSelection]);
 
 	const handleProcessDocument = useCallback(() => {
 		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
@@ -258,27 +300,35 @@ const DocumentNew: React.FC = () => {
 		})();
 	}, [resumeDocumentId, dispatch, navigate]);
 
-	const acceptFile = useCallback((file: File): void => {
-		const result = validateFile(file);
+	const acceptFile = useCallback(
+		(file: File): void => {
+			if (ZIP_FILE_REGEX.test(file.name)) {
+				setSelectedArchive(file);
+				setRejection(null);
+				processZip(file);
+				return;
+			}
 
-		if (result.isValid) {
-			setSelectedFile(file);
-			setRejection(null);
-		} else {
-			setRejection(result.reason);
-		}
-	}, []);
+			const result = validateFile(file);
+
+			if (result.isValid) {
+				setSelectedFile(file);
+				setRejection(null);
+			} else {
+				setRejection(result.reason);
+			}
+		},
+		[processZip],
+	);
 
 	const handleChangeFile = useCallback((): void => {
-		setSelectedFile(null);
-		setRejection(null);
-		setUploadProgress(ZERO_UPLOAD_PROGRESS);
-		if (fileInputReference.current) {
-			fileInputReference.current.value = "";
-		}
-	}, []);
+		resetSelection();
+	}, [resetSelection]);
 
 	const getScreenState = (): ScreenStateType => {
+		if (isZipProcessing) {
+			return ScreenState.PROCESSING;
+		}
 		if (isUploading) {
 			return ScreenState.UPLOADING;
 		}
@@ -308,6 +358,14 @@ const DocumentNew: React.FC = () => {
 							fileInputReference={fileInputReference}
 							onFileSelect={acceptFile}
 							rejection={rejection}
+						/>
+					)}
+
+					{screenState === ScreenState.PROCESSING && selectedArchive && (
+						<UploadProgress
+							fileName={selectedArchive.name}
+							fileSize={selectedArchive.size}
+							percent={zipState.progress}
 						/>
 					)}
 
