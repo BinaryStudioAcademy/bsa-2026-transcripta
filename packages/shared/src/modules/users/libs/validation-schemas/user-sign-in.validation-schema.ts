@@ -22,9 +22,11 @@ const userSignIn = z
 			}),
 		password: z
 			.string()
-			.trim()
 			.min(STRING_MINIMUM_LENGTH, {
 				message: UserValidationMessage.PASSWORD_REQUIRE,
+			})
+			.regex(UserValidationRule.PASSWORD_NO_WHITESPACE_REGEX, {
+				message: UserValidationMessage.PASSWORD_NO_WHITESPACE,
 			})
 			.min(UserValidationRule.PASSWORD_MINIMUM_LENGTH, {
 				message: UserValidationMessage.PASSWORD_MINIMUM_LENGTH,
