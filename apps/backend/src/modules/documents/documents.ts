@@ -1,5 +1,6 @@
 import { logger } from "~/libs/modules/logger/logger.js";
 import { pdfPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+import { pageTranscribeQueue } from "~/libs/modules/queue/queue.js";
 import { storage } from "~/libs/modules/storage/storage.js";
 import { pageRepository } from "~/modules/pages/pages.js";
 
@@ -13,6 +14,7 @@ const documentService = new DocumentService({
 	documentRepository,
 	logger,
 	pageRepository,
+	pageTranscribeQueue,
 	pdfPageProcessor,
 	storage,
 });
