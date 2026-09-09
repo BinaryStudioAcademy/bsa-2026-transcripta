@@ -2,12 +2,14 @@ import React, { useCallback, useRef, useState } from "react";
 
 import { AppRoute } from "~/libs/enums/app-route.enum.js";
 import { DataStatus } from "~/libs/enums/data-status.enum.js";
+import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { useZipProcessor } from "~/libs/hooks/use-zip-processor/use-zip-processor.hook.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
@@ -17,7 +19,10 @@ import { Dropzone } from "./components/dropzone/dropzone.js";
 import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
-import { ZERO_UPLOAD_PROGRESS } from "./libs/constants/constants.js";
+import {
+	ZERO_UPLOAD_PROGRESS,
+	ZIP_FILE_REGEX,
+} from "./libs/constants/constants.js";
 import { ScreenState } from "./libs/enums/enums.js";
 import { uploadFile, validateFile } from "./libs/helpers/helpers.js";
 import { type ScreenStateType } from "./libs/types/types.js";
@@ -25,6 +30,7 @@ import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [selectedArchive, setSelectedArchive] = useState<File | null>(null);
 	const [rejection, setRejection] = useState<null | string>(null);
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
@@ -38,6 +44,25 @@ const DocumentNew: React.FC = () => {
 	const { createdDocument, dataStatus } = useAppSelector(
 		({ documents }) => documents,
 	);
+
+	const handleZipComplete = useCallback((pdfFile: File): void => {
+		setSelectedArchive(null);
+		setSelectedFile(pdfFile);
+	}, []);
+
+	const handleZipError = useCallback((message: string): void => {
+		setSelectedArchive(null);
+		setRejection(message);
+	}, []);
+
+	const {
+		process: processZip,
+		reset: resetZipProcessor,
+		state: zipState,
+	} = useZipProcessor({
+		onComplete: handleZipComplete,
+		onError: handleZipError,
+	});
 
 	const handleUpload = useCallback(
 		(values: UploadFormValues) => {
@@ -76,12 +101,24 @@ const DocumentNew: React.FC = () => {
 		[selectedFile, dispatch],
 	);
 
+	const resetSelection = useCallback((): void => {
+		resetZipProcessor();
+		setSelectedFile(null);
+		setSelectedArchive(null);
+		setRejection(null);
+		setUploadProgress(ZERO_UPLOAD_PROGRESS);
+
+		if (fileInputReference.current) {
+			fileInputReference.current.value = "";
+		}
+	}, [resetZipProcessor]);
+
 	const handleCancelUpload = useCallback(() => {
 		setIsUploading(false);
 		setIsUploaded(false);
 		resetSelection();
 		// TODO: decide and implement what to do if user uploaded document to S3 and cancelled before ingesting
-	}, []);
+	}, [resetSelection]);
 
 	const handleProcessDocument = useCallback(() => {
 		if (!createdDocument) {
@@ -104,32 +141,39 @@ const DocumentNew: React.FC = () => {
 		})();
 	}, [createdDocument, dispatch, navigate]);
 
-	const acceptFile = useCallback((file: File): void => {
-		const result = validateFile(file);
+	const acceptFile = useCallback(
+		(file: File): void => {
+			if (ZIP_FILE_REGEX.test(file.name)) {
+				setSelectedArchive(file);
+				setRejection(null);
+				processZip(file);
+				return;
+			}
 
-		if (result.isValid) {
-			setSelectedFile(file);
-			setRejection(null);
-		} else {
-			setRejection(result.reason);
-		}
-	}, []);
+			const result = validateFile(file);
+
+			if (result.isValid) {
+				setSelectedFile(file);
+				setRejection(null);
+			} else {
+				setRejection(result.reason);
+			}
+		},
+		[processZip],
+	);
 
 	const handleChangeFile = useCallback((): void => {
 		resetSelection();
-	}, []);
+	}, [resetSelection]);
 
-	const resetSelection = (): void => {
-		setSelectedFile(null);
-		setRejection(null);
-		setUploadProgress(ZERO_UPLOAD_PROGRESS);
-
-		if (fileInputReference.current) {
-			fileInputReference.current.value = "";
-		}
-	};
+	const isZipProcessing =
+		zipState.status === ZipProcessingStatus.EXTRACTING ||
+		zipState.status === ZipProcessingStatus.BUILDING;
 
 	const getScreenState = (): ScreenStateType => {
+		if (isZipProcessing) {
+			return ScreenState.PROCESSING;
+		}
 		if (isUploading) {
 			return ScreenState.UPLOADING;
 		}
@@ -157,6 +201,14 @@ const DocumentNew: React.FC = () => {
 							fileInputReference={fileInputReference}
 							onFileSelect={acceptFile}
 							rejection={rejection}
+						/>
+					)}
+
+					{screenState === ScreenState.PROCESSING && selectedArchive && (
+						<UploadProgress
+							fileName={selectedArchive.name}
+							fileSize={selectedArchive.size}
+							percent={zipState.progress}
 						/>
 					)}
 
