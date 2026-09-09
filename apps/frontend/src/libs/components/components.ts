@@ -12,5 +12,6 @@ export { ProtectedRoute } from "./protected-route/protected-route.js";
 export { RouterProvider } from "./router-provider/router-provider.js";
 export { Sidebar } from "./sidebar/sidebar.js";
 export { StatusChip } from "./status-chip/status-chip.js";
+export { ThemeToggle } from "./theme-toggle/theme-toggle.js";
 export { Provider as StoreProvider } from "react-redux";
 export { Outlet as RouterOutlet } from "react-router-dom";
