@@ -85,4 +85,14 @@ const loadById = createAsyncThunk<
 	{ serializeError },
 );
 
-export { create, getUploadUrl, ingest, loadAll, loadById };
+const remove = createAsyncThunk<number, number, AsyncThunkConfig>(
+	`${sliceName}/remove`,
+	async (id, { extra }) => {
+		const { documentApi } = extra;
+		await documentApi.remove(id);
+		return id;
+	},
+	{ serializeError },
+);
+
+export { create, getUploadUrl, ingest, loadAll, loadById, remove };

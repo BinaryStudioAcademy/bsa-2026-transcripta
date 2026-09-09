@@ -1,4 +1,11 @@
-import { create, getUploadUrl, ingest, loadAll, loadById } from "./actions.js";
+import {
+	create,
+	getUploadUrl,
+	ingest,
+	loadAll,
+	loadById,
+	remove,
+} from "./actions.js";
 import { actions } from "./documents.slice.js";
 
 const allActions = {
@@ -8,6 +15,7 @@ const allActions = {
 	ingest,
 	loadAll,
 	loadById,
+	remove,
 };
 
 export { allActions as actions };
