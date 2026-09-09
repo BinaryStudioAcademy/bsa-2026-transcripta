@@ -4,7 +4,6 @@ import {
 	Link,
 	LoaderOverlay,
 	ProgressBar,
-	StatusChip,
 } from "~/libs/components/components.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
@@ -15,6 +14,8 @@ import {
 	useParams,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+
+import { DocumentStatusBlock } from "./libs/components/components.js";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -46,8 +47,11 @@ const Document: React.FC = () => {
 			{hasError && <p>Unable to load the document.</p>}
 			{currentDocument && (
 				<>
-					<h1>{document.title}</h1>
-					<StatusChip status={currentDocument.status} />
+					<h1>{currentDocument.title}</h1>
+					<DocumentStatusBlock
+						documentId={Number(id)}
+						status={currentDocument.status}
+					/>
 
 					<section>
 						<h2>Transcription</h2>
