@@ -11,7 +11,7 @@ import {
 import { type ValueOf } from "~/libs/types/types.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
-import { DocumentStatus } from "../enums/enums.js";
+import { DocumentStatus, ToggleProcessingLabel } from "../enums/enums.js";
 
 type Properties = {
 	documentId: number;
@@ -63,7 +63,11 @@ const DocumentStatusBlock: React.FC<Properties> = ({ documentId, status }) => {
 				<Button
 					isDisabled={isPauseResumeLoading}
 					isPrimary={isPaused}
-					label={isPaused ? "Resume" : "Pause"}
+					label={
+						isPaused
+							? ToggleProcessingLabel.RESUME
+							: ToggleProcessingLabel.PAUSE
+					}
 					onClick={handleToggleProcessing}
 				/>
 			)}
