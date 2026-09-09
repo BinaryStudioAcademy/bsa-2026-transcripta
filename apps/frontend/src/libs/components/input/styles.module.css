@@ -61,3 +61,37 @@
 	line-height: 1.4;
 	color: var(--text-3);
 }
+
+.input-container {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.input-container .input {
+	padding-right: 36px;
+}
+
+.toggle-button {
+	position: absolute;
+	right: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	color: var(--text-2);
+	cursor: pointer;
+	background: transparent;
+	border: none;
+}
+
+.toggle-button:hover {
+	color: var(--text);
+}
+
+.icon {
+	display: block;
+	width: 20px;
+	height: 20px;
+}
