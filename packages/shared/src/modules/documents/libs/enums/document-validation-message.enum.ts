@@ -7,6 +7,7 @@ const DocumentValidationMessage = {
 	DOCUMENT_NOT_FOUND: "Document not found.",
 	FILE_NAME_INVALID_NAME: "Unsupported type. PDFs and image archives only.",
 	FILE_NAME_REQUIRE: "File name is required.",
+	NOT_FOUND: "Document not found",
 	PAGE_FROM_POSITIVE: "Page from must be a positive integer",
 	PAGE_LIMIT_MAXIMUM: "Page limit must not exceed 50",
 	PAGE_LIMIT_POSITIVE: "Page limit must be a positive integer",
