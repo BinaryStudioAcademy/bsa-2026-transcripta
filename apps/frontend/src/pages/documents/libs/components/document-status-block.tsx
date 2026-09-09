@@ -42,8 +42,8 @@ const DocumentStatusBlock: React.FC<Properties> = ({ documentId, status }) => {
 			setOptimisticStatus(targetStatus);
 
 			await (isPaused
-				? dispatch(documentActions.resume(documentId)).unwrap()
-				: dispatch(documentActions.pause(documentId)).unwrap());
+				? dispatch(documentActions.resume(documentId))
+				: dispatch(documentActions.pause(documentId)));
 		});
 	}, [dispatch, documentId, isPaused, setOptimisticStatus]);
 
