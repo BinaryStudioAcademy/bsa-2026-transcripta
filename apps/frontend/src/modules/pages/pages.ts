@@ -16,3 +16,8 @@ export {
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";
 export { /** @public */ actions, reducer } from "./slices/pages.js";
+
+export {
+	selectCurrentPage,
+	selectPagesDataStatus,
+} from "./slices/selectors.js";

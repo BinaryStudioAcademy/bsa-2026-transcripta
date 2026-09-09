@@ -13,6 +13,7 @@ type RollbackState = {
 
 type State = {
 	byId: Record<number, DocumentGetPagesItemResponseDto>;
+	idsByPageNo: Record<number, number>;
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	lastError: null | SerializedAppError;
@@ -21,6 +22,7 @@ type State = {
 
 const initialState: State = {
 	byId: {},
+	idsByPageNo: {},
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	lastError: null,
@@ -79,7 +81,9 @@ const { actions, name, reducer } = createSlice({
 		builder.addCase(loadPages.fulfilled, (state, action) => {
 			for (const page of action.payload.items) {
 				state.byId[page.id] = page;
+				state.idsByPageNo[page.pageNo] = page.id;
 			}
+			state.cursorPageNo = action.meta.arg.query.from;
 			state.dataStatus = DataStatus.FULFILLED;
 		});
 
