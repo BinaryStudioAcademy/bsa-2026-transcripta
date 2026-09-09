@@ -3,6 +3,7 @@ const UserValidationRule = {
 	EMAIL_MINIMUM_LENGTH: 1,
 	PASSWORD_MAXIMUM_LENGTH: 128,
 	PASSWORD_MINIMUM_LENGTH: 8,
+	PASSWORD_NO_WHITESPACE_REGEX: /^\S+$/,
 } as const;
 
 export { UserValidationRule };
