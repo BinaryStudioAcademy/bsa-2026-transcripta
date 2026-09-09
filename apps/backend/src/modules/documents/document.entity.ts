@@ -12,7 +12,11 @@ type Preset = {
 };
 
 class DocumentEntity {
+	private budgetUsd: string;
+
 	private createdAt: string;
+
+	private cursorPageNo: number;
 
 	private id: null | number;
 
@@ -30,12 +34,16 @@ class DocumentEntity {
 
 	private sourceName: null | string;
 
+	private spentUsd: string;
+
 	private status: DocumentStatusValue;
 
 	private title: string;
 
 	private constructor({
+		budgetUsd,
 		createdAt,
+		cursorPageNo,
 		id,
 		ownerId,
 		pageCount,
@@ -44,10 +52,13 @@ class DocumentEntity {
 		sourceBytes,
 		sourceKey,
 		sourceName,
+		spentUsd,
 		status,
 		title,
 	}: {
+		budgetUsd: string;
 		createdAt: string;
+		cursorPageNo: number;
 		id: null | number;
 		ownerId: number;
 		pageCount: number;
@@ -56,10 +67,13 @@ class DocumentEntity {
 		sourceBytes: null | number;
 		sourceKey: null | string;
 		sourceName: null | string;
+		spentUsd: string;
 		status: DocumentStatusValue;
 		title: string;
 	}) {
+		this.budgetUsd = budgetUsd;
 		this.createdAt = createdAt;
+		this.cursorPageNo = cursorPageNo;
 		this.id = id;
 		this.ownerId = ownerId;
 		this.pageCount = pageCount;
@@ -68,12 +82,15 @@ class DocumentEntity {
 		this.sourceBytes = sourceBytes;
 		this.sourceKey = sourceKey;
 		this.sourceName = sourceName;
+		this.spentUsd = spentUsd;
 		this.status = status;
 		this.title = title;
 	}
 
 	public static initialize({
+		budgetUsd,
 		createdAt,
+		cursorPageNo,
 		id,
 		ownerId,
 		pageCount,
@@ -82,10 +99,13 @@ class DocumentEntity {
 		sourceBytes,
 		sourceKey,
 		sourceName,
+		spentUsd,
 		status,
 		title,
 	}: {
+		budgetUsd: string;
 		createdAt: string;
+		cursorPageNo: number;
 		id: number;
 		ownerId: number;
 		pageCount: number;
@@ -94,11 +114,14 @@ class DocumentEntity {
 		sourceBytes?: null | number;
 		sourceKey?: null | string;
 		sourceName?: null | string;
+		spentUsd: string;
 		status: DocumentStatusValue;
 		title: string;
 	}): DocumentEntity {
 		return new DocumentEntity({
+			budgetUsd,
 			createdAt,
+			cursorPageNo,
 			id,
 			ownerId,
 			pageCount,
@@ -107,6 +130,7 @@ class DocumentEntity {
 			sourceBytes: sourceBytes ?? null,
 			sourceKey: sourceKey ?? null,
 			sourceName: sourceName ?? null,
+			spentUsd,
 			status,
 			title,
 		});
@@ -128,7 +152,9 @@ class DocumentEntity {
 		title: string;
 	}): DocumentEntity {
 		return new DocumentEntity({
+			budgetUsd: "10.0000",
 			createdAt: "",
+			cursorPageNo: 1,
 			id: null,
 			ownerId,
 			pageCount: 0,
@@ -136,6 +162,7 @@ class DocumentEntity {
 			sourceBytes: sourceBytes ?? null,
 			sourceKey: sourceKey ?? null,
 			sourceName: sourceName ?? null,
+			spentUsd: "0.000000",
 			status: DocumentStatus.DRAFT,
 			title,
 		});
