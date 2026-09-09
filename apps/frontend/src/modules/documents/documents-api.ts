@@ -77,6 +77,34 @@ class DocumentApi extends BaseHTTPApi {
 			},
 		);
 	}
+
+	public async pause(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(DocumentsApiPath.PAUSE, {
+				id: String(id),
+			}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify({}),
+			},
+		);
+	}
+
+	public async resume(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(DocumentsApiPath.RESUME, {
+				id: String(id),
+			}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify({}),
+			},
+		);
+	}
 }
 
 export { DocumentApi };
