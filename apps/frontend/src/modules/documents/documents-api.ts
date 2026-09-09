@@ -92,6 +92,17 @@ class DocumentApi extends BaseHTTPApi {
 		);
 	}
 
+	public async remove(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(DocumentsApiPath.BY_ID, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.DELETE,
+			},
+		);
+	}
+
 	public async resume(id: number): Promise<void> {
 		await this.load(
 			this.getFullEndpoint(DocumentsApiPath.RESUME, {

@@ -1,4 +1,12 @@
-import { create, ingest, loadAll, loadById, pause, resume } from "./actions.js";
+import {
+	create,
+	ingest,
+	loadAll,
+	loadById,
+	pause,
+	remove,
+	resume,
+} from "./actions.js";
 import { actions } from "./documents.slice.js";
 
 const allActions = {
@@ -8,6 +16,7 @@ const allActions = {
 	loadAll,
 	loadById,
 	pause,
+	remove,
 	resume,
 };
 

@@ -9,7 +9,7 @@ import {
 } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
-import { create, loadAll, loadById, pause, resume } from "./actions.js";
+import { create, loadAll, loadById, pause, remove, resume } from "./actions.js";
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
@@ -77,6 +77,15 @@ const { actions, name, reducer } = createSlice({
 
 			state.document = null;
 			state.documentDataStatus = DataStatus.REJECTED;
+		});
+		builder.addCase(remove.fulfilled, (state, action) => {
+			state.documents = state.documents.filter(
+				(document_) => document_.id !== action.payload,
+			);
+
+			if (state.document?.id === action.payload) {
+				state.document = null;
+			}
 		});
 		builder.addCase(pause.fulfilled, (state, action) => {
 			state.pauseResumeDataStatus = DataStatus.FULFILLED;

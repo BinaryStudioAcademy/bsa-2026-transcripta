@@ -87,4 +87,14 @@ const resume = createAsyncThunk<number, number, AsyncThunkConfig>(
 	{ serializeError },
 );
 
-export { create, ingest, loadAll, loadById, pause, resume };
+const remove = createAsyncThunk<number, number, AsyncThunkConfig>(
+	`${sliceName}/remove`,
+	async (id, { extra }) => {
+		const { documentApi } = extra;
+		await documentApi.remove(id);
+		return id;
+	},
+	{ serializeError },
+);
+
+export { create, ingest, loadAll, loadById, pause, remove, resume };
