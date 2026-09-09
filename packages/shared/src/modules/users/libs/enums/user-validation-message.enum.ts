@@ -4,6 +4,7 @@ const UserValidationMessage = {
 	EMAIL_WRONG: "Email is invalid",
 	PASSWORD_MAXIMUM_LENGTH: "Password must be at most 128 characters",
 	PASSWORD_MINIMUM_LENGTH: "Password must be at least 8 characters",
+	PASSWORD_NO_WHITESPACE: "Password must not contain whitespace",
 	PASSWORD_REQUIRE: "Password is required",
 } as const;
 
