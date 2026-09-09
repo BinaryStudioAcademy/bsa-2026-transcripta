@@ -1,4 +1,4 @@
-import { PageStatus, type ValueOf } from "@transcripta/shared";
+import { type PageStatus, type ValueOf } from "@transcripta/shared";
 
 type PageWithTranscriptionRow = {
 	id: number;
