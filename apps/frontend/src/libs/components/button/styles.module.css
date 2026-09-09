@@ -52,3 +52,16 @@
 	pointer-events: none;
 	cursor: default;
 }
+
+.button--danger {
+	color: var(--on-danger);
+	background-color: var(--danger);
+}
+
+.button--danger:hover {
+	background-color: var(--danger-hover);
+}
+
+.button--danger:active {
+	background-color: var(--danger-active);
+}
