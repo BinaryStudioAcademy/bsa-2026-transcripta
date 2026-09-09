@@ -1,9 +1,10 @@
+import { logger } from "~/libs/modules/logger/logger.js";
 import { secrets } from "~/libs/modules/secrets/secrets.js";
 
 import { EstimateTokens } from "./estimate-tokens.module.js";
 import { type EstimateTokensResult } from "./libs/types/types.js";
 
-const estimateTokensService = new EstimateTokens(secrets);
+const estimateTokensService = new EstimateTokens(secrets, logger);
 
 const estimateTokens = async (
 	blocks: string[],

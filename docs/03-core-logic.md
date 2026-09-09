@@ -193,10 +193,10 @@ neighbouring pages. Deliberately excluded:
 
 **How it counts.**
 
-| Model                                                                   | Method                                                                                                                                                                                                                    |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Anthropic (`anthropic-direct:…` or a Bedrock id containing `anthropic`) | Exact via Anthropic SDK `beta.messages.countTokens` (SSM key `/transcripta/anthropic-api-key`). Bedrock ids are mapped to the API model (strip `anthropic.` and `-vN:M`). Missing key or API failure → character estimate |
-| Everything else                                                         | `ceil(text.length / 4)`                                                                                                                                                                                                   |
+| Model                                                                    | Method                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anthropic (`anthropic-direct:…` or a Bedrock id containing `anthropic.`) | Exact via Anthropic SDK `beta.messages.countTokens` (SSM key `/transcripta/anthropic-api-key`). Bedrock ids are mapped to the API model (strip `anthropic.` and `-vN:M`). Missing key or API failure → character estimate |
+| Everything else                                                          | `ceil(text.length / 4)`                                                                                                                                                                                                   |
 
 **Cache.** In-process `Map` keyed by `sha256(blocks + model)`. Counting the same
 assembled context twice does not call the provider twice.

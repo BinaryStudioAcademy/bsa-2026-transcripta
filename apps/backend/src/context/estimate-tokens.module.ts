@@ -1,10 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
 import {
 	ANTHROPIC_KEY_PARAMETER,
 	CONTEXT_HASH_SEPARATOR,
+	COUNT_TOKENS_FALLBACK_MESSAGE,
+	TOKEN_CACHE_MAX_SIZE,
 } from "./libs/constants/constants.js";
 import { TokenCountSource } from "./libs/enums/enums.js";
 import {
@@ -18,10 +21,13 @@ import { type EstimateTokensResult } from "./libs/types/types.js";
 class EstimateTokens {
 	private cache = new Map<string, EstimateTokensResult>();
 
+	private logger: Logger;
+
 	private secrets: BaseSecrets;
 
-	public constructor(secrets: BaseSecrets) {
+	public constructor(secrets: BaseSecrets, logger: Logger) {
 		this.secrets = secrets;
+		this.logger = logger;
 	}
 
 	private async countAnthropicTokens(
@@ -48,9 +54,38 @@ class EstimateTokens {
 			});
 
 			return response.input_tokens;
-		} catch {
+		} catch (error: unknown) {
+			this.logger.warn(COUNT_TOKENS_FALLBACK_MESSAGE, { error, model });
+
 			return null;
 		}
+	}
+
+	private getCached(cacheKey: string): EstimateTokensResult | undefined {
+		const cached = this.cache.get(cacheKey);
+
+		if (cached === undefined) {
+			return undefined;
+		}
+
+		this.cache.delete(cacheKey);
+		this.cache.set(cacheKey, cached);
+
+		return cached;
+	}
+
+	private setCached(cacheKey: string, result: EstimateTokensResult): void {
+		if (this.cache.has(cacheKey)) {
+			this.cache.delete(cacheKey);
+		} else if (this.cache.size >= TOKEN_CACHE_MAX_SIZE) {
+			const oldestKey = this.cache.keys().next().value;
+
+			if (oldestKey !== undefined) {
+				this.cache.delete(oldestKey);
+			}
+		}
+
+		this.cache.set(cacheKey, result);
 	}
 
 	public async estimate(
@@ -58,7 +93,7 @@ class EstimateTokens {
 		model: string,
 	): Promise<EstimateTokensResult> {
 		const cacheKey = hashContext(blocks, model);
-		const cached = this.cache.get(cacheKey);
+		const cached = this.getCached(cacheKey);
 
 		if (cached !== undefined) {
 			return cached;
@@ -87,7 +122,7 @@ class EstimateTokens {
 			};
 		}
 
-		this.cache.set(cacheKey, result);
+		this.setCached(cacheKey, result);
 
 		return result;
 	}
