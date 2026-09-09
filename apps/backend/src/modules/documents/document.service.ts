@@ -187,12 +187,22 @@ class DocumentService {
 		filePath: string;
 		page: number;
 	}): Promise<void> {
+		let pngPath: string;
+		try {
+			pngPath = await this.pdfPageProcessor.convertPageToPNG(filePath, page);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setError(documentId, errorMessage);
+			throw new HTTPError({
+				message: errorMessage,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
 		const { isBlank, pageImage, pageThumbnail } =
-			await this.pdfPageProcessor.processPage(
-				filePath,
-				page,
-				blankStdevThreshold ?? null,
-			);
+			await this.pdfPageProcessor.processPage(pngPath, blankStdevThreshold);
 
 		let imageKey: string;
 		let thumbnailKey: string;
@@ -480,7 +490,19 @@ class DocumentService {
 		);
 
 		try {
-			const pageCount = await this.pdfPageProcessor.getPageCount(filePath);
+			let pageCount: number;
+			try {
+				pageCount = await this.pdfPageProcessor.getPageCount(filePath);
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+
+				await this.documentRepository.setError(documentId, errorMessage);
+				throw new HTTPError({
+					message: errorMessage,
+					status: HTTPCode.UNPROCESSED_ENTITY,
+				});
+			}
 
 			if (pageCount > MAX_DOCUMENT_PAGES) {
 				await this.documentRepository.setError(

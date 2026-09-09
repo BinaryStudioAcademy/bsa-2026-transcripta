@@ -1,4 +1,5 @@
 type PDFPageProcessor = {
+	convertPageToPNG(filePath: string, page: number): Promise<string>;
 	getPageCount(filePath: string): Promise<number>;
 	processPage(
 		filePath: string,

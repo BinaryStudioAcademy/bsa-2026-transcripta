@@ -18,36 +18,6 @@ import { type PDFPageProcessor as IPDFPageProcessor } from "./libs/types/types.j
 const execAsync = promisify(execFile);
 
 class PDFPageProcessor implements IPDFPageProcessor {
-	private async convertPageToPNG(
-		filePath: string,
-		page: number,
-	): Promise<string> {
-		const directoryName = path.dirname(filePath);
-		const stringPage = String(page);
-		const pngPath = `${directoryName}/page-${stringPage}`;
-
-		await execAsync(
-			"pdftoppm",
-			[
-				"-f",
-				stringPage,
-				"-l",
-				stringPage,
-				"-r",
-				"300",
-				"-png",
-				"-singlefile",
-				filePath,
-				pngPath,
-			],
-			{
-				timeout: PDFTOPPM_TIMEOUT,
-			},
-		);
-
-		return `${pngPath}.png`;
-	}
-
 	private async createNormalized(source: Sharp): Promise<Buffer> {
 		const normalized = await source
 			.clone()
@@ -84,8 +54,47 @@ class PDFPageProcessor implements IPDFPageProcessor {
 		return source;
 	}
 
+	public async convertPageToPNG(
+		filePath: string,
+		page: number,
+	): Promise<string> {
+		const directoryName = path.dirname(filePath);
+		const stringPage = String(page);
+		const pngPath = `${directoryName}/page-${stringPage}`;
+
+		try {
+			await execAsync(
+				"pdftoppm",
+				[
+					"-f",
+					stringPage,
+					"-l",
+					stringPage,
+					"-r",
+					"300",
+					"-png",
+					"-singlefile",
+					filePath,
+					pngPath,
+				],
+				{
+					timeout: PDFTOPPM_TIMEOUT,
+				},
+			);
+
+			return `${pngPath}.png`;
+		} catch {
+			throw new Error(ErrorMessage.FAILED_TO_CONVERT_PAGE);
+		}
+	}
+
 	public async getPageCount(filePath: string): Promise<number> {
-		const { stdout } = await execAsync("pdfinfo", [filePath]);
+		let stdout: string;
+		try {
+			({ stdout } = await execAsync("pdfinfo", [filePath]));
+		} catch {
+			throw new Error(ErrorMessage.FAILED_TO_READ_PDF);
+		}
 
 		const match = new RegExp(/^Pages:\s+(?<count>\d+)$/im).exec(stdout);
 		const pageCount = match?.groups?.["count"];
@@ -98,16 +107,13 @@ class PDFPageProcessor implements IPDFPageProcessor {
 	}
 
 	public async processPage(
-		filePath: string,
-		page: number,
+		pngPath: string,
 		blankStdevThreshold: null | number,
 	): Promise<{
 		isBlank: boolean;
 		pageImage: Buffer;
 		pageThumbnail: Buffer;
 	}> {
-		const pngPath = await this.convertPageToPNG(filePath, page);
-
 		try {
 			const source = this.sharpImage(pngPath);
 			const [pageImage, pageThumbnail, isBlank] = await Promise.all([
