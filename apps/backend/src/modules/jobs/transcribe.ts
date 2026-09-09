@@ -38,13 +38,7 @@ const TRANSCRIBABLE_STATUSES = new Set<ValueOf<typeof DocumentStatus>>([
 	DocumentStatus.READY,
 ]);
 
-type CallOutcome = {
-	inputTokens: number;
-	latencyMs: number;
-	outputTokens: number;
-	structured: unknown;
-	text: string;
-};
+type CallOutcome = FailedCallOutcome | SuccessfulCallOutcome;
 
 type Dependencies = {
 	config: Config;
@@ -53,17 +47,27 @@ type Dependencies = {
 	transcriptionService: TranscriptionService;
 };
 
-type ParseResult = { ok: false } | { ok: true; value: unknown };
-
-type ResolvedTranscription = {
-	costUsd: number;
-	fromCache: boolean;
+type FailedCallOutcome = {
 	inputTokens: number;
 	latencyMs: number;
+	ok: false;
 	outputTokens: number;
-	structured: unknown;
-	text: string;
 };
+
+type FailedResolvedTranscription = {
+	costUsd: number;
+	fromCache: false;
+	inputTokens: number;
+	latencyMs: number;
+	ok: false;
+	outputTokens: number;
+};
+
+type ParseResult = { ok: false } | { ok: true; value: unknown };
+
+type ResolvedTranscription =
+	| FailedResolvedTranscription
+	| SuccessfulResolvedTranscription;
 
 type ResolveOptions = Dependencies & {
 	cacheKey: string;
@@ -87,6 +91,26 @@ type StoreOptions = {
 	pageId: number;
 	presetId: number;
 	provider: string;
+	structured: unknown;
+	text: string;
+};
+
+type SuccessfulCallOutcome = {
+	inputTokens: number;
+	latencyMs: number;
+	ok: true;
+	outputTokens: number;
+	structured: unknown;
+	text: string;
+};
+
+type SuccessfulResolvedTranscription = {
+	costUsd: number;
+	fromCache: boolean;
+	inputTokens: number;
+	latencyMs: number;
+	ok: true;
+	outputTokens: number;
 	structured: unknown;
 	text: string;
 };
@@ -151,7 +175,7 @@ const isBudgetExhausted = (document: {
 
 const transcribeWithRepair = async (
 	options: TranscribeRequestOptions,
-): Promise<CallOutcome | null> => {
+): Promise<CallOutcome> => {
 	const {
 		image,
 		logger,
@@ -164,6 +188,9 @@ const transcribeWithRepair = async (
 	} = options;
 
 	let repairNote: string | undefined;
+	let usedInputTokens = EMPTY_LENGTH;
+	let usedLatencyMs = EMPTY_LENGTH;
+	let usedOutputTokens = EMPTY_LENGTH;
 
 	for (let attempt = EMPTY_LENGTH; attempt <= MAX_REPAIR_ATTEMPTS; attempt++) {
 		const requestPrompt = repairNote
@@ -181,14 +208,29 @@ const transcribeWithRepair = async (
 			});
 		} catch (error) {
 			logger.error(`Model call failed for page ${String(pageId)}`, { error });
-			return null;
+
+			return {
+				inputTokens: usedInputTokens,
+				latencyMs: usedLatencyMs,
+				ok: false,
+				outputTokens: usedOutputTokens,
+			};
 		}
+
+		usedInputTokens += response.usage.inputTokens;
+		usedLatencyMs += response.latencyMs;
+		usedOutputTokens += response.usage.outputTokens;
 
 		const parsed = parseModelJson(response.text);
 
 		if (!parsed.ok) {
 			if (attempt >= MAX_REPAIR_ATTEMPTS) {
-				return null;
+				return {
+					inputTokens: usedInputTokens,
+					latencyMs: usedLatencyMs,
+					ok: false,
+					outputTokens: usedOutputTokens,
+				};
 			}
 
 			repairNote = "Your previous output was not valid JSON.";
@@ -199,22 +241,33 @@ const transcribeWithRepair = async (
 
 		if (result.valid) {
 			return {
-				inputTokens: response.usage.inputTokens,
-				latencyMs: response.latencyMs,
-				outputTokens: response.usage.outputTokens,
+				inputTokens: usedInputTokens,
+				latencyMs: usedLatencyMs,
+				ok: true,
+				outputTokens: usedOutputTokens,
 				structured: parsed.value,
 				text: response.text,
 			};
 		}
 
 		if (attempt >= MAX_REPAIR_ATTEMPTS) {
-			return null;
+			return {
+				inputTokens: usedInputTokens,
+				latencyMs: usedLatencyMs,
+				ok: false,
+				outputTokens: usedOutputTokens,
+			};
 		}
 
 		repairNote = formatValidationErrors(result.errors ?? []);
 	}
 
-	return null;
+	return {
+		inputTokens: usedInputTokens,
+		latencyMs: usedLatencyMs,
+		ok: false,
+		outputTokens: usedOutputTokens,
+	};
 };
 
 const resolveFromCacheOrModel = async (
@@ -246,6 +299,7 @@ const resolveFromCacheOrModel = async (
 			fromCache: true,
 			inputTokens: cached.inputTokens,
 			latencyMs: EMPTY_LENGTH,
+			ok: true,
 			outputTokens: cached.outputTokens,
 			structured,
 			text: cached.text,
@@ -273,37 +327,46 @@ const resolveFromCacheOrModel = async (
 		transcriptionService,
 	});
 
-	if (!outcome) {
-		await recordFailure(page.id, "invalid_model_output", page.attempts);
-		return null;
+	const costUsd = calculateTokenCost({
+		inputTokens: outcome.inputTokens,
+		modelId,
+		outputTokens: outcome.outputTokens,
+		rates: {
+			amazon: {
+				input: config.ENV.PRICING.AMAZON_INPUT,
+				output: config.ENV.PRICING.AMAZON_OUTPUT,
+			},
+			anthropic: {
+				input: config.ENV.PRICING.ANTHROPIC_INPUT,
+				output: config.ENV.PRICING.ANTHROPIC_OUTPUT,
+			},
+			anthropicDirect: {
+				input: config.ENV.PRICING.ANTHROPIC_DIRECT_INPUT,
+				output: config.ENV.PRICING.ANTHROPIC_DIRECT_OUTPUT,
+			},
+		},
+	});
+
+	if (outcome.ok) {
+		return {
+			costUsd,
+			fromCache: false,
+			inputTokens: outcome.inputTokens,
+			latencyMs: outcome.latencyMs,
+			ok: true,
+			outputTokens: outcome.outputTokens,
+			structured: outcome.structured,
+			text: outcome.text,
+		};
 	}
 
 	return {
-		costUsd: calculateTokenCost({
-			inputTokens: outcome.inputTokens,
-			modelId,
-			outputTokens: outcome.outputTokens,
-			rates: {
-				amazon: {
-					input: config.ENV.PRICING.AMAZON_INPUT,
-					output: config.ENV.PRICING.AMAZON_OUTPUT,
-				},
-				anthropic: {
-					input: config.ENV.PRICING.ANTHROPIC_INPUT,
-					output: config.ENV.PRICING.ANTHROPIC_OUTPUT,
-				},
-				anthropicDirect: {
-					input: config.ENV.PRICING.ANTHROPIC_DIRECT_INPUT,
-					output: config.ENV.PRICING.ANTHROPIC_DIRECT_OUTPUT,
-				},
-			},
-		}),
+		costUsd,
 		fromCache: false,
 		inputTokens: outcome.inputTokens,
 		latencyMs: outcome.latencyMs,
+		ok: false,
 		outputTokens: outcome.outputTokens,
-		structured: outcome.structured,
-		text: outcome.text,
 	};
 };
 
@@ -443,6 +506,42 @@ const createTranscribeHandler =
 		});
 
 		if (!resolved) {
+			return;
+		}
+
+		if (!resolved.ok) {
+			await DocumentModel.transaction(async (trx) => {
+				await trx.raw(
+					`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
+					[resolved.costUsd, documentId],
+				);
+
+				await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+					actorId: null,
+					details: {
+						costUsd: resolved.costUsd,
+						error: "invalid_model_output",
+						inputTokens: resolved.inputTokens,
+						outputTokens: resolved.outputTokens,
+					},
+					documentId,
+					durationMs: resolved.latencyMs,
+					event: "transcribe_failed",
+					pageId,
+					transcriptionId: null,
+				});
+
+				await trx
+					.from(DatabaseTableName.PAGE)
+					.where("id", pageId)
+					.update({
+						attempts: page.attempts + ONE,
+						lastError: "invalid_model_output",
+						status: PageStatus.FAILED,
+					});
+			});
+
+			await applyBudgetStopIfExceeded(documentId);
 			return;
 		}
 

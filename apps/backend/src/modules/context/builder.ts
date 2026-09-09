@@ -85,11 +85,6 @@ const buildContext = async ({
 
 	const fixedBlocks: string[] = [];
 
-	const instructionsBlock = preset.instructions;
-	if (instructionsBlock) {
-		fixedBlocks.push(instructionsBlock);
-	}
-
 	const seedBlock = renderSeedGlossary(preset);
 	if (seedBlock) {
 		fixedBlocks.push(seedBlock);
