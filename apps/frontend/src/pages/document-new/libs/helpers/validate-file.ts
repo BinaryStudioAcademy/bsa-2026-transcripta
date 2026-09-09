@@ -1,46 +1,29 @@
-import { fileValidationSchema } from "../validation-schemas/validation-schemas.js";
-import {
-	DEFAULT_FILE_REJECTION_REASON,
-	FIRST_ISSUE_INDEX,
-} from "./libs/constants/constants.js";
-import { type FileValidationResult } from "./libs/types/types.js";
+import { FILE_NAME_FIELD } from "~/libs/constants/file.constants.js";
+import type { ValidationIssue } from "~/libs/types/validation.types.js";
 
-const FILE_NAME_FIELD = "fileName";
-const FIRST_PATH_INDEX = 0;
+const validateFile = (
+	file: File,
+	allowedTypes: string[],
+	maxSizeBytes: number,
+): ValidationIssue[] => {
+	const issues: ValidationIssue[] = [];
 
-type ValidationIssue = {
-	message: string;
-	path: (number | string)[];
-};
-
-const resolveRejection = (
-	issues: readonly ValidationIssue[],
-): null | string => {
-	const typeIssue = issues.find((issue) => {
-		return issue.path[FIRST_PATH_INDEX] === FILE_NAME_FIELD;
-	});
-
-	if (typeIssue) {
-		return typeIssue.message;
+	if (!allowedTypes.includes(file.type)) {
+		issues.push({
+			message: `File type "${file.type}" is not allowed. Allowed: ${allowedTypes.join(", ")}`,
+			path: [FILE_NAME_FIELD],
+		});
 	}
 
-	return issues[FIRST_ISSUE_INDEX]?.message ?? null;
-};
+	if (file.size > maxSizeBytes) {
+		const maxSizeMB = maxSizeBytes / (1024 * 1024);
+		issues.push({
+			message: `File size exceeds ${maxSizeMB} MB limit.`,
+			path: [FILE_NAME_FIELD],
+		});
+	}
 
-const validateFile = (file: File): FileValidationResult => {
-	const result = fileValidationSchema.safeParse({
-		fileBytes: file.size,
-		fileName: file.name,
-	});
-
-	return result.success
-		? { isValid: true }
-		: {
-				isValid: false,
-				reason:
-					resolveRejection(result.error.issues) ??
-					DEFAULT_FILE_REJECTION_REASON,
-			};
+	return issues;
 };
 
 export { validateFile };

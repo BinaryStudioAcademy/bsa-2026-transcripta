@@ -1,6 +1,4 @@
-const NATURAL_SORT_EQUAL = 0;
-const NATURAL_SORT_LESS = -1;
-const NATURAL_SORT_GREATER = 1;
+import { NATURAL_SORT_EQUAL, NATURAL_SORT_GREATER, NATURAL_SORT_LESS } from "~/libs/constants/sort.constants.js";
 
 type SortPart = {
 	key: string;

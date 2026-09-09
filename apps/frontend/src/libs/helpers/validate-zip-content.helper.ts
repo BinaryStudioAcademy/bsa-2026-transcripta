@@ -1,28 +1,10 @@
 import { DEFAULT_MAX_PAGES } from "~/pages/document-new/libs/constants/constants.js";
+import { EMPTY_LENGTH, FIRST_INDEX } from "~/libs/constants/common.constants.js";
 
 import { isImageFile } from "./is-image-file.helper.js";
 import { naturalSort } from "./natural-sort.helper.js";
-
-const PREVIEW_LIMIT = 5;
-const EMPTY_LENGTH = 0;
-const FIRST_INDEX = 0;
-
-const JUNK_PATTERNS = [/__MACOSX/, /\.DS_Store$/, /Thumbs\.db$/];
-
-type ZipArchiveStatus =
-	| "invalid_content"
-	| "no_images"
-	| "too_many_pages"
-	| "valid";
-
-type ZipValidationResult = {
-	allEntries: string[];
-	imageCount: number;
-	message: string;
-	rejected: string[];
-	sortedImages: string[];
-	status: ZipArchiveStatus;
-};
+import { PREVIEW_LIMIT, JUNK_PATTERNS } from "~/libs/constants/zip.constants.js";
+import type { ZipArchiveStatus, ZipValidationResult } from "~/libs/types/zip.types.js";
 
 const isJunkEntry = (entry: string): boolean => {
 	return JUNK_PATTERNS.some((pattern) => {

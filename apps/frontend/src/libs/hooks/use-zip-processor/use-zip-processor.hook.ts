@@ -1,82 +1,24 @@
 import { BYTES_IN_KILOBYTE, KILOBYTES_IN_MEGABYTE } from "@transcripta/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { DEFAULT_STATE } from "~/libs/constants/zip-processor.constants.js";
 import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
-import { type ValueOf } from "~/libs/types/types.js";
+import type {
+	WorkerDoneMessage,
+	WorkerErrorMessage,
+	WorkerMessage,
+	WorkerProgressMessage,
+	WorkerValidationMessage,
+	ZipProcessor,
+	ZipProcessorOptions,
+	ZipProcessorState,
+} from "~/libs/types/zip-processor.types.js";
 import pdfWorker from "~/libs/workers/zip-to-pdf.worker?worker";
 import {
 	DEFAULT_MAX_ARCHIVE_SIZE_MB,
 	DEFAULT_MAX_PAGES,
 } from "~/pages/document-new/libs/constants/constants.js";
 import { PERCENT_MULTIPLIER } from "~/pages/document-new/libs/helpers/libs/constants/percent-multiplier.constant.js";
-
-type WorkerDoneMessage = {
-	payload: {
-		pdfBytes: Uint8Array;
-		totalPages: number;
-	};
-	type: "done";
-};
-
-type WorkerErrorMessage = {
-	message: string;
-	type: "error";
-};
-
-type WorkerMessage =
-	| WorkerDoneMessage
-	| WorkerErrorMessage
-	| WorkerProgressMessage
-	| WorkerValidationMessage;
-
-type WorkerProgressMessage = {
-	payload: {
-		processedPages: number;
-		totalPages: number;
-	};
-	type: "progress";
-};
-
-type WorkerValidationMessage = {
-	message: string;
-	rejectReason: ZipProcessorRejectReason;
-	type: "validation";
-};
-
-type ZipProcessor = {
-	process: (file: File) => void;
-	reset: () => void;
-	state: ZipProcessorState;
-};
-
-type ZipProcessorOptions = {
-	onComplete: (pdfFile: File) => void;
-	onError?: (message: string) => void;
-};
-
-type ZipProcessorRejectReason =
-	| "invalid_content"
-	| "no_images"
-	| "too_large"
-	| "too_many_pages";
-
-type ZipProcessorState = {
-	error: null | string;
-	processedPages: number;
-	progress: number;
-	rejectReason: null | ZipProcessorRejectReason;
-	status: ValueOf<typeof ZipProcessingStatus>;
-	totalPages: number;
-};
-
-const DEFAULT_STATE: ZipProcessorState = {
-	error: null,
-	processedPages: 0,
-	progress: 0,
-	rejectReason: null,
-	status: ZipProcessingStatus.IDLE,
-	totalPages: 0,
-};
 
 const BYTES_IN_MEGABYTE = BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE;
 

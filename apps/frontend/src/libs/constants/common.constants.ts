@@ -1,0 +1,4 @@
+const EMPTY_LENGTH = 0;
+const FIRST_INDEX = 0;
+
+export { EMPTY_LENGTH, FIRST_INDEX };
