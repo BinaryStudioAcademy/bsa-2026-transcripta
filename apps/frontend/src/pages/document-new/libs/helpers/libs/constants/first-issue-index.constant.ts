@@ -1,2 +1,0 @@
-const FIRST_ISSUE_INDEX = 0;
-export { FIRST_ISSUE_INDEX };

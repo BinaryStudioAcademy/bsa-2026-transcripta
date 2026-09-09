@@ -1,0 +1,5 @@
+const IMAGE_EXTENSIONS = new Set(["jpeg", "jpg", "png"]);
+
+const EXTENSION_SEPARATOR_OFFSET = 1;
+
+export { EXTENSION_SEPARATOR_OFFSET, IMAGE_EXTENSIONS };
