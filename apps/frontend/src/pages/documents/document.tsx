@@ -1,8 +1,12 @@
+import { useState } from "react";
+
 import {
 	BudgetIndicator,
+	ConfirmDialog,
 	GroundTruthBlock,
 	Link,
 	LoaderOverlay,
+	OverflowMenu,
 	ProgressBar,
 	StatusChip,
 } from "~/libs/components/components.js";
@@ -11,19 +15,23 @@ import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
+	useCallback,
 	useEffect,
+	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
 			documentDataStatus: documents.documentDataStatus,
 		}),
 	);
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 	const { id } = useParams();
 
@@ -40,14 +48,48 @@ const Document: React.FC = () => {
 	const isLoading = documentDataStatus === DataStatus.PENDING;
 	const hasError = documentDataStatus === DataStatus.REJECTED;
 
+	const handleOpenDeleteDialog = useCallback((): void => {
+		setIsConfirmOpen(true);
+	}, []);
+
+	const handleCancelDelete = useCallback((): void => {
+		setIsConfirmOpen(false);
+	}, []);
+
+	const handleConfirmDelete = useCallback((): void => {
+		if (!currentDocument) {
+			return;
+		}
+
+		void dispatch(documentActions.remove(currentDocument.id))
+			.unwrap()
+			.then(() => {
+				setIsConfirmOpen(false);
+				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
+				void navigate(AppRoute.DOCUMENTS);
+			})
+			.catch(() => {
+				setIsConfirmOpen(false);
+			});
+	}, [currentDocument, dispatch, navigate]);
+
 	return (
 		<>
 			{isLoading && <LoaderOverlay label="Loading document" />}
 			{hasError && <p>Unable to load the document.</p>}
 			{currentDocument && (
 				<>
-					<h1>{document.title}</h1>
+					<h1>{currentDocument.title}</h1>
 					<StatusChip status={currentDocument.status} />
+					<OverflowMenu
+						items={[
+							{
+								isDanger: true,
+								label: "Delete",
+								onClick: handleOpenDeleteDialog,
+							},
+						]}
+					/>
 
 					<section>
 						<h2>Transcription</h2>
@@ -87,6 +129,15 @@ const Document: React.FC = () => {
 						</section>
 					)}
 				</>
+			)}
+
+			{isConfirmOpen && (
+				<ConfirmDialog
+					description="The transcription goes with it. This can't be undone."
+					onCancel={handleCancelDelete}
+					onConfirm={handleConfirmDelete}
+					title="Delete this document"
+				/>
 			)}
 		</>
 	);

@@ -1,0 +1,3 @@
+const DEFAULT_SPENT_USD = "0.000000";
+
+export { DEFAULT_SPENT_USD };

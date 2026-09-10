@@ -4,6 +4,7 @@ import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
+	useNavigate,
 } from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
 import { actions as authActions, selectUser } from "~/modules/auth/auth.js";
@@ -15,13 +16,20 @@ const getLinkClassName = ({ isActive }: { isActive: boolean }): string =>
 
 const Sidebar: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 
 	const user = useAppSelector(selectUser);
 
 	const handleSignOut = useCallback((): void => {
+		// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
+		void navigate(AppRoute.SIGN_IN, {
+			flushSync: true,
+			replace: true,
+		});
+
 		dispatch(authActions.logout());
 		void storage.drop(StorageKey.TOKEN);
-	}, [dispatch]);
+	}, [dispatch, navigate]);
 
 	return (
 		<aside className="sidebar">
@@ -42,13 +50,13 @@ const Sidebar: React.FC = () => {
 
 			<div className="sidebar__user">
 				<span className="sidebar__user-email">{user?.email}</span>
-				<Link
+				<button
 					className="sidebar__sign-out"
 					onClick={handleSignOut}
-					to={AppRoute.SIGN_IN}
+					type="button"
 				>
 					Sign out
-				</Link>
+				</button>
 			</div>
 		</aside>
 	);

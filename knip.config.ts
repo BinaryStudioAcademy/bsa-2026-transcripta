@@ -16,9 +16,12 @@ const config: KnipConfig = {
 				"src/modules/pages/page.repository.ts",
 				"src/context/context.ts",
 			],
-			ignoreDependencies: ["pg"],
+			ignoreDependencies: [],
 		},
-		"apps/frontend": {},
+		"apps/frontend": {
+			ignore: ["src/libs/workers/**"],
+			ignoreDependencies: [],
+		},
 		"packages/shared": {
 			includeEntryExports: true,
 		},
