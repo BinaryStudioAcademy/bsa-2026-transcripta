@@ -140,17 +140,13 @@ class DocumentService {
 		for (const draft of abandonedDrafts) {
 			const documentId = draft.toObject().id;
 
-			await DocumentModel.transaction(async (trx) => {
-				await this.documentRepository.deleteById(documentId, trx);
-			});
-
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.UPLOADS,
 				prefix: `uploads/${documentId.toString()}/`,
 			});
-			await this.storage.deleteByPrefix({
-				bucket: StorageBucket.PAGES,
-				prefix: `pages/${documentId.toString()}/`,
+
+			await DocumentModel.transaction(async (trx) => {
+				await this.documentRepository.deleteById(documentId, trx);
 			});
 		}
 	}
@@ -344,6 +340,15 @@ class DocumentService {
 	}
 
 	public async delete(id: number, ownerId: number): Promise<void> {
+		await this.storage.deleteByPrefix({
+			bucket: StorageBucket.UPLOADS,
+			prefix: `uploads/${id.toString()}/`,
+		});
+		await this.storage.deleteByPrefix({
+			bucket: StorageBucket.PAGES,
+			prefix: `pages/${id.toString()}/`,
+		});
+
 		await DocumentModel.transaction(async (trx) => {
 			const document =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
@@ -365,15 +370,6 @@ class DocumentService {
 					status: HTTPCode.CONFLICT,
 				});
 			}
-
-			await this.storage.deleteByPrefix({
-				bucket: StorageBucket.UPLOADS,
-				prefix: `uploads/${id.toString()}/`,
-			});
-			await this.storage.deleteByPrefix({
-				bucket: StorageBucket.PAGES,
-				prefix: `pages/${id.toString()}/`,
-			});
 
 			await this.documentRepository.deleteById(id, trx);
 		});
