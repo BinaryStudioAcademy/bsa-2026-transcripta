@@ -6,3 +6,4 @@ export { MAX_DOCUMENT_PAGES } from "./max-document-pages.constant.js";
 export { NON_DELETABLE_DOCUMENT_STATUSES } from "./non-deletable-document-statuses.constant.js";
 export { NOT_FOUND_INDEX } from "./not-found-index.constant.js";
 export { PAGES_TO_QUEUE } from "./pages-to-queue.constant.js";
+export { TWENTY_FOUR_HOURS_IN_MS } from "./twenty-four-hours-in-ms.constant.js";

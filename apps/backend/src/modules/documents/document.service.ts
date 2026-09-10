@@ -10,6 +10,7 @@ import {
 import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
@@ -27,6 +28,7 @@ import {
 	NON_DELETABLE_DOCUMENT_STATUSES,
 	NOT_FOUND_INDEX,
 	PAGES_TO_QUEUE,
+	TWENTY_FOUR_HOURS_IN_MS,
 } from "./libs/constants/constants.js";
 import {
 	DocumentErrorMessage,
@@ -37,26 +39,31 @@ import {
 import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentUploadUrlRequestDto,
 } from "./libs/types/types.js";
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
+	private logger: Logger;
 	private pageRepository: PageRepository;
 	private pdfPageProcessor: PDFPageProcessor;
 	private storage: BaseStorage;
 
 	public constructor({
 		documentRepository,
+		logger,
 		pageRepository,
 		pdfPageProcessor,
 		storage,
 	}: {
 		documentRepository: DocumentRepository;
+		logger: Logger;
 		pageRepository: PageRepository;
 		pdfPageProcessor: PDFPageProcessor;
 		storage: BaseStorage;
 	}) {
 		this.documentRepository = documentRepository;
+		this.logger = logger;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
 		this.storage = storage;
@@ -113,6 +120,35 @@ class DocumentService {
 				return lexicon ? [[id, lexicon] as const] : [];
 			}),
 		);
+	}
+
+	private buildSourceKey(documentId: number): string {
+		return `uploads/${documentId.toString()}/original.pdf`;
+	}
+
+	private async cleanupAbandonedDraftsForUser(ownerId: number): Promise<void> {
+		const twentyFourHoursAgo = new Date(
+			Date.now() - TWENTY_FOUR_HOURS_IN_MS,
+		).toISOString();
+
+		const abandonedDrafts =
+			await this.documentRepository.findDraftsOlderThanByUser(
+				ownerId,
+				twentyFourHoursAgo,
+			);
+
+		for (const draft of abandonedDrafts) {
+			const documentId = draft.toObject().id;
+
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.UPLOADS,
+				prefix: `uploads/${documentId.toString()}/`,
+			});
+
+			await DocumentModel.transaction(async (trx) => {
+				await this.documentRepository.deleteById(documentId, trx);
+			});
+		}
 	}
 
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
@@ -268,7 +304,7 @@ class DocumentService {
 				);
 				const document = createdDocument.toObject();
 
-				const sourceKey = `uploads/${document.id.toString()}/original.pdf`;
+				const sourceKey = this.buildSourceKey(document.id);
 
 				await this.documentRepository.updateSourceKey(
 					document.id,
@@ -304,6 +340,15 @@ class DocumentService {
 	}
 
 	public async delete(id: number, ownerId: number): Promise<void> {
+		await this.storage.deleteByPrefix({
+			bucket: StorageBucket.UPLOADS,
+			prefix: `uploads/${id.toString()}/`,
+		});
+		await this.storage.deleteByPrefix({
+			bucket: StorageBucket.PAGES,
+			prefix: `pages/${id.toString()}/`,
+		});
+
 		await DocumentModel.transaction(async (trx) => {
 			const document =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
@@ -326,15 +371,6 @@ class DocumentService {
 				});
 			}
 
-			await this.storage.deleteByPrefix({
-				bucket: StorageBucket.UPLOADS,
-				prefix: `uploads/${id.toString()}/`,
-			});
-			await this.storage.deleteByPrefix({
-				bucket: StorageBucket.PAGES,
-				prefix: `pages/${id.toString()}/`,
-			});
-
 			await this.documentRepository.deleteById(id, trx);
 		});
 	}
@@ -342,6 +378,12 @@ class DocumentService {
 	public async findAllByOwnerId(
 		ownerId: number,
 	): Promise<DocumentGetAllResponseDto> {
+		try {
+			await this.cleanupAbandonedDraftsForUser(ownerId);
+		} catch (error: unknown) {
+			this.logger.error(DocumentErrorMessage.DRAFTS_NOT_CLEAN, { error });
+		}
+
 		const items = await this.documentRepository.findAllByOwnerId(ownerId);
 
 		return {
@@ -364,7 +406,6 @@ class DocumentService {
 				status: HTTPCode.NOT_FOUND,
 			});
 		}
-
 		return document.toObject();
 	}
 
@@ -447,6 +488,83 @@ class DocumentService {
 
 		return { items };
 	}
+
+	public async getUploadUrl(
+		id: number,
+		userId: number,
+		payload?: DocumentUploadUrlRequestDto,
+	): Promise<{ expiresAt: string; uploadUrl: string }> {
+		return await DocumentModel.transaction(async (trx) => {
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					id,
+					userId,
+					trx,
+				);
+
+			if (!document) {
+				throw new HTTPError({
+					message: DocumentErrorMessage.NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			const documentObject = document.toObject();
+
+			if (documentObject.status !== DocumentStatus.DRAFT) {
+				throw new HTTPError({
+					message: DocumentErrorMessage.NOT_DRAFT,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			const currentPresetId = document.getPresetId();
+
+			if (payload?.presetId && payload.presetId !== currentPresetId) {
+				const preset = await this.documentRepository.findAccessiblePreset(
+					payload.presetId,
+					userId,
+					trx,
+				);
+
+				if (!preset) {
+					throw new HTTPError({
+						message: DocumentValidationMessage.PRESET_NOT_FOUND,
+						status: HTTPCode.NOT_FOUND,
+					});
+				}
+			}
+
+			const sourceKey = this.buildSourceKey(id);
+
+			await this.documentRepository.updateDraftMetadata(
+				id,
+				{
+					...(payload?.presetId !== undefined && {
+						presetId: payload.presetId,
+					}),
+					...(payload?.fileBytes !== undefined && {
+						sourceBytes: payload.fileBytes,
+					}),
+					sourceKey,
+					...(payload?.fileName !== undefined && {
+						sourceName: payload.fileName,
+					}),
+					...(payload?.title !== undefined && { title: payload.title }),
+				},
+				trx,
+			);
+
+			const { expiresAt, url: uploadUrl } =
+				await this.storage.getUploadSignedUrl({
+					contentType: ContentType.PDF,
+					key: sourceKey,
+				});
+
+			return { expiresAt, uploadUrl };
+		});
+	}
+
 	public async ingest(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findWithPreset(
 			documentId,
