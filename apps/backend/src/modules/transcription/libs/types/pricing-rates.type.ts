@@ -1,16 +1,9 @@
+import { type ModelRate } from "./model-rate.type.js";
+
 type PricingRates = {
-	amazon: {
-		input: number;
-		output: number;
-	};
-	anthropic: {
-		input: number;
-		output: number;
-	};
-	anthropicDirect: {
-		input: number;
-		output: number;
-	};
+	amazon: ModelRate;
+	anthropic: ModelRate;
+	anthropicDirect: ModelRate;
 };
 
 export { type PricingRates };

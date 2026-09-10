@@ -1,18 +1,16 @@
 import { sha256 } from "~/modules/context/libs/helpers/hash.helper.js";
 
-type CacheKeyParts = {
-	contextHash: string;
-	imageSha256: string;
-	modelId: string;
-	presetId: number;
-};
+import { CACHE_KEY_SEPARATOR } from "../constants/constants.js";
+import { type CacheKeyParts } from "../types/types.js";
 
 const buildCacheKey = ({
 	contextHash,
 	imageSha256,
 	modelId,
-	presetId,
+	presetHash,
 }: CacheKeyParts): string =>
-	sha256([imageSha256, String(presetId), modelId, contextHash].join("|"));
+	sha256(
+		[imageSha256, presetHash, modelId, contextHash].join(CACHE_KEY_SEPARATOR),
+	);
 
 export { buildCacheKey };

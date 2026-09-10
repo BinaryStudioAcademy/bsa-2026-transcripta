@@ -11,21 +11,26 @@ import { buildUserPrompt } from "~/modules/context/prompt.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 import { PresetModel } from "~/modules/presets/preset.model.js";
-import { createOutputValidator } from "~/modules/transcription/libs/helpers/output-validator.helper.js";
-import { calculateTokenCost } from "~/modules/transcription/libs/helpers/pricing.helper.js";
+import {
+	calculateTokenCost,
+	createOutputValidator,
+	resolveModelProvider,
+} from "~/modules/transcription/libs/helpers/helpers.js";
 import { type TranscriptionResponse } from "~/modules/transcription/libs/types/types.js";
 import { TranscriptionCacheModel } from "~/modules/transcription/transcription-cache.model.js";
 
 import {
-	DEFAULT_PROVIDER,
 	MAX_REPAIR_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
-	PROVIDER_INDEX,
 	TRANSCRIBABLE_STATUSES,
 } from "./libs/constants/constants.js";
 import { PageEventName, TranscribeFailureReason } from "./libs/enums/enums.js";
-import { buildCacheKey } from "./libs/helpers/cache-key.helper.js";
+import {
+	buildCacheKey,
+	buildPresetHash,
+	stripCodeFence,
+} from "./libs/helpers/helpers.js";
 import {
 	type CallOutcome,
 	type Dependencies,
@@ -60,11 +65,10 @@ const formatValidationErrors = (
 const recordFailure = async (
 	pageId: number,
 	reason: TranscribeFailureReasonValue,
-	attempts: number,
 ): Promise<void> => {
 	await PageModel.query()
 		.patch({
-			attempts: attempts + ONE,
+			attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
 			lastError: reason,
 			status: PageStatus.FAILED,
 		})
@@ -133,7 +137,8 @@ const transcribeWithRepair = async (
 		usedLatencyMs += response.latencyMs;
 		usedOutputTokens += response.usage.outputTokens;
 
-		const parsed = parseModelJson(response.text);
+		const responseText = stripCodeFence(response.text);
+		const parsed = parseModelJson(responseText);
 
 		if (!parsed.ok) {
 			if (attempt >= MAX_REPAIR_ATTEMPTS) {
@@ -159,7 +164,7 @@ const transcribeWithRepair = async (
 				ok: true,
 				outputTokens: usedOutputTokens,
 				structured: parsed.value,
-				text: response.text,
+				text: responseText,
 			};
 		}
 
@@ -224,11 +229,7 @@ const resolveFromCacheOrModel = async (
 	}
 
 	if (!page.imageKey) {
-		await recordFailure(
-			page.id,
-			TranscribeFailureReason.PAGE_IMAGE_MISSING,
-			page.attempts,
-		);
+		await recordFailure(page.id, TranscribeFailureReason.PAGE_IMAGE_MISSING);
 		return null;
 	}
 
@@ -345,11 +346,12 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 };
 
 const applyBudgetStopIfExceeded = async (documentId: number): Promise<void> => {
-	const document = await DocumentModel.query().findById(documentId);
-
-	if (document && isBudgetExhausted(document)) {
-		await markDocumentStopped(documentId);
-	}
+	await DocumentModel.query()
+		.patch({ status: DocumentStatus.BUDGET_STOP })
+		.where("id", documentId)
+		.whereNot("status", DocumentStatus.BUDGET_STOP)
+		.whereRaw("spent_usd >= budget_usd")
+		.execute();
 };
 
 const createTranscribeHandler =
@@ -415,11 +417,7 @@ const createTranscribeHandler =
 		const preset = await PresetModel.query().findById(document.presetId);
 
 		if (!preset) {
-			await recordFailure(
-				pageId,
-				TranscribeFailureReason.PRESET_NOT_FOUND,
-				page.attempts,
-			);
+			await recordFailure(pageId, TranscribeFailureReason.PRESET_NOT_FOUND);
 			return;
 		}
 
@@ -437,7 +435,6 @@ const createTranscribeHandler =
 			await recordFailure(
 				pageId,
 				TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
-				page.attempts,
 			);
 			return;
 		}
@@ -446,7 +443,13 @@ const createTranscribeHandler =
 			contextHash: context.contextHash,
 			imageSha256: page.imageSha256,
 			modelId,
-			presetId: preset.id,
+			presetHash: buildPresetHash({
+				id: preset.id,
+				instructions: preset.instructions,
+				outputSchema: preset.outputSchema,
+				seedGlossary: preset.seedGlossary,
+				settings: preset.settings,
+			}),
 		});
 
 		const resolved = await resolveFromCacheOrModel({
@@ -493,7 +496,7 @@ const createTranscribeHandler =
 					.from(DatabaseTableName.PAGE)
 					.where("id", pageId)
 					.update({
-						attempts: page.attempts + ONE,
+						attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
 						lastError: resolved.reason,
 						status: PageStatus.FAILED,
 					});
@@ -503,7 +506,7 @@ const createTranscribeHandler =
 			return;
 		}
 
-		const provider = modelId.split(".")[PROVIDER_INDEX] ?? DEFAULT_PROVIDER;
+		const provider = resolveModelProvider(modelId);
 
 		await storeTranscription({
 			contextUsed: JSON.stringify({

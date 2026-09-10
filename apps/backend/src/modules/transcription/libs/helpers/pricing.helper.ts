@@ -1,16 +1,17 @@
 import { MILLION } from "@transcripta/shared";
 
-import { type PricingRates } from "../types/types.js";
+import { ModelProvider } from "../enums/enums.js";
+import { type ModelRate, type PricingRates } from "../types/types.js";
+import { resolveModelProvider } from "./resolve-model-provider.helper.js";
 
-const rateForModel = (
-	rates: PricingRates,
-	modelId: string,
-): { input: number; output: number } => {
-	if (modelId.startsWith("anthropic-direct:")) {
+const rateForModel = (rates: PricingRates, modelId: string): ModelRate => {
+	const provider = resolveModelProvider(modelId);
+
+	if (provider === ModelProvider.ANTHROPIC_DIRECT) {
 		return rates.anthropicDirect;
 	}
 
-	if (modelId.includes(".amazon.") || modelId === "amazon") {
+	if (provider === ModelProvider.AMAZON) {
 		return rates.amazon;
 	}
 

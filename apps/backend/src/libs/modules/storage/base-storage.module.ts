@@ -6,6 +6,7 @@ import {
 	S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { EMPTY_LENGTH } from "@transcripta/shared";
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -144,7 +145,13 @@ class BaseStorage implements Storage {
 			}),
 		);
 
-		return Buffer.from((await response.Body?.transformToByteArray()) ?? []);
+		const body = await response.Body?.transformToByteArray();
+
+		if (!body || body.length === EMPTY_LENGTH) {
+			throw new Error(`${StorageErrorMessage.EMPTY_PAGE_IMAGE}: ${key}`);
+		}
+
+		return Buffer.from(body);
 	}
 
 	public async downloadToTempFolder(sourceKey: string): Promise<{
