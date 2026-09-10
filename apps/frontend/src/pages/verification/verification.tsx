@@ -28,7 +28,7 @@ const Verification: React.FC = () => {
 	const { id } = useParams();
 
 	const [isEditing, setIsEditing] = useState(false);
-	const [isZoomed] = useState(false);
+	const [isZoomed, setIsZoomed] = useState(false);
 	const pageStartedAtReference = useRef(Date.now());
 
 	const { document, documentDataStatus } = useAppSelector(({ documents }) => ({
@@ -136,6 +136,59 @@ const Verification: React.FC = () => {
 			}),
 		);
 	}, [currentPage, dispatch]);
+
+	useEffect(() => {
+		const handleKeyUp = (event: KeyboardEvent): void => {
+			const target = event.target;
+
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target instanceof HTMLSelectElement ||
+				(target instanceof HTMLElement && target.isContentEditable)
+			) {
+				return;
+			}
+
+			if (event.ctrlKey || event.metaKey || event.altKey) {
+				return;
+			}
+
+			switch (event.key) {
+				case " ": {
+					event.preventDefault();
+					setIsZoomed((value) => !value);
+					break;
+				}
+
+				case "ArrowRight": {
+					handleConfirm();
+					break;
+				}
+
+				case "Enter": {
+					handleConfirm();
+					break;
+				}
+
+				case "s": {
+					handleSkip();
+					break;
+				}
+
+				case "S": {
+					handleSkip();
+					break;
+				}
+			}
+		};
+
+		globalThis.addEventListener("keyup", handleKeyUp);
+
+		return () => {
+			globalThis.removeEventListener("keyup", handleKeyUp);
+		};
+	}, [handleConfirm, handleSkip]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING ||
