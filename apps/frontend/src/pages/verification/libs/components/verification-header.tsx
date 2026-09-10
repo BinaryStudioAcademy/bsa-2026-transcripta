@@ -10,12 +10,17 @@ type VerificationHeaderProperties = {
 };
 
 const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
-	budgetLimit,
-	budgetSpent,
+	budgetLimit = 0,
+	budgetSpent = 0,
 	documentTitle,
 	pageCount,
 	pageNo,
 }) => {
+	const budgetPercentage = Math.min(
+		(Number(budgetSpent) / Number(budgetLimit)) * 100,
+		100,
+	);
+
 	return (
 		<header className="verification-header">
 			<Link className="verification-header__back" to={AppRoute.DOCUMENTS}>
@@ -61,7 +66,7 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			<div className="verification-header__budget">
 				<span className="tx-budget">
 					<span className="tx-budget-bar">
-						<i />
+						<i style={{ width: `${budgetPercentage}%` }} />
 					</span>
 					${budgetSpent} / ${budgetLimit}
 				</span>
