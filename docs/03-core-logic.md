@@ -113,6 +113,7 @@ interface BuiltContext {
 	usedPageIds: number[]; // which pages supplied the context
 	usedLexiconIds: number[]; // which lexicon words
 	tokenEstimate: number;
+	wasReduced: boolean; // context trimmed to fit the budget
 }
 
 export async function buildContext(
@@ -150,24 +151,29 @@ export async function buildContext(
 			current: (query) => query.where("isCurrent", true),
 		});
 
-	// Assemble in a fixed order (not the trim priority). Reordering would
-	// change the context hash and miss the transcription cache for free.
-	const blocks = assembleContextBlocks({
-		lexicon: lexicon.length ? renderLexicon(lexicon) : undefined,
-		neighbours: neighbours.length ? renderNeighbours(neighbours) : undefined,
+	// 4. Trim if it does not fit the token budget (90% of maxContextTokens).
+	//    Never pass system / preset instructions here — they sit outside the budget.
+	const lexiconEntries = lexicon.map((entry) => entry.valueDisplay);
+	const neighbourPages = neighbours.map((page) => renderNeighbourPage(page));
+	const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
+	const fitted = await fitToBudget({
+		budget,
+		lexiconEntries,
+		model: preset.settings.model,
+		neighbourPages,
 		seedGlossary,
 	});
 
-	// 4. Trim if it does not fit the token budget (90% of maxContextTokens).
-	const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
-	const fitted = await fitToBudget(blocks, budget, preset.settings.model);
-
 	return {
-		blocks: fitted,
-		contextHash: sha256(fitted.join("\n")),
-		usedPageIds: neighbours.map((p) => p.id),
-		usedLexiconIds: lexicon.map((l) => l.id),
-		tokenEstimate: (await estimateTokens(fitted, preset.settings.model)).tokens,
+		blocks: fitted.blocks,
+		contextHash: sha256(fitted.blocks.join("\n")),
+		usedPageIds: neighbours
+			.slice(0, fitted.neighbourPageCount)
+			.map((p) => p.id),
+		usedLexiconIds: lexicon.slice(0, fitted.lexiconEntryCount).map((l) => l.id),
+		tokenEstimate: (await estimateTokens(fitted.blocks, preset.settings.model))
+			.tokens,
+		wasReduced: fitted.wasReduced,
 	};
 }
 ```
@@ -190,7 +196,7 @@ const budget = getEffectiveContextBudget(maxContextTokens); // 90%
 
 **What it counts.** Only the trimable context blocks — seed glossary, lexicon,
 neighbouring pages (`BUDGETED_CONTEXT_BLOCK_KINDS`). Deliberately excluded from
-`maxContextTokens` / `estimateTokens` / future `fitToBudget`:
+`maxContextTokens` / `estimateTokens` / `fitToBudget`:
 
 - the system message (ours only — never trimmed);
 - preset instructions in the user-message `<preset>` block (mandatory in full —
@@ -211,13 +217,50 @@ present in full even when the context is reduced to the seed glossary alone.
 import {
 	BUDGETED_CONTEXT_BLOCK_KINDS,
 	assembleContextBlocks,
+	fitToBudget,
 	getEffectiveContextBudget,
 } from "~/context/context.js";
 
 // BUDGETED_CONTEXT_BLOCK_KINDS === seed glossary → lexicon → neighbours
-const blocks = assembleContextBlocks({ seedGlossary, lexicon, neighbours });
 const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
-// fitToBudget(blocks, budget, model) — never pass system / preset instructions
+const fitted = await fitToBudget({
+	budget,
+	lexiconEntries,
+	model: preset.settings.model,
+	neighbourPages,
+	seedGlossary,
+});
+// never pass system / preset instructions into fitToBudget
+```
+
+### Trimming floors (`fitToBudget`) (#148)
+
+`fitToBudget` receives structured lexicon entries and neighbour pages (not a flat
+`string[]`), so it can drop whole units. Trim order:
+
+1. **Lexicon** — keep the largest prefix that fits down to `LEXICON_MIN_RETAINED`
+   (50). Below 50, drop the whole lexicon block (a handful of words is noise).
+2. **Neighbouring pages** — drop whole pages from the most distant end
+   (`page_no DESC`, last in the array). Keep at least
+   `MIN_NEIGHBOUR_PAGES_RETAINED` (1) while possible.
+3. If even one neighbour plus the seed glossary still exceeds the budget, drop
+   the last neighbour and transcribe with the seed glossary alone.
+   `wasReduced: true` signals that for `context_used`.
+
+Seed glossary is never trimmed. System and preset instructions never enter this
+function.
+
+```ts
+import { fitToBudget, LEXICON_MIN_RETAINED } from "~/context/context.js";
+
+const { blocks, wasReduced, lexiconEntryCount, neighbourPageCount } =
+	await fitToBudget({
+		budget,
+		lexiconEntries,
+		model,
+		neighbourPages,
+		seedGlossary,
+	});
 ```
 
 **How it counts.**

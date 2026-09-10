@@ -2,6 +2,7 @@ export { ANTHROPIC_DIRECT_PREFIX } from "./anthropic-direct-prefix.constant.js";
 export { ANTHROPIC_ID_MARKER } from "./anthropic-id-marker.constant.js";
 export { ANTHROPIC_KEY_PARAMETER } from "./anthropic-key-parameter.constant.js";
 export { BEDROCK_ANTHROPIC_VERSION_SUFFIX } from "./bedrock-anthropic-version-suffix.constant.js";
+export { BINARY_SEARCH_HALF_DIVISOR } from "./binary-search-half-divisor.constant.js";
 export { BUDGETED_CONTEXT_BLOCK_KINDS } from "./budgeted-context-block-kinds.constant.js";
 export { CHARS_PER_TOKEN } from "./chars-per-token.constant.js";
 export { CONTEXT_ASSEMBLY_ORDER } from "./context-assembly-order.constant.js";
@@ -9,5 +10,8 @@ export { CONTEXT_BUDGET_SAFETY_MARGIN } from "./context-budget-safety-margin.con
 export { CONTEXT_HASH_SEPARATOR } from "./context-hash-separator.constant.js";
 export { COUNT_TOKENS_FALLBACK_MESSAGE } from "./count-tokens-fallback-message.constant.js";
 export { EMPTY_TEXT_LENGTH } from "./empty-text-length.constant.js";
+export { INDEX_STEP } from "./index-step.constant.js";
+export { LEXICON_MIN_RETAINED } from "./lexicon-min-retained.constant.js";
+export { MIN_NEIGHBOUR_PAGES_RETAINED } from "./min-neighbour-pages-retained.constant.js";
 export { NOT_FOUND_INDEX } from "./not-found-index.constant.js";
 export { TOKEN_CACHE_MAX_SIZE } from "./token-cache-max-size.constant.js";
