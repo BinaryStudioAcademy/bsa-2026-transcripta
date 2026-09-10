@@ -2,10 +2,7 @@ import { DocumentStatus } from "@transcripta/shared";
 
 import { type ValueOf } from "~/libs/types/types.js";
 
-type StatusChipVariant = {
-	icon: null | string;
-	modifier: "danger" | "ok" | "warn" | null;
-};
+import { type StatusChipVariant } from "../types/types.js";
 
 const STATUS_CHIP_VARIANT: Record<
 	ValueOf<typeof DocumentStatus>,

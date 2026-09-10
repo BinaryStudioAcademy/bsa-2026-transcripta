@@ -1,5 +1,6 @@
 import {
 	BYTES_IN_KILOBYTE,
+	configureString,
 	DocumentStatus,
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
@@ -9,9 +10,11 @@ import { useState } from "react";
 import {
 	Button,
 	ConfirmDialog,
+	Link,
 	LoaderOverlay,
 	OverflowMenu,
 	StatusChip,
+	ThemeToggle,
 } from "~/libs/components/components.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
@@ -54,12 +57,30 @@ const Documents: React.FC = () => {
 		})();
 	}, [navigate]);
 
+	const handleRowActionClick = useCallback((event: React.MouseEvent): void => {
+		event.stopPropagation();
+	}, []);
+
 	const isLoading = dataStatus === DataStatus.PENDING;
-	const isEmpty = !isLoading && documents.length === EMPTY_LENGTH;
+	const isEmpty =
+		dataStatus === DataStatus.FULFILLED && documents.length === EMPTY_LENGTH;
 	const failedDocuments = documents.filter(
 		(document) => document.status === DocumentStatus.FAILED,
 	);
 	const hasFailedDocuments = failedDocuments.length > EMPTY_LENGTH;
+	const budgetStoppedDocuments = documents.filter(
+		(document) => document.status === DocumentStatus.BUDGET_STOP,
+	);
+	const hasBudgetStoppedDocuments =
+		budgetStoppedDocuments.length > EMPTY_LENGTH;
+	const footerMessage = [
+		hasBudgetStoppedDocuments &&
+			`${budgetStoppedDocuments.map((document) => document.title).join(", ")} stopped at its budget — raise the limit to continue.`,
+		hasFailedDocuments &&
+			`${failedDocuments.map((document) => document.title).join(", ")} has failed pages — open it to re-read them.`,
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	const handleCancelDelete = useCallback((): void => {
 		setPendingDeleteId(null);
@@ -82,7 +103,9 @@ const Documents: React.FC = () => {
 				<h1 className={styles["documents-page__title"]}>Documents</h1>
 
 				<div className={styles["documents-page__actions"]}>
+					<ThemeToggle />
 					<Button
+						className={styles["documents-page__new-btn"]}
 						isPrimary
 						label="+ New document"
 						onClick={handleNewDocument}
@@ -129,29 +152,48 @@ const Documents: React.FC = () => {
 
 							return (
 								<div key={document.id} role="row">
-									<span
-										className={styles["documents-page__title-cell"]}
-										role="cell"
+									<Link
+										className={styles["documents-page__row"] ?? ""}
+										to={configureString(AppRoute.DOCUMENT, {
+											id: String(document.id),
+										})}
 									>
-										{document.title}
-									</span>
-									<span
-										className={styles["documents-page__status-cell"]}
-										role="cell"
-									>
-										<StatusChip status={document.status} />
-										{document.status === DocumentStatus.FAILED && (
-											<span className={styles["documents-page__reread-link"]}>
-												Open to re-read failed pages
+										<span
+											className={styles["documents-page__title-cell"]}
+											role="cell"
+										>
+											<span className={styles["documents-page__title-text"]}>
+												{document.title}
 											</span>
-										)}
-									</span>
-									<span className="tx-num" role="cell">
-										{new Date(document.createdAt).toLocaleDateString()}
-									</span>
-									<span className="tx-num" role="cell">
-										{document.pageCount}
-									</span>
+										</span>
+										<span
+											className={styles["documents-page__status-cell"]}
+											role="cell"
+										>
+											<StatusChip status={document.status} />
+											{document.status === DocumentStatus.FAILED && (
+												<Button
+													className={styles["documents-page__reread-link"]}
+													label="Open to re-read failed pages"
+													onClick={handleRowActionClick}
+												/>
+											)}
+											{document.status === DocumentStatus.BUDGET_STOP && (
+												<Button
+													isSecondary
+													isSmall
+													label="Raise the limit"
+													onClick={handleRowActionClick}
+												/>
+											)}
+										</span>
+										<span className="tx-num" role="cell">
+											{new Date(document.createdAt).toLocaleDateString()}
+										</span>
+										<span className="tx-num" role="cell">
+											{document.pageCount}
+										</span>
+									</Link>
 									<span role="cell">
 										<OverflowMenu
 											items={[
@@ -171,16 +213,11 @@ const Documents: React.FC = () => {
 
 				{!isEmpty && (
 					<div className={styles["documents-page__footer"]}>
-						{hasFailedDocuments && (
+						{(hasFailedDocuments || hasBudgetStoppedDocuments) && (
 							<div className={styles["documents-page__footer-messages"]}>
-								{failedDocuments.map((document) => (
-									<p
-										className={styles["documents-page__footer-message"]}
-										key={document.id}
-									>
-										{document.title} has failed pages — open it to re-read them.
-									</p>
-								))}
+								<p className={styles["documents-page__footer-message"]}>
+									{footerMessage}
+								</p>
 							</div>
 						)}
 

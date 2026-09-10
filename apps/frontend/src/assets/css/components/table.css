@@ -9,8 +9,8 @@
 
 .tx-table [role="columnheader"] {
 	padding: var(--sp-2) var(--sp-3);
-	font: 500 var(--fs-xs) / 1 var(--font-ui);
-	color: var(--text-3);
+	font: 600 var(--fs-2xs) / 1 var(--font-ui);
+	color: var(--text-2);
 	text-align: left;
 	text-transform: uppercase;
 	letter-spacing: var(--ls-caps);
@@ -21,7 +21,7 @@
 .tx-table [role="cell"] {
 	display: flex;
 	align-items: center;
-	padding: var(--sp-3);
+	padding: var(--sp-2) var(--sp-3);
 	font-size: var(--fs-sm);
 	color: var(--text);
 	background-color: var(--surface);
@@ -34,7 +34,7 @@
 
 .tx-table [role="row"]:hover [role="cell"] {
 	cursor: pointer;
-	background: var(--surface-2);
+	background: var(--bg);
 }
 
 .tx-num {
