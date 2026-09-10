@@ -1,0 +1,3 @@
+const DEFAULT_MAX_PAGES = 500;
+
+export { DEFAULT_MAX_PAGES };

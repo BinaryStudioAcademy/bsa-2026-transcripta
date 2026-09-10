@@ -154,18 +154,56 @@ export async function buildContext(
 		});
 	if (neighbours.length) blocks.push(renderNeighbours(neighbours));
 
-	// 4. Trim if it does not fit the token budget.
-	const fitted = fitToBudget(blocks, preset.settings.maxContextTokens);
+	// 4. Trim if it does not fit the token budget (90% of maxContextTokens).
+	const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
+	const fitted = await fitToBudget(blocks, budget, preset.settings.model);
 
 	return {
 		blocks: fitted,
 		contextHash: sha256(fitted.join("\n")),
 		usedPageIds: neighbours.map((p) => p.id),
 		usedLexiconIds: lexicon.map((l) => l.id),
-		tokenEstimate: estimateTokens(fitted),
+		tokenEstimate: (await estimateTokens(fitted, preset.settings.model)).tokens,
 	};
 }
 ```
+
+### Counting tokens (`estimateTokens`)
+
+Implemented in [`apps/backend/src/context/`](../apps/backend/src/context/). This is
+what `fitToBudget` (#148) and preset validation (#150) call.
+
+```ts
+import {
+	estimateTokens,
+	getEffectiveContextBudget,
+} from "~/context/context.js";
+
+const { tokens, source } = await estimateTokens(blocks, model);
+// source is "exact" | "estimate"
+const budget = getEffectiveContextBudget(maxContextTokens); // 90%
+```
+
+**What it counts.** Only the trimable context blocks — seed glossary, lexicon,
+neighbouring pages. Deliberately excluded:
+
+- the page image (~1740 input tokens in Bedrock tests; fixed cost, cannot trim);
+- system instruction and preset instructions (mandatory, never trimmed — #148);
+- the response allowance (`maxTokens` on the call is a separate limit).
+
+**How it counts.**
+
+| Model                                                                    | Method                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anthropic (`anthropic-direct:…` or a Bedrock id containing `anthropic.`) | Exact via Anthropic SDK `beta.messages.countTokens` (SSM key `/transcripta/anthropic-api-key`). Bedrock ids are mapped to the API model (strip `anthropic.` and `-vN:M`). Missing key or API failure → character estimate |
+| Everything else                                                          | `ceil(text.length / 4)`                                                                                                                                                                                                   |
+
+**Cache.** In-process `Map` keyed by `sha256(blocks + model)`. Counting the same
+assembled context twice does not call the provider twice.
+
+**Safety margin.** Trim against `getEffectiveContextBudget(maxContextTokens)`
+(90% of the stated budget), not the raw `maxContextTokens`. Being slightly under
+costs nothing; being over costs a failed call.
 
 ### Trimming by priority, not proportionally
 
