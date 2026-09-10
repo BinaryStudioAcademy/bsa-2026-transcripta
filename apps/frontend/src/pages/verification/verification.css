@@ -213,6 +213,20 @@
 	border-top: 1px solid var(--hairline);
 }
 
+.tx-dialog-shortcuts {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--sp-2) var(--sp-3);
+	align-items: center;
+	font: 400 var(--fs-sm) / var(--lh-compact) var(--font-ui);
+	color: var(--text);
+}
+
+.tx-dialog-shortcut-keys {
+	display: inline-flex;
+	gap: var(--sp-1);
+}
+
 @media (width <= 900px) {
 	.verification-header {
 		gap: 10px;

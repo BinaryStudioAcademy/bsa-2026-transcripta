@@ -1,0 +1,29 @@
+.tx-scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: grid;
+	place-items: center;
+	background: var(--scrim);
+}
+
+.tx-dialog {
+	width: min(440px, 92%);
+	padding: 20px;
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+	box-shadow: var(--shadow-modal);
+}
+
+.tx-dialog-title {
+	margin: 0 0 8px;
+	font: 600 var(--fs-xl) / var(--lh-tight) var(--font-display);
+}
+
+.tx-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 16px;
+}
