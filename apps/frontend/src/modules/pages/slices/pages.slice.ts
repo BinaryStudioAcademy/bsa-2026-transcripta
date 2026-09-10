@@ -20,6 +20,7 @@ type State = {
 	idsByPageNo: Record<number, number>;
 	lastError: null | SerializedAppError;
 	rollback: Record<number, RollbackState | undefined>;
+	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
 
 const initialState: State = {
@@ -29,6 +30,7 @@ const initialState: State = {
 	idsByPageNo: {},
 	lastError: null,
 	rollback: {},
+	verificationDataStatus: DataStatus.IDLE,
 };
 
 const verificationStatusMap = {
@@ -39,6 +41,11 @@ const verificationStatusMap = {
 
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
+		builder.addCase(verifyPage.pending, (state) => {
+			state.verificationDataStatus = DataStatus.PENDING;
+			state.lastError = null;
+		});
+
 		builder.addCase(verifyPage.fulfilled, (state, { payload }) => {
 			state.rollback[payload.pageId] = undefined;
 
@@ -60,6 +67,8 @@ const { actions, name, reducer } = createSlice({
 
 				nextPage.transcription.text = payload.next.transcription.text;
 			}
+
+			state.verificationDataStatus = DataStatus.FULFILLED;
 		});
 
 		builder.addCase(verifyPage.rejected, (state, action) => {
@@ -73,6 +82,7 @@ const { actions, name, reducer } = createSlice({
 			}
 
 			state.lastError = action.error;
+			state.verificationDataStatus = DataStatus.REJECTED;
 		});
 
 		builder.addCase(loadPages.pending, (state) => {
