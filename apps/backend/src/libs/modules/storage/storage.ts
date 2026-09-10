@@ -4,5 +4,5 @@ import { BaseStorage } from "./base-storage.module.js";
 
 const storage = new BaseStorage(config);
 
-export { StorageBucket, StorageErrorMessage } from "./libs/enums/enums.js";
+export { StorageBucket } from "./libs/enums/enums.js";
 export { storage };

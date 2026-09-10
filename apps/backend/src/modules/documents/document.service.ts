@@ -11,14 +11,12 @@ import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
 import {
-	PDFPageProcessor,
-	PDFPageProcessorErrorMessage,
-} from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+	ObjectNotUploadedError,
+	PDFTimeoutError,
+} from "~/libs/exceptions/exceptions.js";
+import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
-import {
-	StorageBucket,
-	StorageErrorMessage,
-} from "~/libs/modules/storage/storage.js";
+import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 
 import { PageEntity } from "../pages/page.entity.js";
@@ -148,16 +146,13 @@ class DocumentService {
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
-			const caughtErrorMessage =
-				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage =
-				caughtErrorMessage === StorageErrorMessage.OBJECT_NOT_UPLOADED
-					? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
-					: DocumentErrorMessage.DOWNLOAD_FAILED;
-			const statusCode =
-				caughtErrorMessage === StorageErrorMessage.OBJECT_NOT_UPLOADED
-					? HTTPCode.NOT_FOUND
-					: HTTPCode.INTERNAL_SERVER_ERROR;
+			const isObjectNotUploaded = error instanceof ObjectNotUploadedError;
+			const finalErrorMessage = isObjectNotUploaded
+				? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
+				: DocumentErrorMessage.DOWNLOAD_FAILED;
+			const statusCode = isObjectNotUploaded
+				? HTTPCode.NOT_FOUND
+				: HTTPCode.INTERNAL_SERVER_ERROR;
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
@@ -207,7 +202,7 @@ class DocumentService {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			const statusCode =
-				errorMessage === PDFPageProcessorErrorMessage.CONVERT_PAGE_TIMEOUT
+				error instanceof PDFTimeoutError
 					? HTTPCode.GATEWAY_TIMEOUT
 					: HTTPCode.UNPROCESSED_ENTITY;
 

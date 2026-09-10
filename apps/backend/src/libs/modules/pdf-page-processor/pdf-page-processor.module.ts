@@ -4,6 +4,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import sharp, { type Sharp } from "sharp";
 
+import { PDFTimeoutError } from "~/libs/exceptions/exceptions.js";
+
 import {
 	BLANK_STDEV_THRESHOLD,
 	NORMALIZED_QUALITY,
@@ -86,7 +88,7 @@ class PDFPageProcessor implements IPDFPageProcessor {
 			return `${pngPath}.png`;
 		} catch (error) {
 			const customError = isTimeoutError(error)
-				? new Error(ErrorMessage.CONVERT_PAGE_TIMEOUT)
+				? new PDFTimeoutError(ErrorMessage.CONVERT_PAGE_TIMEOUT)
 				: new Error(ErrorMessage.FAILED_TO_CONVERT_PAGE);
 			throw customError;
 		}

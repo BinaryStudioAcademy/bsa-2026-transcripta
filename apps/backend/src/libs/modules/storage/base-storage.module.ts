@@ -14,6 +14,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
+import { ObjectNotUploadedError } from "~/libs/exceptions/exceptions.js";
 import { type Config } from "~/libs/modules/config/config.js";
 
 import {
@@ -172,7 +173,9 @@ class BaseStorage implements Storage {
 			await clear();
 
 			if (error instanceof NoSuchKey) {
-				throw new TypeError(StorageErrorMessage.OBJECT_NOT_UPLOADED);
+				throw new ObjectNotUploadedError(
+					StorageErrorMessage.OBJECT_NOT_UPLOADED,
+				);
 			}
 
 			throw error;
