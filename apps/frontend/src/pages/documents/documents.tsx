@@ -1,5 +1,6 @@
 import {
 	BYTES_IN_KILOBYTE,
+	configureString,
 	DocumentStatus,
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
@@ -9,9 +10,11 @@ import { useState } from "react";
 import {
 	Button,
 	ConfirmDialog,
+	Link,
 	LoaderOverlay,
 	OverflowMenu,
 	StatusChip,
+	ThemeToggle,
 } from "~/libs/components/components.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
@@ -28,6 +31,7 @@ import {
 } from "~/pages/document-new/libs/constants/constants.js";
 
 import { EMPTY_LENGTH } from "./libs/constants/empty-length.constant.js";
+import styles from "./styles.module.css";
 
 const DEFAULT_MAX_FILE_SIZE_MB =
 	DocumentValidationRule.MAX_FILE_BYTES /
@@ -52,26 +56,30 @@ const Documents: React.FC = () => {
 		})();
 	}, [navigate]);
 
-	const handleResumeUpload = useCallback(
-		(documentId: number) => {
-			return (): void => {
-				void (async (): Promise<void> => {
-					try {
-						await navigate(AppRoute.DOCUMENTS_NEW, {
-							state: { documentId },
-						});
-					} catch (error: unknown) {
-						// eslint-disable-next-line no-console
-						console.error(error);
-					}
-				})();
-			};
-		},
-		[navigate],
-	);
+	const handleRowActionClick = useCallback((event: React.MouseEvent): void => {
+		event.stopPropagation();
+	}, []);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
-	const isEmpty = !isLoading && documents.length === EMPTY_LENGTH;
+	const isEmpty =
+		dataStatus === DataStatus.FULFILLED && documents.length === EMPTY_LENGTH;
+	const failedDocuments = documents.filter(
+		(document) => document.status === DocumentStatus.FAILED,
+	);
+	const hasFailedDocuments = failedDocuments.length > EMPTY_LENGTH;
+	const budgetStoppedDocuments = documents.filter(
+		(document) => document.status === DocumentStatus.BUDGET_STOP,
+	);
+	const hasBudgetStoppedDocuments =
+		budgetStoppedDocuments.length > EMPTY_LENGTH;
+	const footerMessage = [
+		hasBudgetStoppedDocuments &&
+			`${budgetStoppedDocuments.map((document) => document.title).join(", ")} stopped at its budget — raise the limit to continue.`,
+		hasFailedDocuments &&
+			`${failedDocuments.map((document) => document.title).join(", ")} has failed pages — open it to re-read them.`,
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	const handleCancelDelete = useCallback((): void => {
 		setPendingDeleteId(null);
@@ -87,57 +95,116 @@ const Documents: React.FC = () => {
 	}, [dispatch, pendingDeleteId]);
 
 	return (
-		<>
+		<div className={styles["documents-page"]}>
 			{isLoading && <LoaderOverlay label="Loading documents" />}
 
-			<h1>Documents</h1>
+			<header className={styles["documents-page__header"]}>
+				<h1 className={styles["documents-page__title"]}>Documents</h1>
 
-			<Button label="+ New document" onClick={handleNewDocument} />
-
-			{isEmpty && (
-				<div>
-					<h2>No documents yet</h2>
-					<p>Upload a PDF and start verifying in about a minute.</p>
-					<p>
-						PDFs up to {DEFAULT_MAX_FILE_SIZE_MB} MB, ZIPs up to{" "}
-						{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB, up to {DEFAULT_MAX_PAGES} pages
-					</p>
+				<div className={styles["documents-page__actions"]}>
+					<ThemeToggle />
+					<Button
+						className={styles["documents-page__new-btn"]}
+						isPrimary
+						label="+ New document"
+						onClick={handleNewDocument}
+					/>
 				</div>
-			)}
+			</header>
 
-			{!isEmpty && (
-				<table>
-					<thead>
-						<tr>
-							<th>Title</th>
-							<th>Status</th>
-							<th>Uploaded</th>
-							<th>Pages</th>
-							<th />
-						</tr>
-					</thead>
-					<tbody>
+			<main className={styles["documents-page__main"]}>
+				{isEmpty && (
+					<div className={styles["documents-page__empty"]}>
+						<h2 className={styles["documents-page__empty-title"]}>
+							No documents yet
+						</h2>
+						<p className={styles["documents-page__empty-description"]}>
+							Upload a PDF and start verifying in about a minute.
+						</p>
+						<p className={styles["documents-page__empty-meta"]}>
+							PDFs up to {DEFAULT_MAX_FILE_SIZE_MB} MB, ZIPs up to{" "}
+							{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB, up to {DEFAULT_MAX_PAGES} pages
+						</p>
+					</div>
+				)}
+
+				{!isEmpty && (
+					<div
+						aria-label="Documents"
+						className={["tx-table", styles["documents-page__table"]]
+							.filter(Boolean)
+							.join(" ")}
+						role="table"
+					>
+						<div role="row">
+							<span role="columnheader">Title</span>
+							<span role="columnheader">Status</span>
+							<span role="columnheader">Uploaded</span>
+							<span role="columnheader">Pages</span>
+							<span role="columnheader" />
+						</div>
+
 						{documents.map((document) => {
 							const handleDeleteClick = (): void => {
 								setPendingDeleteId(document.id);
 							};
 
+							const isDraft = document.status === DocumentStatus.DRAFT;
+							const rowRoute = isDraft
+								? AppRoute.DOCUMENTS_NEW
+								: configureString(AppRoute.DOCUMENT, {
+										id: String(document.id),
+									});
+
+							const rowState = isDraft
+								? { documentId: document.id }
+								: undefined;
+
 							return (
-								<tr key={document.id}>
-									<td>{document.title}</td>
-									<td>
-										<StatusChip status={document.status} />
-										{document.status === DocumentStatus.DRAFT && (
-											<Button
-												label="Resume upload"
-												onClick={handleResumeUpload(document.id)}
-												type="button"
-											/>
-										)}
-									</td>
-									<td>{new Date(document.createdAt).toLocaleDateString()}</td>
-									<td>{document.pageCount}</td>
-									<td>
+								<div key={document.id} role="row">
+									<Link
+										className={styles["documents-page__row"] ?? ""}
+										state={rowState}
+										to={rowRoute}
+									>
+										<span
+											className={styles["documents-page__title-cell"]}
+											role="cell"
+										>
+											<span className={styles["documents-page__title-text"]}>
+												{document.title}
+											</span>
+										</span>
+										<span
+											className={styles["documents-page__status-cell"]}
+											role="cell"
+										>
+											<StatusChip status={document.status} />
+
+											{document.status === DocumentStatus.FAILED && (
+												<Button
+													className={styles["documents-page__reread-link"]}
+													label="Open to re-read failed pages"
+													onClick={handleRowActionClick}
+												/>
+											)}
+											{document.status === DocumentStatus.BUDGET_STOP && (
+												<Button
+													isSecondary
+													isSmall
+													label="Raise the limit"
+													onClick={handleRowActionClick}
+												/>
+											)}
+										</span>
+										<span className="tx-num" role="cell">
+											{new Date(document.createdAt).toLocaleDateString()}
+										</span>
+										<span className="tx-num" role="cell">
+											{document.pageCount}
+										</span>
+									</Link>
+									<span role="cell">
 										<OverflowMenu
 											items={[
 												{
@@ -147,13 +214,44 @@ const Documents: React.FC = () => {
 												},
 											]}
 										/>
-									</td>
-								</tr>
+									</span>
+								</div>
 							);
 						})}
-					</tbody>
-				</table>
-			)}
+					</div>
+				)}
+
+				{!isEmpty && (
+					<div className={styles["documents-page__footer"]}>
+						{(hasFailedDocuments || hasBudgetStoppedDocuments) && (
+							<div className={styles["documents-page__footer-messages"]}>
+								<p className={styles["documents-page__footer-message"]}>
+									{footerMessage}
+								</p>
+							</div>
+						)}
+
+						<span
+							className={[
+								"tx-kbdrow",
+								styles["documents-page__footer-shortcuts"],
+							]
+								.filter(Boolean)
+								.join(" ")}
+						>
+							<span>
+								<span className="tx-kbd">↑</span>
+								<span className="tx-kbd">↓</span>
+								Select
+							</span>
+							<span>
+								<span className="tx-kbd">Enter</span>
+								Open
+							</span>
+						</span>
+					</div>
+				)}
+			</main>
 
 			{pendingDeleteId !== null && (
 				<ConfirmDialog
@@ -163,7 +261,7 @@ const Documents: React.FC = () => {
 					title="Delete this document"
 				/>
 			)}
-		</>
+		</div>
 	);
 };
 
