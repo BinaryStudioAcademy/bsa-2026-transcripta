@@ -659,16 +659,42 @@ class DocumentService {
 	}
 
 	public async pause(documentId: number, userId: number): Promise<void> {
-		const updateRows = await this.documentRepository.updateOwnedStatus(
+		const document = await this.documentRepository.findByIdAndOwnerId(
 			documentId,
 			userId,
-			DocumentStatus.PAUSED,
 		);
 
-		if (!updateRows) {
+		if (!document) {
 			throw new HTTPError({
 				message: DocumentValidationMessage.NOT_FOUND,
 				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const { status } = document.toObject();
+
+		if (status === DocumentStatus.PAUSED) {
+			return;
+		}
+
+		if (status !== DocumentStatus.PROCESSING) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
+			currentStatus: DocumentStatus.PROCESSING,
+			id: documentId,
+			ownerId: userId,
+			status: DocumentStatus.PAUSED,
+		});
+
+		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
+				status: HTTPCode.CONFLICT,
 			});
 		}
 	}
@@ -686,37 +712,69 @@ class DocumentService {
 			});
 		}
 
-		if (document.toObject().status !== DocumentStatus.PAUSED) {
-			return;
+		const { status } = document.toObject();
+
+		if (status !== DocumentStatus.PAUSED) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
+				status: HTTPCode.CONFLICT,
+			});
 		}
 
 		const pages = await this.pageRepository.findResumablePages(documentId);
 
-		await this.documentRepository.updateOwnedStatus(
-			documentId,
-			userId,
-			DocumentStatus.PROCESSING,
+		const pendingPages = pages.filter(
+			(page) => page.toObject().status === PageStatus.PENDING,
 		);
+
+		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
+			currentStatus: DocumentStatus.PAUSED,
+			id: documentId,
+			ownerId: userId,
+			status: DocumentStatus.PROCESSING,
+		});
+
+		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
+				status: HTTPCode.CONFLICT,
+			});
+		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
 			return;
 		}
 
-		const pendingPages = pages
-			.filter((page) => page.toObject().status === PageStatus.PENDING)
-			.map((page) => page.toObject().id);
+		try {
+			if (pendingPages.length > EMPTY_COLLECTION_LENGTH) {
+				const pendingPageIds = pendingPages.map((page) => page.toObject().id);
 
-		if (pendingPages.length > EMPTY_COLLECTION_LENGTH) {
-			await this.pageRepository.markPendingAsQueued(documentId, pendingPages);
-		}
+				await this.pageRepository.markPendingAsQueued(
+					documentId,
+					pendingPageIds,
+				);
+			}
 
-		for (const page of pages) {
-			const { id, pageNo } = page.toObject();
+			for (const page of pages) {
+				const { id, pageNo } = page.toObject();
 
-			await this.pageTranscribeQueue.add({
-				documentId,
-				pageId: id,
-				pageNo,
+				await this.pageTranscribeQueue.add({
+					documentId,
+					pageId: id,
+					pageNo,
+				});
+			}
+		} catch {
+			await this.documentRepository.updateOwnedStatusFrom({
+				currentStatus: DocumentStatus.PROCESSING,
+				id: documentId,
+				ownerId: userId,
+				status: DocumentStatus.PAUSED,
+			});
+
+			throw new HTTPError({
+				message: DocumentValidationMessage.RESUME_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
 	}

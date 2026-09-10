@@ -9,33 +9,12 @@ import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
+import { type LexiconRow } from "./libs/types/lexicon-row.type.js";
 import {
+	type DocumentDetailsRow,
 	type DocumentUpdateDraftMetadataPayload,
-	type LexiconRow,
+	type DocumentUpdateOwnedStatus,
 } from "./libs/types/types.js";
-
-type DocumentDetailsRow = {
-	budgetUsd: string;
-	closedPct: number;
-	cursorPageNo: number;
-	id: number;
-	pageCount: number;
-	pagesBlank: number;
-	pagesFailed: number;
-	pagesInWork: number;
-	pagesPending: number;
-	pagesReadyToCheck: number;
-	pagesSkipped: number;
-	pagesTotal: number;
-	pagesVerified: number;
-	presetId: number;
-	presetName: string;
-	presetVersion: number;
-	spentUsd: string;
-	status: ValueOf<typeof DocumentStatus>;
-	title: string;
-	verifiedPct: number;
-};
 
 class DocumentRepository {
 	private documentModel: typeof DocumentModel;
@@ -256,15 +235,20 @@ public async updateDraftMetadata(
 			.execute();
 	}
 
-	public async updateOwnedStatus(
-		id: number,
-		ownerId: number,
-		status: ValueOf<typeof DocumentStatus>,
-	): Promise<number> {
+	public async updateOwnedStatusFrom({
+		currentStatus,
+		id,
+		ownerId,
+		status,
+	}: DocumentUpdateOwnedStatus): Promise<number> {
 		return await this.documentModel
 			.query()
 			.patch({ status })
-			.where({ id, ownerId })
+			.where({
+				id,
+				ownerId,
+				status: currentStatus,
+			})
 			.execute();
 	}
 
