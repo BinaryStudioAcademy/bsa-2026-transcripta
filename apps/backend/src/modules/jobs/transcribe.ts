@@ -448,7 +448,21 @@ const createTranscribeHandler =
 			);
 			return;
 		}
+const claimedRows = await PageModel.query()
+	.patch({ status: PageStatus.TRANSCRIBING })
+	.where({
+		id: pageId,
+		status: PageStatus.QUEUED,
+	})
+	.execute();
 
+if (claimedRows === EMPTY_LENGTH) {
+	logger.info(
+		`Skip page.transcribe ${String(pageId)}: page already claimed or no longer queued`,
+	);
+
+	return;
+}
 		if (isBudgetExhausted(document)) {
 			logger.warn(`Budget exhausted for document ${String(documentId)}`);
 
