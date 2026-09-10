@@ -13,6 +13,7 @@ import {
 	THUMBNAIL_WIDTH,
 } from "./libs/constants/constants.js";
 import { ErrorMessage } from "./libs/enums/enums.js";
+import { isTimeoutError } from "./libs/helpers/helpers.js";
 import { type PDFPageProcessor as IPDFPageProcessor } from "./libs/types/types.js";
 
 const execAsync = promisify(execFile);
@@ -83,8 +84,11 @@ class PDFPageProcessor implements IPDFPageProcessor {
 			);
 
 			return `${pngPath}.png`;
-		} catch {
-			throw new Error(ErrorMessage.FAILED_TO_CONVERT_PAGE);
+		} catch (error) {
+			const customError = isTimeoutError(error)
+				? new Error(ErrorMessage.CONVERT_PAGE_TIMEOUT)
+				: new Error(ErrorMessage.FAILED_TO_CONVERT_PAGE);
+			throw customError;
 		}
 	}
 
