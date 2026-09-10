@@ -1,21 +1,12 @@
-import {
-	DocumentStatus,
-	EMPTY_LENGTH,
-	PageStatus,
-	type ValueOf,
-} from "@transcripta/shared";
+import { DocumentStatus, EMPTY_LENGTH, PageStatus } from "@transcripta/shared";
 import { type Job } from "bullmq";
 
-import { type Config } from "~/libs/modules/config/config.js";
 import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
-import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { buildContext } from "~/modules/context/builder.js";
-import { type BuiltContext } from "~/modules/context/libs/types/types.js";
 import { buildUserPrompt } from "~/modules/context/prompt.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PageModel } from "~/modules/pages/page.model.js";
@@ -24,107 +15,27 @@ import { createOutputValidator } from "~/modules/transcription/libs/helpers/outp
 import { calculateTokenCost } from "~/modules/transcription/libs/helpers/pricing.helper.js";
 import { type TranscriptionResponse } from "~/modules/transcription/libs/types/types.js";
 import { TranscriptionCacheModel } from "~/modules/transcription/transcription-cache.model.js";
-import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
 
+import {
+	DEFAULT_PROVIDER,
+	MAX_REPAIR_ATTEMPTS,
+	ONE,
+	PAGE_MEDIA_TYPE,
+	PROVIDER_INDEX,
+	TRANSCRIBABLE_STATUSES,
+} from "./libs/constants/constants.js";
+import { PageEventName, TranscribeFailureReason } from "./libs/enums/enums.js";
 import { buildCacheKey } from "./libs/helpers/cache-key.helper.js";
-
-const DEFAULT_PROVIDER = "unknown";
-const MAX_REPAIR_ATTEMPTS = 1;
-const ONE = 1;
-const PAGE_MEDIA_TYPE = "image/webp";
-const PROVIDER_INDEX = 1;
-const TRANSCRIBABLE_STATUSES = new Set<ValueOf<typeof DocumentStatus>>([
-	DocumentStatus.PROCESSING,
-	DocumentStatus.READY,
-]);
-
-type CallOutcome = FailedCallOutcome | SuccessfulCallOutcome;
-
-type Dependencies = {
-	config: Config;
-	logger: Logger;
-	storage: BaseStorage;
-	transcriptionService: TranscriptionService;
-};
-
-type FailedCallOutcome = {
-	inputTokens: number;
-	latencyMs: number;
-	ok: false;
-	outputTokens: number;
-};
-
-type FailedResolvedTranscription = {
-	costUsd: number;
-	fromCache: false;
-	inputTokens: number;
-	latencyMs: number;
-	ok: false;
-	outputTokens: number;
-};
-
-type ParseResult = { ok: false } | { ok: true; value: unknown };
-
-type ResolvedTranscription =
-	| FailedResolvedTranscription
-	| SuccessfulResolvedTranscription;
-
-type ResolveOptions = Dependencies & {
-	cacheKey: string;
-	context: BuiltContext;
-	documentId: number;
-	modelId: string;
-	page: InstanceType<typeof PageModel>;
-	pageNo: number;
-	preset: InstanceType<typeof PresetModel>;
-};
-
-type StoreOptions = {
-	contextUsed: string;
-	costUsd: number;
-	documentId: number;
-	fromCache: boolean;
-	inputTokens: number;
-	latencyMs: number;
-	modelId: string;
-	outputTokens: number;
-	pageId: number;
-	presetId: number;
-	provider: string;
-	structured: unknown;
-	text: string;
-};
-
-type SuccessfulCallOutcome = {
-	inputTokens: number;
-	latencyMs: number;
-	ok: true;
-	outputTokens: number;
-	structured: unknown;
-	text: string;
-};
-
-type SuccessfulResolvedTranscription = {
-	costUsd: number;
-	fromCache: boolean;
-	inputTokens: number;
-	latencyMs: number;
-	ok: true;
-	outputTokens: number;
-	structured: unknown;
-	text: string;
-};
-
-type TranscribeRequestOptions = {
-	image: Buffer;
-	logger: Logger;
-	mediaType: string;
-	modelId: string;
-	outputSchema: null | Record<string, unknown>;
-	pageId: number;
-	prompt: string;
-	transcriptionService: TranscriptionService;
-};
+import {
+	type CallOutcome,
+	type Dependencies,
+	type ParseResult,
+	type ResolvedTranscription,
+	type ResolveOptions,
+	type StoreOptions,
+	type TranscribeFailureReasonValue,
+	type TranscribeRequestOptions,
+} from "./libs/types/types.js";
 
 const parseModelJson = (text: string): ParseResult => {
 	try {
@@ -148,13 +59,13 @@ const formatValidationErrors = (
 
 const recordFailure = async (
 	pageId: number,
-	errorMessage: string,
+	reason: TranscribeFailureReasonValue,
 	attempts: number,
 ): Promise<void> => {
 	await PageModel.query()
 		.patch({
 			attempts: attempts + ONE,
-			lastError: errorMessage,
+			lastError: reason,
 			status: PageStatus.FAILED,
 		})
 		.where("id", pageId)
@@ -214,6 +125,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: false,
 				outputTokens: usedOutputTokens,
+				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
 			};
 		}
 
@@ -230,6 +142,7 @@ const transcribeWithRepair = async (
 					latencyMs: usedLatencyMs,
 					ok: false,
 					outputTokens: usedOutputTokens,
+					reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 				};
 			}
 
@@ -256,6 +169,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: false,
 				outputTokens: usedOutputTokens,
+				reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 			};
 		}
 
@@ -267,6 +181,7 @@ const transcribeWithRepair = async (
 		latencyMs: usedLatencyMs,
 		ok: false,
 		outputTokens: usedOutputTokens,
+		reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 	};
 };
 
@@ -289,7 +204,6 @@ const resolveFromCacheOrModel = async (
 		}
 
 		await TranscriptionCacheModel.query()
-			.patch({ lastHitAt: new Date().toISOString() })
 			.patch({
 				hitCount: AbstractModel.knex().raw("hit_count + ?", [ONE]),
 				lastHitAt: new Date().toISOString(),
@@ -310,7 +224,11 @@ const resolveFromCacheOrModel = async (
 	}
 
 	if (!page.imageKey) {
-		await recordFailure(page.id, "page_image_missing", page.attempts);
+		await recordFailure(
+			page.id,
+			TranscribeFailureReason.PAGE_IMAGE_MISSING,
+			page.attempts,
+		);
 		return null;
 	}
 
@@ -370,6 +288,7 @@ const resolveFromCacheOrModel = async (
 		latencyMs: outcome.latencyMs,
 		ok: false,
 		outputTokens: outcome.outputTokens,
+		reason: outcome.reason,
 	};
 };
 
@@ -448,32 +367,46 @@ const createTranscribeHandler =
 			);
 			return;
 		}
-const claimedRows = await PageModel.query()
-	.patch({ status: PageStatus.TRANSCRIBING })
-	.where({
-		id: pageId,
-		status: PageStatus.QUEUED,
-	})
-	.execute();
 
-if (claimedRows === EMPTY_LENGTH) {
-	logger.info(
-		`Skip page.transcribe ${String(pageId)}: page already claimed or no longer queued`,
-	);
+		const claimedRows = await PageModel.query()
+			.patch({ status: PageStatus.TRANSCRIBING })
+			.where({
+				id: pageId,
+				status: PageStatus.QUEUED,
+			})
+			.execute();
 
-	return;
-}
+		if (claimedRows === EMPTY_LENGTH) {
+			logger.info(
+				`Skip page.transcribe ${String(pageId)}: page already claimed or no longer queued`,
+			);
+
+			return;
+		}
+
 		if (isBudgetExhausted(document)) {
 			logger.warn(`Budget exhausted for document ${String(documentId)}`);
 
-			await PageModel.query()
-				.patch({
-					attempts: page.attempts + ONE,
-					lastError: "budget_exceeded",
+			await DocumentModel.transaction(async (trx) => {
+				await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+					actorId: null,
+					details: {
+						budgetUsd: document.budgetUsd,
+						error: TranscribeFailureReason.BUDGET_EXCEEDED,
+						spentUsd: document.spentUsd,
+					},
+					documentId,
+					durationMs: EMPTY_LENGTH,
+					event: PageEventName.TRANSCRIBE_FAILED,
+					pageId,
+					transcriptionId: null,
+				});
+
+				await trx.from(DatabaseTableName.PAGE).where("id", pageId).update({
+					lastError: TranscribeFailureReason.BUDGET_EXCEEDED,
 					status: PageStatus.FAILED,
-				})
-				.where("id", pageId)
-				.execute();
+				});
+			});
 
 			await markDocumentStopped(documentId);
 			return;
@@ -482,7 +415,11 @@ if (claimedRows === EMPTY_LENGTH) {
 		const preset = await PresetModel.query().findById(document.presetId);
 
 		if (!preset) {
-			await recordFailure(pageId, "preset_not_found", page.attempts);
+			await recordFailure(
+				pageId,
+				TranscribeFailureReason.PRESET_NOT_FOUND,
+				page.attempts,
+			);
 			return;
 		}
 
@@ -497,7 +434,11 @@ if (claimedRows === EMPTY_LENGTH) {
 		});
 
 		if (!page.imageSha256) {
-			await recordFailure(pageId, "page_image_sha_missing", page.attempts);
+			await recordFailure(
+				pageId,
+				TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
+				page.attempts,
+			);
 			return;
 		}
 
@@ -537,13 +478,13 @@ if (claimedRows === EMPTY_LENGTH) {
 					actorId: null,
 					details: {
 						costUsd: resolved.costUsd,
-						error: "invalid_model_output",
+						error: resolved.reason,
 						inputTokens: resolved.inputTokens,
 						outputTokens: resolved.outputTokens,
 					},
 					documentId,
 					durationMs: resolved.latencyMs,
-					event: "transcribe_failed",
+					event: PageEventName.TRANSCRIBE_FAILED,
 					pageId,
 					transcriptionId: null,
 				});
@@ -553,7 +494,7 @@ if (claimedRows === EMPTY_LENGTH) {
 					.where("id", pageId)
 					.update({
 						attempts: page.attempts + ONE,
-						lastError: "invalid_model_output",
+						lastError: resolved.reason,
 						status: PageStatus.FAILED,
 					});
 			});
