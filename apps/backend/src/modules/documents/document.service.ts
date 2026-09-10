@@ -10,9 +10,15 @@ import {
 import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
-import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+import {
+	PDFPageProcessor,
+	PDFPageProcessorErrorMessage,
+} from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
-import { StorageBucket } from "~/libs/modules/storage/storage.js";
+import {
+	StorageBucket,
+	StorageErrorMessage,
+} from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 
 import { PageEntity } from "../pages/page.entity.js";
@@ -144,12 +150,19 @@ class DocumentService {
 		} catch (error) {
 			const caughtErrorMessage =
 				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.DOWNLOAD_FAILED}: ${caughtErrorMessage}`;
+			const finalErrorMessage =
+				caughtErrorMessage === StorageErrorMessage.OBJECT_NOT_UPLOADED
+					? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
+					: DocumentErrorMessage.DOWNLOAD_FAILED;
+			const statusCode =
+				caughtErrorMessage === StorageErrorMessage.OBJECT_NOT_UPLOADED
+					? HTTPCode.NOT_FOUND
+					: HTTPCode.INTERNAL_SERVER_ERROR;
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
 				message: finalErrorMessage,
-				status: HTTPCode.INTERNAL_SERVER_ERROR,
+				status: statusCode,
 			});
 		}
 
@@ -193,11 +206,15 @@ class DocumentService {
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
+			const statusCode =
+				errorMessage === PDFPageProcessorErrorMessage.CONVERT_PAGE_TIMEOUT
+					? HTTPCode.GATEWAY_TIMEOUT
+					: HTTPCode.UNPROCESSED_ENTITY;
 
 			await this.documentRepository.setError(documentId, errorMessage);
 			throw new HTTPError({
 				message: errorMessage,
-				status: HTTPCode.UNPROCESSED_ENTITY,
+				status: statusCode,
 			});
 		}
 
@@ -216,14 +233,12 @@ class DocumentService {
 			});
 			imageKey = uploadResult.imageKey;
 			thumbnailKey = uploadResult.thumbnailKey;
-		} catch (error) {
-			const caughtErrorMessage =
-				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.PAGE_UPLOAD_FAILED}: ${caughtErrorMessage}`;
+		} catch {
+			const errorMessage = DocumentErrorMessage.PAGE_UPLOAD_FAILED;
 
-			await this.documentRepository.setError(documentId, finalErrorMessage);
+			await this.documentRepository.setError(documentId, errorMessage);
 			throw new HTTPError({
-				message: finalErrorMessage,
+				message: errorMessage,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
