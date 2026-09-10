@@ -120,12 +120,10 @@ export async function buildContext(
 	pageNo: number,
 	preset: Preset,
 ): Promise<BuiltContext> {
-	const blocks: string[] = [];
-
 	// 1. Seed glossary from the preset. This is what saves the first pages.
-	if (preset.seedGlossary.length) {
-		blocks.push(renderSeedGlossary(preset.seedGlossary));
-	}
+	const seedGlossary = preset.seedGlossary.length
+		? renderSeedGlossary(preset.seedGlossary)
+		: undefined;
 
 	// 2. Document lexicon: the top-100 words that passed the threshold.
 	//    Objection works fine with the partial index, but SQL reads better here.
@@ -139,7 +137,6 @@ export async function buildContext(
 			{ column: "freq", order: "desc" },
 		])
 		.limit(preset.settings.lexiconTopK);
-	if (lexicon.length) blocks.push(renderLexicon(lexicon));
 
 	// 3. Text of the last 3 confirmed pages before the current one.
 	const neighbours = await PageModel.query()
@@ -152,7 +149,14 @@ export async function buildContext(
 		.modifiers({
 			current: (query) => query.where("isCurrent", true),
 		});
-	if (neighbours.length) blocks.push(renderNeighbours(neighbours));
+
+	// Assemble in a fixed order (not the trim priority). Reordering would
+	// change the context hash and miss the transcription cache for free.
+	const blocks = assembleContextBlocks({
+		lexicon: lexicon.length ? renderLexicon(lexicon) : undefined,
+		neighbours: neighbours.length ? renderNeighbours(neighbours) : undefined,
+		seedGlossary,
+	});
 
 	// 4. Trim if it does not fit the token budget (90% of maxContextTokens).
 	const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
@@ -205,15 +209,38 @@ assembled context twice does not call the provider twice.
 (90% of the stated budget), not the raw `maxContextTokens`. Being slightly under
 costs nothing; being over costs a failed call.
 
-### Trimming by priority, not proportionally
+### Assembly order vs trim priority (#148)
 
-If the context does not fit the limit, cut from the end of the priority list:
+**Prompt / hash order** is fixed and must stay stable — `assembleContextBlocks`
+in [`apps/backend/src/context/`](../apps/backend/src/context/) always emits:
 
 ```
-priority 1: preset instructions   ← never cut
-priority 2: seed glossary         ← never cut
-priority 3: neighbouring pages    ← cut, starting with the most distant
-priority 4: document lexicon      ← cut first, shrinking top-100 to top-50
+seed glossary → lexicon → neighbouring pages
+```
+
+The page image is attached by the model call and is **not** part of these
+blocks or of `contextHash`. Reordering the blocks would change the hash and
+invalidate the transcription cache for an identical prompt.
+
+```ts
+import { assembleContextBlocks } from "~/context/context.js";
+
+const blocks = assembleContextBlocks({
+	seedGlossary: renderSeedGlossary(preset.seedGlossary),
+	lexicon: renderLexicon(lexicon),
+	neighbours: renderNeighbours(neighbours),
+});
+// missing / empty parts are skipped; order of the rest never changes
+```
+
+**Trim priority** is a different axis. When the budget is tight, cut in this
+order — do not confuse it with assembly order:
+
+```
+cut first:  document lexicon     ← shrink top-100 → top-50, then drop whole
+then:       neighbouring pages   ← drop whole pages, most distant first
+never cut:  seed glossary
+never cut:  preset instructions  ← outside maxContextTokens (#148)
 ```
 
 Shrinking everything proportionally would produce truncated instructions — it

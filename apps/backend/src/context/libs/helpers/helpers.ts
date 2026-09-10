@@ -1,3 +1,4 @@
+export { assembleContextBlocks } from "./assemble-context-blocks.helper.js";
 export { estimateTokensByChars } from "./estimate-tokens-by-chars.helper.js";
 export { getEffectiveContextBudget } from "./get-effective-context-budget.helper.js";
 export { hashContext } from "./hash-context.helper.js";

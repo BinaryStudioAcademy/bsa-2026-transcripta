@@ -15,6 +15,16 @@ const estimateTokens = async (
 
 export { estimateTokens };
 export { EstimateTokens } from "./estimate-tokens.module.js";
-export { CONTEXT_BUDGET_SAFETY_MARGIN } from "./libs/constants/constants.js";
-export { getEffectiveContextBudget } from "./libs/helpers/helpers.js";
-export { type EstimateTokensResult } from "./libs/types/types.js";
+export {
+	CONTEXT_ASSEMBLY_ORDER,
+	CONTEXT_BUDGET_SAFETY_MARGIN,
+} from "./libs/constants/constants.js";
+export { ContextBlockKind } from "./libs/enums/enums.js";
+export {
+	assembleContextBlocks,
+	getEffectiveContextBudget,
+} from "./libs/helpers/helpers.js";
+export {
+	type ContextBlockParts,
+	type EstimateTokensResult,
+} from "./libs/types/types.js";
