@@ -44,8 +44,20 @@
 	background-color: var(--accent-active);
 }
 
+.button--secondary {
+	color: var(--text);
+	background: var(--surface);
+	border: 1px solid var(--hairline-strong);
+}
+
 .button--fluid {
 	width: 100%;
+}
+
+.button--sm {
+	height: var(--ctl-sm);
+	padding: 0 var(--sp-2);
+	font-size: var(--fs-xs);
 }
 
 .button--disabled {
