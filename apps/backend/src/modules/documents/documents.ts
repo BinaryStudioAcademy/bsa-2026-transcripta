@@ -11,6 +11,7 @@ import { DocumentService } from "./document.service.js";
 const documentRepository = new DocumentRepository(DocumentModel);
 const documentService = new DocumentService({
 	documentRepository,
+	logger,
 	pageRepository,
 	pdfPageProcessor,
 	storage,
