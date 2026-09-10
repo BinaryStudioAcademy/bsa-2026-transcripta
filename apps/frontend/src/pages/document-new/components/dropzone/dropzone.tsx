@@ -1,7 +1,21 @@
+import {
+	BYTES_IN_KILOBYTE,
+	DocumentValidationRule,
+	KILOBYTES_IN_MEGABYTE,
+} from "@transcripta/shared";
 import React, { useCallback, useState } from "react";
+
+import {
+	DEFAULT_MAX_ARCHIVE_SIZE_MB,
+	DEFAULT_MAX_PAGES,
+} from "~/pages/document-new/libs/constants/constants.js";
 
 import { FIRST_FILE_INDEX } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
+
+const DEFAULT_MAX_FILE_SIZE_MB =
+	DocumentValidationRule.MAX_FILE_BYTES /
+	(BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE);
 
 type Properties = {
 	fileInputReference: React.RefObject<HTMLInputElement | null>;
@@ -67,7 +81,7 @@ const Dropzone: React.FC<Properties> = ({
 	return (
 		<>
 			<input
-				accept="application/pdf"
+				accept="application/pdf,.zip"
 				className={styles["dropzone__input--hidden"]}
 				multiple={false}
 				onChange={handleFileInputChange}
@@ -89,7 +103,9 @@ const Dropzone: React.FC<Properties> = ({
 					<>
 						<b>{rejection}</b>
 						<small>
-							up to <span>500 MB</span>, up to <span>500 pages</span>
+							PDFs up to <span>{DEFAULT_MAX_FILE_SIZE_MB} MB</span>, ZIPs up to{" "}
+							<span>{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB</span>, up to{" "}
+							<span>{DEFAULT_MAX_PAGES} pages</span>
 						</small>
 						<button
 							className={[
@@ -114,7 +130,9 @@ const Dropzone: React.FC<Properties> = ({
 							</button>
 						</b>
 						<small>
-							up to <span>500 MB</span>, up to <span>500 pages</span>
+							PDFs up to <span>{DEFAULT_MAX_FILE_SIZE_MB} MB</span>, ZIPs up to{" "}
+							<span>{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB</span>, up to{" "}
+							<span>{DEFAULT_MAX_PAGES} pages</span>
 						</small>
 					</>
 				)}

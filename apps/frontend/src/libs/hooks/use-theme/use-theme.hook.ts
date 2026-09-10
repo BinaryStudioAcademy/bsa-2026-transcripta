@@ -17,7 +17,6 @@ const useTheme = (): { theme: ThemeValue; toggleTheme: () => void } => {
 	});
 	const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-	// 1. Cargar la preferencia guardada al montar el hook
 	useEffect(() => {
 		const loadStoredTheme = async (): Promise<void> => {
 			const storedTheme = await storage.get<ThemeValue>(StorageKey.THEME);
@@ -32,7 +31,6 @@ const useTheme = (): { theme: ThemeValue; toggleTheme: () => void } => {
 		void loadStoredTheme();
 	}, []);
 
-	// 2. Aplicar al DOM y guardar en storage SOLO después de haber leído el tema inicial
 	useEffect(() => {
 		if (!isLoaded) {
 			return;
