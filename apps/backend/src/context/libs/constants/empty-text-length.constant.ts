@@ -1,0 +1,3 @@
+const EMPTY_TEXT_LENGTH = 0;
+
+export { EMPTY_TEXT_LENGTH };
