@@ -3,7 +3,7 @@ import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
-import { EMPTY_COLLECTION_LENGTH } from "../documents/libs/constants/constants.js";
+import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import {
 	type PageWithTranscriptionRow,
 	type UpdatePageVerificationPayload,

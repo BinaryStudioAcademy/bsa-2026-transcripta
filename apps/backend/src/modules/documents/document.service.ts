@@ -4,6 +4,7 @@ import {
 	type DocumentCreateResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
+	DocumentValidationMessage,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
@@ -34,7 +35,6 @@ import {
 import {
 	DocumentErrorMessage,
 	DocumentStatus,
-	DocumentValidationMessage,
 	PageStatus,
 } from "./libs/enums/enums.js";
 import {
@@ -666,7 +666,7 @@ class DocumentService {
 
 		if (!document) {
 			throw new HTTPError({
-				message: DocumentValidationMessage.NOT_FOUND,
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
 				status: HTTPCode.NOT_FOUND,
 			});
 		}
@@ -707,7 +707,7 @@ class DocumentService {
 
 		if (!document) {
 			throw new HTTPError({
-				message: DocumentValidationMessage.NOT_FOUND,
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
 				status: HTTPCode.NOT_FOUND,
 			});
 		}
@@ -764,7 +764,7 @@ class DocumentService {
 					pageNo,
 				});
 			}
-		} catch {
+		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,
 				id: documentId,
@@ -772,8 +772,17 @@ class DocumentService {
 				status: DocumentStatus.PAUSED,
 			});
 
+			if (error instanceof HTTPError) {
+				throw error;
+			}
+
+			const caughtErrorMessage =
+				error instanceof Error ? error.message : String(error);
+			const finalErrorMessage = `${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`;
+
+			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
-				message: DocumentValidationMessage.RESUME_FAILED,
+				message: finalErrorMessage,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
