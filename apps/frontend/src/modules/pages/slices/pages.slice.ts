@@ -42,16 +42,23 @@ const { actions, name, reducer } = createSlice({
 		builder.addCase(verifyPage.fulfilled, (state, { payload }) => {
 			state.rollback[payload.pageId] = undefined;
 
-			if (payload.next) {
-				const nextPage = state.byId[payload.next.pageId];
-				if (nextPage) {
-					nextPage.status = payload.next.status;
-					if (nextPage.transcription && payload.next.transcription) {
-						nextPage.transcription.contextWords =
-							payload.next.transcription.contextWords;
-						nextPage.transcription.text = payload.next.transcription.text;
-					}
-				}
+			if (!payload.next) {
+				return;
+			}
+
+			const nextPage = state.byId[payload.next.pageId];
+
+			if (!nextPage) {
+				return;
+			}
+
+			nextPage.status = payload.next.status;
+
+			if (nextPage.transcription && payload.next.transcription) {
+				nextPage.transcription.contextWords =
+					payload.next.transcription.contextWords;
+
+				nextPage.transcription.text = payload.next.transcription.text;
 			}
 		});
 
@@ -59,19 +66,12 @@ const { actions, name, reducer } = createSlice({
 			const { pageId } = action.meta.arg;
 			const previous = state.rollback[pageId];
 
-			if (!previous) {
-				state.dataStatus = DataStatus.REJECTED;
-				state.lastError = action.error;
-				return;
-			}
-
-			if (state.byId[pageId]) {
+			if (previous && state.byId[pageId]) {
 				state.byId[pageId].status = previous.status;
 				state.cursorPageNo = previous.cursorPageNo;
 				state.rollback[pageId] = undefined;
 			}
 
-			state.dataStatus = DataStatus.REJECTED;
 			state.lastError = action.error;
 		});
 
