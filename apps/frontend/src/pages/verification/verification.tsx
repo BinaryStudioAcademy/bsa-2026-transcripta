@@ -1,11 +1,16 @@
 import { Link, LoaderOverlay } from "~/libs/components/components.js";
-import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
+import {
+	AppRoute,
+	DataStatus,
+	PageVerificationAction,
+} from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
 	useEffect,
 	useParams,
+	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
@@ -23,6 +28,7 @@ const Verification: React.FC = () => {
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [isZoomed] = useState(false);
+	const pageStartedAtReference = useRef(Date.now());
 
 	const { document, documentDataStatus } = useAppSelector(({ documents }) => ({
 		document: documents.document,
@@ -64,7 +70,42 @@ const Verification: React.FC = () => {
 				},
 			}),
 		);
-	}, [document, dispatch]);
+	}, [document?.id, document?.cursorPageNo, dispatch]);
+
+	useEffect(() => {
+		if (currentPage) {
+			pageStartedAtReference.current = Date.now();
+		}
+	}, [currentPage?.id]);
+
+	const handleConfirm = useCallback((): void => {
+		if (!currentPage?.transcription) {
+			return;
+		}
+
+		const durationMs = Date.now() - pageStartedAtReference.current;
+
+		const payload = {
+			action: PageVerificationAction.CONFIRM,
+			durationMs,
+			text: currentPage.transcription.text,
+			transcriptionId: currentPage.transcription.id,
+		};
+
+		dispatch(
+			pageActions.verifyOptimistic({
+				pageId: currentPage.id,
+				payload,
+			}),
+		);
+
+		void dispatch(
+			pageActions.verifyPage({
+				pageId: currentPage.id,
+				payload,
+			}),
+		);
+	}, [currentPage, dispatch]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING ||
@@ -183,7 +224,11 @@ const Verification: React.FC = () => {
 										</p>
 
 										<div className="verification-actions">
-											<button className="tx-btn tx-btn--primary" type="button">
+											<button
+												className="tx-btn tx-btn--primary"
+												onClick={handleConfirm}
+												type="button"
+											>
 												Correct
 											</button>
 
