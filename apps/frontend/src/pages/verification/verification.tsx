@@ -1,4 +1,7 @@
+import { PageStatus, PageStatusValue } from "@transcripta/shared";
+
 import { Link, LoaderOverlay } from "~/libs/components/components.js";
+import { MAX_LOADED_PAGES } from "~/libs/constants/varification.constants.js";
 import {
 	AppRoute,
 	DataStatus,
@@ -13,15 +16,59 @@ import {
 	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
+
+import "./verification.css";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
+	selectCursorPageNo,
 	selectPagesDataStatus,
+	selectPagesForStrip,
 	VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
-import "./verification.css";
+const getPageStripStatus = (
+	status: PageStatusValue,
+	isCurrent: boolean,
+): string => {
+	if (isCurrent) {
+		return "current";
+	}
+
+	switch (status) {
+		case PageStatus.CONFIRMED: {
+			return "confirmed";
+		}
+
+		case PageStatus.CORRECTED: {
+			return "corrected";
+		}
+
+		case PageStatus.FAILED: {
+			return "error";
+		}
+
+		case PageStatus.QUEUED: {
+			return "queued";
+		}
+
+		case PageStatus.SKIPPED: {
+			return "skipped";
+		}
+
+		case PageStatus.TRANSCRIBED: {
+			return "ready";
+		}
+		case PageStatus.TRANSCRIBING: {
+			return "running";
+		}
+
+		default: {
+			return "ready";
+		}
+	}
+};
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -39,6 +86,8 @@ const Verification: React.FC = () => {
 
 	const currentPage = useAppSelector(selectCurrentPage);
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
+	const pagesForStrip = useAppSelector(selectPagesForStrip);
+	const cursorPageNo = useAppSelector(selectCursorPageNo);
 
 	const handleEditClick = useCallback((): void => {
 		setIsEditing(true);
@@ -72,7 +121,7 @@ const Verification: React.FC = () => {
 				documentId: document.id,
 				query: {
 					from: document.cursorPageNo,
-					limit: 5,
+					limit: MAX_LOADED_PAGES,
 				},
 			}),
 		);
@@ -362,17 +411,23 @@ const Verification: React.FC = () => {
 					<button aria-label="Previous" className="tx-page" type="button">
 						◄
 					</button>
-					<PageButton page={41} status="skipped" />
-					<PageButton page={42} status="error" />
-					<PageButton page={43} status="confirmed" />
-					<PageButton page={44} status="confirmed" />
-					<PageButton page={45} status="confirmed" />
-					<PageButton page={46} status="corrected" />
-					<PageButton page={47} status="current" />
-					<PageButton page={48} status="ready" />
-					<PageButton page={49} status="ready" />
-					<PageButton page={50} status="running" />
-					<PageButton page={51} status="queued" />
+					{pagesForStrip.map((page) => {
+						if (!page) {
+							return;
+						}
+
+						const isCurrent = page.pageNo === cursorPageNo;
+
+						return (
+							<PageButton
+								isCurrent={isCurrent}
+								key={page.id}
+								page={page.pageNo}
+								status={getPageStripStatus(page.status, isCurrent)}
+							/>
+						);
+					})}
+
 					<button aria-label="Next" className="tx-page" type="button">
 						►
 					</button>
@@ -475,22 +530,17 @@ const EditMode: React.FC<EditModeProperties> = ({ onCancel, text }) => {
 };
 
 type PageButtonProperties = {
+	isCurrent: boolean;
 	page: number;
-	status: PageStatus;
+	status: string;
 };
 
-type PageStatus =
-	| "confirmed"
-	| "corrected"
-	| "current"
-	| "error"
-	| "queued"
-	| "ready"
-	| "running"
-	| "skipped";
-
-const PageButton: React.FC<PageButtonProperties> = ({ page, status }) => {
-	const statusSymbolMap: Record<PageStatus, string> = {
+const PageButton: React.FC<PageButtonProperties> = ({
+	isCurrent,
+	page,
+	status,
+}) => {
+	const statusSymbolMap: Record<string, string> = {
 		confirmed: "✓",
 		corrected: "✎",
 		current: "●",
@@ -501,25 +551,14 @@ const PageButton: React.FC<PageButtonProperties> = ({ page, status }) => {
 		skipped: "↷",
 	};
 
-	const hasThumb = status !== "current";
+	const hasThumb = !isCurrent;
 
 	return (
 		<button className={`tx-page tx-page--${status}`} type="button">
 			{page}
 			<span aria-hidden="true">{statusSymbolMap[status]}</span>
 
-			{hasThumb && (
-				<span aria-hidden="true" className="tx-page-thumb">
-					<i />
-					<i />
-					<i />
-					<i />
-					<i />
-					<i />
-					<i />
-					<i />
-				</span>
-			)}
+			{hasThumb && <span aria-hidden="true" className="tx-page-thumb"></span>}
 		</button>
 	);
 };

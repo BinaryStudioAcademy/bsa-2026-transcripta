@@ -19,5 +19,7 @@ export { /** @public */ actions, reducer } from "./slices/pages.js";
 
 export {
 	selectCurrentPage,
+	selectCursorPageNo,
 	selectPagesDataStatus,
+	selectPagesForStrip,
 } from "./slices/selectors.js";
