@@ -1,0 +1,3 @@
+const DEFAULT_BUDGET_USD = "10.0000";
+
+export { DEFAULT_BUDGET_USD };
