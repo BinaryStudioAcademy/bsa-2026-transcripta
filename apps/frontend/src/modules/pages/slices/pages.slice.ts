@@ -1,8 +1,10 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type SerializedAppError, type ValueOf } from "~/libs/types/types.js";
 import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/documents.js";
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
+
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
 import { loadPages, verifyPage } from "./actions.js";
 
@@ -13,18 +15,18 @@ type RollbackState = {
 
 type State = {
 	byId: Record<number, DocumentGetPagesItemResponseDto>;
-	idsByPageNo: Record<number, number>;
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
+	idsByPageNo: Record<number, number>;
 	lastError: null | SerializedAppError;
 	rollback: Record<number, RollbackState | undefined>;
 };
 
 const initialState: State = {
 	byId: {},
-	idsByPageNo: {},
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
+	idsByPageNo: {},
 	lastError: null,
 	rollback: {},
 };

@@ -13,14 +13,14 @@ import {
 
 import { name as sliceName } from "./pages.slice.js";
 
-type VerifyPageParameters = {
-	pageId: number;
-	payload: VerifyPageRequestDto;
-};
-
 type LoadPagesParameters = {
 	documentId: number;
 	query: DocumentGetPagesQueryDto;
+};
+
+type VerifyPageParameters = {
+	pageId: number;
+	payload: VerifyPageRequestDto;
 };
 
 const verifyPage = createAsyncThunk<
