@@ -290,7 +290,10 @@ const resolveFromCacheOrModel = async (
 
 		await TranscriptionCacheModel.query()
 			.patch({ lastHitAt: new Date().toISOString() })
-			.increment("hit_count", ONE)
+			.patch({
+				hitCount: AbstractModel.knex().raw("hit_count + ?", [ONE]),
+				lastHitAt: new Date().toISOString(),
+			})
 			.where("cache_key", cacheKey)
 			.execute();
 
