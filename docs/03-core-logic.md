@@ -189,11 +189,36 @@ const budget = getEffectiveContextBudget(maxContextTokens); // 90%
 ```
 
 **What it counts.** Only the trimable context blocks — seed glossary, lexicon,
-neighbouring pages. Deliberately excluded:
+neighbouring pages (`BUDGETED_CONTEXT_BLOCK_KINDS`). Deliberately excluded from
+`maxContextTokens` / `estimateTokens` / future `fitToBudget`:
 
+- the system message (ours only — never trimmed);
+- preset instructions in the user-message `<preset>` block (mandatory in full —
+  a large lexicon must not shrink the instructions that tell the model what to
+  do);
 - the page image (~1740 input tokens in Bedrock tests; fixed cost, cannot trim);
-- system instruction and preset instructions (mandatory, never trimmed — #148);
 - the response allowance (`maxTokens` on the call is a separate limit).
+
+### Budget boundary (#148)
+
+`preset.settings.maxContextTokens` bounds **context growth only**. Resolve the
+working limit with `getEffectiveContextBudget(maxContextTokens)` (90%), then
+trim **only** blocks from `assembleContextBlocks`. System text and preset
+instructions are assembled by the caller outside that budget, so they stay
+present in full even when the context is reduced to the seed glossary alone.
+
+```ts
+import {
+	BUDGETED_CONTEXT_BLOCK_KINDS,
+	assembleContextBlocks,
+	getEffectiveContextBudget,
+} from "~/context/context.js";
+
+// BUDGETED_CONTEXT_BLOCK_KINDS === seed glossary → lexicon → neighbours
+const blocks = assembleContextBlocks({ seedGlossary, lexicon, neighbours });
+const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
+// fitToBudget(blocks, budget, model) — never pass system / preset instructions
+```
 
 **How it counts.**
 

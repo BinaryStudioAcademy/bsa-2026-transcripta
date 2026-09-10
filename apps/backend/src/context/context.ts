@@ -16,6 +16,7 @@ const estimateTokens = async (
 export { estimateTokens };
 export { EstimateTokens } from "./estimate-tokens.module.js";
 export {
+	BUDGETED_CONTEXT_BLOCK_KINDS,
 	CONTEXT_ASSEMBLY_ORDER,
 	CONTEXT_BUDGET_SAFETY_MARGIN,
 } from "./libs/constants/constants.js";
