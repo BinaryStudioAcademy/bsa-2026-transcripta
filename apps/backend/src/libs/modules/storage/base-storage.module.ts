@@ -2,6 +2,7 @@ import {
 	DeleteObjectsCommand,
 	GetObjectCommand,
 	ListObjectsV2Command,
+	NoSuchKey,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -169,6 +170,11 @@ class BaseStorage implements Storage {
 			};
 		} catch (error) {
 			await clear();
+
+			if (error instanceof NoSuchKey) {
+				throw new TypeError(StorageErrorMessage.OBJECT_NOT_UPLOADED);
+			}
+
 			throw error;
 		}
 	}
