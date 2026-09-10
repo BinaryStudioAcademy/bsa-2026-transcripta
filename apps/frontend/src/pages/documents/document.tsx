@@ -8,7 +8,6 @@ import {
 	LoaderOverlay,
 	OverflowMenu,
 	ProgressBar,
-	StatusChip,
 } from "~/libs/components/components.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
@@ -21,6 +20,8 @@ import {
 	useParams,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+
+import { DocumentStatusBlock } from "./libs/components/components.js";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -80,7 +81,10 @@ const Document: React.FC = () => {
 			{currentDocument && (
 				<>
 					<h1>{currentDocument.title}</h1>
-					<StatusChip status={currentDocument.status} />
+					<DocumentStatusBlock
+						documentId={currentDocument.id}
+						status={currentDocument.status}
+					/>
 					<OverflowMenu
 						items={[
 							{

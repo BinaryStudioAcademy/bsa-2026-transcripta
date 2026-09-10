@@ -1,21 +1,23 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, isAnyOf } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
-import { type ValueOf } from "~/libs/types/types.js";
+import { type DataStatusValue } from "~/libs/types/types.js";
 import {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
-import { create, loadAll, loadById, remove } from "./actions.js";
+import { create, loadAll, loadById, pause, remove, resume } from "./actions.js";
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
-	dataStatus: ValueOf<typeof DataStatus>;
+	dataStatus: DataStatusValue;
 	document: DocumentGetByIdResponseDto | null;
-	documentDataStatus: ValueOf<typeof DataStatus>;
+	documentDataStatus: DataStatusValue;
 	documents: DocumentGetAllItemResponseDto[];
+	pauseResumeDataStatus: DataStatusValue;
 	requestedDocumentId: null | number;
 };
 
@@ -25,6 +27,7 @@ const initialState: State = {
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
 	documents: [],
+	pauseResumeDataStatus: DataStatus.IDLE,
 	requestedDocumentId: null,
 };
 
@@ -83,6 +86,24 @@ const { actions, name, reducer } = createSlice({
 			if (state.document?.id === action.payload) {
 				state.document = null;
 			}
+		});
+		builder.addCase(pause.fulfilled, (state, action) => {
+			state.pauseResumeDataStatus = DataStatus.FULFILLED;
+			if (state.document && state.document.id === action.payload) {
+				state.document.status = DocumentStatus.PAUSED;
+			}
+		});
+		builder.addCase(resume.fulfilled, (state, action) => {
+			state.pauseResumeDataStatus = DataStatus.FULFILLED;
+			if (state.document && state.document.id === action.payload) {
+				state.document.status = DocumentStatus.PROCESSING;
+			}
+		});
+		builder.addMatcher(isAnyOf(pause.pending, resume.pending), (state) => {
+			state.pauseResumeDataStatus = DataStatus.PENDING;
+		});
+		builder.addMatcher(isAnyOf(pause.rejected, resume.rejected), (state) => {
+			state.pauseResumeDataStatus = DataStatus.REJECTED;
 		});
 	},
 	initialState,

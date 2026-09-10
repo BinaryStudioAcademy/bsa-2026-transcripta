@@ -78,6 +78,20 @@ class DocumentApi extends BaseHTTPApi {
 		);
 	}
 
+	public async pause(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(DocumentsApiPath.PAUSE, {
+				id: String(id),
+			}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify({}),
+			},
+		);
+	}
+
 	public async remove(id: number): Promise<void> {
 		await this.load(
 			this.getFullEndpoint(DocumentsApiPath.BY_ID, { id: String(id) }),
@@ -85,6 +99,20 @@ class DocumentApi extends BaseHTTPApi {
 				contentType: ContentType.JSON,
 				hasAuth: true,
 				method: HTTPMethod.DELETE,
+			},
+		);
+	}
+
+	public async resume(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(DocumentsApiPath.RESUME, {
+				id: String(id),
+			}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify({}),
 			},
 		);
 	}
