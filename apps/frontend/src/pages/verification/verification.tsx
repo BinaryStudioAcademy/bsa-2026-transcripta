@@ -18,6 +18,7 @@ import {
 	actions as pageActions,
 	selectCurrentPage,
 	selectPagesDataStatus,
+	VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
 import "./verification.css";
@@ -85,8 +86,37 @@ const Verification: React.FC = () => {
 
 		const durationMs = Date.now() - pageStartedAtReference.current;
 
-		const payload = {
+		const payload: VerifyPageRequestDto = {
 			action: PageVerificationAction.CONFIRM,
+			durationMs,
+			text: currentPage.transcription.text,
+			transcriptionId: currentPage.transcription.id,
+		};
+
+		dispatch(
+			pageActions.verifyOptimistic({
+				pageId: currentPage.id,
+				payload,
+			}),
+		);
+
+		void dispatch(
+			pageActions.verifyPage({
+				pageId: currentPage.id,
+				payload,
+			}),
+		);
+	}, [currentPage, dispatch]);
+
+	const handleSkip = useCallback((): void => {
+		if (!currentPage?.transcription) {
+			return;
+		}
+
+		const durationMs = Date.now() - pageStartedAtReference.current;
+
+		const payload: VerifyPageRequestDto = {
+			action: PageVerificationAction.SKIP,
 			durationMs,
 			text: currentPage.transcription.text,
 			transcriptionId: currentPage.transcription.id,
@@ -240,7 +270,11 @@ const Verification: React.FC = () => {
 												Edit
 											</button>
 
-											<button className="tx-btn tx-btn--ghost" type="button">
+											<button
+												className="tx-btn tx-btn--ghost"
+												onClick={handleSkip}
+												type="button"
+											>
 												Skip
 											</button>
 										</div>
