@@ -515,10 +515,7 @@ class DocumentService {
 
 			const documentObject = document.toObject();
 
-			if (
-				documentObject.status !== DocumentStatus.DRAFT &&
-				documentObject.status !== DocumentStatus.FAILED
-			) {
+			if (documentObject.status !== DocumentStatus.DRAFT) {
 				throw new HTTPError({
 					message: DocumentErrorMessage.NOT_DRAFT,
 					status: HTTPCode.CONFLICT,

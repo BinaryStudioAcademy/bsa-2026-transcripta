@@ -412,7 +412,7 @@ class DocumentController extends BaseController {
 	 *       404:
 	 *         description: Document not found
 	 *       409:
-	 *         description: Document is not in draft or failed status
+	 *         description: Document is not in draft status
 	 */
 	private async getUploadUrl(
 		options: APIHandlerOptions<{

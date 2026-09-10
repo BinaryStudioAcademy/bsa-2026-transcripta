@@ -127,8 +127,7 @@ const Documents: React.FC = () => {
 									<td>{document.title}</td>
 									<td>
 										<StatusChip status={document.status} />
-										{(document.status === DocumentStatus.DRAFT ||
-											document.status === DocumentStatus.FAILED) && (
+										{document.status === DocumentStatus.DRAFT && (
 											<Button
 												label="Resume upload"
 												onClick={handleResumeUpload(document.id)}
