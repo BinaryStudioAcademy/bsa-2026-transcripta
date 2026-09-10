@@ -1,4 +1,4 @@
-import { Link } from "~/libs/components/components.js";
+import { Link, ThemeToggle } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
 type VerificationHeaderProperties = {
@@ -72,9 +72,7 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 				</span>
 			</div>
 
-			<button className="tx-btn tx-btn--ghost tx-btn--sm" type="button">
-				Night
-			</button>
+			<ThemeToggle />
 		</header>
 	);
 };
