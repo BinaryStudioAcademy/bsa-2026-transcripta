@@ -57,12 +57,19 @@ const Documents: React.FC = () => {
 	}, [navigate]);
 
 	const handleRowActionClick = useCallback(
-		(event: React.MouseEvent, documentId: number): void => {
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
 			event.preventDefault();
+
+			const documentId = event.currentTarget
+				.closest("[role=row]")
+				?.getAttribute("data-document-id");
+
+			if (!documentId) {
+				return;
+			}
+
 			void (async (): Promise<void> => {
-				await navigate(
-					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
-				);
+				await navigate(configureString(AppRoute.DOCUMENT, { id: documentId }));
 			})();
 		},
 		[navigate],
@@ -76,7 +83,7 @@ const Documents: React.FC = () => {
 
 			event.preventDefault();
 
-			const currentRow = event.currentTarget.closest('[role="row"]');
+			const currentRow = event.currentTarget.closest("[role=row]");
 			const targetRow =
 				event.key === "ArrowDown"
 					? currentRow?.nextElementSibling
@@ -189,7 +196,11 @@ const Documents: React.FC = () => {
 								: undefined;
 
 							return (
-								<div key={document.id} role="row">
+								<div
+									data-document-id={document.id}
+									key={document.id}
+									role="row"
+								>
 									<Link
 										className={styles["documents-page__row"] ?? ""}
 										onKeyDown={handleRowKeyDown}
@@ -214,9 +225,7 @@ const Documents: React.FC = () => {
 												<Button
 													className={styles["documents-page__reread-link"]}
 													label="Open to re-read failed pages"
-													onClick={(event) => {
-														handleRowActionClick(event, document.id);
-													}}
+													onClick={handleRowActionClick}
 												/>
 											)}
 											{document.status === DocumentStatus.BUDGET_STOP && (
@@ -224,9 +233,7 @@ const Documents: React.FC = () => {
 													isSecondary
 													isSmall
 													label="Raise the limit"
-													onClick={(event) => {
-														handleRowActionClick(event, document.id);
-													}}
+													onClick={handleRowActionClick}
 												/>
 											)}
 										</span>
