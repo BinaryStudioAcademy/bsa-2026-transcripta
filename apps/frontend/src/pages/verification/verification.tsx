@@ -1,6 +1,10 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
 import { MAX_LOADED_PAGES } from "~/libs/constants/varification.constants.js";
-import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
+import {
+	DataStatus,
+	HTTPCode,
+	PageVerificationAction,
+} from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -10,6 +14,7 @@ import {
 	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import {
 	actions as pageActions,
@@ -82,17 +87,36 @@ const Verification: React.FC = () => {
 		}
 	}, [currentPage?.id]);
 
-	const handleVerify = useCallback(
-		(action: PageVerificationActionValue): void => {
-			if (!currentPage?.transcription) {
+	const reloadPage = useCallback(
+		(pageNo: number): void => {
+			if (!document) {
 				return;
 			}
 
-			const durationMs = Date.now() - pageStartedAtReference.current;
+			void dispatch(
+				pageActions.loadPages({
+					documentId: document.id,
+					query: {
+						from: pageNo,
+						limit: MAX_LOADED_PAGES,
+					},
+				}),
+			);
+		},
+		[dispatch, document],
+	);
+
+	const handleVerify = useCallback(
+		async (action: PageVerificationActionValue): Promise<void> => {
+			if (!currentPage?.transcription || !document) {
+				return;
+			}
+
+			const pageNo = currentPage.pageNo;
 
 			const payload: VerifyPageRequestDto = {
 				action,
-				durationMs,
+				durationMs: Date.now() - pageStartedAtReference.current,
 				text: currentPage.transcription.text,
 				transcriptionId: currentPage.transcription.id,
 			};
@@ -104,22 +128,35 @@ const Verification: React.FC = () => {
 				}),
 			);
 
-			void dispatch(
+			const result = await dispatch(
 				pageActions.verifyPage({
 					pageId: currentPage.id,
 					payload,
 				}),
 			);
+
+			const isRejected = pageActions.verifyPage.rejected.match(result);
+
+			if (
+				isRejected &&
+				"status" in result.error &&
+				result.error.status === HTTPCode.CONFLICT
+			) {
+				notification.error(
+					"The verification could not be completed. The latest page version has been loaded.",
+				);
+				reloadPage(pageNo);
+			}
 		},
-		[currentPage, dispatch],
+		[currentPage, dispatch, document, reloadPage],
 	);
 
 	const handleConfirm = useCallback((): void => {
-		handleVerify(PageVerificationAction.CONFIRM);
+		void handleVerify(PageVerificationAction.CONFIRM);
 	}, [handleVerify]);
 
 	const handleSkip = useCallback((): void => {
-		handleVerify(PageVerificationAction.SKIP);
+		void handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
 	const handleToggleEdit = useCallback((): void => {
