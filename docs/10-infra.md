@@ -71,8 +71,9 @@ chosen as S3-compatible in the first place
 | MinIO in production         | Would have to be publicly exposed with its own TLS; S3 gives presigned URLs and durability free   |
 
 If this ever became a real service under load, the escape hatch is already in the
-design: `APP_MODE=api|worker` splits the one image into two, and Postgres/Redis
-lift out to RDS/ElastiCache without touching application code
+design: the one process is split by running the same image twice — one that calls
+`app.listen()` and one that only connects the database and the queue registry —
+and Postgres/Redis lift out to RDS/ElastiCache without touching application code
 ([01-architecture.md](01-architecture.md#how-to-keep-the-option-of-splitting-later)).
 
 ---
