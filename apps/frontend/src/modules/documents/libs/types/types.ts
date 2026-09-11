@@ -7,4 +7,6 @@ export {
 	type DocumentGetPagesItemResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 } from "@transcripta/shared";

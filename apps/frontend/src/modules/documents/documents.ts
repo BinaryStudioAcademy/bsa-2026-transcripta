@@ -20,6 +20,8 @@ export {
 	type DocumentGetPagesItemResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 } from "./libs/types/types.js";
 export { DocumentCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
 export { actions, reducer } from "./slices/documents.js";

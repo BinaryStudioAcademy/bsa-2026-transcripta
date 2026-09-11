@@ -11,6 +11,8 @@ import {
 	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 } from "./libs/types/types.js";
 
 type Constructor = {
@@ -84,6 +86,25 @@ class DocumentApi extends BaseHTTPApi {
 		);
 
 		return await response.json<DocumentGetPagesResponseDto>();
+	}
+
+	public async getUploadUrl(
+		id: number,
+		payload?: DocumentUploadUrlRequestDto,
+		signal?: AbortSignal,
+	): Promise<DocumentUploadUrlResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.UPLOAD_URL, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify(payload ?? {}),
+				...(signal ? { signal } : {}),
+			},
+		);
+
+		return await response.json<DocumentUploadUrlResponseDto>();
 	}
 
 	public async ingest(id: number): Promise<void> {

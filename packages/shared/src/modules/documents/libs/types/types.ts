@@ -9,3 +9,5 @@ export { type DocumentGetPagesItemResponseDto } from "./document-get-pages-item-
 export { type DocumentGetPagesQueryDto } from "./document-get-pages-query-dto.type.js";
 export { type DocumentGetPagesResponseDto } from "./document-get-pages-response-dto.type.js";
 export { type DocumentIdRequestDto } from "./document-id-request-dto.type.js";
+export { type DocumentUploadUrlRequestDto } from "./document-upload-url-request-dto.type.js";
+export { type DocumentUploadUrlResponseDto } from "./document-upload-url-response-dto.type.js";
