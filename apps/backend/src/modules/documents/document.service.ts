@@ -266,6 +266,27 @@ class DocumentService {
 		await this.pageRepository.create(pageEntity);
 	}
 
+	private throwDocumentNotFoundError(): never {
+		throw new HTTPError({
+			message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+			status: HTTPCode.NOT_FOUND,
+		});
+	}
+
+	private throwInvalidStatusToPauseError(): never {
+		throw new HTTPError({
+			message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
+			status: HTTPCode.CONFLICT,
+		});
+	}
+
+	private throwInvalidStatusToResumeError(): never {
+		throw new HTTPError({
+			message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
+			status: HTTPCode.CONFLICT,
+		});
+	}
+
 	public async create({
 		fileBytes,
 		fileName,
@@ -665,10 +686,7 @@ class DocumentService {
 		);
 
 		if (!document) {
-			throw new HTTPError({
-				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
-				status: HTTPCode.NOT_FOUND,
-			});
+			this.throwDocumentNotFoundError();
 		}
 
 		const { status } = document.toObject();
@@ -678,10 +696,7 @@ class DocumentService {
 		}
 
 		if (status !== DocumentStatus.PROCESSING) {
-			throw new HTTPError({
-				message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
-				status: HTTPCode.CONFLICT,
-			});
+			this.throwInvalidStatusToPauseError();
 		}
 
 		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
@@ -698,20 +713,14 @@ class DocumentService {
 			);
 
 			if (!currentDocument) {
-				throw new HTTPError({
-					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
-					status: HTTPCode.NOT_FOUND,
-				});
+				this.throwDocumentNotFoundError();
 			}
 
 			if (currentDocument.toObject().status === DocumentStatus.PAUSED) {
 				return;
 			}
 
-			throw new HTTPError({
-				message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
-				status: HTTPCode.CONFLICT,
-			});
+			this.throwInvalidStatusToPauseError();
 		}
 	}
 
@@ -722,19 +731,13 @@ class DocumentService {
 		);
 
 		if (!document) {
-			throw new HTTPError({
-				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
-				status: HTTPCode.NOT_FOUND,
-			});
+			this.throwDocumentNotFoundError();
 		}
 
 		const { status } = document.toObject();
 
 		if (status !== DocumentStatus.PAUSED) {
-			throw new HTTPError({
-				message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
-				status: HTTPCode.CONFLICT,
-			});
+			this.throwInvalidStatusToResumeError();
 		}
 
 		const pages = await this.pageRepository.findResumablePages(documentId);
@@ -757,16 +760,10 @@ class DocumentService {
 			);
 
 			if (!currentDocument) {
-				throw new HTTPError({
-					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
-					status: HTTPCode.NOT_FOUND,
-				});
+				this.throwDocumentNotFoundError();
 			}
 
-			throw new HTTPError({
-				message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
-				status: HTTPCode.CONFLICT,
-			});
+			this.throwInvalidStatusToResumeError();
 		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
