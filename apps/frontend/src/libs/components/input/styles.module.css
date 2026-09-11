@@ -45,7 +45,7 @@
 }
 
 .input--password {
-	padding-right: 40px;
+	padding-right: var(--sp-10);
 }
 
 .input:focus-visible {
@@ -56,12 +56,12 @@
 .toggle-password {
 	position: absolute;
 	top: 50%;
-	right: 6px;
+	right: var(--sp-2);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
-	height: 28px;
+	width: var(--ctl-sm);
+	height: var(--ctl-sm);
 	padding: 0;
 	color: var(--text-3);
 	cursor: pointer;

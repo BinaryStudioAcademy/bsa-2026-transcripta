@@ -113,9 +113,9 @@ const Input = <T extends FieldValues>({
 				/>
 				{isPassword && (
 					<button
+						aria-label={showPassword ? "Hide password" : "Show password"}
 						className={styles["toggle-password"]}
 						onClick={handleTogglePassword}
-						tabIndex={-1}
 						type="button"
 					>
 						{showPassword ? EYE_CLOSED_SVG : EYE_OPEN_SVG}
