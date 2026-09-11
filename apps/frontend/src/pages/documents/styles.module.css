@@ -57,7 +57,7 @@
 .documents-page__row:focus-visible {
 	position: relative;
 	z-index: 1;
-	outline: 2px solid var(--ring);
+	outline: var(--ring-w) solid var(--ring);
 	outline-offset: -2px;
 }
 
