@@ -1,8 +1,9 @@
+import {
+	COMPARE_A_AFTER_B,
+	COMPARE_A_BEFORE_B,
+	COMPARE_EQUAL,
+} from "../constants/constants.js";
 import { type LexiconContextSortable } from "../types/types.js";
-
-const COMPARE_A_BEFORE_B = -1;
-const COMPARE_EQUAL = 0;
-const COMPARE_A_AFTER_B = 1;
 
 const compareLexiconForContext = (
 	left: LexiconContextSortable,

@@ -192,7 +192,7 @@ const budget = getEffectiveContextBudget(maxContextTokens); // 90%
 ```
 
 **What it counts.** Only the trimable context blocks — seed glossary, lexicon,
-neighbouring pages (`BUDGETED_CONTEXT_BLOCK_KINDS`). Deliberately excluded from
+neighbouring pages (`CONTEXT_ASSEMBLY_ORDER`). Deliberately excluded from
 `maxContextTokens` / `estimateTokens` / `fitToBudget`:
 
 - the system message (ours only — never trimmed);
@@ -212,13 +212,13 @@ present in full even when the context is reduced to the seed glossary alone.
 
 ```ts
 import {
-	BUDGETED_CONTEXT_BLOCK_KINDS,
+	CONTEXT_ASSEMBLY_ORDER,
 	assembleContextBlocks,
 	fitToBudget,
 	getEffectiveContextBudget,
 } from "~/context/context.js";
 
-// BUDGETED_CONTEXT_BLOCK_KINDS === seed glossary → lexicon → neighbours
+// CONTEXT_ASSEMBLY_ORDER === seed glossary → lexicon → neighbours
 const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
 const fitted = await fitToBudget({
 	budget,

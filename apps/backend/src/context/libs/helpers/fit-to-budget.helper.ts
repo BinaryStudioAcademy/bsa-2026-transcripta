@@ -210,27 +210,7 @@ const fitToBudget = async (
 		}
 	}
 
-	if (neighbours.length === MIN_NEIGHBOUR_PAGES_RETAINED) {
-		const fitsOne = await fitsBudget({
-			budget,
-			estimateTokens,
-			lexiconEntries: lexicon,
-			model,
-			neighbourPages: neighbours,
-			...seed,
-		});
-
-		if (fitsOne) {
-			return buildResult({
-				lexiconEntries: lexicon,
-				neighbourPages: neighbours,
-				wasReduced: true,
-				...seed,
-			});
-		}
-
-		neighbours = [];
-	}
+	neighbours = [];
 
 	return buildResult({
 		lexiconEntries: lexicon,

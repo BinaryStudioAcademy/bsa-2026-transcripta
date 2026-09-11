@@ -27,7 +27,6 @@ const fitToBudget = async (
 export { estimateTokens, fitToBudget };
 export { EstimateTokens } from "./estimate-tokens.module.js";
 export {
-	BUDGETED_CONTEXT_BLOCK_KINDS,
 	CONTEXT_ASSEMBLY_ORDER,
 	CONTEXT_BUDGET_SAFETY_MARGIN,
 	LEXICON_CONTEXT_ORDER,
