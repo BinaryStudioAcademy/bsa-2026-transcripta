@@ -1,4 +1,9 @@
 import { Link, ThemeToggle } from "~/libs/components/components.js";
+import { DEFAULT_BUDGET } from "~/libs/constants/bundet.constants.js";
+import {
+	MAX_PERCENTAGE,
+	PERCENTAGE_MULTIPLIER,
+} from "~/libs/constants/common.constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
 type VerificationHeaderProperties = {
@@ -10,15 +15,15 @@ type VerificationHeaderProperties = {
 };
 
 const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
-	budgetLimit = 0,
-	budgetSpent = 0,
+	budgetLimit = DEFAULT_BUDGET,
+	budgetSpent = DEFAULT_BUDGET,
 	documentTitle,
 	pageCount,
 	pageNo,
 }) => {
 	const budgetPercentage = Math.min(
-		(Number(budgetSpent) / Number(budgetLimit)) * 100,
-		100,
+		(Number(budgetSpent) / Number(budgetLimit)) * PERCENTAGE_MULTIPLIER,
+		MAX_PERCENTAGE,
 	);
 
 	return (
@@ -66,7 +71,7 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			<div className="verification-header__budget">
 				<span className="tx-budget">
 					<span className="tx-budget-bar">
-						<i style={{ width: `${budgetPercentage}%` }} />
+						<i style={{ width: `${String(budgetPercentage)}%` }} />
 					</span>
 					${budgetSpent} / ${budgetLimit}
 				</span>

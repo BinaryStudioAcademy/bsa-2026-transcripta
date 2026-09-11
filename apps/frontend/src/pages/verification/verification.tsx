@@ -79,13 +79,13 @@ const Verification: React.FC = () => {
 				},
 			}),
 		);
-	}, [document?.id, document?.cursorPageNo, dispatch]);
+	}, [document, dispatch]);
 
 	useEffect(() => {
 		if (currentPage) {
 			pageStartedAtReference.current = Date.now();
 		}
-	}, [currentPage?.id]);
+	}, [currentPage]);
 
 	const reloadPage = useCallback(
 		(pageNo: number): void => {
