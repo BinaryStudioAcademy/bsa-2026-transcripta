@@ -2,6 +2,9 @@ import { Redis } from "ioredis";
 
 import { config } from "~/libs/modules/config/config.js";
 import { logger } from "~/libs/modules/logger/logger.js";
+import { storage } from "~/libs/modules/storage/storage.js";
+import { createTranscribeHandler } from "~/modules/jobs/transcribe.js";
+import { transcriptionService } from "~/modules/transcription/transcription.js";
 
 import { REDIS_CONNECT_TIMEOUT_MS } from "./libs/constants/constants.js";
 import { PageTranscribeQueue } from "./page-transcribe-queue.module.js";
@@ -17,11 +20,12 @@ const redis = new Redis(config.ENV.REDIS.URL, {
 
 const pageTranscribeQueue = new PageTranscribeQueue({
 	logger,
-	processor: (job) => {
-		logger.info("Page transcription job picked up.", job.data);
-
-		return Promise.resolve();
-	},
+	processor: createTranscribeHandler({
+		config,
+		logger,
+		storage,
+		transcriptionService,
+	}),
 });
 const queueRegistry = new QueueRegistry({
 	connection: redis,

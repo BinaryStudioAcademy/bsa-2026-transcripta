@@ -1,0 +1,3 @@
+const CODE_FENCE_CLOSING_PATTERN = /\n?```$/;
+
+export { CODE_FENCE_CLOSING_PATTERN };

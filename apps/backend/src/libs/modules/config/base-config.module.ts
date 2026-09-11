@@ -67,7 +67,7 @@ class BaseConfig implements Config {
 			},
 			BEDROCK: {
 				MODEL_ID: {
-					default: "us.amazon.nova-pro-v1:0",
+					default: "us.anthropic.claude-sonnet-4-6",
 					doc: "Bedrock inference profile id — never a bare model id",
 					env: "BEDROCK_MODEL_ID",
 					format: String,
@@ -105,10 +105,48 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			PRICING: {
+				AMAZON_INPUT: {
+					default: 0.8,
+					doc: "USD per million input tokens (Amazon Bedrock Nova)",
+					env: "PRICING_AMAZON_INPUT",
+					format: Number,
+				},
+				AMAZON_OUTPUT: {
+					default: 3.2,
+					doc: "USD per million output tokens (Amazon Bedrock Nova)",
+					env: "PRICING_AMAZON_OUTPUT",
+					format: Number,
+				},
+				ANTHROPIC_DIRECT_INPUT: {
+					default: 3,
+					doc: "USD per million input tokens (Anthropic direct)",
+					env: "PRICING_ANTHROPIC_DIRECT_INPUT",
+					format: Number,
+				},
+				ANTHROPIC_DIRECT_OUTPUT: {
+					default: 15,
+					doc: "USD per million output tokens (Anthropic direct)",
+					env: "PRICING_ANTHROPIC_DIRECT_OUTPUT",
+					format: Number,
+				},
+				ANTHROPIC_INPUT: {
+					default: 3,
+					doc: "USD per million input tokens (Anthropic via Bedrock)",
+					env: "PRICING_ANTHROPIC_INPUT",
+					format: Number,
+				},
+				ANTHROPIC_OUTPUT: {
+					default: 15,
+					doc: "USD per million output tokens (Anthropic via Bedrock)",
+					env: "PRICING_ANTHROPIC_OUTPUT",
+					format: Number,
+				},
+			},
 			REDIS: {
 				URL: {
 					default: "redis://localhost:6379",
-					doc: "Redis connection string",
+					doc: "Redis connection string for the job queue",
 					env: "REDIS_URL",
 					format: String,
 				},
