@@ -15,7 +15,7 @@ class TranscriptionCacheModel extends Model {
 
 	public outputTokens!: number;
 
-	public structured!: null | string;
+	public structured!: unknown;
 
 	public text!: string;
 

@@ -5,6 +5,7 @@ import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
 import { buildContext } from "~/modules/context/builder.js";
 import { buildUserPrompt } from "~/modules/context/prompt.js";
@@ -200,13 +201,7 @@ const resolveFromCacheOrModel = async (
 		.execute();
 
 	if (cached) {
-		let structured: unknown = null;
-
-		try {
-			structured = cached.structured ? JSON.parse(cached.structured) : null;
-		} catch {
-			structured = null;
-		}
+		const structured = cached.structured ?? null;
 
 		await TranscriptionCacheModel.query()
 			.patch({
@@ -329,7 +324,7 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			page_id: pageId,
 			preset_id: presetId,
 			provider,
-			structured: structured ? JSON.stringify(structured) : null,
+			structured: structured ?? null,
 			text,
 		});
 
@@ -352,6 +347,52 @@ const applyBudgetStopIfExceeded = async (documentId: number): Promise<void> => {
 		.whereNot("status", DocumentStatus.BUDGET_STOP)
 		.whereRaw("spent_usd >= budget_usd")
 		.execute();
+};
+
+const releaseClaimedPage = async ({
+	documentId,
+	error,
+	logger,
+	pageId,
+}: {
+	documentId: number;
+	error: unknown;
+	logger: Logger;
+	pageId: number;
+}): Promise<void> => {
+	try {
+		await DocumentModel.transaction(async (trx) => {
+			const releasedRows = await trx
+				.from(DatabaseTableName.PAGE)
+				.where({ id: pageId, status: PageStatus.TRANSCRIBING })
+				.update({
+					attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
+					lastError: TranscribeFailureReason.UNEXPECTED_ERROR,
+					status: PageStatus.FAILED,
+				});
+
+			if (releasedRows === EMPTY_LENGTH) {
+				return;
+			}
+
+			await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+				actorId: null,
+				details: {
+					error: TranscribeFailureReason.UNEXPECTED_ERROR,
+					message: error instanceof Error ? error.message : String(error),
+				},
+				documentId,
+				durationMs: EMPTY_LENGTH,
+				event: PageEventName.TRANSCRIBE_FAILED,
+				pageId,
+				transcriptionId: null,
+			});
+		});
+	} catch (releaseError) {
+		logger.error(`Failed to release claimed page ${String(pageId)}`, {
+			error: releaseError,
+		});
+	}
 };
 
 const createTranscribeHandler =
@@ -386,179 +427,187 @@ const createTranscribeHandler =
 			return;
 		}
 
-		if (isBudgetExhausted(document)) {
-			logger.warn(`Budget exhausted for document ${String(documentId)}`);
+		try {
+			if (isBudgetExhausted(document)) {
+				logger.warn(`Budget exhausted for document ${String(documentId)}`);
 
-			await DocumentModel.transaction(async (trx) => {
-				await trx.from(DatabaseTableName.PAGE_EVENT).insert({
-					actorId: null,
-					details: {
-						budgetUsd: document.budgetUsd,
-						error: TranscribeFailureReason.BUDGET_EXCEEDED,
-						spentUsd: document.spentUsd,
-					},
-					documentId,
-					durationMs: EMPTY_LENGTH,
-					event: PageEventName.TRANSCRIBE_FAILED,
-					pageId,
-					transcriptionId: null,
-				});
+				await DocumentModel.transaction(async (trx) => {
+					await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+						actorId: null,
+						details: {
+							budgetUsd: document.budgetUsd,
+							error: TranscribeFailureReason.BUDGET_EXCEEDED,
+							spentUsd: document.spentUsd,
+						},
+						documentId,
+						durationMs: EMPTY_LENGTH,
+						event: PageEventName.TRANSCRIBE_FAILED,
+						pageId,
+						transcriptionId: null,
+					});
 
-				await trx.from(DatabaseTableName.PAGE).where("id", pageId).update({
-					lastError: TranscribeFailureReason.BUDGET_EXCEEDED,
-					status: PageStatus.FAILED,
-				});
-			});
-
-			await markDocumentStopped(documentId);
-			return;
-		}
-
-		const preset = await PresetModel.query().findById(document.presetId);
-
-		if (!preset) {
-			await recordFailure(pageId, TranscribeFailureReason.PRESET_NOT_FOUND);
-			return;
-		}
-
-		const modelId = config.ENV.BEDROCK.MODEL_ID;
-		const knex = AbstractModel.knex();
-		const context = await buildContext({
-			documentId,
-			knex,
-			logger,
-			pageNo,
-			preset,
-		});
-
-		if (!page.imageSha256) {
-			await recordFailure(
-				pageId,
-				TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
-			);
-			return;
-		}
-
-		const cacheKey = buildCacheKey({
-			contextHash: context.contextHash,
-			imageSha256: page.imageSha256,
-			modelId,
-			presetHash: buildPresetHash({
-				id: preset.id,
-				instructions: preset.instructions,
-				outputSchema: preset.outputSchema,
-				seedGlossary: preset.seedGlossary,
-				settings: preset.settings,
-			}),
-		});
-
-		const resolved = await resolveFromCacheOrModel({
-			cacheKey,
-			config,
-			context,
-			documentId,
-			logger,
-			modelId,
-			page,
-			pageNo,
-			preset,
-			storage,
-			transcriptionService,
-		});
-
-		if (!resolved) {
-			return;
-		}
-
-		if (!resolved.ok) {
-			await DocumentModel.transaction(async (trx) => {
-				await trx.raw(
-					`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
-					[resolved.costUsd, documentId],
-				);
-
-				await trx.from(DatabaseTableName.PAGE_EVENT).insert({
-					actorId: null,
-					details: {
-						costUsd: resolved.costUsd,
-						error: resolved.reason,
-						inputTokens: resolved.inputTokens,
-						outputTokens: resolved.outputTokens,
-					},
-					documentId,
-					durationMs: resolved.latencyMs,
-					event: PageEventName.TRANSCRIBE_FAILED,
-					pageId,
-					transcriptionId: null,
-				});
-
-				await trx
-					.from(DatabaseTableName.PAGE)
-					.where("id", pageId)
-					.update({
-						attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
-						lastError: resolved.reason,
+					await trx.from(DatabaseTableName.PAGE).where("id", pageId).update({
+						lastError: TranscribeFailureReason.BUDGET_EXCEEDED,
 						status: PageStatus.FAILED,
 					});
+				});
+
+				await markDocumentStopped(documentId);
+				return;
+			}
+
+			const preset = await PresetModel.query().findById(document.presetId);
+
+			if (!preset) {
+				await recordFailure(pageId, TranscribeFailureReason.PRESET_NOT_FOUND);
+				return;
+			}
+
+			const modelId = config.ENV.BEDROCK.MODEL_ID;
+			const knex = AbstractModel.knex();
+			const context = await buildContext({
+				documentId,
+				knex,
+				logger,
+				pageNo,
+				preset,
+			});
+
+			if (!page.imageSha256) {
+				await recordFailure(
+					pageId,
+					TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
+				);
+				return;
+			}
+
+			const cacheKey = buildCacheKey({
+				contextHash: context.contextHash,
+				imageSha256: page.imageSha256,
+				modelId,
+				presetHash: buildPresetHash({
+					id: preset.id,
+					instructions: preset.instructions,
+					outputSchema: preset.outputSchema,
+					seedGlossary: preset.seedGlossary,
+					settings: preset.settings,
+				}),
+			});
+
+			const resolved = await resolveFromCacheOrModel({
+				cacheKey,
+				config,
+				context,
+				documentId,
+				logger,
+				modelId,
+				page,
+				pageNo,
+				preset,
+				storage,
+				transcriptionService,
+			});
+
+			if (!resolved) {
+				return;
+			}
+
+			if (!resolved.ok) {
+				await DocumentModel.transaction(async (trx) => {
+					await trx.raw(
+						`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
+						[resolved.costUsd, documentId],
+					);
+
+					await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+						actorId: null,
+						details: {
+							costUsd: resolved.costUsd,
+							error: resolved.reason,
+							inputTokens: resolved.inputTokens,
+							outputTokens: resolved.outputTokens,
+						},
+						documentId,
+						durationMs: resolved.latencyMs,
+						event: PageEventName.TRANSCRIBE_FAILED,
+						pageId,
+						transcriptionId: null,
+					});
+
+					await trx
+						.from(DatabaseTableName.PAGE)
+						.where("id", pageId)
+						.update({
+							attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
+							lastError: resolved.reason,
+							status: PageStatus.FAILED,
+						});
+				});
+
+				await applyBudgetStopIfExceeded(documentId);
+				return;
+			}
+
+			const provider = resolveModelProvider(modelId);
+
+			await storeTranscription({
+				contextUsed: JSON.stringify({
+					hash: context.contextHash,
+					lexiconIds: context.usedLexiconIds,
+					pageIds: context.usedPageIds,
+					tokens: context.tokenEstimate,
+				}),
+				costUsd: resolved.costUsd,
+				documentId,
+				fromCache: resolved.fromCache,
+				inputTokens: resolved.inputTokens,
+				latencyMs: resolved.latencyMs,
+				modelId,
+				outputTokens: resolved.outputTokens,
+				pageId,
+				presetId: preset.id,
+				provider,
+				structured: resolved.structured,
+				text: resolved.text,
 			});
 
 			await applyBudgetStopIfExceeded(documentId);
-			return;
-		}
 
-		const provider = resolveModelProvider(modelId);
-
-		await storeTranscription({
-			contextUsed: JSON.stringify({
-				hash: context.contextHash,
-				lexiconIds: context.usedLexiconIds,
-				pageIds: context.usedPageIds,
-				tokens: context.tokenEstimate,
-			}),
-			costUsd: resolved.costUsd,
-			documentId,
-			fromCache: resolved.fromCache,
-			inputTokens: resolved.inputTokens,
-			latencyMs: resolved.latencyMs,
-			modelId,
-			outputTokens: resolved.outputTokens,
-			pageId,
-			presetId: preset.id,
-			provider,
-			structured: resolved.structured,
-			text: resolved.text,
-		});
-
-		await applyBudgetStopIfExceeded(documentId);
-
-		if (!resolved.fromCache) {
-			try {
-				await TranscriptionCacheModel.query().insert({
-					cacheKey,
-					costUsd: String(resolved.costUsd),
-					hitCount: EMPTY_LENGTH,
-					inputTokens: resolved.inputTokens,
-					outputTokens: resolved.outputTokens,
-					structured: resolved.structured
-						? JSON.stringify(resolved.structured)
-						: null,
-					text: resolved.text,
-				});
-			} catch (error) {
-				logger.warn(`Cache write skipped for page ${String(pageId)}`, {
-					error,
-				});
+			if (!resolved.fromCache) {
+				try {
+					await TranscriptionCacheModel.query().insert({
+						cacheKey,
+						costUsd: String(resolved.costUsd),
+						hitCount: EMPTY_LENGTH,
+						inputTokens: resolved.inputTokens,
+						outputTokens: resolved.outputTokens,
+						structured: resolved.structured ?? null,
+						text: resolved.text,
+					});
+				} catch (error) {
+					logger.warn(`Cache write skipped for page ${String(pageId)}`, {
+						error,
+					});
+				}
 			}
-		}
 
-		logger.info(
-			`Transcribed page ${String(pageNo)} of document ${String(documentId)}`,
-			{
-				costUsd: resolved.costUsd,
-				fromCache: resolved.fromCache,
-				spentMs: resolved.latencyMs,
-			},
-		);
+			logger.info(
+				`Transcribed page ${String(pageNo)} of document ${String(documentId)}`,
+				{
+					costUsd: resolved.costUsd,
+					fromCache: resolved.fromCache,
+					spentMs: resolved.latencyMs,
+				},
+			);
+		} catch (error) {
+			logger.error(`page.transcribe failed for page ${String(pageId)}`, {
+				error,
+			});
+
+			await releaseClaimedPage({ documentId, error, logger, pageId });
+
+			throw error;
+		}
 	};
 
 export { createTranscribeHandler };
