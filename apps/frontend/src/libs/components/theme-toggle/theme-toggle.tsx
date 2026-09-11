@@ -7,7 +7,6 @@ const ThemeToggle: React.FC = () => {
 
 	return (
 		<Button
-			aria-label="Toggle theme"
 			label={theme === Theme.DARK ? "Day" : "Night"}
 			onClick={toggleTheme}
 			type="button"
