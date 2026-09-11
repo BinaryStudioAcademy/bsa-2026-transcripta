@@ -173,6 +173,7 @@ const Verification: React.FC = () => {
 
 	useVerificationKeyboard({
 		onConfirm: handleConfirm,
+		onEdit: handleToggleEdit,
 		onSkip: handleSkip,
 		onToggleShortcuts: handleToggleShortcuts,
 		onToggleZoom: handleToggleZoom,
