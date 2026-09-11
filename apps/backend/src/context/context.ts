@@ -30,6 +30,7 @@ export {
 	BUDGETED_CONTEXT_BLOCK_KINDS,
 	CONTEXT_ASSEMBLY_ORDER,
 	CONTEXT_BUDGET_SAFETY_MARGIN,
+	LEXICON_CONTEXT_ORDER,
 	LEXICON_MIN_RETAINED,
 	MIN_NEIGHBOUR_PAGES_RETAINED,
 } from "./libs/constants/constants.js";
@@ -37,10 +38,12 @@ export { ContextBlockKind } from "./libs/enums/enums.js";
 export {
 	assembleContextBlocks,
 	getEffectiveContextBudget,
+	sortLexiconForContext,
 } from "./libs/helpers/helpers.js";
 export {
 	type ContextBlockParts,
 	type EstimateTokensResult,
 	type FitToBudgetParameters,
 	type FitToBudgetResult,
+	type LexiconContextSortable,
 } from "./libs/types/types.js";

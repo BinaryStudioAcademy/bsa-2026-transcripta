@@ -133,10 +133,7 @@ export async function buildContext(
 		.where("documentId", documentId)
 		.whereNull("invalidatedAt")
 		.where("distinctPages", ">=", preset.settings.minDistinctPages) // threshold: 2 pages
-		.orderBy([
-			{ column: "distinctPages", order: "desc" },
-			{ column: "freq", order: "desc" },
-		])
+		.orderBy(LEXICON_CONTEXT_ORDER) // distinctPages DESC, freq DESC, valueDisplay ASC
 		.limit(preset.settings.lexiconTopK);
 
 	// 3. Text of the last 3 confirmed pages before the current one.
@@ -235,8 +232,10 @@ const fitted = await fitToBudget({
 
 ### Trimming floors (`fitToBudget`) (#148)
 
-`fitToBudget` receives structured lexicon entries and neighbour pages (not a flat
-`string[]`), so it can drop whole units. Trim order:
+`fitToBudget` receives **unit strings** — lexicon `valueDisplay` values and one
+string per neighbour page — not a flat pre-joined `string[]` of prompt blocks.
+It drops whole units, then joins the survivors with `\n` into the lexicon /
+neighbours blocks (same separator as `contextHash`). Trim order:
 
 1. **Lexicon** — keep the largest prefix that fits down to `LEXICON_MIN_RETAINED`
    (50). Below 50, drop the whole lexicon block (a handful of words is noise).
@@ -293,10 +292,13 @@ invalidate the transcription cache for an identical prompt.
 ```ts
 import { assembleContextBlocks } from "~/context/context.js";
 
+// Already-formed block strings (what fitToBudget also emits after join).
+// Lexicon / neighbours are joined valueDisplay / page texts, not a separate
+// renderLexicon / renderNeighbours wrapper around the whole list.
 const blocks = assembleContextBlocks({
-	seedGlossary: renderSeedGlossary(preset.seedGlossary),
-	lexicon: renderLexicon(lexicon),
-	neighbours: renderNeighbours(neighbours),
+	seedGlossary,
+	lexicon: lexiconEntries.join("\n"),
+	neighbours: neighbourPages.join("\n"),
 });
 // missing / empty parts are skipped; order of the rest never changes
 ```
@@ -313,6 +315,39 @@ never cut:  preset instructions  ← outside maxContextTokens (#148)
 
 Shrinking everything proportionally would produce truncated instructions — it
 would spoil everything a little instead of keeping the important part intact.
+
+### Deterministic lexicon order (#148)
+
+`contextHash` is a cache key. If two runs of the same page pick a different
+order among lexicon ties, the hash changes and the cache misses for an
+identical prompt.
+
+Lexicon top-K uses `LEXICON_CONTEXT_ORDER`:
+
+```
+distinct_pages DESC → freq DESC → value_display ASC
+```
+
+The last key is the tie-break. Neighbouring pages are already total-ordered by
+`page_no DESC` — no extra key. Apply the order **before** `.limit(lexiconTopK)`
+(query time). In-memory `sortLexiconForContext` matches the same keys when
+rows are already loaded.
+
+```ts
+import {
+	LEXICON_CONTEXT_ORDER,
+	sortLexiconForContext,
+} from "~/context/context.js";
+
+const lexicon = await LexiconEntryModel.query()
+	.where("documentId", documentId)
+	.whereNull("invalidatedAt")
+	.orderBy(LEXICON_CONTEXT_ORDER)
+	.limit(preset.settings.lexiconTopK);
+```
+
+`fitToBudget` returns `wasReduced` so the worker can write `context_used` with
+what actually entered the prompt (#114 / #115).
 
 ---
 

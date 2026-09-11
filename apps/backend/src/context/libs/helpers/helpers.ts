@@ -4,3 +4,4 @@ export { getEffectiveContextBudget } from "./get-effective-context-budget.helper
 export { hashContext } from "./hash-context.helper.js";
 export { isAnthropicModel } from "./is-anthropic-model.helper.js";
 export { resolveAnthropicApiModel } from "./resolve-anthropic-api-model.helper.js";
+export { sortLexiconForContext } from "./sort-lexicon-for-context.helper.js";

@@ -11,6 +11,7 @@ export { CONTEXT_HASH_SEPARATOR } from "./context-hash-separator.constant.js";
 export { COUNT_TOKENS_FALLBACK_MESSAGE } from "./count-tokens-fallback-message.constant.js";
 export { EMPTY_TEXT_LENGTH } from "./empty-text-length.constant.js";
 export { INDEX_STEP } from "./index-step.constant.js";
+export { LEXICON_CONTEXT_ORDER } from "./lexicon-context-order.constant.js";
 export { LEXICON_MIN_RETAINED } from "./lexicon-min-retained.constant.js";
 export { MIN_NEIGHBOUR_PAGES_RETAINED } from "./min-neighbour-pages-retained.constant.js";
 export { NOT_FOUND_INDEX } from "./not-found-index.constant.js";
