@@ -45,10 +45,11 @@ const Verification: React.FC = () => {
 
 	const pageStartedAtReference = useRef(Date.now());
 
-	const { document, documentDataStatus } = useAppSelector(({ documents }) => ({
-		document: documents.document,
-		documentDataStatus: documents.documentDataStatus,
-	}));
+	const document = useAppSelector(({ documents }) => documents.document);
+
+	const documentDataStatus = useAppSelector(
+		({ documents }) => documents.documentDataStatus,
+	);
 
 	const currentPage = useAppSelector(selectCurrentPage);
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
