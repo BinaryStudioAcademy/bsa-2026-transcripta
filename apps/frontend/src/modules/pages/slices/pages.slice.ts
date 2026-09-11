@@ -94,7 +94,7 @@ const { actions, name, reducer } = createSlice({
 			state.dataStatus = DataStatus.FULFILLED;
 		});
 
-		builder.addCase(loadPages.rejected, (state, action) => {
+		builder.addCase(loadPages.rejected, (state) => {
 			state.dataStatus = DataStatus.REJECTED;
 		});
 	},
