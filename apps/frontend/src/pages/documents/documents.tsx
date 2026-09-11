@@ -56,9 +56,37 @@ const Documents: React.FC = () => {
 		})();
 	}, [navigate]);
 
-	const handleRowActionClick = useCallback((event: React.MouseEvent): void => {
-		event.stopPropagation();
-	}, []);
+	const handleRowActionClick = useCallback(
+		(event: React.MouseEvent, documentId: number): void => {
+			event.preventDefault();
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+				);
+			})();
+		},
+		[navigate],
+	);
+
+	const handleRowKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLAnchorElement>): void => {
+			if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+				return;
+			}
+
+			event.preventDefault();
+
+			const currentRow = event.currentTarget.closest('[role="row"]');
+			const targetRow =
+				event.key === "ArrowDown"
+					? currentRow?.nextElementSibling
+					: currentRow?.previousElementSibling;
+			const targetLink = targetRow?.querySelector<HTMLAnchorElement>("a");
+
+			targetLink?.focus();
+		},
+		[],
+	);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty =
@@ -164,6 +192,7 @@ const Documents: React.FC = () => {
 								<div key={document.id} role="row">
 									<Link
 										className={styles["documents-page__row"] ?? ""}
+										onKeyDown={handleRowKeyDown}
 										state={rowState}
 										to={rowRoute}
 									>
@@ -185,7 +214,9 @@ const Documents: React.FC = () => {
 												<Button
 													className={styles["documents-page__reread-link"]}
 													label="Open to re-read failed pages"
-													onClick={handleRowActionClick}
+													onClick={(event) => {
+														handleRowActionClick(event, document.id);
+													}}
 												/>
 											)}
 											{document.status === DocumentStatus.BUDGET_STOP && (
@@ -193,7 +224,9 @@ const Documents: React.FC = () => {
 													isSecondary
 													isSmall
 													label="Raise the limit"
-													onClick={handleRowActionClick}
+													onClick={(event) => {
+														handleRowActionClick(event, document.id);
+													}}
 												/>
 											)}
 										</span>
