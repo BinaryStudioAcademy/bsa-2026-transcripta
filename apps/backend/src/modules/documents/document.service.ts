@@ -692,6 +692,22 @@ class DocumentService {
 		});
 
 		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
+			const currentDocument = await this.documentRepository.findByIdAndOwnerId(
+				documentId,
+				userId,
+			);
+
+			if (!currentDocument) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			if (currentDocument.toObject().status === DocumentStatus.PAUSED) {
+				return;
+			}
+
 			throw new HTTPError({
 				message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
 				status: HTTPCode.CONFLICT,
@@ -735,6 +751,18 @@ class DocumentService {
 		});
 
 		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
+			const currentDocument = await this.documentRepository.findByIdAndOwnerId(
+				documentId,
+				userId,
+			);
+
+			if (!currentDocument) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
 			throw new HTTPError({
 				message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
 				status: HTTPCode.CONFLICT,
@@ -755,15 +783,17 @@ class DocumentService {
 				);
 			}
 
-			for (const page of pages) {
-				const { id, pageNo } = page.toObject();
+			await Promise.all(
+				pages.map((page) => {
+					const { id, pageNo } = page.toObject();
 
-				await this.pageTranscribeQueue.add({
-					documentId,
-					pageId: id,
-					pageNo,
-				});
-			}
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
+			);
 		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,
@@ -778,11 +808,14 @@ class DocumentService {
 
 			const caughtErrorMessage =
 				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`;
 
-			await this.documentRepository.setError(documentId, finalErrorMessage);
+			await this.documentRepository.setErrorMessage(
+				documentId,
+				`${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`,
+			);
+
 			throw new HTTPError({
-				message: finalErrorMessage,
+				message: DocumentErrorMessage.RESUME_FAILED,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}

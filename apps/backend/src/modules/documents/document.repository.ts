@@ -186,6 +186,17 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async setErrorMessage(
+		id: number,
+		errorMessage: string,
+	): Promise<void> {
+		await this.documentModel
+			.query()
+			.patch({ errorMessage })
+			.where({ id })
+			.execute();
+	}
+
 	public async updateCursorPageNo(
 		documentId: number,
 		cursorPageNo: number,
