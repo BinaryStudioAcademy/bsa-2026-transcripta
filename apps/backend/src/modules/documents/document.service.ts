@@ -59,7 +59,7 @@ class DocumentService {
 		pageTranscribeQueue,
 		pdfPageProcessor,
 		storage,
-}: DocumentServiceDependencies) {
+	}: DocumentServiceDependencies) {
 		this.documentRepository = documentRepository;
 		this.logger = logger;
 		this.pageRepository = pageRepository;

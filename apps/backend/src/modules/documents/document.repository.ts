@@ -9,11 +9,11 @@ import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
-import { type LexiconRow } from "./libs/types/lexicon-row.type.js";
 import {
 	type DocumentDetailsRow,
 	type DocumentUpdateDraftMetadataPayload,
 	type DocumentUpdateOwnedStatus,
+	type LexiconRow,
 } from "./libs/types/types.js";
 
 class DocumentRepository {
@@ -200,7 +200,7 @@ class DocumentRepository {
 			.execute();
 	}
 
-public async updateDraftMetadata(
+	public async updateDraftMetadata(
 		id: number,
 		{
 			presetId,

@@ -5,7 +5,7 @@ export { type DocumentServiceDependencies } from "./document-service-dependencie
 export { type DocumentStatusValue } from "./document-status-value.type.js";
 export { type DocumentUpdateDraftMetadataPayload } from "./document-update-draft-metadata-payload.type.js";
 export { type DocumentUpdateOwnedStatus } from "./document-update-owned.type.js";
-export { type LexiconRow } from "./lexicon-row.type.js";
+export { LexiconRow } from "./lexicon-row.type.js";
 
 export {
 	type DocumentGetAllItemResponseDto,
