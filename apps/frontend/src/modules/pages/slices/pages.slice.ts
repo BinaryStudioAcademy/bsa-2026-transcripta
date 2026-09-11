@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
-import { type SerializedAppError, type ValueOf } from "~/libs/types/types.js";
+import { type ValueOf } from "~/libs/types/types.js";
 import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/documents.js";
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 
@@ -18,7 +18,6 @@ type State = {
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
-	lastError: null | SerializedAppError;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
@@ -28,7 +27,6 @@ const initialState: State = {
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
-	lastError: null,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
 };
@@ -43,7 +41,6 @@ const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		builder.addCase(verifyPage.pending, (state) => {
 			state.verificationDataStatus = DataStatus.PENDING;
-			state.lastError = null;
 		});
 
 		builder.addCase(verifyPage.fulfilled, (state, { payload }) => {
@@ -81,13 +78,11 @@ const { actions, name, reducer } = createSlice({
 				state.rollback[pageId] = undefined;
 			}
 
-			state.lastError = action.error;
 			state.verificationDataStatus = DataStatus.REJECTED;
 		});
 
 		builder.addCase(loadPages.pending, (state) => {
 			state.dataStatus = DataStatus.PENDING;
-			state.lastError = null;
 		});
 
 		builder.addCase(loadPages.fulfilled, (state, action) => {
@@ -101,7 +96,6 @@ const { actions, name, reducer } = createSlice({
 
 		builder.addCase(loadPages.rejected, (state, action) => {
 			state.dataStatus = DataStatus.REJECTED;
-			state.lastError = action.error;
 		});
 	},
 	initialState,
