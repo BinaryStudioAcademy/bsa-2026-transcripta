@@ -1,0 +1,3 @@
+const CACHE_KEY_SEPARATOR = "|";
+
+export { CACHE_KEY_SEPARATOR };

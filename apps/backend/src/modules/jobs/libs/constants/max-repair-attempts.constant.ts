@@ -1,0 +1,3 @@
+const MAX_REPAIR_ATTEMPTS = 1;
+
+export { MAX_REPAIR_ATTEMPTS };

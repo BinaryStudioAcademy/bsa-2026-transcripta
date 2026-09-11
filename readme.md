@@ -51,8 +51,9 @@ migrations in `apps/backend/src/db/migrations/`.
 
 ## 5. Architecture
 
-A monolith: the API and the queue worker live in one process and can be split
-apart with a single `APP_MODE` environment variable.
+A monolith: the API and the queue worker live in one process — the server
+connects the BullMQ queue registry (and starts consuming `page.transcribe`
+jobs) on startup.
 
 - Components and stack: [docs/01-architecture.md](docs/01-architecture.md)
 - Data path: [docs/02-data-pipeline.md](docs/02-data-pipeline.md)
