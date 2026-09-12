@@ -1,0 +1,3 @@
+const POLLING_INTERVAL_MS = 2000;
+
+export { POLLING_INTERVAL_MS };
