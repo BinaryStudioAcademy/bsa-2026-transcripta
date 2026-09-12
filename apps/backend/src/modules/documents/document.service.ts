@@ -740,11 +740,7 @@ class DocumentService {
 			this.throwInvalidStatusToResumeError();
 		}
 
-		const pages = await this.pageRepository.findResumablePages(documentId);
-
-		const pendingPages = pages.filter(
-			(page) => page.toObject().status === PageStatus.PENDING,
-		);
+		const pages = await this.pageRepository.findQueuedPages(documentId);
 
 		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
 			currentStatus: DocumentStatus.PAUSED,
@@ -771,15 +767,6 @@ class DocumentService {
 		}
 
 		try {
-			if (pendingPages.length > EMPTY_COLLECTION_LENGTH) {
-				const pendingPageIds = pendingPages.map((page) => page.toObject().id);
-
-				await this.pageRepository.markPendingAsQueued(
-					documentId,
-					pendingPageIds,
-				);
-			}
-
 			await Promise.all(
 				pages.map((page) => {
 					const { id, pageNo } = page.toObject();
@@ -798,10 +785,6 @@ class DocumentService {
 				ownerId: userId,
 				status: DocumentStatus.PAUSED,
 			});
-
-			if (error instanceof HTTPError) {
-				throw error;
-			}
 
 			const caughtErrorMessage =
 				error instanceof Error ? error.message : String(error);

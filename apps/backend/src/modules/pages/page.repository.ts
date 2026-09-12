@@ -3,7 +3,6 @@ import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
-import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import {
 	type PageWithTranscriptionRow,
 	type UpdatePageVerificationPayload,
@@ -99,32 +98,15 @@ class PageRepository {
 		return pages.map((page) => page.pageNo);
 	}
 
-	public async findResumablePages(documentId: number): Promise<PageEntity[]> {
+	public async findQueuedPages(documentId: number): Promise<PageEntity[]> {
 		const pages = await this.pageModel
 			.query()
 			.where({ documentId })
-			.whereIn("status", [PageStatus.PENDING, PageStatus.QUEUED])
+			.where("status", PageStatus.QUEUED)
 			.orderBy("page_no", "asc")
 			.execute();
 
 		return pages.map((page) => PageEntity.initialize(page));
-	}
-
-	public async markPendingAsQueued(
-		documentId: number,
-		pageIds: number[],
-	): Promise<void> {
-		if (pageIds.length === EMPTY_COLLECTION_LENGTH) {
-			return;
-		}
-
-		await this.pageModel
-			.query()
-			.patch({ status: PageStatus.QUEUED })
-			.where({ documentId })
-			.whereIn("id", pageIds)
-			.where("status", PageStatus.PENDING)
-			.execute();
 	}
 
 	public async updateFirstPendingPagesAsQueued(
