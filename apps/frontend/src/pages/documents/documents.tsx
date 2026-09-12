@@ -57,9 +57,44 @@ const Documents: React.FC = () => {
 		})();
 	}, [navigate]);
 
-	const handleRowActionClick = useCallback((event: React.MouseEvent): void => {
-		event.stopPropagation();
-	}, []);
+	const handleRowActionClick = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			event.preventDefault();
+
+			const documentId = event.currentTarget
+				.closest("[role=row]")
+				?.getAttribute("data-document-id");
+
+			if (!documentId) {
+				return;
+			}
+
+			void (async (): Promise<void> => {
+				await navigate(configureString(AppRoute.DOCUMENT, { id: documentId }));
+			})();
+		},
+		[navigate],
+	);
+
+	const handleRowKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLAnchorElement>): void => {
+			if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+				return;
+			}
+
+			event.preventDefault();
+
+			const currentRow = event.currentTarget.closest("[role=row]");
+			const targetRow =
+				event.key === "ArrowDown"
+					? currentRow?.nextElementSibling
+					: currentRow?.previousElementSibling;
+			const targetLink = targetRow?.querySelector<HTMLAnchorElement>("a");
+
+			targetLink?.focus();
+		},
+		[],
+	);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty =
@@ -177,9 +212,14 @@ const Documents: React.FC = () => {
 									: document.cursorPageNo;
 
 							return (
-								<div key={document.id} role="row">
+								<div
+									data-document-id={document.id}
+									key={document.id}
+									role="row"
+								>
 									<Link
 										className={styles["documents-page__row"] ?? ""}
+										onKeyDown={handleRowKeyDown}
 										state={rowState}
 										to={rowRoute}
 									>
