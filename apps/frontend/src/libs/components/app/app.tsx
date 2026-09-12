@@ -6,6 +6,7 @@ import {
 } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
+	matchPath,
 	useAppDispatch,
 	useAppSelector,
 	useEffect,
@@ -28,6 +29,7 @@ const App: React.FC = () => {
 	const isInitialized = useAppSelector(selectIsInitialized);
 	const isAuthenticated = useAppSelector(selectIsAuthenticated);
 	const isAuthPage = AUTH_ROUTES.has(pathname as ValueOf<typeof AppRoute>);
+	const isVerificationPage = matchPath(AppRoute.VERIFICATION, pathname);
 
 	useEffect(() => {
 		void dispatch(authActions.restoreSession());
@@ -46,6 +48,10 @@ const App: React.FC = () => {
 			return <Landing />;
 		}
 
+		return <RouterOutlet />;
+	}
+
+	if (isVerificationPage) {
 		return <RouterOutlet />;
 	}
 

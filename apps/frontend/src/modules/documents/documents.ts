@@ -17,6 +17,9 @@ export {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetPagesItemResponseDto,
+	type DocumentGetPagesQueryDto,
+	type DocumentGetPagesResponseDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
 } from "./libs/types/types.js";
