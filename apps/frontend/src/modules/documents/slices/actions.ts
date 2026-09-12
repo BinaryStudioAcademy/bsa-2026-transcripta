@@ -1,9 +1,8 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 
 import {
-	CONSECUTIVE_ERRORS,
 	INITIAL_COUNT,
-	MAX_ALLOWED_ERRORS,
+	MAX_FAILURES_BEFORE_STOP,
 } from "~/libs/constants/constants.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
@@ -17,6 +16,7 @@ import {
 } from "~/modules/documents/documents.js";
 
 import {
+	POLLING_FAILED_MESSAGE,
 	POLLING_INTERVAL_MS,
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
@@ -28,8 +28,20 @@ type GetUploadUrlPayload = {
 	signal?: AbortSignal;
 };
 
-let pollingIntervalId: null | ReturnType<typeof setInterval>;
-let consecutiveErrors = CONSECUTIVE_ERRORS;
+let pollingIntervalId: null | ReturnType<typeof setInterval> = null;
+let consecutiveErrors = INITIAL_COUNT;
+
+const clearActiveInterval = (): void => {
+	if (pollingIntervalId !== null) {
+		clearInterval(pollingIntervalId);
+		pollingIntervalId = null;
+	}
+};
+
+const stopPolling = createAction(`${sliceName}/stop-polling`, () => {
+	clearActiveInterval();
+	return { payload: undefined };
+});
 
 const create = createAsyncThunk<
 	DocumentCreateResponseDto,
@@ -120,26 +132,16 @@ const remove = createAsyncThunk<number, number, AsyncThunkConfig>(
 	{ serializeError },
 );
 
-const stopPolling = createAction(`${sliceName}/stop-polling`, () => {
-	if (pollingIntervalId !== null) {
-		clearInterval(pollingIntervalId);
-		pollingIntervalId = null;
-	}
-	return { payload: undefined };
-});
-
 const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 	`${sliceName}/start-polling`,
 	(documentId, { dispatch, getState }) => {
-		if (pollingIntervalId !== null) {
-			clearInterval(pollingIntervalId);
-			pollingIntervalId = null;
-		}
+		clearActiveInterval();
+		consecutiveErrors = INITIAL_COUNT;
 
-		let isrequestInFlight = false;
+		let isRequestInFlight = false;
 
 		const executePoll = (): void => {
-			if (isrequestInFlight) {
+			if (isRequestInFlight) {
 				return;
 			}
 
@@ -155,19 +157,21 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 				return;
 			}
 
-			isrequestInFlight = true;
+			isRequestInFlight = true;
 
 			dispatch(pollDocumentById(documentId))
 				.unwrap()
 				.then(() => {
 					consecutiveErrors = INITIAL_COUNT;
-					isrequestInFlight = false;
+					isRequestInFlight = false;
 				})
-				.catch(() => {
+				.catch((error: unknown) => {
+					// eslint-disable-next-line no-console
+					console.error(POLLING_FAILED_MESSAGE, error);
 					consecutiveErrors++;
-					isrequestInFlight = false;
+					isRequestInFlight = false;
 
-					if (consecutiveErrors >= MAX_ALLOWED_ERRORS) {
+					if (consecutiveErrors >= MAX_FAILURES_BEFORE_STOP) {
 						dispatch(stopPolling());
 					}
 				});

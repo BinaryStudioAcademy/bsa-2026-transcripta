@@ -1,3 +1,0 @@
-const CONSECUTIVE_ERRORS = 0;
-
-export { CONSECUTIVE_ERRORS };

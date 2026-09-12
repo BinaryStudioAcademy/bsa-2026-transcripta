@@ -14,7 +14,6 @@ import {
 	loadById,
 	pollDocumentById,
 	remove,
-	stopPolling,
 } from "./actions.js";
 
 type State = {
@@ -23,7 +22,6 @@ type State = {
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: ValueOf<typeof DataStatus>;
 	documents: DocumentGetAllItemResponseDto[];
-	isPolling: boolean;
 	requestedDocumentId: null | number;
 };
 
@@ -33,7 +31,6 @@ const initialState: State = {
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
 	documents: [],
-	isPolling: false,
 	requestedDocumentId: null,
 };
 
@@ -88,10 +85,6 @@ const { actions, name, reducer } = createSlice({
 			if (state.document && state.document.id === action.payload.id) {
 				state.document = action.payload;
 			}
-		});
-		builder.addCase(pollDocumentById.rejected, () => {});
-		builder.addCase(stopPolling, (state) => {
-			state.isPolling = false;
 		});
 		builder.addCase(remove.fulfilled, (state, action) => {
 			state.documents = state.documents.filter(

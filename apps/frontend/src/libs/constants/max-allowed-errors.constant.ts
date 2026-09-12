@@ -1,3 +1,0 @@
-const MAX_ALLOWED_ERRORS = 1;
-
-export { MAX_ALLOWED_ERRORS };
