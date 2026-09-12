@@ -1,3 +1,4 @@
+export { EMPTY_LENGTH, MILLION } from "./libs/constants/constants.js";
 export {
 	APIPath,
 	AppEnvironment,
@@ -36,6 +37,8 @@ export {
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentIdRequestDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 	BYTES_IN_KILOBYTE,
 	DocumentCreateValidationSchema,
 	DocumentGetByIdParametersValidationSchema,
@@ -43,6 +46,7 @@ export {
 	DocumentIdValidationSchema,
 	DocumentsApiPath,
 	DocumentStatus,
+	DocumentUploadUrlValidationSchema,
 	DocumentValidationMessage,
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,

@@ -30,9 +30,8 @@ import {
 	DEFAULT_MAX_PAGES,
 } from "~/pages/document-new/libs/constants/constants.js";
 
+import { EMPTY_LENGTH } from "./libs/constants/empty-length.constant.js";
 import styles from "./styles.module.css";
-
-const EMPTY_LENGTH = 0;
 
 const DEFAULT_MAX_FILE_SIZE_MB =
 	DocumentValidationRule.MAX_FILE_BYTES /
@@ -150,13 +149,23 @@ const Documents: React.FC = () => {
 								setPendingDeleteId(document.id);
 							};
 
+							const isDraft = document.status === DocumentStatus.DRAFT;
+							const rowRoute = isDraft
+								? AppRoute.DOCUMENTS_NEW
+								: configureString(AppRoute.DOCUMENT, {
+										id: String(document.id),
+									});
+
+							const rowState = isDraft
+								? { documentId: document.id }
+								: undefined;
+
 							return (
 								<div key={document.id} role="row">
 									<Link
 										className={styles["documents-page__row"] ?? ""}
-										to={configureString(AppRoute.DOCUMENT, {
-											id: String(document.id),
-										})}
+										state={rowState}
+										to={rowRoute}
 									>
 										<span
 											className={styles["documents-page__title-cell"]}
@@ -171,6 +180,7 @@ const Documents: React.FC = () => {
 											role="cell"
 										>
 											<StatusChip status={document.status} />
+
 											{document.status === DocumentStatus.FAILED && (
 												<Button
 													className={styles["documents-page__reread-link"]}

@@ -6,6 +6,7 @@ type HTTPApiOptions = Omit<HTTPOptions, "headers" | "payload"> & {
 	contentType: ValueOf<typeof ContentType>;
 	hasAuth: boolean;
 	payload?: HTTPOptions["payload"];
+	signal?: AbortSignal | null;
 };
 
 export { type HTTPApiOptions };
