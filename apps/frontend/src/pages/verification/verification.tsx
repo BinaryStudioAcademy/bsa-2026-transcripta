@@ -22,6 +22,7 @@ import {
 	selectCursorPageNo,
 	selectPagesDataStatus,
 	selectPagesForStrip,
+	selectVerificationDataStatus,
 	VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
@@ -55,6 +56,9 @@ const Verification: React.FC = () => {
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
 	const pagesForStrip = useAppSelector(selectPagesForStrip);
 	const cursorPageNo = useAppSelector(selectCursorPageNo);
+	const verificationDataStatus = useAppSelector(selectVerificationDataStatus);
+
+	const isVerifying = verificationDataStatus === DataStatus.PENDING;
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -109,7 +113,7 @@ const Verification: React.FC = () => {
 
 	const handleVerify = useCallback(
 		async (action: PageVerificationActionValue): Promise<void> => {
-			if (!currentPage?.transcription || !document) {
+			if (!currentPage?.transcription || !document || isVerifying) {
 				return;
 			}
 
@@ -149,7 +153,7 @@ const Verification: React.FC = () => {
 				reloadPage(pageNo);
 			}
 		},
-		[currentPage, dispatch, document, reloadPage],
+		[currentPage, dispatch, document, reloadPage, isVerifying],
 	);
 
 	const handleConfirm = useCallback((): void => {
@@ -201,6 +205,7 @@ const Verification: React.FC = () => {
 			<VerificationWorkspace
 				currentPage={currentPage}
 				isEditing={isEditing}
+				isVerifying={isVerifying}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
 				onSkip={handleSkip}

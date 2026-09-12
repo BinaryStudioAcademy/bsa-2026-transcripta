@@ -5,6 +5,9 @@ import { type RootState } from "~/libs/types/types.js";
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 
+const selectVerificationDataStatus = (state: RootState) =>
+	state.pages.verificationDataStatus;
+
 const selectCurrentPage = (state: RootState) => {
 	const pageId = state.pages.idsByPageNo[state.pages.cursorPageNo];
 
@@ -32,4 +35,5 @@ export {
 	selectCursorPageNo,
 	selectPagesDataStatus,
 	selectPagesForStrip,
+	selectVerificationDataStatus,
 };

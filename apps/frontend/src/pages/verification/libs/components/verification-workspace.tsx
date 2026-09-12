@@ -4,6 +4,7 @@ import { VerificationEdit } from "./components.js";
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
 	isEditing: boolean;
+	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onSkip: () => void;
@@ -14,6 +15,7 @@ type VerificationWorkspaceProperties = {
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
 	isEditing,
+	isVerifying,
 	isZoomed,
 	onConfirm,
 	onSkip,
@@ -73,6 +75,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 									<div className="verification-actions">
 										<button
 											className="tx-btn tx-btn--primary"
+											disabled={isVerifying}
 											onClick={onConfirm}
 											type="button"
 										>
@@ -81,6 +84,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 										<button
 											className="tx-btn tx-btn--secondary"
+											disabled={isVerifying}
 											onClick={onToggleEdit}
 											type="button"
 										>
@@ -89,6 +93,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 										<button
 											className="tx-btn tx-btn--ghost"
+											disabled={isVerifying}
 											onClick={onSkip}
 											type="button"
 										>
