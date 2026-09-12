@@ -113,6 +113,7 @@ interface BuiltContext {
 	usedPageIds: number[]; // which pages supplied the context
 	usedLexiconIds: number[]; // which lexicon words
 	tokenEstimate: number;
+	wasReduced: boolean; // context trimmed to fit the budget
 }
 
 export async function buildContext(
@@ -120,12 +121,10 @@ export async function buildContext(
 	pageNo: number,
 	preset: Preset,
 ): Promise<BuiltContext> {
-	const blocks: string[] = [];
-
 	// 1. Seed glossary from the preset. This is what saves the first pages.
-	if (preset.seedGlossary.length) {
-		blocks.push(renderSeedGlossary(preset.seedGlossary));
-	}
+	const seedGlossary = preset.seedGlossary.length
+		? renderSeedGlossary(preset.seedGlossary)
+		: undefined;
 
 	// 2. Document lexicon: the top-100 words that passed the threshold.
 	//    Objection works fine with the partial index, but SQL reads better here.
@@ -134,12 +133,8 @@ export async function buildContext(
 		.where("documentId", documentId)
 		.whereNull("invalidatedAt")
 		.where("distinctPages", ">=", preset.settings.minDistinctPages) // threshold: 2 pages
-		.orderBy([
-			{ column: "distinctPages", order: "desc" },
-			{ column: "freq", order: "desc" },
-		])
+		.orderBy(LEXICON_CONTEXT_ORDER) // distinctPages DESC, freq DESC, valueDisplay ASC
 		.limit(preset.settings.lexiconTopK);
-	if (lexicon.length) blocks.push(renderLexicon(lexicon));
 
 	// 3. Text of the last 3 confirmed pages before the current one.
 	const neighbours = await PageModel.query()
@@ -152,18 +147,30 @@ export async function buildContext(
 		.modifiers({
 			current: (query) => query.where("isCurrent", true),
 		});
-	if (neighbours.length) blocks.push(renderNeighbours(neighbours));
 
 	// 4. Trim if it does not fit the token budget (90% of maxContextTokens).
+	//    Never pass system / preset instructions here — they sit outside the budget.
+	const lexiconEntries = lexicon.map((entry) => entry.valueDisplay);
+	const neighbourPages = neighbours.map((page) => renderNeighbourPage(page));
 	const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
-	const fitted = await fitToBudget(blocks, budget, preset.settings.model);
+	const fitted = await fitToBudget({
+		budget,
+		lexiconEntries,
+		model: preset.settings.model,
+		neighbourPages,
+		seedGlossary,
+	});
 
 	return {
-		blocks: fitted,
-		contextHash: sha256(fitted.join("\n")),
-		usedPageIds: neighbours.map((p) => p.id),
-		usedLexiconIds: lexicon.map((l) => l.id),
-		tokenEstimate: (await estimateTokens(fitted, preset.settings.model)).tokens,
+		blocks: fitted.blocks,
+		contextHash: sha256(fitted.blocks.join("\n")),
+		usedPageIds: neighbours
+			.slice(0, fitted.neighbourPageCount)
+			.map((p) => p.id),
+		usedLexiconIds: lexicon.slice(0, fitted.lexiconEntryCount).map((l) => l.id),
+		tokenEstimate: (await estimateTokens(fitted.blocks, preset.settings.model))
+			.tokens,
+		wasReduced: fitted.wasReduced,
 	};
 }
 ```
@@ -185,11 +192,75 @@ const budget = getEffectiveContextBudget(maxContextTokens); // 90%
 ```
 
 **What it counts.** Only the trimable context blocks — seed glossary, lexicon,
-neighbouring pages. Deliberately excluded:
+neighbouring pages (`CONTEXT_ASSEMBLY_ORDER`). Deliberately excluded from
+`maxContextTokens` / `estimateTokens` / `fitToBudget`:
 
+- the system message (ours only — never trimmed);
+- preset instructions in the user-message `<preset>` block (mandatory in full —
+  a large lexicon must not shrink the instructions that tell the model what to
+  do);
 - the page image (~1740 input tokens in Bedrock tests; fixed cost, cannot trim);
-- system instruction and preset instructions (mandatory, never trimmed — #148);
 - the response allowance (`maxTokens` on the call is a separate limit).
+
+### Budget boundary (#148)
+
+`preset.settings.maxContextTokens` bounds **context growth only**. Resolve the
+working limit with `getEffectiveContextBudget(maxContextTokens)` (90%), then
+trim **only** blocks from `assembleContextBlocks`. System text and preset
+instructions are assembled by the caller outside that budget, so they stay
+present in full even when the context is reduced to the seed glossary alone.
+
+```ts
+import {
+	CONTEXT_ASSEMBLY_ORDER,
+	assembleContextBlocks,
+	fitToBudget,
+	getEffectiveContextBudget,
+} from "~/context/context.js";
+
+// CONTEXT_ASSEMBLY_ORDER === seed glossary → lexicon → neighbours
+const budget = getEffectiveContextBudget(preset.settings.maxContextTokens);
+const fitted = await fitToBudget({
+	budget,
+	lexiconEntries,
+	model: preset.settings.model,
+	neighbourPages,
+	seedGlossary,
+});
+// never pass system / preset instructions into fitToBudget
+```
+
+### Trimming floors (`fitToBudget`) (#148)
+
+`fitToBudget` receives **unit strings** — lexicon `valueDisplay` values and one
+string per neighbour page — not a flat pre-joined `string[]` of prompt blocks.
+It drops whole units, then joins the survivors with `\n` into the lexicon /
+neighbours blocks (same separator as `contextHash`). Trim order:
+
+1. **Lexicon** — keep the largest prefix that fits down to `LEXICON_MIN_RETAINED`
+   (50). Below 50, drop the whole lexicon block (a handful of words is noise).
+2. **Neighbouring pages** — drop whole pages from the most distant end
+   (`page_no DESC`, last in the array). Keep at least
+   `MIN_NEIGHBOUR_PAGES_RETAINED` (1) while possible.
+3. If even one neighbour plus the seed glossary still exceeds the budget, drop
+   the last neighbour and transcribe with the seed glossary alone.
+   `wasReduced: true` signals that for `context_used`.
+
+Seed glossary is never trimmed. System and preset instructions never enter this
+function.
+
+```ts
+import { fitToBudget, LEXICON_MIN_RETAINED } from "~/context/context.js";
+
+const { blocks, wasReduced, lexiconEntryCount, neighbourPageCount } =
+	await fitToBudget({
+		budget,
+		lexiconEntries,
+		model,
+		neighbourPages,
+		seedGlossary,
+	});
+```
 
 **How it counts.**
 
@@ -205,19 +276,78 @@ assembled context twice does not call the provider twice.
 (90% of the stated budget), not the raw `maxContextTokens`. Being slightly under
 costs nothing; being over costs a failed call.
 
-### Trimming by priority, not proportionally
+### Assembly order vs trim priority (#148)
 
-If the context does not fit the limit, cut from the end of the priority list:
+**Prompt / hash order** is fixed and must stay stable — `assembleContextBlocks`
+in [`apps/backend/src/context/`](../apps/backend/src/context/) always emits:
 
 ```
-priority 1: preset instructions   ← never cut
-priority 2: seed glossary         ← never cut
-priority 3: neighbouring pages    ← cut, starting with the most distant
-priority 4: document lexicon      ← cut first, shrinking top-100 to top-50
+seed glossary → lexicon → neighbouring pages
+```
+
+The page image is attached by the model call and is **not** part of these
+blocks or of `contextHash`. Reordering the blocks would change the hash and
+invalidate the transcription cache for an identical prompt.
+
+```ts
+import { assembleContextBlocks } from "~/context/context.js";
+
+// Already-formed block strings (what fitToBudget also emits after join).
+// Lexicon / neighbours are joined valueDisplay / page texts, not a separate
+// renderLexicon / renderNeighbours wrapper around the whole list.
+const blocks = assembleContextBlocks({
+	seedGlossary,
+	lexicon: lexiconEntries.join("\n"),
+	neighbours: neighbourPages.join("\n"),
+});
+// missing / empty parts are skipped; order of the rest never changes
+```
+
+**Trim priority** is a different axis. When the budget is tight, cut in this
+order — do not confuse it with assembly order:
+
+```
+cut first:  document lexicon     ← shrink top-100 → top-50, then drop whole
+then:       neighbouring pages   ← drop whole pages, most distant first
+never cut:  seed glossary
+never cut:  preset instructions  ← outside maxContextTokens (#148)
 ```
 
 Shrinking everything proportionally would produce truncated instructions — it
 would spoil everything a little instead of keeping the important part intact.
+
+### Deterministic lexicon order (#148)
+
+`contextHash` is a cache key. If two runs of the same page pick a different
+order among lexicon ties, the hash changes and the cache misses for an
+identical prompt.
+
+Lexicon top-K uses `LEXICON_CONTEXT_ORDER`:
+
+```
+distinct_pages DESC → freq DESC → value_display ASC
+```
+
+The last key is the tie-break. Neighbouring pages are already total-ordered by
+`page_no DESC` — no extra key. Apply the order **before** `.limit(lexiconTopK)`
+(query time). In-memory `sortLexiconForContext` matches the same keys when
+rows are already loaded.
+
+```ts
+import {
+	LEXICON_CONTEXT_ORDER,
+	sortLexiconForContext,
+} from "~/context/context.js";
+
+const lexicon = await LexiconEntryModel.query()
+	.where("documentId", documentId)
+	.whereNull("invalidatedAt")
+	.orderBy(LEXICON_CONTEXT_ORDER)
+	.limit(preset.settings.lexiconTopK);
+```
+
+`fitToBudget` returns `wasReduced` so the worker can write `context_used` with
+what actually entered the prompt (#114 / #115).
 
 ---
 
