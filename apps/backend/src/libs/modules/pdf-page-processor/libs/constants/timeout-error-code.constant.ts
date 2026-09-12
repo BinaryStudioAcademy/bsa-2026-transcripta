@@ -1,0 +1,3 @@
+const TIMEOUT_ERROR_CODE = "ETIMEDOUT";
+
+export { TIMEOUT_ERROR_CODE };

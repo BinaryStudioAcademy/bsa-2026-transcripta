@@ -1,0 +1,3 @@
+const SIGTERM_SIGNAL = "SIGTERM";
+
+export { SIGTERM_SIGNAL };
