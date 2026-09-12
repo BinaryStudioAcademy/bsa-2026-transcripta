@@ -87,6 +87,7 @@ const Document: React.FC = () => {
 			{hasError && <p>Unable to load the document.</p>}
 			{currentDocument && (
 				<>
+					<Link to={AppRoute.DOCUMENTS}>← Back to Documents</Link>
 					<h1>{currentDocument.title}</h1>
 					<StatusChip status={currentDocument.status} />
 					<OverflowMenu
