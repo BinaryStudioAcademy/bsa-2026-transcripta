@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
 	BudgetIndicator,
@@ -17,6 +17,7 @@ import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
+	useEffect,
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
@@ -42,8 +43,8 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		dispatch(documentActions.loadById(documentId)).catch(() => {});
-		dispatch(documentActions.startPolling(documentId)).catch(() => {});
+		void dispatch(documentActions.loadById(documentId));
+		void dispatch(documentActions.startPolling(documentId));
 
 		return () => {
 			dispatch(documentActions.stopPolling());
@@ -68,14 +69,12 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		const deletePromise = dispatch(
-			documentActions.remove(currentDocument.id),
-		).unwrap();
-
-		deletePromise
+		void dispatch(documentActions.remove(currentDocument.id))
+			.unwrap()
 			.then(() => {
 				setIsConfirmOpen(false);
-				return navigate(AppRoute.DOCUMENTS);
+				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
+				void navigate(AppRoute.DOCUMENTS);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);

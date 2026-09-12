@@ -1,6 +1,10 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import {
+	CONSECUTIVE_ERRORS,
+	INITIAL_COUNT,
+	MAX_ALLOWED_ERRORS,
+} from "~/libs/constants/constants.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 import {
@@ -23,6 +27,9 @@ type GetUploadUrlPayload = {
 	payload?: DocumentUploadUrlRequestDto;
 	signal?: AbortSignal;
 };
+
+let pollingIntervalId: null | ReturnType<typeof setInterval>;
+let consecutiveErrors = CONSECUTIVE_ERRORS;
 
 const create = createAsyncThunk<
 	DocumentCreateResponseDto,
@@ -112,10 +119,6 @@ const remove = createAsyncThunk<number, number, AsyncThunkConfig>(
 	},
 	{ serializeError },
 );
-
-let pollingIntervalId: null | ReturnType<typeof setInterval>;
-let consecutiveErrors = 0;
-const MAX_ALLOWED_ERRORS = 1;
 
 const stopPolling = createAction(`${sliceName}/stop-polling`, () => {
 	if (pollingIntervalId !== null) {
