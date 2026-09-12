@@ -514,6 +514,8 @@ class DocumentController extends BaseController {
 	 *         description: Successful operation
 	 *       404:
 	 *         description: Document not found
+	 *       409:
+	 *         description: Document cannot be paused from its current status
 	 *       500:
 	 *         description: Other errors
 	 */
@@ -545,6 +547,8 @@ class DocumentController extends BaseController {
 	 *         description: Successful operation
 	 *       404:
 	 *         description: Document not found
+	 *       409:
+	 *         description: Document cannot be resumed from its current status
 	 *       500:
 	 *         description: Other errors
 	 */
