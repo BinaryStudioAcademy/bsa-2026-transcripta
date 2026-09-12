@@ -3,6 +3,5 @@ export { DocumentRelationName } from "./document-relation-name.enum.js";
 export {
 	DocumentsApiPath,
 	DocumentStatus,
-	DocumentValidationMessage,
 	PageStatus,
 } from "@transcripta/shared";
