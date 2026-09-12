@@ -17,6 +17,7 @@ import {
 	ThemeToggle,
 } from "~/libs/components/components.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
+import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -139,8 +140,18 @@ const Documents: React.FC = () => {
 						<div role="row">
 							<span role="columnheader">Title</span>
 							<span role="columnheader">Status</span>
-							<span role="columnheader">Uploaded</span>
-							<span role="columnheader">Pages</span>
+							<span
+								className={styles["documents-page__num-header"]}
+								role="columnheader"
+							>
+								Progress
+							</span>
+							<span
+								className={styles["documents-page__num-header"]}
+								role="columnheader"
+							>
+								Spent
+							</span>
 							<span role="columnheader" />
 						</div>
 
@@ -159,6 +170,11 @@ const Documents: React.FC = () => {
 							const rowState = isDraft
 								? { documentId: document.id }
 								: undefined;
+
+							const progressCursor =
+								document.pageCount === EMPTY_LENGTH
+									? EMPTY_LENGTH
+									: document.cursorPageNo;
 
 							return (
 								<div key={document.id} role="row">
@@ -198,10 +214,11 @@ const Documents: React.FC = () => {
 											)}
 										</span>
 										<span className="tx-num" role="cell">
-											{new Date(document.createdAt).toLocaleDateString()}
+											{progressCursor} / {document.pageCount}
 										</span>
 										<span className="tx-num" role="cell">
-											{document.pageCount}
+											{formatMoney(document.spentUsd)} /{" "}
+											{formatMoney(document.budgetUsd)}
 										</span>
 									</Link>
 									<span role="cell">

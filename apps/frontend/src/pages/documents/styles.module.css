@@ -146,3 +146,8 @@
 	font-size: var(--fs-xs);
 	color: var(--text-3);
 }
+
+.documents-page__num-header {
+	text-align: right;
+	white-space: nowrap;
+}
