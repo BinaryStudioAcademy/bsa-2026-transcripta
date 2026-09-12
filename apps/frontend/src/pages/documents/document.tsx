@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
 	BudgetIndicator,
@@ -10,13 +10,13 @@ import {
 	ProgressBar,
 	StatusChip,
 } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
-	useEffect,
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
@@ -42,11 +42,18 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		void dispatch(documentActions.loadById(documentId));
+		dispatch(documentActions.loadById(documentId)).catch(() => {});
+		dispatch(documentActions.startPolling(documentId)).catch(() => {});
+
+		return () => {
+			dispatch(documentActions.stopPolling());
+		};
 	}, [id, dispatch]);
 
-	const isLoading = documentDataStatus === DataStatus.PENDING;
-	const hasError = documentDataStatus === DataStatus.REJECTED;
+	const isLoading =
+		documentDataStatus === DataStatus.PENDING && !currentDocument;
+	const hasError =
+		documentDataStatus === DataStatus.REJECTED && !currentDocument;
 
 	const handleOpenDeleteDialog = useCallback((): void => {
 		setIsConfirmOpen(true);
@@ -61,12 +68,14 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		void dispatch(documentActions.remove(currentDocument.id))
-			.unwrap()
+		const deletePromise = dispatch(
+			documentActions.remove(currentDocument.id),
+		).unwrap();
+
+		deletePromise
 			.then(() => {
 				setIsConfirmOpen(false);
-				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-				void navigate(AppRoute.DOCUMENTS);
+				return navigate(AppRoute.DOCUMENTS);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);
@@ -97,6 +106,26 @@ const Document: React.FC = () => {
 							closedPct={currentDocument.progress.closedPct}
 							verifiedPct={currentDocument.progress.verifiedPct}
 						/>
+						<div>
+							<span className="tabular-figures">
+								{currentDocument.progress.pagesVerified}
+							</span>{" "}
+							of{" "}
+							<span className="tabular-figures">
+								{currentDocument.progress.pagesTotal}
+							</span>{" "}
+							pages verified
+							{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
+								<span>
+									{" "}
+									·{" "}
+									<span className="tabular-figures">
+										{currentDocument.progress.pagesInWork}
+									</span>{" "}
+									in work
+								</span>
+							)}
+						</div>
 						<BudgetIndicator
 							limitUsd={currentDocument.budget.limitUsd}
 							spentUsd={currentDocument.budget.spentUsd}
