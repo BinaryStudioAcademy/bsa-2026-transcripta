@@ -29,3 +29,5 @@ const pageService = new PageService({
 const pageController = new PageController(logger, pageService);
 
 export { pageController, pageRepository };
+export { type PageWithText } from "./libs/types/types.js";
+export { type PageRepository } from "./page.repository.js";
