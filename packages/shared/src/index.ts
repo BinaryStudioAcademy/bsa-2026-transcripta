@@ -3,6 +3,7 @@ export {
 	APIPath,
 	AppEnvironment,
 	ContentType,
+	ModelId,
 	ServerErrorType,
 } from "./libs/enums/enums.js";
 export { HTTPError, ValidationError } from "./libs/exceptions/exceptions.js";
@@ -18,6 +19,7 @@ export {
 } from "./libs/modules/http/http.js";
 export { type Storage } from "./libs/modules/storage/storage.js";
 export {
+	type ModelIdValue,
 	type ServerCommonErrorResponse,
 	type ServerErrorDetail,
 	type ServerErrorResponse,

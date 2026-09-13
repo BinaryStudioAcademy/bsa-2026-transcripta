@@ -1,5 +1,5 @@
 import { type AppEnvironment } from "~/libs/enums/enums.js";
-import { type ValueOf } from "~/libs/types/types.js";
+import { type ModelIdValue, type ValueOf } from "~/libs/types/types.js";
 
 type EnvironmentSchema = {
 	APP: {
@@ -11,7 +11,7 @@ type EnvironmentSchema = {
 		JWT_SECRET: string;
 	};
 	BEDROCK: {
-		MODEL_ID: string;
+		MODEL_ID: ModelIdValue;
 		REGION: string;
 	};
 	DB: {

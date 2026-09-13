@@ -1,7 +1,7 @@
 import convict, { type Config as LibraryConfig } from "convict";
 import { config } from "dotenv";
 
-import { AppEnvironment } from "~/libs/enums/enums.js";
+import { AppEnvironment, ModelId } from "~/libs/enums/enums.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import {
@@ -67,10 +67,10 @@ class BaseConfig implements Config {
 			},
 			BEDROCK: {
 				MODEL_ID: {
-					default: "us.anthropic.claude-sonnet-4-6",
+					default: ModelId.CLAUDE_SONNET_4_6_BEDROCK,
 					doc: "Bedrock inference profile id — never a bare model id",
 					env: "BEDROCK_MODEL_ID",
-					format: String,
+					format: Object.values(ModelId),
 				},
 				REGION: {
 					default: "us-east-1",
