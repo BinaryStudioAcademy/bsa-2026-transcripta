@@ -20,14 +20,6 @@ type EnvironmentSchema = {
 		POOL_MAX: number;
 		POOL_MIN: number;
 	};
-	PRICING: {
-		AMAZON_INPUT: number;
-		AMAZON_OUTPUT: number;
-		ANTHROPIC_DIRECT_INPUT: number;
-		ANTHROPIC_DIRECT_OUTPUT: number;
-		ANTHROPIC_INPUT: number;
-		ANTHROPIC_OUTPUT: number;
-	};
 	REDIS: {
 		URL: string;
 	};
