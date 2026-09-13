@@ -1,0 +1,3 @@
+const MIN_LEXICON_WORDS = 50;
+
+export { MIN_LEXICON_WORDS };
