@@ -1,5 +1,9 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
-import { MAX_LOADED_PAGES } from "~/libs/constants/varification.constants.js";
+import {
+	MAX_LOADED_PAGES,
+	MIN_NUMBER_OF_PAGES,
+	PAGE_STEP,
+} from "~/libs/constants/varification.constants.js";
 import {
 	DataStatus,
 	HTTPCode,
@@ -75,16 +79,32 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		dispatch(pageActions.setCursorPageNo(document.cursorPageNo));
+	}, [document, dispatch]);
+
+	useEffect(() => {
+		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES) {
+			return;
+		}
+
+		const isPageLoaded = pagesForStrip.some(
+			(page) => page?.pageNo === cursorPageNo,
+		);
+
+		if (isPageLoaded) {
+			return;
+		}
+
 		void dispatch(
 			pageActions.loadPages({
 				documentId: document.id,
 				query: {
-					from: document.cursorPageNo,
+					from: cursorPageNo,
 					limit: MAX_LOADED_PAGES,
 				},
 			}),
 		);
-	}, [document, dispatch]);
+	}, [cursorPageNo, document, dispatch, pagesForStrip]);
 
 	useEffect(() => {
 		if (currentPage) {
@@ -176,9 +196,33 @@ const Verification: React.FC = () => {
 		setIsZoomed((value) => !value);
 	}, []);
 
+	const handlePageSelect = useCallback(
+		(pageNo: number): void => {
+			dispatch(pageActions.setCursorPageNo(pageNo));
+		},
+		[dispatch],
+	);
+
+	const handlePrevious = useCallback((): void => {
+		if (cursorPageNo <= MIN_NUMBER_OF_PAGES) {
+			return;
+		}
+
+		handlePageSelect(cursorPageNo - PAGE_STEP);
+	}, [cursorPageNo, handlePageSelect]);
+
+	const handleNext = useCallback((): void => {
+		if (!document || cursorPageNo >= document.pageCount) {
+			return;
+		}
+
+		handlePageSelect(cursorPageNo + PAGE_STEP);
+	}, [cursorPageNo, handlePageSelect, document]);
+
 	useVerificationKeyboard({
 		onConfirm: handleConfirm,
 		onEdit: handleToggleEdit,
+		onPrevious: handlePrevious,
 		onSkip: handleSkip,
 		onToggleShortcuts: handleToggleShortcuts,
 		onToggleZoom: handleToggleZoom,
@@ -192,13 +236,17 @@ const Verification: React.FC = () => {
 		return <LoaderOverlay label="Loading verification" />;
 	}
 
+	if (!document) {
+		return;
+	}
+
 	return (
 		<div className="verification">
 			<VerificationHeader
-				budgetLimit={document?.budget.limitUsd}
-				budgetSpent={document?.budget.spentUsd}
-				documentTitle={document?.title}
-				pageCount={document?.pageCount}
+				budgetLimit={document.budget.limitUsd}
+				budgetSpent={document.budget.spentUsd}
+				documentTitle={document.title}
+				pageCount={document.pageCount}
 				pageNo={currentPage?.pageNo}
 			/>
 
@@ -210,10 +258,17 @@ const Verification: React.FC = () => {
 				onConfirm={handleConfirm}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
-				pageCount={document?.pageCount}
+				pageCount={document.pageCount}
 			/>
 
-			<VerificationFooter currentPageNo={cursorPageNo} pages={pagesForStrip} />
+			<VerificationFooter
+				currentPageNo={cursorPageNo}
+				onNext={handleNext}
+				onPageSelect={handlePageSelect}
+				onPrevious={handlePrevious}
+				pageCount={document.pageCount}
+				pages={pagesForStrip}
+			/>
 
 			{isShortcutsOpen && (
 				<VerificationShortcutsDialog onClose={handleToggleShortcuts} />

@@ -7,10 +7,10 @@ import {
 import { AppRoute } from "~/libs/enums/enums.js";
 
 type VerificationHeaderProperties = {
-	budgetLimit?: string | undefined;
-	budgetSpent?: string | undefined;
-	documentTitle?: string | undefined;
-	pageCount?: number | undefined;
+	budgetLimit?: string;
+	budgetSpent?: string;
+	documentTitle?: string;
+	pageCount?: number;
 	pageNo?: number | undefined;
 };
 

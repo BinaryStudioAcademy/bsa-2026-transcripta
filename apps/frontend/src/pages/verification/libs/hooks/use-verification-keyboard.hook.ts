@@ -3,6 +3,7 @@ import { useEffect } from "~/libs/hooks/hooks.js";
 type UseVerificationKeyboardProperties = {
 	onConfirm: () => void;
 	onEdit: () => void;
+	onPrevious: () => void;
 	onSkip: () => void;
 	onToggleShortcuts: () => void;
 	onToggleZoom: () => void;
@@ -11,6 +12,7 @@ type UseVerificationKeyboardProperties = {
 const useVerificationKeyboard = ({
 	onConfirm,
 	onEdit,
+	onPrevious,
 	onSkip,
 	onToggleShortcuts,
 	onToggleZoom,
@@ -34,6 +36,11 @@ const useVerificationKeyboard = ({
 
 			if (event.key === "?") {
 				onToggleShortcuts();
+				return;
+			}
+
+			if (event.key === "ArrowLeft") {
+				onPrevious();
 				return;
 			}
 

@@ -90,7 +90,6 @@ const { actions, name, reducer } = createSlice({
 				state.byId[page.id] = page;
 				state.idsByPageNo[page.pageNo] = page.id;
 			}
-			state.cursorPageNo = action.meta.arg.query.from;
 			state.dataStatus = DataStatus.FULFILLED;
 		});
 
@@ -101,6 +100,10 @@ const { actions, name, reducer } = createSlice({
 	initialState,
 	name: "pages",
 	reducers: {
+		setCursorPageNo: (state, action: PayloadAction<number>) => {
+			state.cursorPageNo = action.payload;
+		},
+
 		verifyOptimistic: (
 			state,
 			action: PayloadAction<{
