@@ -209,7 +209,7 @@ const Documents: React.FC = () => {
 							const progressCursor =
 								document.pageCount === EMPTY_LENGTH
 									? EMPTY_LENGTH
-									: document.cursorPageNo;
+									: Math.min(document.cursorPageNo, document.pageCount);
 
 							return (
 								<div
