@@ -88,14 +88,14 @@ const { actions, name, reducer } = createSlice({
 			}
 		});
 		builder.addCase(pause.fulfilled, (state, action) => {
-			delete state.pauseResumeDataStatuses[action.meta.arg];
+			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.FULFILLED;
 
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PAUSED;
 			}
 		});
 		builder.addCase(resume.fulfilled, (state, action) => {
-			delete state.pauseResumeDataStatuses[action.meta.arg];
+			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.FULFILLED;
 
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PROCESSING;
@@ -116,14 +116,14 @@ const { actions, name, reducer } = createSlice({
 			}
 		});
 		builder.addCase(pause.rejected, (state, action) => {
-			delete state.pauseResumeDataStatuses[action.meta.arg];
+			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.REJECTED;
 
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PROCESSING;
 			}
 		});
 		builder.addCase(resume.rejected, (state, action) => {
-			delete state.pauseResumeDataStatuses[action.meta.arg];
+			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.REJECTED;
 
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PAUSED;
