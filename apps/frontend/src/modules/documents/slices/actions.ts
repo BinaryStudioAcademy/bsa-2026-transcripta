@@ -5,6 +5,7 @@ import {
 	MAX_FAILURES_BEFORE_STOP,
 } from "~/libs/constants/constants.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 import {
 	type DocumentCreateRequestDto,
@@ -17,9 +18,10 @@ import {
 
 import {
 	POLLING_FAILED_MESSAGE,
-	POLLING_INTERVAL_MS,
+	POLLING_FAILED_NOTIFICATION,
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
+import { PollingIntervalsMS } from "../libs/enums/enums.js";
 import { name as sliceName } from "./documents.slice.js";
 
 type GetUploadUrlPayload = {
@@ -139,6 +141,7 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 		consecutiveErrors = INITIAL_COUNT;
 
 		let isRequestInFlight = false;
+		let currentIntervalMs: number = PollingIntervalsMS.DEFAULT;
 
 		const executePoll = (): void => {
 			if (isRequestInFlight) {
@@ -162,17 +165,33 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 			dispatch(pollDocumentById(documentId))
 				.unwrap()
 				.then(() => {
-					consecutiveErrors = INITIAL_COUNT;
+					if (consecutiveErrors > INITIAL_COUNT) {
+						consecutiveErrors = INITIAL_COUNT;
+						if (currentIntervalMs !== PollingIntervalsMS.DEFAULT) {
+							currentIntervalMs = PollingIntervalsMS.DEFAULT;
+							clearActiveInterval();
+							pollingIntervalId = setInterval(executePoll, currentIntervalMs);
+						}
+					}
 					isRequestInFlight = false;
 				})
 				.catch((error: unknown) => {
-					// eslint-disable-next-line no-console
-					console.error(POLLING_FAILED_MESSAGE, error);
+					if (consecutiveErrors === INITIAL_COUNT) {
+						// eslint-disable-next-line no-console
+						console.error(POLLING_FAILED_MESSAGE, error);
+						notification.error(POLLING_FAILED_NOTIFICATION);
+					}
+
 					consecutiveErrors++;
 					isRequestInFlight = false;
 
-					if (consecutiveErrors >= MAX_FAILURES_BEFORE_STOP) {
-						dispatch(stopPolling());
+					if (
+						consecutiveErrors >= MAX_FAILURES_BEFORE_STOP &&
+						currentIntervalMs === PollingIntervalsMS.DEFAULT
+					) {
+						currentIntervalMs = PollingIntervalsMS.FAILED;
+						clearActiveInterval();
+						pollingIntervalId = setInterval(executePoll, currentIntervalMs);
 					}
 				});
 		};
@@ -181,7 +200,7 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 
 		pollingIntervalId = setInterval(() => {
 			executePoll();
-		}, POLLING_INTERVAL_MS);
+		}, currentIntervalMs);
 	},
 );
 
