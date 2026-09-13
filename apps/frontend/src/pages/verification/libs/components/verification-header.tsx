@@ -1,5 +1,5 @@
 import { Link, ThemeToggle } from "~/libs/components/components.js";
-import { DEFAULT_BUDGET } from "~/libs/constants/bundet.constants.js";
+import { DEFAULT_BUDGET } from "~/libs/constants/budget.constants.js";
 import {
 	MAX_PERCENTAGE,
 	PERCENTAGE_MULTIPLIER,

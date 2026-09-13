@@ -1,5 +1,5 @@
 import { Button } from "~/libs/components/components.js";
-import { MIN_NUMBER_OF_PAGES } from "~/libs/constants/varification.constants.js";
+import { MIN_NUMBER_OF_PAGES } from "~/libs/constants/verification.constants.js";
 
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { PageButton } from "./components.js";

@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 
-import { MAX_LOADED_PAGES } from "~/libs/constants/varification.constants.js";
+import { MAX_LOADED_PAGES } from "~/libs/constants/verification.constants.js";
 import { type RootState } from "~/libs/types/types.js";
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
