@@ -9,6 +9,7 @@ const DocumentErrorMessage = {
 	NOT_DRAFT: "The document is not in draft status",
 	NOT_FOUND: "Document not found",
 	PAGE_UPLOAD_FAILED: "Failed to upload a page",
+	RESUME_FAILED: "Failed to resume the document",
 } as const;
 
 export { DocumentErrorMessage };

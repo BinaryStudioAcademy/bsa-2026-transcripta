@@ -33,4 +33,4 @@ const queueRegistry = new QueueRegistry({
 	queues: [pageTranscribeQueue],
 });
 
-export { queueRegistry };
+export { pageTranscribeQueue, queueRegistry };
