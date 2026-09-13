@@ -7,8 +7,7 @@ import {
 } from "~/libs/modules/database/database.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { buildContext } from "~/modules/context/builder.js";
-import { buildUserPrompt } from "~/modules/context/prompt.js";
+import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 import { PresetModel } from "~/modules/presets/preset.model.js";
