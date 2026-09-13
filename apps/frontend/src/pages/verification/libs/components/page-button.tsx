@@ -1,5 +1,6 @@
 import { DocumentGetPagesItemResponseDto } from "@transcripta/shared";
 
+import { Button } from "~/libs/components/components.js";
 import { useCallback } from "~/libs/hooks/hooks.js";
 
 import { getPageStripStatus } from "../helpers/get-page-strip-status.helper.js";
@@ -33,7 +34,7 @@ const PageButton: React.FC<PageButtonProperties> = ({
 	}, [page, onPageSelect]);
 
 	return (
-		<button
+		<Button
 			className={`tx-page tx-page--${status}`}
 			onClick={handleClick}
 			type="button"
@@ -42,7 +43,7 @@ const PageButton: React.FC<PageButtonProperties> = ({
 			<span aria-hidden="true">{statusSymbolMap[status]}</span>
 
 			{!isCurrent && <span aria-hidden="true" className="tx-page-thumb" />}
-		</button>
+		</Button>
 	);
 };
 

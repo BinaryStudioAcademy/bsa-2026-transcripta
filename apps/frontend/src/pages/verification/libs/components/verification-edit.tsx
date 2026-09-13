@@ -1,3 +1,4 @@
+import { Button } from "~/libs/components/components.js";
 import { useCallback, useState } from "~/libs/hooks/hooks.js";
 
 type EditModeProperties = {
@@ -25,23 +26,15 @@ const VerificationEdit: React.FC<EditModeProperties> = ({ onCancel, text }) => {
 			/>
 
 			<div className="verification-edit__actions">
-				<button className="tx-btn tx-btn--primary" type="button">
-					Save and next
-				</button>
-
+				<Button isPrimary={true} label="Save and next" type="button" />
 				<span>
 					<kbd className="tx-kbd">Ctrl+Enter</kbd>
 					{" — Save and next"}
 				</span>
-
-				<button
-					className="tx-btn tx-btn--ghost"
-					onClick={onCancel}
-					type="button"
-				>
+				<Button onClick={onCancel} type="button">
 					<kbd className="tx-kbd">Esc</kbd>
 					{" — cancel"}
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

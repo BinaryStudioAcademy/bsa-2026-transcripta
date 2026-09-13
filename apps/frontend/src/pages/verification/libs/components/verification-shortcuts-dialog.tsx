@@ -1,3 +1,5 @@
+import { Button } from "~/libs/components/components.js";
+
 type VerificationShortcutsDialogProperties = {
 	onClose: () => void;
 };
@@ -37,13 +39,12 @@ const VerificationShortcutsDialog: React.FC<
 				</div>
 
 				<div className="tx-dialog-actions">
-					<button
-						className="tx-btn tx-btn--secondary"
+					<Button
+						isSecondary={true}
+						label="Close"
 						onClick={onClose}
 						type="button"
-					>
-						Close
-					</button>
+					/>
 				</div>
 			</div>
 		</div>

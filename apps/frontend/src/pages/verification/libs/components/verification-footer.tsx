@@ -1,3 +1,4 @@
+import { Button } from "~/libs/components/components.js";
 import { MIN_NUMBER_OF_PAGES } from "~/libs/constants/varification.constants.js";
 
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
@@ -23,15 +24,14 @@ const VerificationFooter: React.FC<VerificationFooterProperties> = ({
 	return (
 		<footer className="verification-footer">
 			<div className="tx-pstrip">
-				<button
+				<Button
 					aria-label="Previous"
 					className="tx-page"
-					disabled={currentPageNo <= MIN_NUMBER_OF_PAGES}
+					isDisabled={currentPageNo <= MIN_NUMBER_OF_PAGES}
+					label="◄"
 					onClick={onPrevious}
 					type="button"
-				>
-					◄
-				</button>
+				/>
 
 				{pages.map((page) => {
 					if (!page) {
@@ -50,15 +50,14 @@ const VerificationFooter: React.FC<VerificationFooterProperties> = ({
 					);
 				})}
 
-				<button
+				<Button
 					aria-label="Next"
 					className="tx-page"
-					disabled={pageCount === undefined || currentPageNo >= pageCount}
+					isDisabled={pageCount === undefined || currentPageNo >= pageCount}
+					label="►"
 					onClick={onNext}
 					type="button"
-				>
-					►
-				</button>
+				/>
 			</div>
 
 			<span className="tx-pstrip-legend">▓ ready ░ running · queued</span>

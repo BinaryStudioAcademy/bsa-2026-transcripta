@@ -1,3 +1,5 @@
+import { Button } from "~/libs/components/components.js";
+
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
@@ -73,32 +75,28 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 									</p>
 
 									<div className="verification-actions">
-										<button
-											className="tx-btn tx-btn--primary"
-											disabled={isVerifying}
+										<Button
+											isDisabled={isVerifying}
+											isPrimary={true}
+											label="Correct"
 											onClick={onConfirm}
 											type="button"
-										>
-											Correct
-										</button>
+										/>
 
-										<button
-											className="tx-btn tx-btn--secondary"
-											disabled={isVerifying}
+										<Button
+											isDisabled={isVerifying}
+											isSecondary={true}
+											label="Edit"
 											onClick={onToggleEdit}
 											type="button"
-										>
-											Edit
-										</button>
+										/>
 
-										<button
-											className="tx-btn tx-btn--ghost"
-											disabled={isVerifying}
+										<Button
+											isDisabled={isVerifying}
+											label="Skip"
 											onClick={onSkip}
 											type="button"
-										>
-											Skip
-										</button>
+										/>
 									</div>
 								</>
 							)}
