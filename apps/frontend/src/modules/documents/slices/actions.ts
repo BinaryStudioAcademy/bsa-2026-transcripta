@@ -7,9 +7,17 @@ import {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 } from "~/modules/documents/documents.js";
 
 import { name as sliceName } from "./documents.slice.js";
+
+type GetUploadUrlPayload = {
+	id: number;
+	payload?: DocumentUploadUrlRequestDto;
+	signal?: AbortSignal;
+};
 
 const create = createAsyncThunk<
 	DocumentCreateResponseDto,
@@ -21,6 +29,19 @@ const create = createAsyncThunk<
 		const { documentApi } = extra;
 
 		return documentApi.create(payload);
+	},
+	{ serializeError },
+);
+
+const getUploadUrl = createAsyncThunk<
+	DocumentUploadUrlResponseDto,
+	GetUploadUrlPayload,
+	AsyncThunkConfig
+>(
+	`${sliceName}/get-upload-url`,
+	({ id, payload, signal }, { extra }) => {
+		const { documentApi } = extra;
+		return documentApi.getUploadUrl(id, payload, signal);
 	},
 	{ serializeError },
 );
@@ -97,4 +118,13 @@ const remove = createAsyncThunk<number, number, AsyncThunkConfig>(
 	{ serializeError },
 );
 
-export { create, ingest, loadAll, loadById, pause, remove, resume };
+export {
+	create,
+	getUploadUrl,
+	ingest,
+	loadAll,
+	loadById,
+	pause,
+	remove,
+	resume,
+};

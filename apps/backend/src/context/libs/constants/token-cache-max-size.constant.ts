@@ -1,0 +1,3 @@
+const TOKEN_CACHE_MAX_SIZE = 256;
+
+export { TOKEN_CACHE_MAX_SIZE };

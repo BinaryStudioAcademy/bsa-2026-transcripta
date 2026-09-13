@@ -1,0 +1,3 @@
+const CONTEXT_HASH_SEPARATOR = "\n";
+
+export { CONTEXT_HASH_SEPARATOR };

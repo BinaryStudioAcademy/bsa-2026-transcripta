@@ -9,30 +9,12 @@ import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
-import { type LexiconRow } from "./libs/types/lexicon-row.type.js";
-
-type DocumentDetailsRow = {
-	budgetUsd: string;
-	closedPct: number;
-	cursorPageNo: number;
-	id: number;
-	pageCount: number;
-	pagesBlank: number;
-	pagesFailed: number;
-	pagesInWork: number;
-	pagesPending: number;
-	pagesReadyToCheck: number;
-	pagesSkipped: number;
-	pagesTotal: number;
-	pagesVerified: number;
-	presetId: number;
-	presetName: string;
-	presetVersion: number;
-	spentUsd: string;
-	status: ValueOf<typeof DocumentStatus>;
-	title: string;
-	verifiedPct: number;
-};
+import {
+	type DocumentDetailsRow,
+	type DocumentUpdateDraftMetadataPayload,
+	type DocumentUpdateOwnedStatus,
+	type LexiconRow,
+} from "./libs/types/types.js";
 
 class DocumentRepository {
 	private documentModel: typeof DocumentModel;
@@ -147,6 +129,19 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
+	public async findDraftsOlderThanByUser(
+		ownerId: number,
+		date: string,
+	): Promise<DocumentEntity[]> {
+		const documents = await this.documentModel
+			.query()
+			.where({ ownerId, status: DocumentStatus.DRAFT })
+			.where("createdAt", "<", date)
+			.execute();
+
+		return documents.map((document) => DocumentEntity.initialize(document));
+	}
+
 	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
 		if (ids.length === EMPTY_COLLECTION_LENGTH) {
 			return [];
@@ -191,6 +186,17 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async setErrorMessage(
+		id: number,
+		errorMessage: string,
+	): Promise<void> {
+		await this.documentModel
+			.query()
+			.patch({ errorMessage })
+			.where({ id })
+			.execute();
+	}
+
 	public async updateCursorPageNo(
 		documentId: number,
 		cursorPageNo: number,
@@ -202,6 +208,58 @@ class DocumentRepository {
 				cursorPageNo: raw("GREATEST(??, ?)", ["cursor_page_no", cursorPageNo]),
 			})
 			.where({ id: documentId })
+			.execute();
+	}
+
+	public async updateDraftMetadata(
+		id: number,
+		{
+			presetId,
+			sourceBytes,
+			sourceKey,
+			sourceName,
+			title,
+		}: DocumentUpdateDraftMetadataPayload,
+		trx?: Transaction,
+	): Promise<void> {
+		const patchData: Record<string, unknown> = {
+			sourceKey,
+		};
+
+		if (presetId !== undefined) {
+			patchData["presetId"] = presetId;
+		}
+		if (title !== undefined) {
+			patchData["title"] = title;
+		}
+		if (sourceName !== undefined) {
+			patchData["sourceName"] = sourceName;
+		}
+		if (sourceBytes !== undefined) {
+			patchData["sourceBytes"] = sourceBytes;
+		}
+
+		await this.documentModel
+			.query(trx)
+			.patch(patchData)
+			.where({ id })
+			.execute();
+	}
+
+	public async updateOwnedStatusFrom({
+		currentStatus,
+		id,
+		ownerId,
+		status,
+	}: DocumentUpdateOwnedStatus): Promise<number> {
+		return await this.documentModel
+			.query()
+			.patch({ status })
+			.where({
+				id,
+				ownerId,
+				status: currentStatus,
+			})
 			.execute();
 	}
 

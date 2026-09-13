@@ -113,7 +113,7 @@ STORAGE_ENDPOINT=
 STORAGE_ACCESS_KEY_ID=
 STORAGE_SECRET_ACCESS_KEY=
 AWS_REGION=us-east-1
-BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0
+BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-6
 ENV
 
 # --- deploy script: ECR login, pull (retry until present), up ---

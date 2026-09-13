@@ -172,6 +172,10 @@ class DocumentEntity {
 		});
 	}
 
+	public getPresetId(): number {
+		return this.presetId;
+	}
+
 	public toNewObject(): {
 		ownerId: number;
 		pageCount: number;

@@ -3,10 +3,13 @@ import React from "react";
 import styles from "./styles.module.css";
 
 type Properties = {
+	className?: string | undefined;
 	isDanger?: boolean;
 	isDisabled?: boolean;
 	isFluid?: boolean;
 	isPrimary?: boolean;
+	isSecondary?: boolean;
+	isSmall?: boolean;
 	label: string;
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	type?: "button" | "submit";
@@ -28,10 +31,13 @@ const getVariantClassName = (
 };
 
 const Button: React.FC<Properties> = ({
+	className,
 	isDanger = false,
 	isDisabled = false,
 	isFluid = false,
 	isPrimary = false,
+	isSecondary = false,
+	isSmall = false,
 	label,
 	onClick,
 	type = "button",
@@ -41,6 +47,9 @@ const Button: React.FC<Properties> = ({
 		isFluid && styles["button--fluid"],
 		getVariantClassName(isDanger, isPrimary),
 		isDisabled && styles["button--disabled"],
+		isSecondary ? styles["button--secondary"] : styles["button--basic"],
+		isSmall && styles["button--sm"],
+		className,
 	]
 		.filter(Boolean)
 		.join(" ");

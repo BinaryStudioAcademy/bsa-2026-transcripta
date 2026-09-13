@@ -41,22 +41,12 @@ Roughly one week out of six — spent on a problem you do not have yet.
 
 ### How to keep the option of splitting later
 
-One environment variable:
-
-The field must be added to `EnvironmentSchema` and to the convict schema
-(`libs/modules/config`) — the template does not expect anyone to read
-`process.env` directly, bypassing the config.
-
-```ts
-// apps/backend/src/index.ts
-const mode = config.ENV.APP.MODE ?? "all"; // all | api | worker
-
-if (mode === "all" || mode === "api") await startApi();
-if (mode === "all" || mode === "worker") await startWorker();
-```
-
-When the need arises, the same image runs twice with different `APP_MODE`.
-Zero refactoring.
+Today the `queueRegistry` is connected from the server application
+(`libs/modules/server-application`): the one process serves HTTP and consumes
+`page.transcribe` jobs. To split later, a second instance of the same image
+would call `database.connect()` + `queueRegistry.connect()` and skip
+`app.listen()` — no environment variable or config change is needed at the
+field level, the connections are already standalone.
 
 **The condition under which this really becomes necessary:** the worker holds
 long connections to the LLM, and under load the API health check starts timing
@@ -202,7 +192,7 @@ transcripta/
 │   ├── backend/                     # Node: Fastify + BullMQ in one process
 │   │   ├── knexfile.ts              # ← exists
 │   │   └── src/
-│   │       ├── index.ts             # ← exists. Entry point, APP_MODE goes here
+│   │       ├── index.ts             # ← exists. Entry point: serverApplication.init()
 │   │       ├── db/migrations/       # ← exists. Knex, snake_case names
 │   │       ├── libs/modules/        # ← exists. database, config, logger
 │   │       ├── modules/

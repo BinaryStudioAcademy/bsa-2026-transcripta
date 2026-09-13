@@ -14,6 +14,7 @@ const config: KnipConfig = {
 				"knexfile.ts",
 				"src/modules/pages/page.model.ts",
 				"src/modules/pages/page.repository.ts",
+				"src/context/context.ts",
 			],
 			ignoreDependencies: [],
 		},

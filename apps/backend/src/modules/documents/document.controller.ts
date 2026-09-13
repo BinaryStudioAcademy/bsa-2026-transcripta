@@ -5,7 +5,10 @@ import {
 	DocumentGetByIdParametersValidationSchema,
 	type DocumentGetPagesQueryDto,
 	DocumentGetPagesQueryValidationSchema,
+	type DocumentIdRequestDto,
 	DocumentIdValidationSchema,
+	type DocumentUploadUrlRequestDto,
+	DocumentUploadUrlValidationSchema,
 } from "@transcripta/shared";
 
 import { APIPath } from "~/libs/enums/enums.js";
@@ -22,7 +25,10 @@ import { type TokenPayload } from "~/libs/modules/token/token.js";
 import { type DocumentService } from "~/modules/documents/document.service.js";
 
 import { DocumentsApiPath } from "./libs/enums/enums.js";
-import { type DocumentDeleteOptions } from "./libs/types/types.js";
+import {
+	type DocumentDeleteOptions,
+	type DocumentIdHandlerOptions,
+} from "./libs/types/types.js";
 
 /*** @swagger
  * components:
@@ -168,10 +174,48 @@ class DocumentController extends BaseController {
 		});
 
 		this.addRoute({
+			handler: (options) =>
+				this.getUploadUrl(
+					options as APIHandlerOptions<{
+						body?: DocumentUploadUrlRequestDto;
+						params: DocumentIdRequestDto;
+						user: TokenPayload;
+					}>,
+				),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.UPLOAD_URL,
+			preHandler: authGuard,
+			validation: {
+				body: DocumentUploadUrlValidationSchema,
+				params: DocumentIdValidationSchema,
+			},
+		});
+
+		this.addRoute({
 			handler: (this.ingest as APIHandler).bind(this),
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
 			preHandler: authGuard,
+		});
+
+		this.addRoute({
+			handler: (this.pause as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.PAUSE,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+			},
+		});
+
+		this.addRoute({
+			handler: (this.resume as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.RESUME,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+			},
 		});
 	}
 
@@ -345,6 +389,71 @@ class DocumentController extends BaseController {
 			status: HTTPCode.OK,
 		};
 	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/upload-url:
+	 *   post:
+	 *     description: Get a fresh presigned upload URL for a draft or failed document
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *         description: Document ID
+	 *     requestBody:
+	 *       required: false
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             properties:
+	 *               title:
+	 *                 type: string
+	 *               presetId:
+	 *                 type: number
+	 *               fileName:
+	 *                 type: string
+	 *               fileBytes:
+	 *                 type: number
+	 *     responses:
+	 *       200:
+	 *         description: Fresh upload URL generated successfully
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 uploadUrl:
+	 *                   type: string
+	 *                 expiresAt:
+	 *                   type: string
+	 *       404:
+	 *         description: Document not found
+	 *       409:
+	 *         description: Document is not in draft status
+	 */
+	private async getUploadUrl(
+		options: APIHandlerOptions<{
+			body?: DocumentUploadUrlRequestDto;
+			params: DocumentIdRequestDto;
+			user: TokenPayload;
+		}>,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.getUploadUrl(
+				options.params.id,
+				options.user.userId,
+				options.body,
+			),
+			status: HTTPCode.OK,
+		};
+	}
+
 	/**
 	 * @swagger
 	 * /documents/{id}/ingest:
@@ -381,6 +490,72 @@ class DocumentController extends BaseController {
 	): Promise<APIHandlerResponse> {
 		await this.documentService.ingest(options.params.id, options.user.userId);
 
+		return {
+			payload: null,
+			status: HTTPCode.OK,
+		};
+	}
+	/**
+	 * @swagger
+	 * /documents/{id}/pause:
+	 *   post:
+	 *     description: Set the document to paused
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Document ID
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *       404:
+	 *         description: Document not found
+	 *       409:
+	 *         description: Document cannot be paused from its current status
+	 *       500:
+	 *         description: Other errors
+	 */
+	private async pause(
+		options: DocumentIdHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.pause(options.params.id, options.user.userId);
+		return {
+			payload: null,
+			status: HTTPCode.OK,
+		};
+	}
+	/**
+	 * @swagger
+	 * /documents/{id}/resume:
+	 *   post:
+	 *     description: Back to processing, and re-enqueue what still needs work
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *         description: Document ID
+	 *     responses:
+	 *       200:
+	 *         description: Successful operation
+	 *       404:
+	 *         description: Document not found
+	 *       409:
+	 *         description: Document cannot be resumed from its current status
+	 *       500:
+	 *         description: Other errors
+	 */
+	private async resume(
+		options: DocumentIdHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		await this.documentService.resume(options.params.id, options.user.userId);
 		return {
 			payload: null,
 			status: HTTPCode.OK,

@@ -5,6 +5,7 @@ const DocumentsApiPath = {
 	PAUSE: "/:id/pause",
 	RESUME: "/:id/resume",
 	ROOT: "/",
+	UPLOAD_URL: "/:id/upload-url",
 } as const;
 
 export { DocumentsApiPath };

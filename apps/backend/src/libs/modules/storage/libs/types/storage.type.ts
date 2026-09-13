@@ -6,6 +6,7 @@ import {
 
 type Storage = {
 	deleteByPrefix(options: DeleteByPrefixRequest): Promise<void>;
+	downloadPageImage(key: string): Promise<Buffer>;
 	downloadToTempFolder(sourceKey: string): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;

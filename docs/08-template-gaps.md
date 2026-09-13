@@ -335,7 +335,7 @@ goal, not as the current state.
 
 `.env.example` exists in both apps, but it only covers what the template
 already needs: `PORT`, `HOST`, `NODE_ENV` and four database variables.
-Everything of ours — S3, Redis, the model key, `APP_MODE` — will have to be
+Everything of ours — S3, Redis, the model key — will have to be
 added with three edits at once (see the convict section in the architecture
 document).
 

@@ -7,6 +7,7 @@ const DatabaseTableName = {
 	PAGE_EVENT: "page_event",
 	PRESET: "preset",
 	TRANSCRIPTION: "transcription",
+	TRANSCRIPTION_CACHE: "transcription_cache",
 	USERS: "users",
 } as const;
 

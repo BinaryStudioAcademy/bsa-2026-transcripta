@@ -55,7 +55,7 @@ flowchart TB
 
     subgraph app["OUR CODE"]
         WEB["<b>apps/frontend</b> · React + Vite<br/>Redux Toolkit: slices + async thunks<br/>2 screens: upload and verification<br/><i>NO business logic</i>"]
-        API["<b>apps/backend</b> · Node + Fastify + BullMQ<br/>API and worker in ONE process<br/><i>APP_MODE = all | api | worker</i>"]
+        API["<b>apps/backend</b> · Node + Fastify + BullMQ<br/>API and queue worker in ONE process "]
         SH["<b>packages/shared</b> · types, enums, zod<br/><i>one set of schemas for both sides</i>"]
     end
 
@@ -124,7 +124,7 @@ but shared code that both sides import at build time.
 ## What matters here
 
 - **`apps/backend` is one process** hosting both the HTTP API and the queue
-  worker. They can be split apart with a single `APP_MODE` variable, but by
+  worker. They can be split apart into two instances of the same image, but by
   default it is one container.
 - **`packages/shared` is not a third service.** It is an npm workspace with
   types, enums and zod schemas; at runtime it does not exist as a separate

@@ -19,10 +19,13 @@ export {
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentIdRequestDto,
+	type DocumentUploadUrlRequestDto,
+	type DocumentUploadUrlResponseDto,
 } from "./libs/types/types.js";
 export {
 	DocumentCreateValidationSchema,
 	DocumentGetByIdParametersValidationSchema,
 	DocumentGetPagesQueryValidationSchema,
 	DocumentIdValidationSchema,
+	DocumentUploadUrlValidationSchema,
 } from "./libs/validation-schemas/validation-schemas.js";

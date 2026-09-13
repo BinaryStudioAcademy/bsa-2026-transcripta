@@ -1,5 +1,6 @@
 import {
 	create,
+	getUploadUrl,
 	ingest,
 	loadAll,
 	loadById,
@@ -12,6 +13,7 @@ import { actions } from "./documents.slice.js";
 const allActions = {
 	...actions,
 	create,
+	getUploadUrl,
 	ingest,
 	loadAll,
 	loadById,

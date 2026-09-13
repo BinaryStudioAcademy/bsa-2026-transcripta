@@ -1,9 +1,11 @@
 import { Link, LogoIcon } from "~/libs/components/components.js";
+import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
+	useLocation,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
 import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
@@ -19,17 +21,31 @@ const Sidebar: React.FC = () => {
 	const navigate = useNavigate();
 
 	const user = useAppSelector(selectUser);
+	const { pathname } = useLocation();
 
-	const handleSignOut = useCallback((): void => {
-		// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-		void navigate(AppRoute.SIGN_IN, {
-			flushSync: true,
-			replace: true,
-		});
+	const handleSignOut = useCallback(
+		(event: React.MouseEvent): void => {
+			if (pathname === AppRoute.DOCUMENTS_NEW) {
+				const confirmLeave = globalThis.confirm(UPLOAD_WARNING_MESSAGE);
 
-		dispatch(authActions.logout());
-		void storage.drop(StorageKey.TOKEN);
-	}, [dispatch, navigate]);
+				if (!confirmLeave) {
+					event.preventDefault();
+					event.nativeEvent.stopImmediatePropagation();
+					return;
+				}
+			}
+
+			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
+			void navigate(AppRoute.SIGN_IN, {
+				flushSync: true,
+				replace: true,
+			});
+
+			dispatch(authActions.logout());
+			void storage.drop(StorageKey.TOKEN);
+		},
+		[dispatch, navigate, pathname],
+	);
 
 	return (
 		<aside className="sidebar">

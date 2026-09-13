@@ -80,6 +80,7 @@ const Document: React.FC = () => {
 			{hasError && <p>Unable to load the document.</p>}
 			{currentDocument && (
 				<>
+					<Link to={AppRoute.DOCUMENTS}>← Back to Documents</Link>
 					<h1>{currentDocument.title}</h1>
 					<DocumentStatusBlock
 						documentId={currentDocument.id}
