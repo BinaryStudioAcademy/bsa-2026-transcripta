@@ -1,12 +1,9 @@
-import { startTransition } from "react";
-
 import { Button, StatusChip } from "~/libs/components/components.js";
 import { DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
-	useOptimistic,
 } from "~/libs/hooks/hooks.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
@@ -22,38 +19,24 @@ const DocumentStatusBlock: React.FC<Properties> = ({ documentId, status }) => {
 	const dispatch = useAppDispatch();
 
 	const pauseResumeDataStatus = useAppSelector(
-		({ documents }) => documents.pauseResumeDataStatus,
+		({ documents }) => documents.pauseResumeDataStatuses[documentId],
 	);
 
-	const [optimisticStatus, setOptimisticStatus] = useOptimistic(
-		status,
-		(_currentStatus, newStatus: ValueOf<typeof DocumentStatus>) => newStatus,
-	);
-
-	const isPaused = optimisticStatus === DocumentStatus.PAUSED;
+	const isPaused = status === DocumentStatus.PAUSED;
 	const isPauseResumeLoading = pauseResumeDataStatus === DataStatus.PENDING;
 
 	const handleToggleProcessing = useCallback(() => {
-		startTransition(async () => {
-			const targetStatus = isPaused
-				? DocumentStatus.PROCESSING
-				: DocumentStatus.PAUSED;
+		const action = isPaused ? documentActions.resume : documentActions.pause;
 
-			setOptimisticStatus(targetStatus);
-
-			await (isPaused
-				? dispatch(documentActions.resume(documentId))
-				: dispatch(documentActions.pause(documentId)));
-		});
-	}, [dispatch, documentId, isPaused, setOptimisticStatus]);
+		void dispatch(action(documentId));
+	}, [dispatch, documentId, isPaused]);
 
 	const showProcessingToggle =
-		optimisticStatus === DocumentStatus.PAUSED ||
-		optimisticStatus === DocumentStatus.PROCESSING;
+		status === DocumentStatus.PAUSED || status === DocumentStatus.PROCESSING;
 
 	return (
 		<>
-			<StatusChip status={optimisticStatus} />
+			<StatusChip status={status} />
 			{showProcessingToggle && (
 				<Button
 					isDisabled={isPauseResumeLoading}

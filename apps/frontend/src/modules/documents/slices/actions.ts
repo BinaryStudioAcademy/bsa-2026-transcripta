@@ -103,6 +103,7 @@ const resume = createAsyncThunk<number, number, AsyncThunkConfig>(
 		const { documentApi } = extra;
 
 		await documentApi.resume(id);
+
 		return id;
 	},
 	{ serializeError },

@@ -1,4 +1,4 @@
-import { createSlice, isAnyOf } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
@@ -17,7 +17,7 @@ type State = {
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: DataStatusValue;
 	documents: DocumentGetAllItemResponseDto[];
-	pauseResumeDataStatus: DataStatusValue;
+	pauseResumeDataStatuses: Record<number, DataStatusValue>;
 	requestedDocumentId: null | number;
 };
 
@@ -27,7 +27,7 @@ const initialState: State = {
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
 	documents: [],
-	pauseResumeDataStatus: DataStatus.IDLE,
+	pauseResumeDataStatuses: {},
 	requestedDocumentId: null,
 };
 
@@ -88,22 +88,46 @@ const { actions, name, reducer } = createSlice({
 			}
 		});
 		builder.addCase(pause.fulfilled, (state, action) => {
-			state.pauseResumeDataStatus = DataStatus.FULFILLED;
-			if (state.document && state.document.id === action.payload) {
+			delete state.pauseResumeDataStatuses[action.meta.arg];
+
+			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PAUSED;
 			}
 		});
 		builder.addCase(resume.fulfilled, (state, action) => {
-			state.pauseResumeDataStatus = DataStatus.FULFILLED;
-			if (state.document && state.document.id === action.payload) {
+			delete state.pauseResumeDataStatuses[action.meta.arg];
+
+			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PROCESSING;
 			}
 		});
-		builder.addMatcher(isAnyOf(pause.pending, resume.pending), (state) => {
-			state.pauseResumeDataStatus = DataStatus.PENDING;
+		builder.addCase(pause.pending, (state, action) => {
+			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.PENDING;
+
+			if (state.document && state.document.id === action.meta.arg) {
+				state.document.status = DocumentStatus.PAUSED;
+			}
 		});
-		builder.addMatcher(isAnyOf(pause.rejected, resume.rejected), (state) => {
-			state.pauseResumeDataStatus = DataStatus.REJECTED;
+		builder.addCase(resume.pending, (state, action) => {
+			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.PENDING;
+
+			if (state.document && state.document.id === action.meta.arg) {
+				state.document.status = DocumentStatus.PROCESSING;
+			}
+		});
+		builder.addCase(pause.rejected, (state, action) => {
+			delete state.pauseResumeDataStatuses[action.meta.arg];
+
+			if (state.document && state.document.id === action.meta.arg) {
+				state.document.status = DocumentStatus.PROCESSING;
+			}
+		});
+		builder.addCase(resume.rejected, (state, action) => {
+			delete state.pauseResumeDataStatuses[action.meta.arg];
+
+			if (state.document && state.document.id === action.meta.arg) {
+				state.document.status = DocumentStatus.PAUSED;
+			}
 		});
 	},
 	initialState,
