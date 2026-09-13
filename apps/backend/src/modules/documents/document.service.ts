@@ -4,6 +4,7 @@ import {
 	type DocumentCreateResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
+	DocumentValidationMessage,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
@@ -12,6 +13,7 @@ import { ForeignKeyViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
@@ -33,12 +35,12 @@ import {
 import {
 	DocumentErrorMessage,
 	DocumentStatus,
-	DocumentValidationMessage,
 	PageStatus,
 } from "./libs/enums/enums.js";
 import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentServiceDependencies,
 	type DocumentUploadUrlRequestDto,
 } from "./libs/types/types.js";
 
@@ -46,6 +48,7 @@ class DocumentService {
 	private documentRepository: DocumentRepository;
 	private logger: Logger;
 	private pageRepository: PageRepository;
+	private pageTranscribeQueue: PageTranscribeQueue;
 	private pdfPageProcessor: PDFPageProcessor;
 	private storage: BaseStorage;
 
@@ -53,20 +56,16 @@ class DocumentService {
 		documentRepository,
 		logger,
 		pageRepository,
+		pageTranscribeQueue,
 		pdfPageProcessor,
 		storage,
-	}: {
-		documentRepository: DocumentRepository;
-		logger: Logger;
-		pageRepository: PageRepository;
-		pdfPageProcessor: PDFPageProcessor;
-		storage: BaseStorage;
-	}) {
+	}: DocumentServiceDependencies) {
 		this.documentRepository = documentRepository;
 		this.logger = logger;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
 		this.storage = storage;
+		this.pageTranscribeQueue = pageTranscribeQueue;
 	}
 
 	private buildContextWords({
@@ -265,6 +264,27 @@ class DocumentService {
 			thumbKey: thumbnailKey,
 		});
 		await this.pageRepository.create(pageEntity);
+	}
+
+	private throwDocumentNotFoundError(): never {
+		throw new HTTPError({
+			message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+			status: HTTPCode.NOT_FOUND,
+		});
+	}
+
+	private throwInvalidStatusToPauseError(): never {
+		throw new HTTPError({
+			message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
+			status: HTTPCode.CONFLICT,
+		});
+	}
+
+	private throwInvalidStatusToResumeError(): never {
+		throw new HTTPError({
+			message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
+			status: HTTPCode.CONFLICT,
+		});
 	}
 
 	public async create({
@@ -656,6 +676,128 @@ class DocumentService {
 			});
 		} finally {
 			await clear();
+		}
+	}
+
+	public async pause(documentId: number, userId: number): Promise<void> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			documentId,
+			userId,
+		);
+
+		if (!document) {
+			this.throwDocumentNotFoundError();
+		}
+
+		const { status } = document.toObject();
+
+		if (status === DocumentStatus.PAUSED) {
+			return;
+		}
+
+		if (status !== DocumentStatus.PROCESSING) {
+			this.throwInvalidStatusToPauseError();
+		}
+
+		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
+			currentStatus: DocumentStatus.PROCESSING,
+			id: documentId,
+			ownerId: userId,
+			status: DocumentStatus.PAUSED,
+		});
+
+		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
+			const currentDocument = await this.documentRepository.findByIdAndOwnerId(
+				documentId,
+				userId,
+			);
+
+			if (!currentDocument) {
+				this.throwDocumentNotFoundError();
+			}
+
+			if (currentDocument.toObject().status === DocumentStatus.PAUSED) {
+				return;
+			}
+
+			this.throwInvalidStatusToPauseError();
+		}
+	}
+
+	public async resume(documentId: number, userId: number): Promise<void> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			documentId,
+			userId,
+		);
+
+		if (!document) {
+			this.throwDocumentNotFoundError();
+		}
+
+		const { status } = document.toObject();
+
+		if (status !== DocumentStatus.PAUSED) {
+			this.throwInvalidStatusToResumeError();
+		}
+
+		const pages = await this.pageRepository.findQueuedPages(documentId);
+
+		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
+			currentStatus: DocumentStatus.PAUSED,
+			id: documentId,
+			ownerId: userId,
+			status: DocumentStatus.PROCESSING,
+		});
+
+		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
+			const currentDocument = await this.documentRepository.findByIdAndOwnerId(
+				documentId,
+				userId,
+			);
+
+			if (!currentDocument) {
+				this.throwDocumentNotFoundError();
+			}
+
+			this.throwInvalidStatusToResumeError();
+		}
+
+		if (pages.length === EMPTY_COLLECTION_LENGTH) {
+			return;
+		}
+
+		try {
+			await Promise.all(
+				pages.map((page) => {
+					const { id, pageNo } = page.toObject();
+
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
+			);
+		} catch (error) {
+			await this.documentRepository.updateOwnedStatusFrom({
+				currentStatus: DocumentStatus.PROCESSING,
+				id: documentId,
+				ownerId: userId,
+				status: DocumentStatus.PAUSED,
+			});
+
+			const caughtErrorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setErrorMessage(
+				documentId,
+				`${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`,
+			);
+
+			throw new HTTPError({
+				message: DocumentErrorMessage.RESUME_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
 		}
 	}
 }
