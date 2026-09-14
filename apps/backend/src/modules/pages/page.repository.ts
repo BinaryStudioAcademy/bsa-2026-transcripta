@@ -98,6 +98,17 @@ class PageRepository {
 		return pages.map((page) => page.pageNo);
 	}
 
+	public async findQueuedPages(documentId: number): Promise<PageEntity[]> {
+		const pages = await this.pageModel
+			.query()
+			.where({ documentId })
+			.where("status", PageStatus.QUEUED)
+			.orderBy("page_no", "asc")
+			.execute();
+
+		return pages.map((page) => PageEntity.initialize(page));
+	}
+
 	public async updateFirstPendingPagesAsQueued(
 		documentId: number,
 		quantity: number,
