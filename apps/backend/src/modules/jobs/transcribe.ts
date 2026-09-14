@@ -433,8 +433,7 @@ const createTranscribeHandler =
 					});
 
 					await trx.from(DatabaseTableName.PAGE).where("id", pageId).update({
-						lastError: TranscribeFailureReason.BUDGET_EXCEEDED,
-						status: PageStatus.FAILED,
+						status: PageStatus.QUEUED,
 					});
 				});
 

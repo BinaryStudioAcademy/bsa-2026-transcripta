@@ -72,16 +72,21 @@ class DocumentRepository {
 		id: number,
 		ownerId: number,
 	): Promise<DocumentDetailsEntity | null> {
-		const document = await this.documentModel
-			.knex()
+		const knex = this.documentModel.knex();
+
+		const document = await knex
 			.select<DocumentDetailsRow>([
 				"dp.documentId as id",
 				"dp.title",
 				"dp.status",
 				"dp.pageCount",
 				"dp.cursorPageNo",
-				"dp.budgetUsd",
-				"dp.spentUsd",
+				knex.raw("round(dp.budget_usd, 2)::text as ??", ["budgetUsd"]),
+				knex.raw("round(dp.spent_usd, 2)::text as ??", ["spentUsd"]),
+				knex.raw(
+					"coalesce(round(dp.spent_usd / nullif(dp.budget_usd, 0) * 100, 1), 0)::float8 as ??",
+					["usedPct"],
+				),
 				"pr.id as presetId",
 				"pr.name as presetName",
 				"pr.version as presetVersion",

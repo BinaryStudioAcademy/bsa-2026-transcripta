@@ -22,16 +22,11 @@ type DocumentDetailsProperties = {
 	spentUsd: string;
 	status: DocumentStatusValue;
 	title: string;
+	usedPct: number;
 	verifiedPct: number;
 };
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
-
-const BUDGET_FRACTION_DIGITS = 2;
-const BUDGET_USED_PERCENT_MULTIPLIER = 100;
-const BUDGET_USED_PERCENT_ROUNDING_FACTOR = 10;
-const ZERO_BUDGET_LIMIT_USD = 0;
-const ZERO_BUDGET_USED_PERCENT = 0;
 
 class DocumentDetailsEntity {
 	private budgetUsd: string;
@@ -72,6 +67,8 @@ class DocumentDetailsEntity {
 
 	private title: string;
 
+	private usedPct: number;
+
 	private verifiedPct: number;
 
 	private constructor({
@@ -94,6 +91,7 @@ class DocumentDetailsEntity {
 		spentUsd,
 		status,
 		title,
+		usedPct,
 		verifiedPct,
 	}: DocumentDetailsProperties) {
 		this.budgetUsd = budgetUsd;
@@ -115,6 +113,7 @@ class DocumentDetailsEntity {
 		this.spentUsd = spentUsd;
 		this.status = status;
 		this.title = title;
+		this.usedPct = usedPct;
 		this.verifiedPct = verifiedPct;
 	}
 
@@ -124,32 +123,12 @@ class DocumentDetailsEntity {
 		return new DocumentDetailsEntity(properties);
 	}
 
-	private calculateUsedPct(): number {
-		const limitUsd = Number(this.budgetUsd);
-
-		if (limitUsd === ZERO_BUDGET_LIMIT_USD) {
-			return ZERO_BUDGET_USED_PERCENT;
-		}
-
-		const usedPct =
-			(Number(this.spentUsd) / limitUsd) * BUDGET_USED_PERCENT_MULTIPLIER;
-
-		return (
-			Math.round(usedPct * BUDGET_USED_PERCENT_ROUNDING_FACTOR) /
-			BUDGET_USED_PERCENT_ROUNDING_FACTOR
-		);
-	}
-
-	private formatMoney(value: string): string {
-		return Number(value).toFixed(BUDGET_FRACTION_DIGITS);
-	}
-
 	public toObject(): DocumentGetByIdResponseDto {
 		return {
 			budget: {
-				limitUsd: this.formatMoney(this.budgetUsd),
-				spentUsd: this.formatMoney(this.spentUsd),
-				usedPct: this.calculateUsedPct(),
+				limitUsd: this.budgetUsd,
+				spentUsd: this.spentUsd,
+				usedPct: this.usedPct,
 			},
 			cursorPageNo: this.cursorPageNo,
 			groundTruth: null,
