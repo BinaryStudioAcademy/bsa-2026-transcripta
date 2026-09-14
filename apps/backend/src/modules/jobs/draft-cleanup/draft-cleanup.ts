@@ -5,7 +5,7 @@ import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { DocumentRepository } from "~/modules/documents/document.repository.js";
 
 import { TWENTY_FOUR_HOURS_IN_MS } from "./libs/constants/constants.js";
-import { ErrorMessage } from "./libs/enums/enums.js";
+import { DocumentStatus, ErrorMessage } from "./libs/enums/enums.js";
 
 const createDraftCleanupHandler =
 	({
@@ -36,6 +36,12 @@ const createDraftCleanupHandler =
 			const documentId = draft.toObject().id;
 
 			try {
+				const currentDraft = await documentRepository.findById(documentId);
+
+				if (currentDraft?.toObject().status !== DocumentStatus.DRAFT) {
+					continue;
+				}
+
 				await storage.deleteByPrefix({
 					bucket: StorageBucket.UPLOADS,
 					prefix: `${StorageBucket.UPLOADS}/${documentId.toString()}/`,

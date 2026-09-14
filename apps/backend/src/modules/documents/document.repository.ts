@@ -68,6 +68,12 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
+	public async findById(id: number): Promise<DocumentEntity | null> {
+		const document = await this.documentModel.query().findById(id).execute();
+
+		return document ? DocumentEntity.initialize(document) : null;
+	}
+
 	public async findByIdAndOwnerId(
 		id: number,
 		ownerId: number,
