@@ -1,4 +1,3 @@
-// import headerLogo from "~/assets/img/logo.svg";
 import { Link, LogoIcon, ThemeToggle } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
