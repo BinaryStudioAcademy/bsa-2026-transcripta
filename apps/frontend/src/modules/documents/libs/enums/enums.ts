@@ -1,1 +1,1 @@
-export { DocumentsApiPath } from "@transcripta/shared";
+export { DocumentsApiPath, DocumentStatus } from "@transcripta/shared";
