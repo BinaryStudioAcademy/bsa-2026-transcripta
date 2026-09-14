@@ -2,9 +2,11 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
 	DocumentValidationMessage,
+	EMPTY_LENGTH,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
@@ -167,6 +169,47 @@ class DocumentService {
 		}
 
 		return { clear, filePath };
+	}
+
+	private async enqueueBudgetResumedPages(
+		documentId: number,
+		ownerId: number,
+	): Promise<void> {
+		try {
+			const pages = await this.pageRepository.findQueuedPages(documentId);
+
+			await Promise.all(
+				pages.map((page) => {
+					const { id, pageNo } = page.toObject();
+
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
+			);
+		} catch (error) {
+			await this.documentRepository.updateOwnedStatusFrom({
+				currentStatus: DocumentStatus.PROCESSING,
+				id: documentId,
+				ownerId,
+				status: DocumentStatus.BUDGET_STOP,
+			});
+
+			const caughtErrorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setErrorMessage(
+				documentId,
+				`${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`,
+			);
+
+			throw new HTTPError({
+				message: DocumentErrorMessage.RESUME_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
 	}
 
 	private extractLexiconIds(
@@ -719,7 +762,6 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
-
 	public async resume(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findByIdAndOwnerId(
 			documentId,
@@ -795,6 +837,33 @@ class DocumentService {
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
+	}
+
+	public async updateBudget(
+		id: number,
+		limitUsd: string,
+		ownerId: number,
+	): Promise<DocumentGetByIdBudgetResponseDto> {
+		const resumedRows = await DocumentModel.transaction(async (trx) => {
+			const updatedRows = await this.documentRepository.updateBudget(
+				{ id, limitUsd, ownerId },
+				trx,
+			);
+
+			if (updatedRows === EMPTY_LENGTH) {
+				this.throwDocumentNotFoundError();
+			}
+
+			return await this.documentRepository.resumeFromBudgetStop(id, trx);
+		});
+
+		if (resumedRows !== EMPTY_LENGTH) {
+			await this.enqueueBudgetResumedPages(id, ownerId);
+		}
+
+		const { budget } = await this.findById(id, ownerId);
+
+		return budget;
 	}
 }
 

@@ -1,4 +1,5 @@
 import {
+	DocumentBudgetUpdateValidationSchema,
 	type DocumentCreateRequestDto,
 	DocumentCreateValidationSchema,
 	type DocumentGetByIdParametersDto,
@@ -7,6 +8,7 @@ import {
 	DocumentGetPagesQueryValidationSchema,
 	type DocumentIdRequestDto,
 	DocumentIdValidationSchema,
+	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	DocumentUploadUrlValidationSchema,
 } from "@transcripta/shared";
@@ -96,6 +98,27 @@ import {
  *           type: array
  *           items:
  *             $ref: "#/components/schemas/DocumentGetAllItem"
+ *     DocumentBudgetResponse:
+ *       type: object
+ *       properties:
+ *         limitUsd:
+ *           type: string
+ *           example: "20.00"
+ *         spentUsd:
+ *           type: string
+ *           example: "10.03"
+ *         usedPct:
+ *           type: number
+ *           example: 50.2
+ *     DocumentUpdateBudgetRequest:
+ *       type: object
+ *       required:
+ *         - limitUsd
+ *       properties:
+ *         limitUsd:
+ *           type: string
+ *           pattern: "^\\d{1,6}(\\.\\d{1,4})?$"
+ *           example: "20.00"
  */
 type DocumentCreateOptions = APIHandlerOptions<{
 	body: DocumentCreateRequestDto;
@@ -114,6 +137,12 @@ type DocumentFindByIdOptions = APIHandlerOptions<{
 type DocumentFindPagesOptions = APIHandlerOptions<{
 	params: DocumentGetByIdParametersDto;
 	query: DocumentGetPagesQueryDto;
+	user: TokenPayload;
+}>;
+
+type DocumentUpdateBudgetOptions = APIHandlerOptions<{
+	body: DocumentUpdateBudgetDto;
+	params: DocumentIdRequestDto;
 	user: TokenPayload;
 }>;
 
@@ -196,6 +225,18 @@ class DocumentController extends BaseController {
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
 			preHandler: authGuard,
+		});
+
+		this.addRoute({
+			handler: (options) =>
+				this.updateBudget(options as DocumentUpdateBudgetOptions),
+			method: HTTPMethod.PATCH,
+			path: DocumentsApiPath.BY_ID_BUDGET,
+			preHandler: authGuard,
+			validation: {
+				body: DocumentBudgetUpdateValidationSchema,
+				params: DocumentIdValidationSchema,
+			},
 		});
 
 		this.addRoute({
@@ -495,6 +536,7 @@ class DocumentController extends BaseController {
 			status: HTTPCode.OK,
 		};
 	}
+
 	/**
 	 * @swagger
 	 * /documents/{id}/pause:
@@ -528,6 +570,7 @@ class DocumentController extends BaseController {
 			status: HTTPCode.OK,
 		};
 	}
+
 	/**
 	 * @swagger
 	 * /documents/{id}/resume:
@@ -558,6 +601,51 @@ class DocumentController extends BaseController {
 		await this.documentService.resume(options.params.id, options.user.userId);
 		return {
 			payload: null,
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/budget:
+	 *   patch:
+	 *     description: Set the spending limit and resume a budget-stopped document when the new limit exceeds what is already spent
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: "#/components/schemas/DocumentUpdateBudgetRequest"
+	 *     responses:
+	 *       200:
+	 *         description: Limit updated
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: "#/components/schemas/DocumentBudgetResponse"
+	 *       400:
+	 *         description: Invalid limit
+	 *       404:
+	 *         description: Document not found
+	 */
+	private async updateBudget(
+		options: DocumentUpdateBudgetOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.updateBudget(
+				options.params.id,
+				options.body.limitUsd,
+				options.user.userId,
+			),
 			status: HTTPCode.OK,
 		};
 	}

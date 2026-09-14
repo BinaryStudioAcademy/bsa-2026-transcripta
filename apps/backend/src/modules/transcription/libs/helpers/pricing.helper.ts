@@ -1,39 +1,21 @@
-import { MILLION } from "@transcripta/shared";
+import { MILLION, type ModelIdValue } from "@transcripta/shared";
 
-import { ModelProvider } from "../enums/enums.js";
-import { type ModelRate, type PricingRates } from "../types/types.js";
-import { resolveModelProvider } from "./resolve-model-provider.helper.js";
-
-const rateForModel = (rates: PricingRates, modelId: string): ModelRate => {
-	const provider = resolveModelProvider(modelId);
-
-	if (provider === ModelProvider.ANTHROPIC_DIRECT) {
-		return rates.anthropicDirect;
-	}
-
-	if (provider === ModelProvider.AMAZON) {
-		return rates.amazon;
-	}
-
-	return rates.anthropic;
-};
+import { MODEL_RATES } from "../constants/constants.js";
 
 const calculateTokenCost = ({
 	inputTokens,
 	modelId,
 	outputTokens,
-	rates,
 }: {
 	inputTokens: number;
-	modelId: string;
+	modelId: ModelIdValue;
 	outputTokens: number;
-	rates: PricingRates;
 }): number => {
-	const rate = rateForModel(rates, modelId);
+	const rate = MODEL_RATES[modelId];
 
 	return (
-		(inputTokens / MILLION) * rate.input +
-		(outputTokens / MILLION) * rate.output
+		(inputTokens / MILLION) * rate.inputUsdPerMillion +
+		(outputTokens / MILLION) * rate.outputUsdPerMillion
 	);
 };
 
