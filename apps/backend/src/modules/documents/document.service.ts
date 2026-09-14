@@ -758,42 +758,35 @@ class DocumentService {
 	}
 
 	public async resume(documentId: number, userId: number): Promise<void> {
-		const document = await this.documentRepository.findByIdAndOwnerId(
-			documentId,
-			userId,
-		);
+		const pages = await DocumentModel.transaction(async (trx) => {
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					documentId,
+					userId,
+					trx,
+				);
 
-		if (!document) {
-			this.throwDocumentNotFoundError();
-		}
-
-		const { status } = document.toObject();
-
-		if (status !== DocumentStatus.PAUSED) {
-			this.throwInvalidStatusToResumeError();
-		}
-
-		const pages = await this.pageRepository.findQueuedPages(documentId);
-
-		const affectedRows = await this.documentRepository.updateOwnedStatusFrom({
-			currentStatus: DocumentStatus.PAUSED,
-			id: documentId,
-			ownerId: userId,
-			status: DocumentStatus.PROCESSING,
-		});
-
-		if (affectedRows === EMPTY_COLLECTION_LENGTH) {
-			const currentDocument = await this.documentRepository.findByIdAndOwnerId(
-				documentId,
-				userId,
-			);
-
-			if (!currentDocument) {
+			if (!document) {
 				this.throwDocumentNotFoundError();
 			}
 
-			this.throwInvalidStatusToResumeError();
-		}
+			if (document.toObject().status !== DocumentStatus.PAUSED) {
+				this.throwInvalidStatusToResumeError();
+			}
+
+			await this.documentRepository.updateStatus(
+				documentId,
+				DocumentStatus.PROCESSING,
+				trx,
+			);
+			await this.pageRepository.updateFirstPendingPagesAsQueued(
+				documentId,
+				PAGES_TO_QUEUE,
+				trx,
+			);
+
+			return await this.pageRepository.findQueuedPages(documentId, trx);
+		});
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
 			return;
