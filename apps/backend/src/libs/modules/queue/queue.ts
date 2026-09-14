@@ -3,9 +3,10 @@ import { Redis } from "ioredis";
 import { config } from "~/libs/modules/config/config.js";
 import { logger } from "~/libs/modules/logger/logger.js";
 import { storage } from "~/libs/modules/storage/storage.js";
-import { createTranscribeHandler } from "~/modules/jobs/transcribe.js";
+import { createTranscribeHandler } from "~/modules/jobs/jobs.js";
 import { transcriptionService } from "~/modules/transcription/transcription.js";
 
+import { documentCleanupQueue } from "./document-cleanup/document-cleanup.js";
 import { REDIS_CONNECT_TIMEOUT_MS } from "./libs/constants/constants.js";
 import { PageTranscribeQueue } from "./page-transcribe-queue.module.js";
 import { QueueRegistry } from "./queue-registry.module.js";
@@ -27,10 +28,15 @@ const pageTranscribeQueue = new PageTranscribeQueue({
 		transcriptionService,
 	}),
 });
+
 const queueRegistry = new QueueRegistry({
 	connection: redis,
 	logger,
-	queues: [pageTranscribeQueue],
+	queues: [pageTranscribeQueue, documentCleanupQueue],
 });
 
 export { pageTranscribeQueue, queueRegistry };
+export {
+	DocumentCleanupQueue,
+	documentCleanupQueue,
+} from "./document-cleanup/document-cleanup.js";
