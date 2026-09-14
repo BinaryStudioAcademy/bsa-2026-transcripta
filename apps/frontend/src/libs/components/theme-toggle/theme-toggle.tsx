@@ -7,9 +7,9 @@ const ThemeToggle: React.FC = () => {
 
 	return (
 		<Button
+			isSmall
 			label={theme === Theme.DARK ? "Day" : "Night"}
 			onClick={toggleTheme}
-			type="button"
 		/>
 	);
 };
