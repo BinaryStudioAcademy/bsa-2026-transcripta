@@ -7,6 +7,7 @@ import {
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
 
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
 
@@ -34,6 +35,8 @@ import { type PageRepository } from "./page.repository.js";
 class PageService {
 	private documentRepository: DocumentRepository;
 
+	private logger: Logger;
+
 	private pageEventRepository: PageEventRepository;
 
 	private pageRepository: PageRepository;
@@ -44,12 +47,14 @@ class PageService {
 
 	public constructor({
 		documentRepository,
+		logger,
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
 		transcriptionRepository,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
+		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
@@ -132,11 +137,29 @@ class PageService {
 			});
 		}
 
-		await this.pageTranscribeQueue.add({
-			documentId: page.documentId,
-			pageId: page.id,
-			pageNo: page.pageNo,
-		});
+		try {
+			await this.pageTranscribeQueue.add({
+				documentId: page.documentId,
+				pageId: page.id,
+				pageNo: page.pageNo,
+			});
+		} catch (error) {
+			await this.pageRepository.restoreFailedPageAfterReprocessFailure(
+				page.id,
+				page.attempts,
+				page.lastError,
+			);
+
+			this.logger.error(
+				`Failed to enqueue reprocess job for page ${String(page.id)}`,
+				{ error },
+			);
+
+			throw new HTTPError({
+				message: PageErrorMessage.REPROCESS_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
 	}
 
 	public async verify(
