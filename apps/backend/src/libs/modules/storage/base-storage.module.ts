@@ -2,6 +2,7 @@ import {
 	DeleteObjectsCommand,
 	GetObjectCommand,
 	ListObjectsV2Command,
+	NoSuchKey,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -14,6 +15,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
+import { ObjectNotUploadedError } from "~/libs/exceptions/exceptions.js";
 import { type Config } from "~/libs/modules/config/config.js";
 
 import {
@@ -187,6 +189,13 @@ class BaseStorage implements Storage {
 			};
 		} catch (error) {
 			await clear();
+
+			if (error instanceof NoSuchKey) {
+				throw new ObjectNotUploadedError(
+					StorageErrorMessage.OBJECT_NOT_UPLOADED,
+				);
+			}
+
 			throw error;
 		}
 	}
