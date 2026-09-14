@@ -2,6 +2,7 @@ export { type CacheKeyParts } from "./cache-key-parts.type.js";
 export { type CallOutcome } from "./call-outcome.type.js";
 export { type Dependencies } from "./dependencies.type.js";
 export { type EnqueueTranscribeRetry } from "./enqueue-transcribe-retry.type.js";
+export { type FailedResolvedTranscription } from "./failed-resolved-transcription.type.js";
 export { type ParseResult } from "./parse-result.type.js";
 export { type PresetHashParts } from "./preset-hash-parts.type.js";
 export { type ResolveOptions } from "./resolve-options.type.js";
