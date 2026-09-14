@@ -91,7 +91,7 @@ const Verification: React.FC = () => {
 	}, [document, dispatch]);
 
 	useEffect(() => {
-		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES) {
+		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES || isPagesLoading) {
 			return;
 		}
 
@@ -112,7 +112,7 @@ const Verification: React.FC = () => {
 				},
 			}),
 		);
-	}, [cursorPageNo, document, dispatch, pagesForStrip]);
+	}, [cursorPageNo, document, dispatch, isPagesLoading, pagesForStrip]);
 
 	useEffect(() => {
 		if (currentPage) {
