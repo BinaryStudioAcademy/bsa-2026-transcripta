@@ -1,7 +1,7 @@
 import convict, { type Config as LibraryConfig } from "convict";
 import { config } from "dotenv";
 
-import { AppEnvironment } from "~/libs/enums/enums.js";
+import { AppEnvironment, ModelId } from "~/libs/enums/enums.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import {
@@ -67,10 +67,10 @@ class BaseConfig implements Config {
 			},
 			BEDROCK: {
 				MODEL_ID: {
-					default: "us.anthropic.claude-sonnet-4-6",
+					default: ModelId.CLAUDE_SONNET_4_6_BEDROCK,
 					doc: "Bedrock inference profile id — never a bare model id",
 					env: "BEDROCK_MODEL_ID",
-					format: String,
+					format: Object.values(ModelId),
 				},
 				REGION: {
 					default: "us-east-1",
@@ -102,44 +102,6 @@ class BaseConfig implements Config {
 					default: null,
 					doc: "Database pool min count",
 					env: "DB_POOL_MIN",
-					format: Number,
-				},
-			},
-			PRICING: {
-				AMAZON_INPUT: {
-					default: 0.8,
-					doc: "USD per million input tokens (Amazon Bedrock Nova)",
-					env: "PRICING_AMAZON_INPUT",
-					format: Number,
-				},
-				AMAZON_OUTPUT: {
-					default: 3.2,
-					doc: "USD per million output tokens (Amazon Bedrock Nova)",
-					env: "PRICING_AMAZON_OUTPUT",
-					format: Number,
-				},
-				ANTHROPIC_DIRECT_INPUT: {
-					default: 3,
-					doc: "USD per million input tokens (Anthropic direct)",
-					env: "PRICING_ANTHROPIC_DIRECT_INPUT",
-					format: Number,
-				},
-				ANTHROPIC_DIRECT_OUTPUT: {
-					default: 15,
-					doc: "USD per million output tokens (Anthropic direct)",
-					env: "PRICING_ANTHROPIC_DIRECT_OUTPUT",
-					format: Number,
-				},
-				ANTHROPIC_INPUT: {
-					default: 3,
-					doc: "USD per million input tokens (Anthropic via Bedrock)",
-					env: "PRICING_ANTHROPIC_INPUT",
-					format: Number,
-				},
-				ANTHROPIC_OUTPUT: {
-					default: 15,
-					doc: "USD per million output tokens (Anthropic via Bedrock)",
-					env: "PRICING_ANTHROPIC_OUTPUT",
 					format: Number,
 				},
 			},
