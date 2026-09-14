@@ -23,7 +23,10 @@ import {
 	type ValidationSchema,
 } from "~/libs/types/types.js";
 
-import { DEFAULT_VALIDATION_ERROR_MESSAGE } from "./libs/constants/constants.js";
+import {
+	DEFAULT_VALIDATION_ERROR_MESSAGE,
+	INVALID_JSON_BODY_ERROR_MESSAGE,
+} from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
 	type ServerApplicationApi,
@@ -115,6 +118,21 @@ class BaseServerApplication implements ServerApplication {
 					};
 
 					return reply.status(error.status).send(response);
+				}
+
+				if (
+					("statusCode" in error &&
+						error.statusCode === HTTPCode.BAD_REQUEST) ||
+					error instanceof SyntaxError
+				) {
+					this.logger.error(`[Bad Request]: ${error.message}`);
+
+					const response: ServerCommonErrorResponse = {
+						errorType: ServerErrorType.COMMON,
+						message: INVALID_JSON_BODY_ERROR_MESSAGE,
+					};
+
+					return reply.status(HTTPCode.BAD_REQUEST).send(response);
 				}
 
 				this.logger.error(error.message);
