@@ -1,5 +1,6 @@
 const DocumentErrorMessage = {
 	CURRENTLY_INGESTING: "The document is currently being ingested",
+	DOCUMENT_NOT_UPLOADED: "The document has not been uploaded",
 	DOWNLOAD_FAILED: "Failed to download the document",
 	DRAFTS_NOT_CLEAN: "Failed to clean up abandoned drafts",
 	EXCEEDED_MAX_PAGES: "The document has too many pages (over 500).",
@@ -9,6 +10,7 @@ const DocumentErrorMessage = {
 	NOT_DRAFT: "The document is not in draft status",
 	NOT_FOUND: "Document not found",
 	PAGE_UPLOAD_FAILED: "Failed to upload a page",
+	RESUME_FAILED: "Failed to resume the document",
 } as const;
 
 export { DocumentErrorMessage };
