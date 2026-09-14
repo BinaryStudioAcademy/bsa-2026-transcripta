@@ -241,8 +241,8 @@ class DocumentService {
 			});
 		}
 	}
-  
-  private async enqueueTranscriptionPages(
+
+	private async enqueueTranscriptionPages(
 		documentId: number,
 		pages: PageEntity[],
 	): Promise<void> {
@@ -257,7 +257,7 @@ class DocumentService {
 				});
 			}),
 		);
-  }
+	}
 
 	private extractLexiconIds(
 		contextUsed: null | Record<string, unknown>,
