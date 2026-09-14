@@ -22,7 +22,7 @@ import {
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectVerificationDataStatus,
-	VerifyPageRequestDto,
+	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
 import {
