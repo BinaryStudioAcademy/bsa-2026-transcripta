@@ -5,7 +5,7 @@ const DocumentValidationMessage = {
 	DOCUMENT_MAX_FILE_BYTES:
 		"The file exceeds the maximum allowed size (500 MB).",
 	DOCUMENT_NOT_FOUND: "Document not found.",
-	FILE_NAME_INVALID_NAME: "Unsupported type. PDFs and image archives only.",
+	FILE_NAME_INVALID_NAME: "Unsupported file type. PDF files only.",
 	FILE_NAME_REQUIRE: "File name is required.",
 	INVALID_STATUS_TO_PAUSE: "Document must be processing to be paused",
 	INVALID_STATUS_TO_RESUME: "Document must be paused to be resumed",
