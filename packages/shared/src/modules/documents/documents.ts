@@ -13,6 +13,7 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
@@ -20,10 +21,12 @@ export {
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentIdRequestDto,
+	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
 } from "./libs/types/types.js";
 export {
+	DocumentBudgetUpdateValidationSchema,
 	DocumentCreateValidationSchema,
 	DocumentGetByIdParametersValidationSchema,
 	DocumentGetPagesQueryValidationSchema,

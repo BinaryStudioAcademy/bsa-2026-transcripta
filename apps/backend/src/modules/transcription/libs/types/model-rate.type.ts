@@ -1,6 +1,6 @@
 type ModelRate = {
-	input: number;
-	output: number;
+	inputUsdPerMillion: number;
+	outputUsdPerMillion: number;
 };
 
 export { type ModelRate };

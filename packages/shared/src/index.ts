@@ -3,6 +3,7 @@ export {
 	APIPath,
 	AppEnvironment,
 	ContentType,
+	ModelId,
 	ServerErrorType,
 } from "./libs/enums/enums.js";
 export { HTTPError, ValidationError } from "./libs/exceptions/exceptions.js";
@@ -18,6 +19,7 @@ export {
 } from "./libs/modules/http/http.js";
 export { type Storage } from "./libs/modules/storage/storage.js";
 export {
+	type ModelIdValue,
 	type ServerCommonErrorResponse,
 	type ServerErrorDetail,
 	type ServerErrorResponse,
@@ -31,6 +33,7 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
@@ -38,9 +41,11 @@ export {
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentIdRequestDto,
+	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
 	BYTES_IN_KILOBYTE,
+	DocumentBudgetUpdateValidationSchema,
 	DocumentCreateValidationSchema,
 	DocumentGetByIdParametersValidationSchema,
 	DocumentGetPagesQueryValidationSchema,
