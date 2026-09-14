@@ -104,6 +104,15 @@ const { actions, name, reducer } = createSlice({
 	initialState,
 	name: "pages",
 	reducers: {
+		reset: (state) => {
+			state.byId = {};
+			state.idsByPageNo = {};
+			state.cursorPageNo = 0;
+			state.dataStatus = DataStatus.IDLE;
+			state.rollback = {};
+			state.verificationDataStatus = DataStatus.IDLE;
+		},
+
 		setCursorPageNo: (state, action: PayloadAction<number>) => {
 			state.cursorPageNo = action.payload;
 		},

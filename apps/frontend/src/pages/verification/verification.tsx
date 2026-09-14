@@ -79,6 +79,8 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		dispatch(pageActions.reset());
+
 		if (document && document.id === documentId) {
 			return;
 		}
