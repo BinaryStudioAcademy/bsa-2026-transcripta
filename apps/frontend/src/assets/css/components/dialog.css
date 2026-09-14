@@ -9,7 +9,7 @@
 
 .tx-dialog {
 	width: min(440px, 92%);
-	padding: 20px;
+	padding: var(--sp-5);
 	background: var(--surface);
 	border: 1px solid var(--hairline);
 	border-radius: var(--r-lg);
@@ -17,13 +17,13 @@
 }
 
 .tx-dialog-title {
-	margin: 0 0 8px;
+	margin: 0 0 var(--sp-2);
 	font: 600 var(--fs-xl) / var(--lh-tight) var(--font-display);
 }
 
 .tx-dialog-actions {
 	display: flex;
-	gap: 8px;
+	gap: var(--sp-2);
 	justify-content: flex-end;
-	margin-top: 16px;
+	margin-top: var(--sp-4);
 }
