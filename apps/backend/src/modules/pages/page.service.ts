@@ -195,6 +195,11 @@ class PageService {
 					trx,
 				);
 
+				await this.documentRepository.markDoneIfAllPagesClosed(
+					page.documentId,
+					trx,
+				);
+
 				return await this.buildVerifyResponse(
 					{
 						documentId: page.documentId,
