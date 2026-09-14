@@ -20,6 +20,7 @@ type DocumentDetailsRow = {
 	spentUsd: string;
 	status: DocumentStatusValue;
 	title: string;
+	usedPct: number;
 	verifiedPct: number;
 };
 

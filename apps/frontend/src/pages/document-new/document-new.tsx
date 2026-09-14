@@ -85,6 +85,12 @@ const DocumentNew: React.FC = () => {
 
 	const isBusy = isUploading || isZipProcessing;
 
+	useEffect(() => {
+		(
+			globalThis as unknown as Window & { __IS_UPLOADING__?: boolean }
+		).__IS_UPLOADING__ = isBusy;
+	}, [isBusy]);
+
 	const blocker = useBlocker(
 		({ currentLocation, nextLocation }) =>
 			isBusy && currentLocation.pathname !== nextLocation.pathname,

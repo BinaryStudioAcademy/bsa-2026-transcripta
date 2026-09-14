@@ -2,15 +2,21 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
 	DocumentValidationMessage,
+	EMPTY_LENGTH,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
 import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
+import {
+	ObjectNotUploadedError,
+	PDFTimeoutError,
+} from "~/libs/exceptions/exceptions.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
@@ -177,18 +183,63 @@ class DocumentService {
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
-			const caughtErrorMessage =
-				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.DOWNLOAD_FAILED}: ${caughtErrorMessage}`;
+			const isObjectNotUploaded = error instanceof ObjectNotUploadedError;
+			const finalErrorMessage = isObjectNotUploaded
+				? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
+				: DocumentErrorMessage.DOWNLOAD_FAILED;
+			const statusCode = isObjectNotUploaded
+				? HTTPCode.NOT_FOUND
+				: HTTPCode.INTERNAL_SERVER_ERROR;
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
 				message: finalErrorMessage,
-				status: HTTPCode.INTERNAL_SERVER_ERROR,
+				status: statusCode,
 			});
 		}
 
 		return { clear, filePath };
+	}
+
+	private async enqueueBudgetResumedPages(
+		documentId: number,
+		ownerId: number,
+	): Promise<void> {
+		try {
+			const pages = await this.pageRepository.findQueuedPages(documentId);
+
+			await Promise.all(
+				pages.map((page) => {
+					const { id, pageNo } = page.toObject();
+
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
+			);
+		} catch (error) {
+			await this.documentRepository.updateOwnedStatusFrom({
+				currentStatus: DocumentStatus.PROCESSING,
+				id: documentId,
+				ownerId,
+				status: DocumentStatus.BUDGET_STOP,
+			});
+
+			const caughtErrorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setErrorMessage(
+				documentId,
+				`${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`,
+			);
+
+			throw new HTTPError({
+				message: DocumentErrorMessage.RESUME_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
 	}
 
 	private extractLexiconIds(
@@ -222,12 +273,26 @@ class DocumentService {
 		filePath: string;
 		page: number;
 	}): Promise<void> {
+		let pngPath: string;
+		try {
+			pngPath = await this.pdfPageProcessor.convertPageToPNG(filePath, page);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			const statusCode =
+				error instanceof PDFTimeoutError
+					? HTTPCode.GATEWAY_TIMEOUT
+					: HTTPCode.UNPROCESSED_ENTITY;
+
+			await this.documentRepository.setError(documentId, errorMessage);
+			throw new HTTPError({
+				message: errorMessage,
+				status: statusCode,
+			});
+		}
+
 		const { isBlank, pageImage, pageThumbnail } =
-			await this.pdfPageProcessor.processPage(
-				filePath,
-				page,
-				blankStdevThreshold ?? null,
-			);
+			await this.pdfPageProcessor.processPage(pngPath, blankStdevThreshold);
 
 		let imageKey: string;
 		let thumbnailKey: string;
@@ -241,14 +306,12 @@ class DocumentService {
 			});
 			imageKey = uploadResult.imageKey;
 			thumbnailKey = uploadResult.thumbnailKey;
-		} catch (error) {
-			const caughtErrorMessage =
-				error instanceof Error ? error.message : String(error);
-			const finalErrorMessage = `${DocumentErrorMessage.PAGE_UPLOAD_FAILED}: ${caughtErrorMessage}`;
+		} catch {
+			const errorMessage = DocumentErrorMessage.PAGE_UPLOAD_FAILED;
 
-			await this.documentRepository.setError(documentId, finalErrorMessage);
+			await this.documentRepository.setError(documentId, errorMessage);
 			throw new HTTPError({
-				message: finalErrorMessage,
+				message: errorMessage,
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
@@ -618,7 +681,19 @@ class DocumentService {
 		);
 
 		try {
-			const pageCount = await this.pdfPageProcessor.getPageCount(filePath);
+			let pageCount: number;
+			try {
+				pageCount = await this.pdfPageProcessor.getPageCount(filePath);
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+
+				await this.documentRepository.setError(documentId, errorMessage);
+				throw new HTTPError({
+					message: errorMessage,
+					status: HTTPCode.UNPROCESSED_ENTITY,
+				});
+			}
 
 			if (pageCount > MAX_DOCUMENT_PAGES) {
 				await this.documentRepository.setError(
@@ -723,7 +798,6 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
-
 	public async resume(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findByIdAndOwnerId(
 			documentId,
@@ -799,6 +873,33 @@ class DocumentService {
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
+	}
+
+	public async updateBudget(
+		id: number,
+		limitUsd: string,
+		ownerId: number,
+	): Promise<DocumentGetByIdBudgetResponseDto> {
+		const resumedRows = await DocumentModel.transaction(async (trx) => {
+			const updatedRows = await this.documentRepository.updateBudget(
+				{ id, limitUsd, ownerId },
+				trx,
+			);
+
+			if (updatedRows === EMPTY_LENGTH) {
+				this.throwDocumentNotFoundError();
+			}
+
+			return await this.documentRepository.resumeFromBudgetStop(id, trx);
+		});
+
+		if (resumedRows !== EMPTY_LENGTH) {
+			await this.enqueueBudgetResumedPages(id, ownerId);
+		}
+
+		const { budget } = await this.findById(id, ownerId);
+
+		return budget;
 	}
 }
 

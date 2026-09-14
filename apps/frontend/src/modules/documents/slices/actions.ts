@@ -111,6 +111,18 @@ const loadById = createAsyncThunk<
 	{ serializeError },
 );
 
+const pause = createAsyncThunk<number, number, AsyncThunkConfig>(
+	`${sliceName}/pause`,
+	async (id, { extra }) => {
+		const { documentApi } = extra;
+
+		await documentApi.pause(id);
+
+		return id;
+	},
+	{ serializeError },
+);
+
 const pollDocumentById = createAsyncThunk<
 	DocumentGetByIdResponseDto,
 	number,
@@ -120,6 +132,18 @@ const pollDocumentById = createAsyncThunk<
 	(id, { extra }) => {
 		const { documentApi } = extra;
 		return documentApi.getById(id);
+	},
+	{ serializeError },
+);
+
+const resume = createAsyncThunk<number, number, AsyncThunkConfig>(
+	`${sliceName}/resume`,
+	async (id, { extra }) => {
+		const { documentApi } = extra;
+
+		await documentApi.resume(id);
+
+		return id;
 	},
 	{ serializeError },
 );
@@ -210,8 +234,10 @@ export {
 	ingest,
 	loadAll,
 	loadById,
+	pause,
 	pollDocumentById,
 	remove,
+	resume,
 	startPolling,
 	stopPolling,
 };

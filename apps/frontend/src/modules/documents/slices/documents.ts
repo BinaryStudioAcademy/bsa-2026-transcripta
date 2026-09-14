@@ -4,8 +4,10 @@ import {
 	ingest,
 	loadAll,
 	loadById,
+	pause,
 	pollDocumentById,
 	remove,
+	resume,
 	startPolling,
 	stopPolling,
 } from "./actions.js";
@@ -18,8 +20,10 @@ const allActions = {
 	ingest,
 	loadAll,
 	loadById,
+	pause,
 	pollDocumentById,
 	remove,
+	resume,
 	startPolling,
 	stopPolling,
 };
