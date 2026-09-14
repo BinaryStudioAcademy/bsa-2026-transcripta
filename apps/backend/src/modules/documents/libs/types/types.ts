@@ -1,5 +1,6 @@
 export { type DocumentDeleteOptions } from "./document-delete-options.type.js";
 export { type DocumentStatusValue } from "./document-status-value.type.js";
+export { type DocumentUpdateBudgetPayload } from "./document-update-budget-payload.type.js";
 export { type DocumentUpdateDraftMetadataPayload } from "./document-update-draft-metadata-payload.type.js";
 export { type LexiconRow } from "./lexicon-row.type.js";
 

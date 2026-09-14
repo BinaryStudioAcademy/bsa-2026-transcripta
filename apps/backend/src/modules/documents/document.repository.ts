@@ -10,6 +10,7 @@ import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
 import {
+	type DocumentUpdateBudgetPayload,
 	type DocumentUpdateDraftMetadataPayload,
 	type LexiconRow,
 } from "./libs/types/types.js";
@@ -199,11 +200,34 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
+	public async resumeFromBudgetStop(
+		id: number,
+		trx: Transaction,
+	): Promise<number> {
+		return await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.PROCESSING })
+			.where({ id, status: DocumentStatus.BUDGET_STOP })
+			.whereColumn("budgetUsd", ">", "spentUsd")
+			.execute();
+	}
+
 	public async setError(id: number, errorMessage: string): Promise<void> {
 		await this.documentModel
 			.query()
 			.patch({ errorMessage, status: DocumentStatus.FAILED })
 			.where({ id })
+			.execute();
+	}
+
+	public async updateBudget(
+		{ id, limitUsd, ownerId }: DocumentUpdateBudgetPayload,
+		trx: Transaction,
+	): Promise<number> {
+		return await this.documentModel
+			.query(trx)
+			.patch({ budgetUsd: limitUsd })
+			.where({ id, ownerId })
 			.execute();
 	}
 

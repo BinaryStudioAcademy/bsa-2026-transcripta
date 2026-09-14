@@ -2,8 +2,10 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
+	EMPTY_LENGTH,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
@@ -657,6 +659,32 @@ class DocumentService {
 		} finally {
 			await clear();
 		}
+	}
+
+	public async updateBudget(
+		id: number,
+		limitUsd: string,
+		ownerId: number,
+	): Promise<DocumentGetByIdBudgetResponseDto> {
+		await DocumentModel.transaction(async (trx) => {
+			const updatedRows = await this.documentRepository.updateBudget(
+				{ id, limitUsd, ownerId },
+				trx,
+			);
+
+			if (updatedRows === EMPTY_LENGTH) {
+				throw new HTTPError({
+					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			await this.documentRepository.resumeFromBudgetStop(id, trx);
+		});
+
+		const { budget } = await this.findById(id, ownerId);
+
+		return budget;
 	}
 }
 
