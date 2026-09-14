@@ -5,8 +5,11 @@ import {
 	loadAll,
 	loadById,
 	pause,
+	pollDocumentById,
 	remove,
 	resume,
+	startPolling,
+	stopPolling,
 } from "./actions.js";
 import { actions } from "./documents.slice.js";
 
@@ -18,8 +21,11 @@ const allActions = {
 	loadAll,
 	loadById,
 	pause,
+	pollDocumentById,
 	remove,
 	resume,
+	startPolling,
+	stopPolling,
 };
 
 export { allActions as actions };
