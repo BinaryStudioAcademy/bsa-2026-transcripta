@@ -4,10 +4,12 @@ import { config } from "~/libs/modules/config/config.js";
 import { logger } from "~/libs/modules/logger/logger.js";
 import { storage } from "~/libs/modules/storage/storage.js";
 import { createTranscribeHandler } from "~/modules/jobs/jobs.js";
+import { TRANSCRIBE_RETRY_DELAY_MS } from "~/modules/jobs/libs/constants/constants.js";
 import { transcriptionService } from "~/modules/transcription/transcription.js";
 
 import { documentCleanupQueue } from "./document-cleanup/document-cleanup.js";
 import { REDIS_CONNECT_TIMEOUT_MS } from "./libs/constants/constants.js";
+import { type PageTranscribeJobData } from "./libs/types/types.js";
 import { PageTranscribeQueue } from "./page-transcribe-queue.module.js";
 import { QueueRegistry } from "./queue-registry.module.js";
 
@@ -19,10 +21,19 @@ const redis = new Redis(config.ENV.REDIS.URL, {
 	retryStrategy: () => null,
 });
 
-const pageTranscribeQueue = new PageTranscribeQueue({
+let pageTranscribeQueue: PageTranscribeQueue;
+
+const enqueueRetry = async (data: PageTranscribeJobData): Promise<void> => {
+	await pageTranscribeQueue.add(data, {
+		delay: TRANSCRIBE_RETRY_DELAY_MS,
+	});
+};
+
+pageTranscribeQueue = new PageTranscribeQueue({
 	logger,
 	processor: createTranscribeHandler({
 		config,
+		enqueueRetry,
 		logger,
 		storage,
 		transcriptionService,
