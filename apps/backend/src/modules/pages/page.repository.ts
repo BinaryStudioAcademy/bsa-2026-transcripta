@@ -133,6 +133,26 @@ class PageRepository {
 		return updatedRows > EMPTY_LENGTH;
 	}
 
+	public async restoreFailedPageAfterReprocessFailure(
+		pageId: number,
+		attempts: number,
+		lastError: null | string,
+	): Promise<void> {
+		await this.pageModel
+			.query()
+			.patch({
+				attempts,
+				lastError,
+				status: PageStatus.FAILED,
+			})
+			.where({
+				attempts: EMPTY_LENGTH,
+				id: pageId,
+				status: PageStatus.QUEUED,
+			})
+			.execute();
+	}
+
 	public async updateFirstPendingPagesAsQueued(
 		documentId: number,
 		quantity: number,
