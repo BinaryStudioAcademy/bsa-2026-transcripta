@@ -7,6 +7,8 @@ const DocumentValidationMessage = {
 	DOCUMENT_NOT_FOUND: "Document not found.",
 	FILE_NAME_INVALID_NAME: "Unsupported type. PDFs and image archives only.",
 	FILE_NAME_REQUIRE: "File name is required.",
+	INVALID_STATUS_TO_PAUSE: "Document must be processing to be paused",
+	INVALID_STATUS_TO_RESUME: "Document must be paused to be resumed",
 	LIMIT_USD_INVALID:
 		"Limit must be a non-negative amount with up to 4 decimal places",
 	PAGE_FROM_POSITIVE: "Page from must be a positive integer",
@@ -14,6 +16,7 @@ const DocumentValidationMessage = {
 	PAGE_LIMIT_POSITIVE: "Page limit must be a positive integer",
 	PRESET_ID_REQUIRE: "Preset ID is required.",
 	PRESET_NOT_FOUND: "Preset not found.",
+	RESUME_FAILED: "Failed to resume document processing",
 	TITLE_REQUIRE: "Title is required.",
 	USER_NOT_FOUND: "User not found.",
 } as const;
