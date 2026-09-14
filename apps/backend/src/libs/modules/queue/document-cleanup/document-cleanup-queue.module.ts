@@ -5,7 +5,7 @@ import { type Logger } from "~/libs/modules/logger/logger.js";
 import { BaseQueue } from "../base-queue.module.js";
 import { QueueName } from "../libs/enums/enums.js";
 import {
-	DOCUMENT_CLEANUP_JOB_ATTEMPS,
+	DOCUMENT_CLEANUP_JOB_ATTEMPTS,
 	ONE_HOUR_IN_MS,
 } from "./libs/constants/constants.js";
 
@@ -30,7 +30,7 @@ class DocumentCleanupQueue extends BaseQueue<null> {
 				every: ONE_HOUR_IN_MS,
 			},
 			{
-				attempts: DOCUMENT_CLEANUP_JOB_ATTEMPS,
+				attempts: DOCUMENT_CLEANUP_JOB_ATTEMPTS,
 			},
 		);
 	}
