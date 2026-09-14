@@ -1,5 +1,11 @@
-import { DocumentStatus, EMPTY_LENGTH, PageStatus } from "@transcripta/shared";
+import {
+	DocumentStatus,
+	EMPTY_LENGTH,
+	HTTPCode,
+	PageStatus,
+} from "@transcripta/shared";
 import { type Job } from "bullmq";
+import { type Transaction } from "objection";
 
 import {
 	AbstractModel,
@@ -22,11 +28,11 @@ import { TranscriptionCacheModel } from "~/modules/transcription/transcription-c
 
 import {
 	MAX_REPAIR_ATTEMPTS,
+	MAX_RETRYABLE_HTTP_CODE,
 	MAX_TRANSCRIBE_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
 	RETRYABLE_ERROR_NAMES,
-	RETRYABLE_HTTP_CODES,
 	TRANSCRIBABLE_STATUSES,
 } from "./libs/constants/constants.js";
 import { PageEventName, TranscribeFailureReason } from "./libs/enums/enums.js";
@@ -38,6 +44,8 @@ import {
 import {
 	type CallOutcome,
 	type Dependencies,
+	type EnqueueTranscribeRetry,
+	type FailedResolvedTranscription,
 	type ParseResult,
 	type ResolvedTranscription,
 	type ResolveOptions,
@@ -111,7 +119,7 @@ const transcribeWithRepair = async (
 	let usedLatencyMs = EMPTY_LENGTH;
 	let usedOutputTokens = EMPTY_LENGTH;
 
-	const createFailureOurcome = (
+	const createFailureOutcome = (
 		reason: TranscribeFailureReasonValue,
 		retryable = false,
 	): CallOutcome => ({
@@ -139,7 +147,7 @@ const transcribeWithRepair = async (
 		} catch (error) {
 			logger.error(`Model call failed for page ${String(pageId)}`, { error });
 
-			return createFailureOurcome(
+			return createFailureOutcome(
 				TranscribeFailureReason.MODEL_CALL_FAILED,
 				errorIsRetryable(error),
 			);
@@ -154,7 +162,7 @@ const transcribeWithRepair = async (
 
 		if (!parsed.ok) {
 			if (attempt >= MAX_REPAIR_ATTEMPTS) {
-				return createFailureOurcome(
+				return createFailureOutcome(
 					TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 				);
 			}
@@ -177,13 +185,13 @@ const transcribeWithRepair = async (
 		}
 
 		if (attempt >= MAX_REPAIR_ATTEMPTS) {
-			return createFailureOurcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
+			return createFailureOutcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
 		}
 
 		repairNote = formatValidationErrors(result.errors ?? []);
 	}
 
-	return createFailureOurcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
+	return createFailureOutcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
 };
 
 const resolveFromCacheOrModel = async (
@@ -322,13 +330,25 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 	});
 };
 
-const applyBudgetStopIfExceeded = async (documentId: number): Promise<void> => {
-	await DocumentModel.query()
+const applyBudgetStopIfExceeded = async (
+	documentId: number,
+	trx?: Transaction,
+): Promise<boolean> => {
+	const affectedRows = await DocumentModel.query(trx)
 		.patch({ status: DocumentStatus.BUDGET_STOP })
 		.where("id", documentId)
 		.whereNot("status", DocumentStatus.BUDGET_STOP)
-		.whereRaw("spent_usd >= budget_usd")
-		.execute();
+		.whereRaw("spent_usd >= budget_usd");
+
+	if (affectedRows > EMPTY_LENGTH) {
+		return true;
+	}
+
+	const document = await DocumentModel.query(trx)
+		.select("status")
+		.findById(documentId);
+
+	return document?.status === DocumentStatus.BUDGET_STOP;
 };
 
 const releaseClaimedPage = async ({
@@ -505,48 +525,15 @@ const createTranscribeHandler =
 			}
 
 			if (!resolved.ok) {
-				const nextAttempts = page.attempts + ONE;
-
-				const shouldRetry =
-					resolved.retryable && nextAttempts < MAX_TRANSCRIBE_ATTEMPTS;
-
-				await DocumentModel.transaction(async (trx) => {
-					await trx.raw(
-						`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
-						[resolved.costUsd, documentId],
-					);
-
-					await trx.from(DatabaseTableName.PAGE_EVENT).insert({
-						actorId: null,
-						details: {
-							costUsd: resolved.costUsd,
-							error: resolved.reason,
-							inputTokens: resolved.inputTokens,
-							outputTokens: resolved.outputTokens,
-						},
-						documentId,
-						durationMs: resolved.latencyMs,
-						event: PageEventName.TRANSCRIBE_FAILED,
-						pageId,
-						transcriptionId: null,
-					});
-
-					await trx
-						.from(DatabaseTableName.PAGE)
-						.where("id", pageId)
-						.andWhere("status", PageStatus.TRANSCRIBING)
-						.update({
-							attempts: nextAttempts,
-							lastError: resolved.reason,
-							status: shouldRetry ? PageStatus.QUEUED : PageStatus.FAILED,
-						});
+				await handleFailedTranscription({
+					documentId,
+					enqueueRetry,
+					jobData: job.data,
+					logger,
+					pageAttempts: page.attempts,
+					pageId,
+					resolved,
 				});
-
-				await applyBudgetStopIfExceeded(documentId);
-
-				if (shouldRetry) {
-					await enqueueRetry(job.data);
-				}
 
 				return;
 			}
@@ -613,6 +600,91 @@ const createTranscribeHandler =
 		}
 	};
 
+const handleFailedTranscription = async ({
+	documentId,
+	enqueueRetry,
+	jobData,
+	logger,
+	pageAttempts,
+	pageId,
+	resolved,
+}: {
+	documentId: number;
+	enqueueRetry: EnqueueTranscribeRetry;
+	jobData: PageTranscribeJobData;
+	logger: Logger;
+	pageAttempts: number;
+	pageId: number;
+	resolved: FailedResolvedTranscription;
+}): Promise<void> => {
+	const nextAttempts = pageAttempts + ONE;
+
+	const canRetry = resolved.retryable && nextAttempts < MAX_TRANSCRIBE_ATTEMPTS;
+
+	const shouldRetry = await DocumentModel.transaction(async (trx) => {
+		await trx.raw(
+			`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
+			[resolved.costUsd, documentId],
+		);
+
+		await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+			actorId: null,
+			details: {
+				costUsd: resolved.costUsd,
+				error: resolved.reason,
+				inputTokens: resolved.inputTokens,
+				outputTokens: resolved.outputTokens,
+			},
+			documentId,
+			durationMs: resolved.latencyMs,
+			event: PageEventName.TRANSCRIBE_FAILED,
+			pageId,
+			transcriptionId: null,
+		});
+
+		const budgetExausted = await applyBudgetStopIfExceeded(documentId, trx);
+
+		const retry = canRetry && !budgetExausted;
+
+		await trx
+			.from(DatabaseTableName.PAGE)
+			.where("id", pageId)
+			.andWhere("status", PageStatus.TRANSCRIBING)
+			.update({
+				attempts: nextAttempts,
+				lastError: budgetExausted
+					? TranscribeFailureReason.BUDGET_EXCEEDED
+					: resolved.reason,
+				status: retry ? PageStatus.QUEUED : PageStatus.FAILED,
+			});
+
+		return retry;
+	});
+
+	if (!shouldRetry) {
+		return;
+	}
+
+	try {
+		await enqueueRetry(jobData);
+	} catch (error) {
+		await PageModel.query()
+			.patch({
+				status: PageStatus.FAILED,
+			})
+			.where({
+				attempts: nextAttempts,
+				id: pageId,
+				status: PageStatus.QUEUED,
+			})
+			.execute();
+
+		logger.error(`Failed to enqueue retry for page ${String(pageId)}`, {
+			error,
+		});
+	}
+};
+
 const errorIsRetryable = (error: unknown): boolean => {
 	if (!(error instanceof Error)) {
 		return false;
@@ -632,7 +704,11 @@ const errorIsRetryable = (error: unknown): boolean => {
 	const status =
 		errorWithStatus.status ?? errorWithStatus.$metadata?.httpStatusCode;
 
-	return status !== undefined && RETRYABLE_HTTP_CODES.includes(status);
+	return (
+		status !== undefined &&
+		status >= HTTPCode.INTERNAL_SERVER_ERROR &&
+		status < MAX_RETRYABLE_HTTP_CODE
+	);
 };
 
 export { createTranscribeHandler };
