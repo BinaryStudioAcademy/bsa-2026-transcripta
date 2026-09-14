@@ -1,8 +1,6 @@
 import {
 	HTTPCode,
 	HTTPError,
-	PageStatus,
-	type PageStatusValue,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
@@ -14,7 +12,10 @@ import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
-import { NUMBER_OF_PAGES_TO_INCREMENT } from "./libs/constants/constants.js";
+import {
+	CLOSED_PAGE_STATUSES,
+	NUMBER_OF_PAGES_TO_INCREMENT,
+} from "./libs/constants/constants.js";
 import {
 	PageErrorMessage,
 	PageErrorType,
@@ -222,15 +223,8 @@ class PageService {
 					trx,
 				);
 
-				const closedStatuses: PageStatusValue[] = [
-					PageStatus.CONFIRMED,
-					PageStatus.CORRECTED,
-					PageStatus.SKIPPED,
-					PageStatus.BLANK,
-					PageStatus.FAILED,
-				];
 				const shouldAdvanceWindow =
-					!closedStatuses.includes(page.status) &&
+					!CLOSED_PAGE_STATUSES.includes(page.status) &&
 					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
 				const pagesToQueue = shouldAdvanceWindow
 					? await this.pageRepository.updateFirstPendingPagesAsQueued(
