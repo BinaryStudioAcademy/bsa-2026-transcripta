@@ -3,7 +3,7 @@ import {
 	MAX_LOADED_PAGES,
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
-} from "~/libs/constants/verification.constants.js";
+} from "./libs/constants/verification.constants.js";
 import {
 	DataStatus,
 	HTTPCode,

@@ -5,7 +5,7 @@ import {
 	INDEX_NOT_FOUND,
 	START_INDEX_FALLBACK,
 } from "~/libs/constants/common.constants.js";
-import { MAX_LOADED_PAGES } from "~/libs/constants/verification.constants.js";
+import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
 import { type RootState } from "~/libs/types/types.js";
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
