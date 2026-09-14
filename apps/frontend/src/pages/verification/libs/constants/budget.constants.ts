@@ -1,3 +1,4 @@
-const DEFAULT_BUDGET = 0;
+const DEFAULT_BUDGET = "0";
+const ZERO_BUDGET = "0";
 
-export { DEFAULT_BUDGET };
+export { DEFAULT_BUDGET, ZERO_BUDGET };

@@ -5,7 +5,7 @@ import {
 } from "~/libs/constants/common.constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
-import { DEFAULT_BUDGET } from "../constants/budget.constants.js";
+import { DEFAULT_BUDGET, ZERO_BUDGET } from "../constants/budget.constants.js";
 
 type VerificationHeaderProperties = {
 	budgetLimit?: string;
@@ -22,10 +22,13 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 	pageCount,
 	pageNo,
 }) => {
-	const budgetPercentage = Math.min(
-		(Number(budgetSpent) / Number(budgetLimit)) * PERCENTAGE_MULTIPLIER,
-		MAX_PERCENTAGE,
-	);
+	const budgetPercentage =
+		budgetLimit === ZERO_BUDGET
+			? Number(ZERO_BUDGET)
+			: Math.min(
+					(Number(budgetSpent) / Number(budgetLimit)) * PERCENTAGE_MULTIPLIER,
+					MAX_PERCENTAGE,
+				);
 
 	return (
 		<header className="verification-header">
