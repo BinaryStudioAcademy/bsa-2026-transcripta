@@ -1,3 +1,4 @@
+import { type ModelIdValue } from "~/libs/types/types.js";
 import { type BuiltContext } from "~/modules/context/libs/types/types.js";
 import { type PageModel } from "~/modules/pages/page.model.js";
 import { type PresetModel } from "~/modules/presets/preset.model.js";
@@ -8,7 +9,7 @@ type ResolveOptions = Dependencies & {
 	cacheKey: string;
 	context: BuiltContext;
 	documentId: number;
-	modelId: string;
+	modelId: ModelIdValue;
 	page: InstanceType<typeof PageModel>;
 	pageNo: number;
 	preset: InstanceType<typeof PresetModel>;

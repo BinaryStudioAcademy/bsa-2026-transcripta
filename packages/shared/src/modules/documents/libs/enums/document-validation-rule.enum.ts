@@ -10,12 +10,15 @@ const MAX_FILE_BYTES =
 
 const PDF_FILE_REGEX = /^.+\.pdf$/i;
 
+const LIMIT_USD_REGEX = /^\d{1,6}(\.\d{1,4})?$/;
+
 const PAGE_FROM_DEFAULT = 1;
 const PAGE_LIMIT_DEFAULT = 20;
 const PAGE_LIMIT_MAXIMUM = 50;
 
 const DocumentValidationRule = {
 	ID_MINIMUM: 1,
+	LIMIT_USD_REGEX,
 	MAX_FILE_BYTES,
 	MIN_TITLE_LENGTH: 1,
 	PAGE_FROM_DEFAULT,

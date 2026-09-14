@@ -6,6 +6,8 @@ import {
 class TranscriptionModel extends AbstractModel {
 	public contextUsed!: Record<string, unknown>;
 
+	public costUsd!: string;
+
 	public documentId!: number;
 
 	public editedStructured!: null | Record<string, unknown>;
