@@ -22,8 +22,11 @@ import { TranscriptionCacheModel } from "~/modules/transcription/transcription-c
 
 import {
 	MAX_REPAIR_ATTEMPTS,
+	MAX_TRANSCRIBE_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
+	RETRYABLE_ERROR_NAMES,
+	RETRYABLE_HTTP_CODES,
 	TRANSCRIBABLE_STATUSES,
 } from "./libs/constants/constants.js";
 import { PageEventName, TranscribeFailureReason } from "./libs/enums/enums.js";
@@ -108,11 +111,22 @@ const transcribeWithRepair = async (
 	let usedLatencyMs = EMPTY_LENGTH;
 	let usedOutputTokens = EMPTY_LENGTH;
 
+	const createFailureOurcome = (
+		reason: TranscribeFailureReasonValue,
+		retryable = false,
+	): CallOutcome => ({
+		inputTokens: usedInputTokens,
+		latencyMs: usedLatencyMs,
+		ok: false,
+		outputTokens: usedOutputTokens,
+		reason,
+		retryable,
+	});
+
 	for (let attempt = EMPTY_LENGTH; attempt <= MAX_REPAIR_ATTEMPTS; attempt++) {
 		const requestPrompt = repairNote
 			? `${prompt}\n\nYour previous output failed the schema. Fix it:\n${repairNote}`
 			: prompt;
-
 		let response: TranscriptionResponse;
 
 		try {
@@ -125,13 +139,10 @@ const transcribeWithRepair = async (
 		} catch (error) {
 			logger.error(`Model call failed for page ${String(pageId)}`, { error });
 
-			return {
-				inputTokens: usedInputTokens,
-				latencyMs: usedLatencyMs,
-				ok: false,
-				outputTokens: usedOutputTokens,
-				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
-			};
+			return createFailureOurcome(
+				TranscribeFailureReason.MODEL_CALL_FAILED,
+				errorIsRetryable(error),
+			);
 		}
 
 		usedInputTokens += response.usage.inputTokens;
@@ -143,13 +154,9 @@ const transcribeWithRepair = async (
 
 		if (!parsed.ok) {
 			if (attempt >= MAX_REPAIR_ATTEMPTS) {
-				return {
-					inputTokens: usedInputTokens,
-					latencyMs: usedLatencyMs,
-					ok: false,
-					outputTokens: usedOutputTokens,
-					reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-				};
+				return createFailureOurcome(
+					TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+				);
 			}
 
 			repairNote = "Your previous output was not valid JSON.";
@@ -170,25 +177,13 @@ const transcribeWithRepair = async (
 		}
 
 		if (attempt >= MAX_REPAIR_ATTEMPTS) {
-			return {
-				inputTokens: usedInputTokens,
-				latencyMs: usedLatencyMs,
-				ok: false,
-				outputTokens: usedOutputTokens,
-				reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-			};
+			return createFailureOurcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
 		}
 
 		repairNote = formatValidationErrors(result.errors ?? []);
 	}
 
-	return {
-		inputTokens: usedInputTokens,
-		latencyMs: usedLatencyMs,
-		ok: false,
-		outputTokens: usedOutputTokens,
-		reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-	};
+	return createFailureOurcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
 };
 
 const resolveFromCacheOrModel = async (
@@ -271,6 +266,7 @@ const resolveFromCacheOrModel = async (
 		ok: false,
 		outputTokens: outcome.outputTokens,
 		reason: outcome.reason,
+		retryable: outcome.retryable,
 	};
 };
 
@@ -319,10 +315,10 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			[costUsd, documentId],
 		);
 
-		await trx
-			.from(DatabaseTableName.PAGE)
-			.where("id", pageId)
-			.update({ status: PageStatus.TRANSCRIBED });
+		await trx.from(DatabaseTableName.PAGE).where("id", pageId).update({
+			lastError: null,
+			status: PageStatus.TRANSCRIBED,
+		});
 	});
 };
 
@@ -382,7 +378,13 @@ const releaseClaimedPage = async ({
 };
 
 const createTranscribeHandler =
-	({ config, logger, storage, transcriptionService }: Dependencies) =>
+	({
+		config,
+		enqueueRetry,
+		logger,
+		storage,
+		transcriptionService,
+	}: Dependencies) =>
 	async (job: Job<PageTranscribeJobData>): Promise<void> => {
 		const { documentId, pageId, pageNo } = job.data;
 
@@ -503,6 +505,11 @@ const createTranscribeHandler =
 			}
 
 			if (!resolved.ok) {
+				const nextAttempts = page.attempts + ONE;
+
+				const shouldRetry =
+					resolved.retryable && nextAttempts < MAX_TRANSCRIBE_ATTEMPTS;
+
 				await DocumentModel.transaction(async (trx) => {
 					await trx.raw(
 						`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
@@ -527,14 +534,20 @@ const createTranscribeHandler =
 					await trx
 						.from(DatabaseTableName.PAGE)
 						.where("id", pageId)
+						.andWhere("status", PageStatus.TRANSCRIBING)
 						.update({
-							attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
+							attempts: nextAttempts,
 							lastError: resolved.reason,
-							status: PageStatus.FAILED,
+							status: shouldRetry ? PageStatus.QUEUED : PageStatus.FAILED,
 						});
 				});
 
 				await applyBudgetStopIfExceeded(documentId);
+
+				if (shouldRetry) {
+					await enqueueRetry(job.data);
+				}
+
 				return;
 			}
 
@@ -599,5 +612,27 @@ const createTranscribeHandler =
 			throw error;
 		}
 	};
+
+const errorIsRetryable = (error: unknown): boolean => {
+	if (!(error instanceof Error)) {
+		return false;
+	}
+
+	if (RETRYABLE_ERROR_NAMES.includes(error.name)) {
+		return true;
+	}
+
+	const errorWithStatus = error as {
+		$metadata?: {
+			httpStatusCode: number;
+		};
+		status?: number;
+	};
+
+	const status =
+		errorWithStatus.status ?? errorWithStatus.$metadata?.httpStatusCode;
+
+	return status !== undefined && RETRYABLE_HTTP_CODES.includes(status);
+};
 
 export { createTranscribeHandler };
