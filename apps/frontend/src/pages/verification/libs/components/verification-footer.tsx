@@ -1,7 +1,7 @@
 import { Button, Loader } from "~/libs/components/components.js";
-import { MIN_NUMBER_OF_PAGES } from "../constants/verification.constants.js";
 import { LoaderSize } from "~/libs/enums/loader-size.enum.js";
 
+import { MIN_NUMBER_OF_PAGES } from "../constants/verification.constants.js";
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { PageButton } from "./components.js";
 

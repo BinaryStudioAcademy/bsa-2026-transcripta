@@ -1,10 +1,5 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
 import {
-	MAX_LOADED_PAGES,
-	MIN_NUMBER_OF_PAGES,
-	PAGE_STEP,
-} from "./libs/constants/verification.constants.js";
-import {
 	DataStatus,
 	HTTPCode,
 	PageVerificationAction,
@@ -36,6 +31,11 @@ import {
 	VerificationShortcutsDialog,
 	VerificationWorkspace,
 } from "./libs/components/components.js";
+import {
+	MAX_LOADED_PAGES,
+	MIN_NUMBER_OF_PAGES,
+	PAGE_STEP,
+} from "./libs/constants/verification.constants.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import "./verification.css";
 import { type PageVerificationActionValue } from "./libs/types/types.js";

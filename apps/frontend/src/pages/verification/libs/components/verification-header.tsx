@@ -1,10 +1,11 @@
 import { Link, ThemeToggle } from "~/libs/components/components.js";
-import { DEFAULT_BUDGET } from "../constants/budget.constants.js";
 import {
 	MAX_PERCENTAGE,
 	PERCENTAGE_MULTIPLIER,
 } from "~/libs/constants/common.constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
+
+import { DEFAULT_BUDGET } from "../constants/budget.constants.js";
 
 type VerificationHeaderProperties = {
 	budgetLimit?: string;

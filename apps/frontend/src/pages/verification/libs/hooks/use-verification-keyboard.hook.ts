@@ -70,7 +70,7 @@ const useVerificationKeyboard = ({
 		return () => {
 			globalThis.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [onConfirm, onSkip, onToggleShortcuts, onToggleZoom]);
+	}, [onConfirm, onEdit, onSkip, onPrevious, onToggleShortcuts, onToggleZoom]);
 };
 
 export { useVerificationKeyboard };
