@@ -9,6 +9,7 @@ type StoreOptions = {
 	outputTokens: number;
 	pageId: number;
 	presetId: number;
+	prompt: string;
 	provider: string;
 	structured: unknown;
 	text: string;

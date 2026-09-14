@@ -5,6 +5,7 @@ type SuccessfulResolvedTranscription = {
 	latencyMs: number;
 	ok: true;
 	outputTokens: number;
+	prompt: string;
 	structured: unknown;
 	text: string;
 };

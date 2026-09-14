@@ -195,6 +195,7 @@ const resolveFromCacheOrModel = async (
 	options: ResolveOptions,
 ): Promise<null | ResolvedTranscription> => {
 	const { cacheKey, context, page, preset } = options;
+	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const cached = await TranscriptionCacheModel.query()
 		.findById(cacheKey)
@@ -218,6 +219,7 @@ const resolveFromCacheOrModel = async (
 			latencyMs: EMPTY_LENGTH,
 			ok: true,
 			outputTokens: cached.outputTokens,
+			prompt: userPrompt,
 			structured,
 			text: cached.text,
 		};
@@ -231,7 +233,6 @@ const resolveFromCacheOrModel = async (
 	const { logger, modelId, storage, transcriptionService } = options;
 
 	const image = await storage.downloadPageImage(page.imageKey);
-	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const outcome = await transcribeWithRepair({
 		image,
@@ -258,6 +259,7 @@ const resolveFromCacheOrModel = async (
 			latencyMs: outcome.latencyMs,
 			ok: true,
 			outputTokens: outcome.outputTokens,
+			prompt: userPrompt,
 			structured: outcome.structured,
 			text: outcome.text,
 		};
@@ -286,6 +288,7 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 		outputTokens,
 		pageId,
 		presetId,
+		prompt,
 		provider,
 		structured,
 		text,
@@ -309,6 +312,7 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			output_tokens: outputTokens,
 			page_id: pageId,
 			preset_id: presetId,
+			prompt,
 			provider,
 			structured: structured ?? null,
 			text,
@@ -551,6 +555,7 @@ const createTranscribeHandler =
 				outputTokens: resolved.outputTokens,
 				pageId,
 				presetId: preset.id,
+				prompt: resolved.prompt,
 				provider,
 				structured: resolved.structured,
 				text: resolved.text,

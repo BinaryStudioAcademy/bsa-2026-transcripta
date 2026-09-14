@@ -30,6 +30,8 @@ class TranscriptionModel extends AbstractModel {
 
 	public presetId!: null | number;
 
+	public prompt!: string;
+
 	public provider!: null | string;
 
 	public structured!: null | Record<string, unknown>;
