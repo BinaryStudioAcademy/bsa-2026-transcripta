@@ -4,7 +4,9 @@ import {
 	ingest,
 	loadAll,
 	loadById,
+	pause,
 	remove,
+	resume,
 } from "./actions.js";
 import { actions } from "./documents.slice.js";
 
@@ -15,7 +17,9 @@ const allActions = {
 	ingest,
 	loadAll,
 	loadById,
+	pause,
 	remove,
+	resume,
 };
 
 export { allActions as actions };
