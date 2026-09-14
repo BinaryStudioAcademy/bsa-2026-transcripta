@@ -40,7 +40,8 @@ class PageController extends BaseController {
 		});
 
 		this.addRoute({
-			handler: (options) => this.reprocess(options as VerifyPageHandlerOptions),
+			handler: (options) =>
+				this.reprocess(options as ReprocessPageHandlerOptions),
 			method: HTTPMethod.POST,
 			path: PageApiPath.REPROCESS,
 			preHandler: authGuard,
