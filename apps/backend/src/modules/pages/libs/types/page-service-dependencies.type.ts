@@ -1,4 +1,5 @@
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
+import { PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { type DocumentRepository } from "~/modules/documents/document.repository.js";
 import { type TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
 

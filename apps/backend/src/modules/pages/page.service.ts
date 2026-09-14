@@ -1,6 +1,7 @@
 import {
 	HTTPCode,
 	HTTPError,
+	PageStatus,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
@@ -24,6 +25,7 @@ import {
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
+	type ReprocessPagePayload,
 	type VerifyPagePayload,
 } from "./libs/types/types.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
@@ -52,6 +54,7 @@ class PageService {
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
+		this.pageTranscribeQueue = pageTranscribeQueue;
 	}
 
 	private async buildVerifyResponse(
@@ -96,6 +99,44 @@ class PageService {
 			pageId,
 			status,
 		};
+	}
+
+	public async reprocess({
+		pageId,
+		userId,
+	}: ReprocessPagePayload): Promise<void> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		if (page.status !== PageStatus.FAILED) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FAILED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const wasReset = await this.pageRepository.resetFailedPageForReprocess(
+			page.id,
+		);
+
+		if (!wasReset) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FAILED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		await this.pageTranscribeQueue.add({
+			documentId: page.documentId,
+			pageId: page.id,
+			pageNo: page.pageNo,
+		});
 	}
 
 	public async verify(
