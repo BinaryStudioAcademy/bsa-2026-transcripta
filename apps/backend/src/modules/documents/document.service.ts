@@ -193,6 +193,47 @@ class DocumentService {
 		return { clear, filePath };
 	}
 
+	private async enqueueBudgetResumedPages(
+		documentId: number,
+		ownerId: number,
+	): Promise<void> {
+		try {
+			const pages = await this.pageRepository.findQueuedPages(documentId);
+
+			await Promise.all(
+				pages.map((page) => {
+					const { id, pageNo } = page.toObject();
+
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
+			);
+		} catch (error) {
+			await this.documentRepository.updateOwnedStatusFrom({
+				currentStatus: DocumentStatus.PROCESSING,
+				id: documentId,
+				ownerId,
+				status: DocumentStatus.BUDGET_STOP,
+			});
+
+			const caughtErrorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setErrorMessage(
+				documentId,
+				`${DocumentErrorMessage.RESUME_FAILED}: ${caughtErrorMessage}`,
+			);
+
+			throw new HTTPError({
+				message: DocumentErrorMessage.RESUME_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
+	}
+
 	private extractLexiconIds(
 		contextUsed: null | Record<string, unknown>,
 	): number[] {
@@ -807,21 +848,22 @@ class DocumentService {
 		limitUsd: string,
 		ownerId: number,
 	): Promise<DocumentGetByIdBudgetResponseDto> {
-		await DocumentModel.transaction(async (trx) => {
+		const resumedRows = await DocumentModel.transaction(async (trx) => {
 			const updatedRows = await this.documentRepository.updateBudget(
 				{ id, limitUsd, ownerId },
 				trx,
 			);
 
 			if (updatedRows === EMPTY_LENGTH) {
-				throw new HTTPError({
-					message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
-					status: HTTPCode.NOT_FOUND,
-				});
+				this.throwDocumentNotFoundError();
 			}
 
-			await this.documentRepository.resumeFromBudgetStop(id, trx);
+			return await this.documentRepository.resumeFromBudgetStop(id, trx);
 		});
+
+		if (resumedRows !== EMPTY_LENGTH) {
+			await this.enqueueBudgetResumedPages(id, ownerId);
+		}
 
 		const { budget } = await this.findById(id, ownerId);
 
