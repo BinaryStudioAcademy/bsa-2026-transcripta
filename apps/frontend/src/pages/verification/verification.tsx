@@ -79,8 +79,12 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		if (document && document.id === documentId) {
+			return;
+		}
+
 		void dispatch(documentActions.loadById(documentId));
-	}, [id, dispatch]);
+	}, [id, document, dispatch]);
 
 	useEffect(() => {
 		if (!document) {
@@ -242,7 +246,7 @@ const Verification: React.FC = () => {
 	}
 
 	if (!document) {
-		return;
+		return null;
 	}
 
 	return (
