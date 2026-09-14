@@ -1,5 +1,4 @@
-import headerLogo from "~/assets/img/logo.svg";
-import { Link, ThemeToggle } from "~/libs/components/components.js";
+import { Link, LogoIcon, ThemeToggle } from "~/libs/components/components.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
 import "./header.css";
@@ -8,7 +7,7 @@ const Header: React.FC = () => {
 	return (
 		<header className="header">
 			<Link className="header-brand" to={AppRoute.ROOT}>
-				<img alt="Transcripta logo" className="header-logo" src={headerLogo} />
+				<LogoIcon size="large" variant="mark" />
 				<span className="header-title">Transcripta</span>
 			</Link>
 

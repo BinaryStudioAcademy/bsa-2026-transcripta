@@ -6,7 +6,6 @@ import {
 	useAppSelector,
 	useCallback,
 	useEffect,
-	useLocation,
 	useNavigate,
 	useState,
 } from "~/libs/hooks/hooks.js";
@@ -28,7 +27,6 @@ const Sidebar: React.FC = () => {
 	const navigate = useNavigate();
 
 	const user = useAppSelector(selectUser);
-	const { pathname } = useLocation();
 
 	const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 	const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -66,7 +64,10 @@ const Sidebar: React.FC = () => {
 
 	const handleSignOut = useCallback(
 		(event: React.MouseEvent): void => {
-			if (pathname === AppRoute.DOCUMENTS_NEW) {
+			const isUploadingActive = (
+				globalThis as unknown as Window & { __IS_UPLOADING__?: boolean }
+			).__IS_UPLOADING__;
+			if (isUploadingActive) {
 				const confirmLeave = globalThis.confirm(UPLOAD_WARNING_MESSAGE);
 
 				if (!confirmLeave) {
@@ -85,7 +86,7 @@ const Sidebar: React.FC = () => {
 			dispatch(authActions.logout());
 			void storage.drop(StorageKey.TOKEN);
 		},
-		[dispatch, navigate, pathname],
+		[dispatch, navigate],
 	);
 
 	const sidebarClassName = `sidebar${isCollapsed ? " sidebar--collapsed" : ""}`;
