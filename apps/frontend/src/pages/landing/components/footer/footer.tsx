@@ -1,4 +1,4 @@
-import logoSmall from "~/assets/img/logo-small.svg";
+import { LogoIcon } from "~/libs/components/components.js";
 
 import "./footer.css";
 
@@ -6,7 +6,8 @@ const Footer: React.FC = () => {
 	return (
 		<footer className="footer">
 			<span className="footer__brand">
-				<img alt="Transcripta" className="footer__logo" src={logoSmall} />
+				<LogoIcon size="small" variant="mark" />
+				{/* <img alt="Transcripta" className="footer__logo" src={logoSmall} /> */}
 
 				<span className="footer__brand-name">Transcripta</span>
 			</span>
