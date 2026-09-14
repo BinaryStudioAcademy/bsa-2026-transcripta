@@ -1,13 +1,13 @@
 import { createSlice, isAnyOf } from "@reduxjs/toolkit";
 
 import { DataStatus } from "~/libs/enums/enums.js";
-import { type ValueOf } from "~/libs/types/types.js";
+import { type DataStatusValue } from "~/libs/types/types.js";
 import { type UserGetAllItemResponseDto } from "~/modules/users/users.js";
 
 import { restoreSession, signIn, signUp } from "./actions.js";
 
 type State = {
-	dataStatus: ValueOf<typeof DataStatus>;
+	dataStatus: DataStatusValue;
 	isInitialized: boolean;
 	user: null | UserGetAllItemResponseDto;
 };
