@@ -5,6 +5,7 @@ import { VerificationEdit } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	isCompleted: boolean;
 	isEditing: boolean;
 	isVerifying: boolean;
 	isZoomed: boolean;
@@ -16,6 +17,7 @@ type VerificationWorkspaceProperties = {
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
+	isCompleted,
 	isEditing,
 	isVerifying,
 	isZoomed,
@@ -60,7 +62,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						<>
 							<span className="verification-transcription__page">
 								page {currentPage.pageNo} of {pageCount}
-								{isEditing && " · editing"}
+								{isEditing && " · editing"} {isCompleted && "(last page)"}
 							</span>
 
 							{isEditing ? (
@@ -107,6 +109,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 							<p>
 								Everything ready has been verified; the model is still reading.
 							</p>
+							{isCompleted && <p>This is the last page!</p>}
 						</div>
 					)}
 				</section>

@@ -66,6 +66,12 @@ const Verification: React.FC = () => {
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 
+	let isLastPage = false;
+
+	if (document) {
+		isLastPage = cursorPageNo >= document.pageCount;
+	}
+
 	useEffect(() => {
 		const documentId = Number(id);
 
@@ -150,6 +156,7 @@ const Verification: React.FC = () => {
 
 			dispatch(
 				pageActions.verifyOptimistic({
+					pageCount: document.pageCount,
 					pageId: currentPage.id,
 					payload,
 				}),
@@ -249,6 +256,7 @@ const Verification: React.FC = () => {
 			/>
 			<VerificationWorkspace
 				currentPage={currentPage}
+				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isVerifying={isVerifying}
 				isZoomed={isZoomed}

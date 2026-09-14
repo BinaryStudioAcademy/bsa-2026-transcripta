@@ -47,14 +47,18 @@ const { actions, name, reducer } = createSlice({
 			state.rollback[payload.pageId] = undefined;
 
 			if (!payload.next) {
+				state.verificationDataStatus = DataStatus.FULFILLED;
 				return;
 			}
 
 			const nextPage = state.byId[payload.next.pageId];
 
 			if (!nextPage) {
+				state.verificationDataStatus = DataStatus.FULFILLED;
 				return;
 			}
+
+			state.cursorPageNo = nextPage.pageNo;
 
 			nextPage.status = payload.next.status;
 
@@ -107,11 +111,12 @@ const { actions, name, reducer } = createSlice({
 		verifyOptimistic: (
 			state,
 			action: PayloadAction<{
+				pageCount: number;
 				pageId: number;
 				payload: VerifyPageRequestDto;
 			}>,
 		) => {
-			const { pageId, payload } = action.payload;
+			const { pageCount, pageId, payload } = action.payload;
 			const page = state.byId[pageId];
 
 			if (!page) {
@@ -124,7 +129,10 @@ const { actions, name, reducer } = createSlice({
 			};
 
 			page.status = verificationStatusMap[payload.action];
-			state.cursorPageNo += 1;
+
+			if (state.cursorPageNo < pageCount) {
+				state.cursorPageNo += 1;
+			}
 		},
 	},
 });
