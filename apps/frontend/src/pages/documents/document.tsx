@@ -9,6 +9,7 @@ import {
 	OverflowMenu,
 	ProgressBar,
 } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -44,10 +45,17 @@ const Document: React.FC = () => {
 		}
 
 		void dispatch(documentActions.loadById(documentId));
+		void dispatch(documentActions.startPolling(documentId));
+
+		return () => {
+			dispatch(documentActions.stopPolling());
+		};
 	}, [id, dispatch]);
 
-	const isLoading = documentDataStatus === DataStatus.PENDING;
-	const hasError = documentDataStatus === DataStatus.REJECTED;
+	const isLoading =
+		documentDataStatus === DataStatus.PENDING && !currentDocument;
+	const hasError =
+		documentDataStatus === DataStatus.REJECTED && !currentDocument;
 
 	const handleOpenDeleteDialog = useCallback((): void => {
 		setIsConfirmOpen(true);
@@ -102,6 +110,26 @@ const Document: React.FC = () => {
 							closedPct={currentDocument.progress.closedPct}
 							verifiedPct={currentDocument.progress.verifiedPct}
 						/>
+						<div>
+							<span className="tabular-figures">
+								{currentDocument.progress.pagesVerified}
+							</span>{" "}
+							of{" "}
+							<span className="tabular-figures">
+								{currentDocument.progress.pagesTotal}
+							</span>{" "}
+							pages verified
+							{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
+								<span>
+									{" "}
+									·{" "}
+									<span className="tabular-figures">
+										{currentDocument.progress.pagesInWork}
+									</span>{" "}
+									in work
+								</span>
+							)}
+						</div>
 						<BudgetIndicator
 							limitUsd={currentDocument.budget.limitUsd}
 							spentUsd={currentDocument.budget.spentUsd}
