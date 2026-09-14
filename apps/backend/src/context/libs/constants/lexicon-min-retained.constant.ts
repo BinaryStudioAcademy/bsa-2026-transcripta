@@ -1,0 +1,3 @@
+const LEXICON_MIN_RETAINED = 50;
+
+export { LEXICON_MIN_RETAINED };
