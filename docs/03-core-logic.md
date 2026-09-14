@@ -249,6 +249,14 @@ neighbours blocks (same separator as `contextHash`). Trim order:
 Seed glossary is never trimmed. System and preset instructions never enter this
 function.
 
+**Search vs confirm.** Binary search and neighbour drops use the cheap character
+estimate (`estimateTokensByChars`) so trim does not hit the network on every
+step. Real `estimateTokens` confirms the initial payload and each stage’s
+candidate. If chars under-estimate and confirm fails, the budget is scaled by
+`charTokens / exactTokens` and the stage searches once more before moving on
+(drop lexicon → shrink neighbours → seed alone). Still a handful of
+`countTokens` calls per page, not one per search step.
+
 ```ts
 import { fitToBudget, LEXICON_MIN_RETAINED } from "~/context/context.js";
 
