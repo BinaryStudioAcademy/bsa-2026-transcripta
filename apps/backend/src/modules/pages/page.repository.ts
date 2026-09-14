@@ -1,7 +1,8 @@
-import { PageStatus } from "@transcripta/shared";
+import { EMPTY_LENGTH, PageStatus } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
+import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 
 import {
 	type PageWithTranscriptionRow,
@@ -98,9 +99,12 @@ class PageRepository {
 		return pages.map((page) => page.pageNo);
 	}
 
-	public async findQueuedPages(documentId: number): Promise<PageEntity[]> {
+	public async findQueuedPages(
+		documentId: number,
+		trx?: Transaction,
+	): Promise<PageEntity[]> {
 		const pages = await this.pageModel
-			.query()
+			.query(trx)
 			.where({ documentId })
 			.where("status", PageStatus.QUEUED)
 			.orderBy("page_no", "asc")
@@ -112,19 +116,44 @@ class PageRepository {
 	public async updateFirstPendingPagesAsQueued(
 		documentId: number,
 		quantity: number,
-	): Promise<void> {
+		trx: Transaction,
+	): Promise<PageEntity[]> {
+		const pagesInWindow = await this.pageModel
+			.query(trx)
+			.where({ documentId })
+			.whereIn("status", [
+				PageStatus.QUEUED,
+				PageStatus.TRANSCRIBING,
+				PageStatus.TRANSCRIBED,
+			])
+			.resultSize();
+		const limit = Math.min(
+			quantity,
+			Math.max(PAGES_TO_QUEUE - pagesInWindow, EMPTY_LENGTH),
+		);
+
+		if (limit === EMPTY_LENGTH) {
+			return [];
+		}
+
 		const subquery = this.pageModel
-			.query()
+			.query(trx)
 			.select("id")
 			.where({ documentId, status: PageStatus.PENDING })
 			.orderBy("pageNo", "asc")
-			.limit(quantity);
+			.limit(limit);
 
-		await this.pageModel
-			.query()
+		const pages = await this.pageModel
+			.query(trx)
 			.whereIn("id", subquery)
+			.where({ status: PageStatus.PENDING })
 			.patch({ status: PageStatus.QUEUED })
+			.returning("*")
 			.execute();
+
+		return pages
+			.toSorted((firstPage, secondPage) => firstPage.pageNo - secondPage.pageNo)
+			.map((page) => PageEntity.initialize(page));
 	}
 
 	public async updateVerification(

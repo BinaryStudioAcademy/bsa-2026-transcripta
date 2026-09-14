@@ -651,14 +651,47 @@ class DocumentService {
 				});
 			}
 
-			await this.documentRepository.updatePageCount(documentId, pageCount);
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.READY,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
+			const pages = await DocumentModel.transaction(async (trx) => {
+				const currentDocument =
+					await this.documentRepository.findByIdAndOwnerIdForUpdate(
+						documentId,
+						userId,
+						trx,
+					);
+
+				if (!currentDocument) {
+					this.throwDocumentNotFoundError();
+				}
+
+				await this.documentRepository.updatePageCount(
+					documentId,
+					pageCount,
+					trx,
+				);
+				await this.documentRepository.updateStatus(
+					documentId,
+					DocumentStatus.READY,
+					trx,
+				);
+				await this.pageRepository.updateFirstPendingPagesAsQueued(
+					documentId,
+					PAGES_TO_QUEUE,
+					trx,
+				);
+
+				return await this.pageRepository.findQueuedPages(documentId, trx);
+			});
+
+			await Promise.all(
+				pages.map((page) => {
+					const { id, pageNo } = page.toObject();
+
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
 			);
 		} catch (error) {
 			if (error instanceof HTTPError) {

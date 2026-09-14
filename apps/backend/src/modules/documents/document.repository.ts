@@ -263,9 +263,13 @@ class DocumentRepository {
 			.execute();
 	}
 
-	public async updatePageCount(id: number, pageCount: number): Promise<void> {
+	public async updatePageCount(
+		id: number,
+		pageCount: number,
+		trx?: Transaction,
+	): Promise<void> {
 		await this.documentModel
-			.query()
+			.query(trx)
 			.patch({ pageCount })
 			.where({ id })
 			.execute();
@@ -286,8 +290,13 @@ class DocumentRepository {
 	public async updateStatus(
 		id: number,
 		status: ValueOf<typeof DocumentStatus>,
+		trx?: Transaction,
 	): Promise<void> {
-		await this.documentModel.query().patch({ status }).where({ id }).execute();
+		await this.documentModel
+			.query(trx)
+			.patch({ status })
+			.where({ id })
+			.execute();
 	}
 }
 
