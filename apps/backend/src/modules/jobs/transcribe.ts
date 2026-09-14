@@ -194,7 +194,7 @@ const transcribeWithRepair = async (
 const resolveFromCacheOrModel = async (
 	options: ResolveOptions,
 ): Promise<null | ResolvedTranscription> => {
-	const { cacheKey, config, context, page, preset } = options;
+	const { cacheKey, context, page, preset } = options;
 
 	const cached = await TranscriptionCacheModel.query()
 		.findById(cacheKey)
@@ -248,20 +248,6 @@ const resolveFromCacheOrModel = async (
 		inputTokens: outcome.inputTokens,
 		modelId,
 		outputTokens: outcome.outputTokens,
-		rates: {
-			amazon: {
-				input: config.ENV.PRICING.AMAZON_INPUT,
-				output: config.ENV.PRICING.AMAZON_OUTPUT,
-			},
-			anthropic: {
-				input: config.ENV.PRICING.ANTHROPIC_INPUT,
-				output: config.ENV.PRICING.ANTHROPIC_OUTPUT,
-			},
-			anthropicDirect: {
-				input: config.ENV.PRICING.ANTHROPIC_DIRECT_INPUT,
-				output: config.ENV.PRICING.ANTHROPIC_DIRECT_OUTPUT,
-			},
-		},
 	});
 
 	if (outcome.ok) {
@@ -447,8 +433,7 @@ const createTranscribeHandler =
 					});
 
 					await trx.from(DatabaseTableName.PAGE).where("id", pageId).update({
-						lastError: TranscribeFailureReason.BUDGET_EXCEEDED,
-						status: PageStatus.FAILED,
+						status: PageStatus.QUEUED,
 					});
 				});
 
