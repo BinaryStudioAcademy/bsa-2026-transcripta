@@ -63,6 +63,8 @@ const Verification: React.FC = () => {
 	const verificationDataStatus = useAppSelector(selectVerificationDataStatus);
 
 	const isVerifying = verificationDataStatus === DataStatus.PENDING;
+	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
+	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -228,11 +230,7 @@ const Verification: React.FC = () => {
 		onToggleZoom: handleToggleZoom,
 	});
 
-	const isLoading =
-		documentDataStatus === DataStatus.PENDING ||
-		pagesDataStatus === DataStatus.PENDING;
-
-	if (isLoading) {
+	if (isDocumentLoading) {
 		return <LoaderOverlay label="Loading verification" />;
 	}
 
@@ -249,7 +247,6 @@ const Verification: React.FC = () => {
 				pageCount={document.pageCount}
 				pageNo={currentPage?.pageNo}
 			/>
-
 			<VerificationWorkspace
 				currentPage={currentPage}
 				isEditing={isEditing}
@@ -260,16 +257,15 @@ const Verification: React.FC = () => {
 				onToggleEdit={handleToggleEdit}
 				pageCount={document.pageCount}
 			/>
-
 			<VerificationFooter
 				currentPageNo={cursorPageNo}
+				isLoading={isPagesLoading}
 				onNext={handleNext}
 				onPageSelect={handlePageSelect}
 				onPrevious={handlePrevious}
 				pageCount={document.pageCount}
 				pages={pagesForStrip}
 			/>
-
 			{isShortcutsOpen && (
 				<VerificationShortcutsDialog onClose={handleToggleShortcuts} />
 			)}
