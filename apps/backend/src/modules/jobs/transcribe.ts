@@ -453,11 +453,8 @@ const createTranscribeHandler =
 			}
 
 			const modelId = config.ENV.BEDROCK.MODEL_ID;
-			const knex = AbstractModel.knex();
 			const context = await buildContext({
 				documentId,
-				knex,
-				logger,
 				pageNo,
 				preset,
 			});

@@ -1,9 +1,14 @@
-import { estimateTokens } from "~/context/context.js";
+import {
+	estimateTokens,
+	fitToBudget,
+	getEffectiveContextBudget,
+} from "~/context/context.js";
 import { type Preset } from "~/modules/context/libs/types/types.js";
-import { PageRepository } from "~/modules/pages/pages.js";
+import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { PageRepository } from "~/modules/pages/page.repository.js";
 
-import { EMPTY_LENGTH, MIN_LEXICON_WORDS } from "./libs/constants/constants.js";
-import { DefaultPresetSettings, LeadInPhrase } from "./libs/enums/enums.js";
+import { EMPTY_LENGTH, ONE } from "./libs/constants/constants.js";
+import { ArrayIndex, DefaultPresetSettings } from "./libs/enums/enums.js";
 import {
 	createContextHash,
 	renderLexicon,
@@ -14,9 +19,9 @@ import {
 } from "./libs/helpers/helpers.js";
 import {
 	type BuiltContext,
+	type ContextToFit,
 	type ContextBuilder as IContextBuilder,
 	type LexiconEntry,
-	type PageWithText,
 } from "./libs/types/types.js";
 
 class ContextBuilder implements IContextBuilder {
@@ -24,134 +29,6 @@ class ContextBuilder implements IContextBuilder {
 
 	constructor(pageRepository: PageRepository) {
 		this.pageRepository = pageRepository;
-	}
-
-	private async trimContextToBudget({
-		blocks,
-		budget,
-		lexicon,
-		model,
-		neighbouringPages,
-	}: {
-		blocks: string[];
-		budget: number;
-		lexicon: LexiconEntry[];
-		model: string;
-		neighbouringPages: PageWithText[];
-	}): Promise<{
-		fittedBlocks: string[];
-		usedLexicon: LexiconEntry[];
-		usedPages: PageWithText[];
-		usedTokens: number;
-	}> {
-		let { tokens: currentTokens } = await estimateTokens(blocks, model);
-
-		if (currentTokens <= budget) {
-			return {
-				fittedBlocks: blocks,
-				usedLexicon: lexicon,
-				usedPages: neighbouringPages,
-				usedTokens: currentTokens,
-			};
-		}
-
-		if (lexicon.length > MIN_LEXICON_WORDS) {
-			currentTokens = await this.trimLexiconToBudget({
-				budget,
-				currentTokens,
-				lexicon,
-				model,
-			});
-
-			for (let index = 0; index < blocks.length; index++) {
-				const currentBlock = blocks[index] as string;
-
-				if (currentBlock.startsWith(LeadInPhrase.LEXICON)) {
-					blocks[index] = renderLexicon(lexicon);
-					break;
-				}
-			}
-		}
-
-		if (currentTokens <= budget) {
-			return {
-				fittedBlocks: blocks,
-				usedLexicon: lexicon,
-				usedPages: neighbouringPages,
-				usedTokens: currentTokens,
-			};
-		}
-
-		if (neighbouringPages.length > EMPTY_LENGTH) {
-			await this.trimNeighbouringPagesToBudget({
-				budget,
-				currentTokens,
-				model,
-				neighbouringPages,
-			});
-
-			for (let index = 0; index < blocks.length; index++) {
-				const currentBlock = blocks[index] as string;
-
-				if (currentBlock.startsWith(LeadInPhrase.NEIGHBOURING_PAGES)) {
-					blocks[index] = renderNeighbouringPages(neighbouringPages);
-					break;
-				}
-			}
-		}
-
-		return {
-			fittedBlocks: blocks,
-			usedLexicon: lexicon,
-			usedPages: neighbouringPages,
-			usedTokens: currentTokens,
-		};
-	}
-
-	private async trimLexiconToBudget({
-		budget,
-		currentTokens,
-		lexicon,
-		model,
-	}: {
-		budget: number;
-		currentTokens: number;
-		lexicon: LexiconEntry[];
-		model: string;
-	}): Promise<number> {
-		while (lexicon.length > MIN_LEXICON_WORDS && currentTokens > budget) {
-			const lexiconEntry = lexicon.pop() as LexiconEntry;
-			const { tokens: lexiconEntryTokens } = await estimateTokens(
-				[renderLexiconEntry(lexiconEntry)],
-				model,
-			);
-			currentTokens -= lexiconEntryTokens;
-		}
-
-		return currentTokens;
-	}
-
-	private async trimNeighbouringPagesToBudget({
-		budget,
-		currentTokens,
-		model,
-		neighbouringPages,
-	}: {
-		budget: number;
-		currentTokens: number;
-		model: string;
-		neighbouringPages: PageWithText[];
-	}): Promise<number> {
-		while (neighbouringPages.length > EMPTY_LENGTH && currentTokens > budget) {
-			const page = neighbouringPages.pop() as PageWithText;
-			const { tokens: pageTokens } = await estimateTokens(
-				[renderNeighbouringPagesEntry(page)],
-				model,
-			);
-			currentTokens -= pageTokens;
-		}
-
-		return currentTokens;
 	}
 
 	public async buildContext({
@@ -163,21 +40,40 @@ class ContextBuilder implements IContextBuilder {
 		pageNo: number;
 		preset: Preset;
 	}): Promise<BuiltContext> {
-		const blocks: string[] = [];
-		// eslint-disable-next-line sonarjs/no-unused-vars, sonarjs/no-dead-store, @typescript-eslint/no-unused-vars
-		const { lexiconTopK, maxContextTokens, model, neighbourPages } = {
+		const contextToTrim: ContextToFit = {};
+
+		const {
+			lexiconTopK,
+			maxContextTokens,
+			minDistinctPages,
+			model,
+			neighbourPages,
+		} = {
 			...DefaultPresetSettings,
 			...preset.settings,
 		};
 
 		if (preset.seedGlossary.length > EMPTY_LENGTH) {
-			blocks.push(renderSeedGlossary(preset.seedGlossary));
+			contextToTrim.seedGlossary = renderSeedGlossary(preset.seedGlossary);
 		}
 
 		// TODO: Replace with actual lexicon repository method (sorted lexiconTopK)
-		const lexicon: LexiconEntry[] = [];
+		const lexicon: LexiconEntry[] = await LexiconEntryModel.query()
+			.select("id", "valueDisplay", "freq")
+			.where("documentId", documentId)
+			.whereNull("invalidatedAt")
+			.where("distinctPages", ">=", minDistinctPages)
+			.orderBy([
+				{ column: "distinctPages", order: "desc" },
+				{ column: "freq", order: "desc" },
+				{ column: "valueDisplay", order: "asc" },
+			])
+			.limit(lexiconTopK);
+
 		if (lexicon.length > EMPTY_LENGTH) {
-			blocks.push(renderLexicon(lexicon));
+			contextToTrim.lexiconEntries = lexicon.map((entry) =>
+				renderLexiconEntry(entry),
+			);
 		}
 
 		const neighbouringPages =
@@ -188,26 +84,46 @@ class ContextBuilder implements IContextBuilder {
 			);
 
 		if (neighbouringPages.length > EMPTY_LENGTH) {
-			blocks.push(renderNeighbouringPages(neighbouringPages));
+			contextToTrim.neighbourPages = neighbouringPages.map((page) =>
+				renderNeighbouringPagesEntry(page),
+			);
 		}
 
-		const { fittedBlocks, usedLexicon, usedPages, usedTokens } =
-			await this.trimContextToBudget({
-				blocks,
-				budget: maxContextTokens,
-				lexicon,
+		const budget = getEffectiveContextBudget(maxContextTokens);
+		const { blocks, lexiconEntryCount, neighbourPageCount } = await fitToBudget(
+			{
+				budget,
 				model,
-				neighbouringPages,
-			});
+				...contextToTrim,
+			},
+		);
 
-		const contextHash = createContextHash(fittedBlocks);
+		if (lexiconEntryCount > EMPTY_LENGTH) {
+			const lexiconIndex = contextToTrim.seedGlossary
+				? ArrayIndex.SECOND
+				: ArrayIndex.FIRST;
+			blocks[lexiconIndex] = renderLexicon(blocks[lexiconIndex] as string);
+		}
+
+		if (neighbourPageCount > EMPTY_LENGTH) {
+			blocks[blocks.length - ONE] = renderNeighbouringPages(
+				blocks[blocks.length - ONE] as string,
+			);
+		}
+
+		const contextHash = createContextHash(blocks);
+		const estimateTokensResult = await estimateTokens(blocks, model);
 
 		return {
-			blocks: fittedBlocks,
+			blocks,
 			contextHash,
-			tokenEstimate: usedTokens,
-			usedLexiconIds: usedLexicon.map((l) => l.id),
-			usedPageIds: usedPages.map((p) => p.id),
+			tokenEstimate: estimateTokensResult.tokens,
+			usedLexiconIds: lexicon
+				.slice(ArrayIndex.FIRST, lexiconEntryCount)
+				.map((l) => l.id),
+			usedPageIds: neighbouringPages
+				.slice(ArrayIndex.FIRST, neighbourPageCount)
+				.map((p) => p.id),
 		};
 	}
 }

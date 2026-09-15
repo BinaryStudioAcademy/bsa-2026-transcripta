@@ -6,8 +6,10 @@ type Preset = {
 	outputSchema: null | Record<string, unknown>;
 	seedGlossary: SeedGlossary;
 	settings?: {
+		blankStdevThreshold?: number;
 		lexiconTopK?: number;
 		maxContextTokens?: number;
+		minDistinctPages?: number;
 		model?: string;
 		neighbourPages?: number;
 	};
