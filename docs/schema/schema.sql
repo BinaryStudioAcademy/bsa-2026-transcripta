@@ -261,6 +261,10 @@ CREATE TABLE transcription (
   -- context_used only keeps ids/hash; this is the text that went with the image.
   prompt        text        NOT NULL DEFAULT '',
 
+  -- Raw model text before validation / code-fence strip (#153).
+  -- Empty for cache hits (no model call on this run) and pre-feature rows.
+  raw_response  text        NOT NULL DEFAULT '',
+
   -- What it cost. In the same table to avoid extra joins.
   provider      text,
   model         text,

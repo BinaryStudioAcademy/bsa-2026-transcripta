@@ -58,7 +58,7 @@ transcription_cache     (standalone, unrelated)
 | 2   | `preset`              | Settings for a document type. The row is never updated              |
 | 3   | `document`            | Uploaded file, status, budget, cursor position                      |
 | 4   | `page`                | A page: image keys, status, who verified it                         |
-| 5   | `transcription`       | What the model read + corrections + cost + context + prompt         |
+| 5   | `transcription`       | Model read + corrections + cost + context + prompt + raw response   |
 | 6   | `lexicon_entry`       | Document lexicon with frequencies                                   |
 | 7   | `page_event`          | Action history. Append-only                                         |
 | 8   | `transcription_cache` | So we never pay twice for the same thing                            |
@@ -199,6 +199,20 @@ prompt text NOT NULL DEFAULT ''
 
 Old rows stay empty until re-transcribed. Failed calls still do not write a
 transcription row — that comes with the debug/raw-response work.
+
+### 3.2 `raw_response` — model output before validation (#153)
+
+`text` / `structured` are the accepted output. When the model misbehaves you
+need the string it actually returned — fences, broken JSON, schema drift —
+before the worker cleaned it up.
+
+```sql
+raw_response text NOT NULL DEFAULT ''
+```
+
+Filled on a live model call with `response.text`. Cache hits leave it empty
+(no call this run). Persisting it on validation failure (when no current
+transcription row is written) is still open for the debug endpoint work.
 
 ### 4. `distinct_pages` separately from `freq`
 

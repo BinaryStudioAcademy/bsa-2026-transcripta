@@ -11,6 +11,7 @@ type StoreOptions = {
 	presetId: number;
 	prompt: string;
 	provider: string;
+	rawResponse: string;
 	structured: unknown;
 	text: string;
 };

@@ -34,6 +34,8 @@ class TranscriptionModel extends AbstractModel {
 
 	public provider!: null | string;
 
+	public rawResponse!: string;
+
 	public structured!: null | Record<string, unknown>;
 
 	public text!: string;

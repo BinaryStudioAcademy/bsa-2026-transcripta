@@ -1,0 +1,3 @@
+const EMPTY_RAW_RESPONSE = "";
+
+export { EMPTY_RAW_RESPONSE };

@@ -21,6 +21,7 @@ import { type TranscriptionResponse } from "~/modules/transcription/libs/types/t
 import { TranscriptionCacheModel } from "~/modules/transcription/transcription-cache.model.js";
 
 import {
+	EMPTY_RAW_RESPONSE,
 	MAX_REPAIR_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
@@ -138,7 +139,8 @@ const transcribeWithRepair = async (
 		usedLatencyMs += response.latencyMs;
 		usedOutputTokens += response.usage.outputTokens;
 
-		const responseText = stripCodeFence(response.text);
+		const rawResponse = response.text;
+		const responseText = stripCodeFence(rawResponse);
 		const parsed = parseModelJson(responseText);
 
 		if (!parsed.ok) {
@@ -164,6 +166,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: true,
 				outputTokens: usedOutputTokens,
+				rawResponse,
 				structured: parsed.value,
 				text: responseText,
 			};
@@ -220,6 +223,7 @@ const resolveFromCacheOrModel = async (
 			ok: true,
 			outputTokens: cached.outputTokens,
 			prompt: userPrompt,
+			rawResponse: EMPTY_RAW_RESPONSE,
 			structured,
 			text: cached.text,
 		};
@@ -260,6 +264,7 @@ const resolveFromCacheOrModel = async (
 			ok: true,
 			outputTokens: outcome.outputTokens,
 			prompt: userPrompt,
+			rawResponse: outcome.rawResponse,
 			structured: outcome.structured,
 			text: outcome.text,
 		};
@@ -290,6 +295,7 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 		presetId,
 		prompt,
 		provider,
+		rawResponse,
 		structured,
 		text,
 	} = options;
@@ -314,6 +320,7 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			preset_id: presetId,
 			prompt,
 			provider,
+			raw_response: rawResponse,
 			structured: structured ?? null,
 			text,
 		});
@@ -557,6 +564,7 @@ const createTranscribeHandler =
 				presetId: preset.id,
 				prompt: resolved.prompt,
 				provider,
+				rawResponse: resolved.rawResponse,
 				structured: resolved.structured,
 				text: resolved.text,
 			});
