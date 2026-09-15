@@ -3,6 +3,7 @@ import React from "react";
 import styles from "./styles.module.css";
 
 type Properties = {
+	children?: React.ReactNode;
 	className?: string | undefined;
 	isDanger?: boolean;
 	isDisabled?: boolean;
@@ -10,7 +11,7 @@ type Properties = {
 	isPrimary?: boolean;
 	isSecondary?: boolean;
 	isSmall?: boolean;
-	label: string;
+	label?: string;
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	type?: "button" | "submit";
 };
@@ -31,6 +32,7 @@ const getVariantClassName = (
 };
 
 const Button: React.FC<Properties> = ({
+	children,
 	className,
 	isDanger = false,
 	isDisabled = false,
@@ -62,6 +64,7 @@ const Button: React.FC<Properties> = ({
 			type={type}
 		>
 			{label}
+			{children}
 		</button>
 	);
 };

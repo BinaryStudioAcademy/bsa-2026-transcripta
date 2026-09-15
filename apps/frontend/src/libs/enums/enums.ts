@@ -9,5 +9,6 @@ export {
 	ContentType,
 	HTTPCode,
 	HTTPMethod,
+	PageVerificationAction,
 	ServerErrorType,
 } from "@transcripta/shared";
