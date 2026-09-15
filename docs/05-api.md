@@ -156,6 +156,7 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 	"id": 1,
 	"title": "Parish register of Dykanka, 1887",
 	"status": "processing",
+	"errorMessage": null,
 	"preset": { "id": 1, "name": "19th-century parish register", "version": 1 },
 	"pageCount": 300,
 	"cursorPageNo": 47,
@@ -177,6 +178,12 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 
 The `progress` block is read with a single query from the `document_progress`
 view.
+
+`errorMessage` contains the reason why document ingest or processing failed.
+It is `null` when no document-level error has been recorded.
+
+`errorMessage` describes a document-level failure and is separate from
+`progress.pagesFailed`, which counts individual pages that failed processing.
 
 `verifiedPct` and `closedPct` are not the same number and must not be swapped.
 The first counts only what a human read; the second also counts `skipped`,
