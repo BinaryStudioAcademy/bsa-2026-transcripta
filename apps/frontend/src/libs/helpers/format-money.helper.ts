@@ -1,6 +1,3 @@
-const MONEY_DECIMAL_PLACES = 2;
-
-const formatMoney = (value: string): string =>
-	`$${Number(value).toFixed(MONEY_DECIMAL_PLACES)}`;
+const formatMoney = (value: number | string): string => `$${String(value)}`;
 
 export { formatMoney };

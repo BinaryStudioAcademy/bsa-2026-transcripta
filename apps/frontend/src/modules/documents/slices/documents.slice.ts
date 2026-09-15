@@ -17,6 +17,7 @@ import {
 	pollDocumentById,
 	remove,
 	resume,
+	updateBudget,
 } from "./actions.js";
 
 type State = {
@@ -140,6 +141,25 @@ const { actions, name, reducer } = createSlice({
 
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PAUSED;
+			}
+		});
+		builder.addCase(updateBudget.fulfilled, (state, action) => {
+			const { budget, id } = action.payload;
+			if (state.document && state.document.id === id) {
+				state.document.budget = budget;
+				if (Number(budget.limitUsd) > Number(budget.spentUsd)) {
+					state.document.status = DocumentStatus.PROCESSING;
+				}
+			}
+			const documentItem = state.documents.find(
+				(document_) => document_.id === id,
+			);
+			if (documentItem) {
+				documentItem.budgetUsd = budget.limitUsd;
+				documentItem.spentUsd = budget.spentUsd;
+				if (Number(budget.limitUsd) > Number(budget.spentUsd)) {
+					documentItem.status = DocumentStatus.PROCESSING;
+				}
 			}
 		});
 	},

@@ -2,12 +2,14 @@ import { useState } from "react";
 
 import {
 	BudgetIndicator,
+	Button,
 	ConfirmDialog,
 	GroundTruthBlock,
 	Link,
 	LoaderOverlay,
 	OverflowMenu,
 	ProgressBar,
+	RaiseLimitDialog,
 } from "~/libs/components/components.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
@@ -21,6 +23,7 @@ import {
 	useParams,
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import { DocumentStatusBlock } from "./libs/components/components.js";
 
@@ -34,6 +37,7 @@ const Document: React.FC = () => {
 		}),
 	);
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
 
 	const { id } = useParams();
 
@@ -81,6 +85,36 @@ const Document: React.FC = () => {
 				setIsConfirmOpen(false);
 			});
 	}, [currentDocument, dispatch, navigate]);
+
+	const handleOpenRaiseLimit = useCallback((): void => {
+		setIsRaiseLimitOpen(true);
+	}, []);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setIsRaiseLimitOpen(false);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			if (!currentDocument) {
+				return;
+			}
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: currentDocument.id,
+					payload: { limitUsd },
+				}),
+			)
+				.unwrap()
+				.then(() => {
+					setIsRaiseLimitOpen(false);
+					void dispatch(documentActions.startPolling(currentDocument.id));
+				})
+				.catch(() => {});
+		},
+		[currentDocument, dispatch],
+	);
 
 	return (
 		<>
@@ -133,8 +167,25 @@ const Document: React.FC = () => {
 						<BudgetIndicator
 							limitUsd={currentDocument.budget.limitUsd}
 							spentUsd={currentDocument.budget.spentUsd}
+							usedPct={currentDocument.budget.usedPct}
 						/>
 					</section>
+
+					{currentDocument.status === DocumentStatus.BUDGET_STOP && (
+						<section className="budget-stop-banner">
+							<p>
+								Stopped before page{" "}
+								<span className="tx-num">{currentDocument.cursorPageNo}</span> —
+								the budget limit was reached.
+							</p>
+							<Button
+								isSecondary
+								isSmall
+								label="Raise the limit"
+								onClick={handleOpenRaiseLimit}
+							/>
+						</section>
+					)}
 
 					<section>
 						<h2>Verification</h2>
@@ -170,6 +221,15 @@ const Document: React.FC = () => {
 					onCancel={handleCancelDelete}
 					onConfirm={handleConfirmDelete}
 					title="Delete this document"
+				/>
+			)}
+
+			{isRaiseLimitOpen && currentDocument && (
+				<RaiseLimitDialog
+					currentLimitUsd={currentDocument.budget.limitUsd}
+					onCancel={handleCancelRaiseLimit}
+					onSubmit={handleUpdateBudget}
+					spentUsd={currentDocument.budget.spentUsd}
 				/>
 			)}
 		</>
