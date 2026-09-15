@@ -1,4 +1,5 @@
 import { logger } from "~/libs/modules/logger/logger.js";
+import { pageTranscribeQueue } from "~/libs/modules/queue/queue.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { DocumentRepository } from "../documents/document.repository.js";
@@ -21,6 +22,7 @@ const pageService = new PageService({
 	documentRepository,
 	pageEventRepository,
 	pageRepository,
+	pageTranscribeQueue,
 	transcriptionRepository,
 });
 

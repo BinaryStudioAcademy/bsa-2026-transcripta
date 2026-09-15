@@ -1,7 +1,10 @@
 import { config } from "~/libs/modules/config/config.js";
 import { database } from "~/libs/modules/database/database.js";
 import { logger } from "~/libs/modules/logger/logger.js";
-import { queueRegistry } from "~/libs/modules/queue/queue.js";
+import {
+	documentCleanupQueue,
+	queueRegistry,
+} from "~/libs/modules/queue/queue.js";
 import { authController } from "~/modules/auth/auth.js";
 import { documentController } from "~/modules/documents/documents.js";
 import { pageController } from "~/modules/pages/pages.js";
@@ -24,6 +27,7 @@ const serverApplication = new BaseServerApplication({
 	apis: [apiV1],
 	config,
 	database,
+	documentCleanupQueue,
 	logger,
 	queueRegistry,
 	title: "Transcripta",

@@ -414,6 +414,11 @@ const createTranscribeHandler =
 		}
 
 		try {
+			await DocumentModel.query()
+				.patch({ status: DocumentStatus.PROCESSING })
+				.where({ id: documentId, status: DocumentStatus.READY })
+				.execute();
+
 			if (isBudgetExhausted(document)) {
 				logger.warn(`Budget exhausted for document ${String(documentId)}`);
 

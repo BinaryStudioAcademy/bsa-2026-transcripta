@@ -1,0 +1,3 @@
+const TWENTY_FOUR_HOURS_IN_MS = 86_400_000;
+
+export { TWENTY_FOUR_HOURS_IN_MS };
