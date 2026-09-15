@@ -237,13 +237,6 @@ const Documents: React.FC = () => {
 										>
 											<StatusChip status={document.status} />
 
-											{document.status === DocumentStatus.FAILED && (
-												<Button
-													className={styles["documents-page__reread-link"]}
-													label="Open to re-read failed pages"
-													onClick={handleRowActionClick}
-												/>
-											)}
 											{document.status === DocumentStatus.BUDGET_STOP && (
 												<Button
 													isSecondary
