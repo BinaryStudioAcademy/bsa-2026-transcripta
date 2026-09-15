@@ -66,6 +66,7 @@ list below needs its own block — 19 blocks that nobody will write for us.
 |          |                                  |                                                |
 | `GET`    | `/api/v1/documents/:id/pages`    | Pages with their transcriptions                |
 | `POST`   | `/api/v1/pages/:id/verify`       | **The main endpoint**                          |
+| `GET`    | `/api/v1/pages/:id/debug`        | Prompt + raw response + context (owner only)   |
 | `POST`   | `/api/v1/pages/:id/reprocess`    | Re-read a page                                 |
 |          |                                  |                                                |
 | `GET`    | `/api/v1/documents/:id/lexicon`  | The lexicon                                    |
@@ -220,6 +221,45 @@ Without them the first page window is returned; pass both to page further.
 `contextWords` are the words the context suggested. The frontend highlights
 exactly these, because they carry the highest risk of context poisoning. See
 [03-core-logic.md](03-core-logic.md#6-context-poisoning--the-main-danger).
+
+---
+
+## `GET /api/v1/pages/:id/debug` — inspect a bad transcription (#153)
+
+Owner-only. Returns what was sent to the model and what came back for the
+**current** transcription of the page — without opening the database.
+
+```jsonc
+// response 200
+{
+	"pageId": 47,
+	"transcriptionId": 312,
+	"provider": "anthropic",
+	"model": "claude-sonnet-4-20250514",
+	"preset": { "id": 3, "version": 2 },
+	"prompt": "…exact assembled user message…",
+	"rawResponse": "…model text before validation / fence strip…",
+	"contextUsed": {
+		"pageIds": [45, 46],
+		"lexiconIds": [1, 8],
+		"hash": "…",
+		"tokens": 1840,
+	},
+	"inputTokens": 2100,
+	"outputTokens": 420,
+	"costUsd": "0.012300",
+	"latencyMs": 3400,
+	"fromCache": false,
+}
+```
+
+`prompt` is the stored assembled text, not a reconstruction from
+`context_used`. `rawResponse` is empty on cache hits (no model call this run)
+and on rows written before the column existed. Another user's page — or a
+page with no current transcription — returns `404`.
+
+Validation failures still do not create a transcription row yet, so there is
+nothing to return for those until that path persists prompt + raw response.
 
 ---
 

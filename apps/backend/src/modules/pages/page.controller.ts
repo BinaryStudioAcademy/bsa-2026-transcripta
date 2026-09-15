@@ -13,7 +13,10 @@ import {
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
-import { type VerifyPageHandlerOptions } from "./libs/types/types.js";
+import {
+	type GetPageDebugHandlerOptions,
+	type VerifyPageHandlerOptions,
+} from "./libs/types/types.js";
 import { type PageService } from "./page.service.js";
 
 class PageController extends BaseController {
@@ -23,6 +26,17 @@ class PageController extends BaseController {
 		super(logger, APIPath.PAGES);
 
 		this.pageService = pageService;
+
+		this.addRoute({
+			handler: (options) =>
+				this.getDebug(options as GetPageDebugHandlerOptions),
+			method: HTTPMethod.GET,
+			path: PageApiPath.DEBUG,
+			preHandler: authGuard,
+			validation: {
+				params: verifyPageParameters,
+			},
+		});
 
 		this.addRoute({
 			handler: (options) => this.verify(options as VerifyPageHandlerOptions),
@@ -35,6 +49,40 @@ class PageController extends BaseController {
 			},
 		});
 	}
+
+	/**
+	 * @swagger
+	 * /pages/{id}/debug:
+	 *   get:
+	 *     description: Get transcription debug info for a page owned by the caller
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         description: Page ID
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *     responses:
+	 *       200:
+	 *         description: Debug payload for the current transcription
+	 *       404:
+	 *         description: Page or transcription not found
+	 */
+	private async getDebug(
+		options: GetPageDebugHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.pageService.getDebug(
+				options.params.id,
+				options.user.userId,
+			),
+			status: HTTPCode.OK,
+		};
+	}
+
 	/**
 	 * @swagger
 	 * /pages/{id}/verify:

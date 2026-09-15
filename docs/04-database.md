@@ -198,7 +198,8 @@ prompt text NOT NULL DEFAULT ''
 ```
 
 Old rows stay empty until re-transcribed. Failed calls still do not write a
-transcription row — that comes with the debug/raw-response work.
+transcription row — that comes with the failure-persist work. Read via
+`GET /api/v1/pages/:id/debug`.
 
 ### 3.2 `raw_response` — model output before validation (#153)
 
@@ -211,8 +212,9 @@ raw_response text NOT NULL DEFAULT ''
 ```
 
 Filled on a live model call with `response.text`. Cache hits leave it empty
-(no call this run). Persisting it on validation failure (when no current
-transcription row is written) is still open for the debug endpoint work.
+(no call this run). Exposed on `GET /api/v1/pages/:id/debug`. Persisting it
+on validation failure (when no current transcription row is written) is
+still open.
 
 ### 4. `distinct_pages` separately from `freq`
 
