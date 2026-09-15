@@ -160,3 +160,16 @@
 	text-align: right;
 	white-space: nowrap;
 }
+
+.document-page__header {
+	display: flex;
+	gap: var(--sp-3);
+	align-items: center;
+	justify-content: space-between;
+}
+
+.document-page__actions {
+	display: flex;
+	gap: var(--sp-3);
+	align-items: center;
+}
