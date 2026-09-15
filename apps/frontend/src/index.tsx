@@ -17,6 +17,7 @@ import { Document } from "~/pages/documents/document.jsx";
 import { Documents } from "~/pages/documents/documents.jsx";
 import { NotFound } from "~/pages/not-found/not-found.jsx";
 import { Test } from "~/pages/test/test.jsx";
+import { Verification } from "~/pages/verification/verification.jsx";
 
 createRoot(document.querySelector("#root") as HTMLElement).render(
 	<StrictMode>
@@ -42,6 +43,10 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 									{
 										element: <Document />,
 										path: AppRoute.DOCUMENT,
+									},
+									{
+										element: <Verification />,
+										path: AppRoute.VERIFICATION,
 									},
 									{
 										element: <Test />,
