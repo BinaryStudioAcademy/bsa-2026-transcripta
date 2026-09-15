@@ -69,6 +69,7 @@ list below needs its own block — 19 blocks that nobody will write for us.
 | `GET`    | `/api/v1/pages/:id/debug`        | Prompt + raw response + context (owner only)   |
 | `POST`   | `/api/v1/pages/:id/reprocess`    | Re-read a page                                 |
 |          |                                  |                                                |
+| `POST`   | `/api/v1/test/transcribe`        | Model sandbox (no auth, nothing stored)        |
 | `GET`    | `/api/v1/documents/:id/lexicon`  | The lexicon                                    |
 | `POST`   | `/api/v1/lexicon/:id/invalidate` | Mark a word as wrong                           |
 |          |                                  |                                                |
@@ -259,6 +260,30 @@ and on rows written before the column existed. After a validation failure the
 worker still stores a current row with empty `text` and the rejected
 `rawResponse`, so this endpoint can diagnose that case too. Another user's
 page — or a page with no current transcription — returns `404`.
+
+---
+
+## `POST /api/v1/test/transcribe` — model sandbox (#153 / #65)
+
+No auth. Nothing is persisted. Used for model comparison on real scans.
+Returns the same debug surface as page debug where it applies: the prompt
+that was sent, the raw model text, provider, model, tokens, estimated cost
+and latency. There is no preset, context breakdown or cache flag here —
+the sandbox sends a freeform prompt with an image only.
+
+```jsonc
+// response 200
+{
+	"prompt": "…exact prompt from the request…",
+	"rawResponse": "…model text…",
+	"text": "…same as rawResponse (no schema validation in sandbox)…",
+	"provider": "anthropic",
+	"modelId": "us.anthropic.claude-sonnet-4-6",
+	"costUsd": "0.0123",
+	"latencyMs": 3400,
+	"usage": { "inputTokens": 2100, "outputTokens": 420 },
+}
+```
 
 ---
 
