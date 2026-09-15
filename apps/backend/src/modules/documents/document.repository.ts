@@ -93,6 +93,7 @@ class DocumentRepository {
 		const document = await knex
 			.select<DocumentDetailsRow>([
 				"dp.documentId as id",
+				"d.error_message as errorMessage",
 				"dp.title",
 				"dp.status",
 				"dp.pageCount",
