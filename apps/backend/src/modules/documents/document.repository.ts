@@ -6,6 +6,8 @@ import { DocumentDetailsEntity } from "~/modules/documents/document-details.enti
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { CLOSED_PAGE_STATUSES } from "~/modules/pages/libs/constants/constants.js";
+import { PageModel } from "~/modules/pages/page.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
@@ -182,6 +184,23 @@ class DocumentRepository {
 			.withGraphFetched(DocumentRelationName.PRESET);
 
 		return document ? DocumentEntity.initialize(document) : null;
+	}
+
+	public async markDoneIfAllPagesClosed(
+		id: number,
+		trx: Transaction,
+	): Promise<void> {
+		const openPages = PageModel.query(trx)
+			.select("id")
+			.where({ documentId: id })
+			.whereNotIn("status", [...CLOSED_PAGE_STATUSES]);
+
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.DONE })
+			.where({ id })
+			.whereNotExists(openPages)
+			.execute();
 	}
 
 	public async resumeFromBudgetStop(

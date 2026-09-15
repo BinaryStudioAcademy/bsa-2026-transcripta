@@ -224,7 +224,7 @@ class PageService {
 				);
 
 				const shouldAdvanceWindow =
-					!CLOSED_PAGE_STATUSES.includes(page.status) &&
+					!CLOSED_PAGE_STATUSES.has(page.status) &&
 					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
 				const pagesToQueue = shouldAdvanceWindow
 					? await this.pageRepository.updateFirstPendingPagesAsQueued(
@@ -233,7 +233,12 @@ class PageService {
 							trx,
 						)
 					: [];
-
+        
+        await this.documentRepository.markDoneIfAllPagesClosed(
+          page.documentId,
+          trx,
+        );
+        
 				return {
 					pagesToQueue,
 					response: await this.buildVerifyResponse(
