@@ -6,6 +6,8 @@ import { DocumentDetailsEntity } from "~/modules/documents/document-details.enti
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { CLOSED_PAGE_STATUSES } from "~/modules/pages/libs/constants/constants.js";
+import { PageModel } from "~/modules/pages/page.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
 import { DocumentRelationName, DocumentStatus } from "./libs/enums/enums.js";
@@ -36,7 +38,7 @@ class DocumentRepository {
 		return DocumentEntity.initialize(document);
 	}
 
-	public async deleteById(id: number, trx: Transaction): Promise<void> {
+	public async deleteById(id: number, trx?: Transaction): Promise<void> {
 		await this.documentModel.query(trx).deleteById(id).execute();
 	}
 
@@ -66,6 +68,12 @@ class DocumentRepository {
 			.execute();
 
 		return documents.map((document) => DocumentEntity.initialize(document));
+	}
+
+	public async findById(id: number): Promise<DocumentEntity | null> {
+		const document = await this.documentModel.query().findById(id).execute();
+
+		return document ? DocumentEntity.initialize(document) : null;
 	}
 
 	public async findByIdAndOwnerId(
@@ -135,13 +143,10 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
-	public async findDraftsOlderThanByUser(
-		ownerId: number,
-		date: string,
-	): Promise<DocumentEntity[]> {
+	public async findDraftsOlderThan(date: string): Promise<DocumentEntity[]> {
 		const documents = await this.documentModel
 			.query()
-			.where({ ownerId, status: DocumentStatus.DRAFT })
+			.where({ status: DocumentStatus.DRAFT })
 			.where("createdAt", "<", date)
 			.execute();
 
@@ -182,6 +187,23 @@ class DocumentRepository {
 			.withGraphFetched(DocumentRelationName.PRESET);
 
 		return document ? DocumentEntity.initialize(document) : null;
+	}
+
+	public async markDoneIfAllPagesClosed(
+		id: number,
+		trx: Transaction,
+	): Promise<void> {
+		const openPages = PageModel.query(trx)
+			.select("id")
+			.where({ documentId: id })
+			.whereNotIn("status", [...CLOSED_PAGE_STATUSES]);
+
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.DONE })
+			.where({ id })
+			.whereNotExists(openPages)
+			.execute();
 	}
 
 	public async resumeFromBudgetStop(
@@ -292,9 +314,13 @@ class DocumentRepository {
 			.execute();
 	}
 
-	public async updatePageCount(id: number, pageCount: number): Promise<void> {
+	public async updatePageCount(
+		id: number,
+		pageCount: number,
+		trx?: Transaction,
+	): Promise<void> {
 		await this.documentModel
-			.query()
+			.query(trx)
 			.patch({ pageCount })
 			.where({ id })
 			.execute();
@@ -315,8 +341,13 @@ class DocumentRepository {
 	public async updateStatus(
 		id: number,
 		status: ValueOf<typeof DocumentStatus>,
+		trx?: Transaction,
 	): Promise<void> {
-		await this.documentModel.query().patch({ status }).where({ id }).execute();
+		await this.documentModel
+			.query(trx)
+			.patch({ status })
+			.where({ id })
+			.execute();
 	}
 }
 

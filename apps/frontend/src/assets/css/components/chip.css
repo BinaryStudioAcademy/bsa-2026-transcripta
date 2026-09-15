@@ -2,6 +2,7 @@
 	display: inline-flex;
 	gap: var(--sp-1);
 	align-items: center;
+	height: 22px;
 	padding: var(--sp-1) var(--sp-2);
 	font: 500 var(--fs-xs) / 1 var(--font-ui);
 	color: var(--text-2);
@@ -9,6 +10,12 @@
 	background: var(--surface);
 	border: 1px solid var(--hairline-strong);
 	border-radius: var(--r-sm);
+}
+
+.tx-chip--seal {
+	color: var(--accent-text);
+	background: var(--accent-tint);
+	border-color: color-mix(in oklab, var(--accent) 35%, transparent);
 }
 
 .tx-chip__icon {
@@ -31,5 +38,10 @@
 .tx-chip--danger {
 	color: var(--danger-text);
 	background: var(--danger-tint);
+	border-color: color-mix(in oklab, var(--danger) 40%, transparent);
+}
+
+.tx-chip .tnum {
+	font-size: var(--fs-xs);
 	border-color: color-mix(in oklab, var(--danger) 55%, transparent);
 }

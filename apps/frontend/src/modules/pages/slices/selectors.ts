@@ -1,0 +1,68 @@
+import { createSelector } from "@reduxjs/toolkit";
+
+import {
+	DIVIDER_HALF,
+	INDEX_NOT_FOUND,
+	START_INDEX_FALLBACK,
+} from "~/libs/constants/common.constants.js";
+import { type RootState } from "~/libs/types/types.js";
+import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
+
+const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
+
+const selectVerificationDataStatus = (state: RootState) =>
+	state.pages.verificationDataStatus;
+
+const selectCurrentPage = (state: RootState) => {
+	const pageId = state.pages.idsByPageNo[state.pages.cursorPageNo];
+
+	return pageId ? state.pages.byId[pageId] : undefined;
+};
+
+const selectCursorPageNo = (state: RootState) => state.pages.cursorPageNo;
+
+const selectPagesForStrip = createSelector(
+	[
+		(state: RootState) => state.pages.byId,
+		(state: RootState) => state.pages.cursorPageNo,
+		(state: RootState) => state.pages.idsByPageNo,
+	],
+	(byId, cursorPageNo, idsByPageNo) => {
+		const pageNumbers = Object.keys(idsByPageNo)
+			.map(Number)
+			.sort((a, b) => a - b);
+
+		const currentIndex = pageNumbers.indexOf(cursorPageNo);
+
+		if (currentIndex === INDEX_NOT_FOUND) {
+			return [];
+		}
+
+		const half = Math.floor(MAX_LOADED_PAGES / DIVIDER_HALF);
+
+		let start = currentIndex - half;
+		let end = start + MAX_LOADED_PAGES;
+
+		if (start < START_INDEX_FALLBACK) {
+			start = START_INDEX_FALLBACK;
+			end = Math.min(pageNumbers.length, MAX_LOADED_PAGES);
+		}
+
+		if (end > pageNumbers.length) {
+			end = pageNumbers.length;
+			start = Math.max(START_INDEX_FALLBACK, end - MAX_LOADED_PAGES);
+		}
+
+		return pageNumbers
+			.slice(start, end)
+			.map((pageNo) => byId[idsByPageNo[pageNo] as number]);
+	},
+);
+
+export {
+	selectCurrentPage,
+	selectCursorPageNo,
+	selectPagesDataStatus,
+	selectPagesForStrip,
+	selectVerificationDataStatus,
+};

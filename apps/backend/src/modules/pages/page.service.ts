@@ -7,10 +7,16 @@ import {
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
 
+import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
+import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
+
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
-import { NUMBER_OF_PAGES_TO_INCREMENT } from "./libs/constants/constants.js";
+import {
+	CLOSED_PAGE_STATUSES,
+	NUMBER_OF_PAGES_TO_INCREMENT,
+} from "./libs/constants/constants.js";
 import {
 	PageErrorMessage,
 	PageErrorType,
@@ -31,15 +37,19 @@ class PageService {
 
 	private pageRepository: PageRepository;
 
+	private pageTranscribeQueue: PageTranscribeQueue;
+
 	private transcriptionRepository: TranscriptionRepository;
 
 	public constructor({
 		documentRepository,
 		pageEventRepository,
 		pageRepository,
+		pageTranscribeQueue,
 		transcriptionRepository,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
+		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
@@ -156,14 +166,29 @@ class PageService {
 		const status = StatusByAction[action];
 
 		try {
-			return await DocumentModel.transaction(async (trx) => {
-				const page = await this.pageRepository.findByIdForOwner(
+			const result = await DocumentModel.transaction(async (trx) => {
+				let page = await this.pageRepository.findByIdForOwner(
 					pageId,
 					userId,
 					trx,
 				);
 
 				if (!page) {
+					throw new HTTPError({
+						message: PageErrorMessage.PAGE_NOT_FOUND,
+						status: HTTPCode.NOT_FOUND,
+					});
+				}
+
+				const document =
+					await this.documentRepository.findByIdAndOwnerIdForUpdate(
+						page.documentId,
+						userId,
+						trx,
+					);
+				page = await this.pageRepository.findByIdForOwner(pageId, userId, trx);
+
+				if (!document || !page) {
 					throw new HTTPError({
 						message: PageErrorMessage.PAGE_NOT_FOUND,
 						status: HTTPCode.NOT_FOUND,
@@ -191,15 +216,18 @@ class PageService {
 					);
 
 				if (existingEvent && !isCorrection) {
-					return await this.buildVerifyResponse(
-						{
-							documentId: page.documentId,
-							pageId,
-							pageNo: page.pageNo,
-							status: page.status,
-						},
-						trx,
-					);
+					return {
+						pagesToQueue: [],
+						response: await this.buildVerifyResponse(
+							{
+								documentId: page.documentId,
+								pageId,
+								pageNo: page.pageNo,
+								status: page.status,
+							},
+							trx,
+						),
+					};
 				}
 
 				if (isCorrection) {
@@ -244,16 +272,49 @@ class PageService {
 					trx,
 				);
 
-				return await this.buildVerifyResponse(
-					{
-						documentId: page.documentId,
-						pageId,
-						pageNo: page.pageNo,
-						status,
-					},
+				const shouldAdvanceWindow =
+					!CLOSED_PAGE_STATUSES.has(page.status) &&
+					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
+				const pagesToQueue = shouldAdvanceWindow
+					? await this.pageRepository.updateFirstPendingPagesAsQueued(
+							page.documentId,
+							NUMBER_OF_PAGES_TO_INCREMENT,
+							trx,
+						)
+					: [];
+
+				await this.documentRepository.markDoneIfAllPagesClosed(
+					page.documentId,
 					trx,
 				);
+
+				return {
+					pagesToQueue,
+					response: await this.buildVerifyResponse(
+						{
+							documentId: page.documentId,
+							pageId,
+							pageNo: page.pageNo,
+							status,
+						},
+						trx,
+					),
+				};
 			});
+
+			await Promise.all(
+				result.pagesToQueue.map((page) => {
+					const { documentId, id, pageNo } = page.toObject();
+
+					return this.pageTranscribeQueue.add({
+						documentId,
+						pageId: id,
+						pageNo,
+					});
+				}),
+			);
+
+			return result.response;
 		} catch (error) {
 			if (
 				error instanceof UniqueViolationError &&
