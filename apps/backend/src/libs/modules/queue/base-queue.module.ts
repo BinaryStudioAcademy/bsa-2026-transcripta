@@ -3,6 +3,7 @@ import {
 	type JobsOptions,
 	type Processor,
 	Queue,
+	type RepeatOptions,
 	Worker,
 } from "bullmq";
 import { type Redis } from "ioredis";
@@ -44,6 +45,26 @@ class BaseQueue<TData> implements QueueLifecycle {
 		}
 
 		await this.queue.add(this.name, data, options);
+	}
+
+	protected async addRepeatableJob(
+		data: TData,
+		repeatOptions: RepeatOptions,
+		jobOptions: JobsOptions,
+	): Promise<void> {
+		if (!this.queue) {
+			throw new Error(QueueErrorMessage.QUEUE_NOT_CREATED);
+		}
+
+		await this.queue.upsertJobScheduler(
+			`${this.name}-scheduler`,
+			repeatOptions,
+			{
+				data,
+				name: this.name,
+				opts: jobOptions,
+			},
+		);
 	}
 
 	public async close(): Promise<void> {

@@ -17,7 +17,6 @@ import {
 	ObjectNotUploadedError,
 	PDFTimeoutError,
 } from "~/libs/exceptions/exceptions.js";
-import { type Logger } from "~/libs/modules/logger/logger.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
@@ -36,7 +35,6 @@ import {
 	NON_DELETABLE_DOCUMENT_STATUSES,
 	NOT_FOUND_INDEX,
 	PAGES_TO_QUEUE,
-	TWENTY_FOUR_HOURS_IN_MS,
 } from "./libs/constants/constants.js";
 import {
 	DocumentErrorMessage,
@@ -52,7 +50,6 @@ import {
 
 class DocumentService {
 	private documentRepository: DocumentRepository;
-	private logger: Logger;
 	private pageRepository: PageRepository;
 	private pageTranscribeQueue: PageTranscribeQueue;
 	private pdfPageProcessor: PDFPageProcessor;
@@ -60,14 +57,12 @@ class DocumentService {
 
 	public constructor({
 		documentRepository,
-		logger,
 		pageRepository,
 		pageTranscribeQueue,
 		pdfPageProcessor,
 		storage,
 	}: DocumentServiceDependencies) {
 		this.documentRepository = documentRepository;
-		this.logger = logger;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
 		this.storage = storage;
@@ -129,31 +124,6 @@ class DocumentService {
 
 	private buildSourceKey(documentId: number): string {
 		return `uploads/${documentId.toString()}/original.pdf`;
-	}
-
-	private async cleanupAbandonedDraftsForUser(ownerId: number): Promise<void> {
-		const twentyFourHoursAgo = new Date(
-			Date.now() - TWENTY_FOUR_HOURS_IN_MS,
-		).toISOString();
-
-		const abandonedDrafts =
-			await this.documentRepository.findDraftsOlderThanByUser(
-				ownerId,
-				twentyFourHoursAgo,
-			);
-
-		for (const draft of abandonedDrafts) {
-			const documentId = draft.toObject().id;
-
-			await this.storage.deleteByPrefix({
-				bucket: StorageBucket.UPLOADS,
-				prefix: `uploads/${documentId.toString()}/`,
-			});
-
-			await DocumentModel.transaction(async (trx) => {
-				await this.documentRepository.deleteById(documentId, trx);
-			});
-		}
 	}
 
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
@@ -461,12 +431,6 @@ class DocumentService {
 	public async findAllByOwnerId(
 		ownerId: number,
 	): Promise<DocumentGetAllResponseDto> {
-		try {
-			await this.cleanupAbandonedDraftsForUser(ownerId);
-		} catch (error: unknown) {
-			this.logger.error(DocumentErrorMessage.DRAFTS_NOT_CLEAN, { error });
-		}
-
 		const items = await this.documentRepository.findAllByOwnerId(ownerId);
 
 		return {

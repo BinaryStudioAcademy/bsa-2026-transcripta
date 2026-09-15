@@ -38,7 +38,7 @@ class DocumentRepository {
 		return DocumentEntity.initialize(document);
 	}
 
-	public async deleteById(id: number, trx: Transaction): Promise<void> {
+	public async deleteById(id: number, trx?: Transaction): Promise<void> {
 		await this.documentModel.query(trx).deleteById(id).execute();
 	}
 
@@ -68,6 +68,12 @@ class DocumentRepository {
 			.execute();
 
 		return documents.map((document) => DocumentEntity.initialize(document));
+	}
+
+	public async findById(id: number): Promise<DocumentEntity | null> {
+		const document = await this.documentModel.query().findById(id).execute();
+
+		return document ? DocumentEntity.initialize(document) : null;
 	}
 
 	public async findByIdAndOwnerId(
@@ -137,13 +143,10 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
-	public async findDraftsOlderThanByUser(
-		ownerId: number,
-		date: string,
-	): Promise<DocumentEntity[]> {
+	public async findDraftsOlderThan(date: string): Promise<DocumentEntity[]> {
 		const documents = await this.documentModel
 			.query()
-			.where({ ownerId, status: DocumentStatus.DRAFT })
+			.where({ status: DocumentStatus.DRAFT })
 			.where("createdAt", "<", date)
 			.execute();
 
