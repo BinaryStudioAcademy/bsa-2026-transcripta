@@ -8,6 +8,7 @@ type FailedResolvedTranscription = {
 	ok: false;
 	outputTokens: number;
 	reason: TranscribeFailureReasonValue;
+	retryable: boolean;
 };
 
 export { type FailedResolvedTranscription };

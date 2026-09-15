@@ -113,6 +113,46 @@ class PageRepository {
 		return pages.map((page) => PageEntity.initialize(page));
 	}
 
+	public async resetFailedPageForReprocess(
+		pageId: number,
+		trx?: Transaction,
+	): Promise<boolean> {
+		const updatedRows = await this.pageModel
+			.query(trx)
+			.patch({
+				attempts: EMPTY_LENGTH,
+				lastError: null,
+				status: PageStatus.QUEUED,
+			})
+			.where({
+				id: pageId,
+				status: PageStatus.FAILED,
+			})
+			.execute();
+
+		return updatedRows > EMPTY_LENGTH;
+	}
+
+	public async restoreFailedPageAfterReprocessFailure(
+		pageId: number,
+		attempts: number,
+		lastError: null | string,
+	): Promise<void> {
+		await this.pageModel
+			.query()
+			.patch({
+				attempts,
+				lastError,
+				status: PageStatus.FAILED,
+			})
+			.where({
+				attempts: EMPTY_LENGTH,
+				id: pageId,
+				status: PageStatus.QUEUED,
+			})
+			.execute();
+	}
+
 	public async updateFirstPendingPagesAsQueued(
 		documentId: number,
 		quantity: number,
