@@ -93,6 +93,7 @@ sorted by `created_at` descending (newest first). No pagination in release 1.
 			"title": "Birth records, Kharkiv county, 1892",
 			"status": "draft",
 			"pageCount": 0,
+			"pagesFailed": 0,
 			"createdAt": "2026-08-28T08:15:00.000Z",
 		},
 		{
@@ -100,11 +101,14 @@ sorted by `created_at` descending (newest first). No pagination in release 1.
 			"title": "Parish register of Dykanka, 1887",
 			"status": "processing",
 			"pageCount": 300,
+			"pagesFailed": 0,
 			"createdAt": "2026-08-07T10:00:00.000Z",
 		},
 	],
 }
 ```
+
+`pagesFailed` is the number of pages whose transcription failed. A document with `status: "failed"` can still have `pagesFailed: 0`: that status means the document ingest itself failed, not that individual page transcription failed.
 
 An empty library is still `200` with `{ "items": [] }`.
 
