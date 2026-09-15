@@ -2,6 +2,7 @@ import { HTTPCode } from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
 
+import { ThemeToggle } from "~/libs/components/components.js";
 import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
 import { AppRoute, BlockerState, DataStatus } from "~/libs/enums/enums.js";
 import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
@@ -356,6 +357,8 @@ const DocumentNew: React.FC = () => {
 				<h1 className={styles["page-header__title"]}>
 					{resumeDocumentId ? "Resume document upload" : "New document"}
 				</h1>
+
+				<ThemeToggle />
 			</header>
 			<main className={styles["upload-screen"]}>
 				<div className={styles["upload-form__container"]}>

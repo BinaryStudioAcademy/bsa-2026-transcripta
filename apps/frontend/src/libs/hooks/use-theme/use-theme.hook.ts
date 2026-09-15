@@ -11,34 +11,21 @@ type ThemeValue = ValueOf<typeof Theme>;
 
 const useTheme = (): { theme: ThemeValue; toggleTheme: () => void } => {
 	const [theme, setTheme] = useState<ThemeValue>(() => {
+		const appliedTheme = document.documentElement.dataset["theme"];
+
+		if (appliedTheme === Theme.DARK || appliedTheme === Theme.LIGHT) {
+			return appliedTheme;
+		}
+
 		const prefersDark = globalThis.matchMedia(COLOR_SCHEME_QUERY).matches;
 
 		return prefersDark ? Theme.DARK : Theme.LIGHT;
 	});
-	const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
 	useEffect(() => {
-		const loadStoredTheme = async (): Promise<void> => {
-			const storedTheme = await storage.get<ThemeValue>(StorageKey.THEME);
-
-			if (storedTheme) {
-				setTheme(storedTheme);
-			}
-
-			setIsLoaded(true);
-		};
-
-		void loadStoredTheme();
-	}, []);
-
-	useEffect(() => {
-		if (!isLoaded) {
-			return;
-		}
-
 		document.documentElement.dataset["theme"] = theme;
 		void storage.set(StorageKey.THEME, theme);
-	}, [theme, isLoaded]);
+	}, [theme]);
 
 	const toggleTheme = useCallback(() => {
 		setTheme((previousTheme) =>
