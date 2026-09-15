@@ -93,6 +93,7 @@ sorted by `created_at` descending (newest first). No pagination in release 1.
 			"title": "Birth records, Kharkiv county, 1892",
 			"status": "draft",
 			"pageCount": 0,
+			"pagesFailed": 0,
 			"createdAt": "2026-08-28T08:15:00.000Z",
 		},
 		{
@@ -100,11 +101,14 @@ sorted by `created_at` descending (newest first). No pagination in release 1.
 			"title": "Parish register of Dykanka, 1887",
 			"status": "processing",
 			"pageCount": 300,
+			"pagesFailed": 0,
 			"createdAt": "2026-08-07T10:00:00.000Z",
 		},
 	],
 }
 ```
+
+`pagesFailed` is the number of pages whose transcription failed. A document with `status: "failed"` can still have `pagesFailed: 0`: that status means the document ingest itself failed, not that individual page transcription failed.
 
 An empty library is still `200` with `{ "items": [] }`.
 
@@ -152,6 +156,7 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 	"id": 1,
 	"title": "Parish register of Dykanka, 1887",
 	"status": "processing",
+	"errorMessage": null,
 	"preset": { "id": 1, "name": "19th-century parish register", "version": 1 },
 	"pageCount": 300,
 	"cursorPageNo": 47,
@@ -173,6 +178,12 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 
 The `progress` block is read with a single query from the `document_progress`
 view.
+
+`errorMessage` contains the reason why document ingest or processing failed.
+It is `null` when no document-level error has been recorded.
+
+`errorMessage` describes a document-level failure and is separate from
+`progress.pagesFailed`, which counts individual pages that failed processing.
 
 `verifiedPct` and `closedPct` are not the same number and must not be swapped.
 The first counts only what a human read; the second also counts `skipped`,

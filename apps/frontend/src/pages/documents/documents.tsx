@@ -99,20 +99,28 @@ const Documents: React.FC = () => {
 	const isLoading = dataStatus === DataStatus.PENDING;
 	const isEmpty =
 		dataStatus === DataStatus.FULFILLED && documents.length === EMPTY_LENGTH;
-	const failedDocuments = documents.filter(
-		(document) => document.status === DocumentStatus.FAILED,
+	const documentsWithFailedPages = documents.filter(
+		(document) =>
+			document.status !== DocumentStatus.FAILED &&
+			document.pagesFailed > EMPTY_LENGTH,
 	);
-	const hasFailedDocuments = failedDocuments.length > EMPTY_LENGTH;
+	const hasFailedPages = documentsWithFailedPages.length > EMPTY_LENGTH;
 	const budgetStoppedDocuments = documents.filter(
 		(document) => document.status === DocumentStatus.BUDGET_STOP,
 	);
 	const hasBudgetStoppedDocuments =
 		budgetStoppedDocuments.length > EMPTY_LENGTH;
+	const failedPagesMessage = documentsWithFailedPages
+		.map(
+			(document) =>
+				`${document.title} has ${String(document.pagesFailed)} failed pages`,
+		)
+		.join(", ");
+
 	const footerMessage = [
 		hasBudgetStoppedDocuments &&
 			`${budgetStoppedDocuments.map((document) => document.title).join(", ")} stopped at its budget — raise the limit to continue.`,
-		hasFailedDocuments &&
-			`${failedDocuments.map((document) => document.title).join(", ")} has failed pages — open it to re-read them.`,
+		hasFailedPages && `${failedPagesMessage} — open it to re-read them.`,
 	]
 		.filter(Boolean)
 		.join(" ");
@@ -237,13 +245,14 @@ const Documents: React.FC = () => {
 										>
 											<StatusChip status={document.status} />
 
-											{document.status === DocumentStatus.FAILED && (
-												<Button
-													className={styles["documents-page__reread-link"]}
-													label="Open to re-read failed pages"
-													onClick={handleRowActionClick}
-												/>
-											)}
+											{document.status !== DocumentStatus.FAILED &&
+												document.pagesFailed > EMPTY_LENGTH && (
+													<Button
+														className={styles["documents-page__reread-link"]}
+														label="Open to re-read failed pages"
+														onClick={handleRowActionClick}
+													/>
+												)}
 											{document.status === DocumentStatus.BUDGET_STOP && (
 												<Button
 													isSecondary
@@ -280,7 +289,7 @@ const Documents: React.FC = () => {
 
 				{!isEmpty && (
 					<div className={styles["documents-page__footer"]}>
-						{(hasFailedDocuments || hasBudgetStoppedDocuments) && (
+						{(hasFailedPages || hasBudgetStoppedDocuments) && (
 							<div className={styles["documents-page__footer-messages"]}>
 								<p className={styles["documents-page__footer-message"]}>
 									{footerMessage}

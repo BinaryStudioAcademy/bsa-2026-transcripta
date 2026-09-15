@@ -8,6 +8,7 @@ type DocumentGetAllItemResponseDto = {
 	id: number;
 	ownerId: number;
 	pageCount: number;
+	pagesFailed: number;
 	spentUsd: string;
 	status: ValueOf<typeof DocumentStatus>;
 	title: string;
