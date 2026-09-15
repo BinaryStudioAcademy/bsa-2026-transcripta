@@ -255,11 +255,10 @@ Owner-only. Returns what was sent to the model and what came back for the
 
 `prompt` is the stored assembled text, not a reconstruction from
 `context_used`. `rawResponse` is empty on cache hits (no model call this run)
-and on rows written before the column existed. Another user's page — or a
-page with no current transcription — returns `404`.
-
-Validation failures still do not create a transcription row yet, so there is
-nothing to return for those until that path persists prompt + raw response.
+and on rows written before the column existed. After a validation failure the
+worker still stores a current row with empty `text` and the rejected
+`rawResponse`, so this endpoint can diagnose that case too. Another user's
+page — or a page with no current transcription — returns `404`.
 
 ---
 

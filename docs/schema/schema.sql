@@ -263,6 +263,7 @@ CREATE TABLE transcription (
 
   -- Raw model text before validation / code-fence strip (#153).
   -- Empty for cache hits (no model call on this run) and pre-feature rows.
+  -- On validation failure after repair: still stored; text stays empty.
   raw_response  text        NOT NULL DEFAULT '',
 
   -- What it cost. In the same table to avoid extra joins.
