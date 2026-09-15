@@ -17,6 +17,7 @@ import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type QueueRegistry } from "~/libs/modules/queue/queue-registry.module.js";
+import { DocumentCleanupQueue } from "~/libs/modules/queue/queue.js";
 import {
 	type ServerCommonErrorResponse,
 	type ServerValidationErrorResponse,
@@ -41,6 +42,7 @@ type Constructor = {
 	apis: ServerApplicationApi[];
 	config: Config;
 	database: Database;
+	documentCleanupQueue: DocumentCleanupQueue;
 	logger: Logger;
 	queueRegistry: QueueRegistry;
 	title: string;
@@ -55,6 +57,8 @@ class BaseServerApplication implements ServerApplication {
 
 	private database: Database;
 
+	private documentCleanupQueue: DocumentCleanupQueue;
+
 	private logger: Logger;
 
 	private queueRegistry: QueueRegistry;
@@ -65,6 +69,7 @@ class BaseServerApplication implements ServerApplication {
 		apis,
 		config,
 		database,
+		documentCleanupQueue,
 		logger,
 		queueRegistry,
 		title,
@@ -75,6 +80,7 @@ class BaseServerApplication implements ServerApplication {
 		this.database = database;
 		this.apis = apis;
 		this.queueRegistry = queueRegistry;
+		this.documentCleanupQueue = documentCleanupQueue;
 
 		this.initApp();
 	}
@@ -257,7 +263,7 @@ class BaseServerApplication implements ServerApplication {
 
 		try {
 			await this.queueRegistry.connect();
-
+			await this.documentCleanupQueue.init();
 			await this.app.listen({
 				host: this.config.ENV.APP.HOST,
 				port: this.config.ENV.APP.PORT,
