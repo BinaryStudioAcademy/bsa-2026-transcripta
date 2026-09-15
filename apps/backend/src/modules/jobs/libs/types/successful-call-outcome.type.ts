@@ -3,6 +3,7 @@ type SuccessfulCallOutcome = {
 	latencyMs: number;
 	ok: true;
 	outputTokens: number;
+	rawResponse: string;
 	structured: unknown;
 	text: string;
 };

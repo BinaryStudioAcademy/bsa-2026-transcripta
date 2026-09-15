@@ -104,6 +104,7 @@ const transcribeWithRepair = async (
 	} = options;
 
 	let repairNote: string | undefined;
+	let lastRawResponse = "";
 	let usedInputTokens = EMPTY_LENGTH;
 	let usedLatencyMs = EMPTY_LENGTH;
 	let usedOutputTokens = EMPTY_LENGTH;
@@ -130,6 +131,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: false,
 				outputTokens: usedOutputTokens,
+				rawResponse: lastRawResponse,
 				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
 			};
 		}
@@ -138,7 +140,9 @@ const transcribeWithRepair = async (
 		usedLatencyMs += response.latencyMs;
 		usedOutputTokens += response.usage.outputTokens;
 
-		const responseText = stripCodeFence(response.text);
+		const rawResponse = response.text;
+		lastRawResponse = rawResponse;
+		const responseText = stripCodeFence(rawResponse);
 		const parsed = parseModelJson(responseText);
 
 		if (!parsed.ok) {
@@ -148,6 +152,7 @@ const transcribeWithRepair = async (
 					latencyMs: usedLatencyMs,
 					ok: false,
 					outputTokens: usedOutputTokens,
+					rawResponse,
 					reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 				};
 			}
@@ -164,6 +169,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: true,
 				outputTokens: usedOutputTokens,
+				rawResponse,
 				structured: parsed.value,
 				text: responseText,
 			};
@@ -175,6 +181,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: false,
 				outputTokens: usedOutputTokens,
+				rawResponse,
 				reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 			};
 		}
@@ -187,6 +194,7 @@ const transcribeWithRepair = async (
 		latencyMs: usedLatencyMs,
 		ok: false,
 		outputTokens: usedOutputTokens,
+		rawResponse: lastRawResponse,
 		reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 	};
 };
@@ -195,6 +203,7 @@ const resolveFromCacheOrModel = async (
 	options: ResolveOptions,
 ): Promise<null | ResolvedTranscription> => {
 	const { cacheKey, context, page, preset } = options;
+	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const cached = await TranscriptionCacheModel.query()
 		.findById(cacheKey)
@@ -218,6 +227,8 @@ const resolveFromCacheOrModel = async (
 			latencyMs: EMPTY_LENGTH,
 			ok: true,
 			outputTokens: cached.outputTokens,
+			prompt: userPrompt,
+			rawResponse: "",
 			structured,
 			text: cached.text,
 		};
@@ -231,7 +242,6 @@ const resolveFromCacheOrModel = async (
 	const { logger, modelId, storage, transcriptionService } = options;
 
 	const image = await storage.downloadPageImage(page.imageKey);
-	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const outcome = await transcribeWithRepair({
 		image,
@@ -258,6 +268,8 @@ const resolveFromCacheOrModel = async (
 			latencyMs: outcome.latencyMs,
 			ok: true,
 			outputTokens: outcome.outputTokens,
+			prompt: userPrompt,
+			rawResponse: outcome.rawResponse,
 			structured: outcome.structured,
 			text: outcome.text,
 		};
@@ -270,6 +282,8 @@ const resolveFromCacheOrModel = async (
 		latencyMs: outcome.latencyMs,
 		ok: false,
 		outputTokens: outcome.outputTokens,
+		prompt: userPrompt,
+		rawResponse: outcome.rawResponse,
 		reason: outcome.reason,
 	};
 };
@@ -286,7 +300,9 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 		outputTokens,
 		pageId,
 		presetId,
+		prompt,
 		provider,
+		rawResponse,
 		structured,
 		text,
 	} = options;
@@ -309,7 +325,9 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			output_tokens: outputTokens,
 			page_id: pageId,
 			preset_id: presetId,
+			prompt,
 			provider,
+			raw_response: rawResponse,
 			structured: structured ?? null,
 			text,
 		});
@@ -503,7 +521,43 @@ const createTranscribeHandler =
 			}
 
 			if (!resolved.ok) {
+				const provider = resolveModelProvider(modelId);
+
 				await DocumentModel.transaction(async (trx) => {
+					await trx
+						.from(DatabaseTableName.TRANSCRIPTION)
+						.where("page_id", pageId)
+						.where("is_current", true)
+						.update({ is_current: false });
+
+					const insertedRows: Array<{ id: number }> = await trx
+						.from(DatabaseTableName.TRANSCRIPTION)
+						.insert({
+							context_used: JSON.stringify({
+								hash: context.contextHash,
+								lexiconIds: context.usedLexiconIds,
+								pageIds: context.usedPageIds,
+								tokens: context.tokenEstimate,
+							}),
+							cost_usd: resolved.costUsd,
+							document_id: documentId,
+							from_cache: resolved.fromCache,
+							input_tokens: resolved.inputTokens,
+							latency_ms: resolved.latencyMs,
+							model: modelId,
+							output_tokens: resolved.outputTokens,
+							page_id: pageId,
+							preset_id: preset.id,
+							prompt: resolved.prompt,
+							provider,
+							raw_response: resolved.rawResponse,
+							structured: null,
+							text: "",
+						})
+						.returning("id");
+
+					const transcriptionId = insertedRows[EMPTY_LENGTH]?.id ?? null;
+
 					await trx.raw(
 						`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
 						[resolved.costUsd, documentId],
@@ -521,7 +575,7 @@ const createTranscribeHandler =
 						durationMs: resolved.latencyMs,
 						event: PageEventName.TRANSCRIBE_FAILED,
 						pageId,
-						transcriptionId: null,
+						transcriptionId,
 					});
 
 					await trx
@@ -556,7 +610,9 @@ const createTranscribeHandler =
 				outputTokens: resolved.outputTokens,
 				pageId,
 				presetId: preset.id,
+				prompt: resolved.prompt,
 				provider,
+				rawResponse: resolved.rawResponse,
 				structured: resolved.structured,
 				text: resolved.text,
 			});

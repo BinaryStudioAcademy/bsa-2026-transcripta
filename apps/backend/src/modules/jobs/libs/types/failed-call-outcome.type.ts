@@ -5,6 +5,7 @@ type FailedCallOutcome = {
 	latencyMs: number;
 	ok: false;
 	outputTokens: number;
+	rawResponse: string;
 	reason: TranscribeFailureReasonValue;
 };
 

@@ -1,6 +1,7 @@
 import {
 	HTTPCode,
 	HTTPError,
+	type PageDebugResponseDto,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
@@ -95,6 +96,54 @@ class PageService {
 			},
 			pageId,
 			status,
+		};
+	}
+
+	public async getDebug(
+		pageId: number,
+		userId: number,
+	): Promise<PageDebugResponseDto> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const transcription =
+			await this.transcriptionRepository.findCurrentDebugByPageId(pageId);
+
+		if (!transcription) {
+			throw new HTTPError({
+				message: PageErrorMessage.TRANSCRIPTION_UNAVAILABLE,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const { presetId, presetVersion } = transcription;
+
+		return {
+			contextUsed: transcription.contextUsed,
+			costUsd: transcription.costUsd,
+			fromCache: transcription.fromCache,
+			inputTokens: transcription.inputTokens,
+			latencyMs: transcription.latencyMs,
+			model: transcription.model,
+			outputTokens: transcription.outputTokens,
+			pageId: transcription.pageId,
+			preset:
+				presetId === null || presetVersion === null
+					? null
+					: {
+							id: presetId,
+							version: presetVersion,
+						},
+			prompt: transcription.prompt,
+			provider: transcription.provider,
+			rawResponse: transcription.rawResponse,
+			transcriptionId: transcription.transcriptionId,
 		};
 	}
 
