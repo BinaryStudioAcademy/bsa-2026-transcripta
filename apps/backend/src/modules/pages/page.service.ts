@@ -200,7 +200,7 @@ class PageService {
 			});
 		} catch (error) {
 			await DocumentModel.transaction(async (trx) => {
-				await this.pageRepository.restorePageAfterReprocessFailure({
+				await this.pageRepository.restorePage({
 					attempts: page.attempts,
 					lastError: page.lastError,
 					pageId: page.id,
