@@ -47,6 +47,9 @@ const Verification: React.FC = () => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isZoomed, setIsZoomed] = useState(false);
 	const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+	const [editConflictDraft, setEditConflictDraft] = useState<null | string>(
+		null,
+	);
 
 	const pageStartedAtReference = useRef(Date.now());
 
@@ -185,9 +188,15 @@ const Verification: React.FC = () => {
 				"status" in result.error &&
 				result.error.status === HTTPCode.CONFLICT
 			) {
+				if (action === PageVerificationAction.CORRECT && text !== undefined) {
+					setEditConflictDraft(text);
+					setIsEditing(false);
+				}
+
 				notification.error(
 					"The verification could not be completed. The latest page version has been loaded.",
 				);
+
 				reloadPage(pageNo);
 			}
 
@@ -213,6 +222,7 @@ const Verification: React.FC = () => {
 				);
 
 				if (success) {
+					setEditConflictDraft(null);
 					setIsEditing(false);
 				}
 			})();
@@ -287,6 +297,7 @@ const Verification: React.FC = () => {
 			/>
 			<VerificationWorkspace
 				currentPage={currentPage}
+				editConflictDraft={editConflictDraft}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isVerifying={isVerifying}

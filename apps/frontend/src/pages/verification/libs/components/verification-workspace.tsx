@@ -5,6 +5,7 @@ import { VerificationEdit } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	editConflictDraft: null | string;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isVerifying: boolean;
@@ -18,6 +19,7 @@ type VerificationWorkspaceProperties = {
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
+	editConflictDraft,
 	isCompleted,
 	isEditing,
 	isVerifying,
@@ -105,6 +107,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 										/>
 									</div>
 								</>
+							)}
+							{editConflictDraft !== null && (
+								<p className="verification-transcription__draft">
+									<strong>Your previous draft:</strong>
+									<p>{editConflictDraft}</p>
+								</p>
 							)}
 						</>
 					) : (
