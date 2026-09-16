@@ -38,7 +38,10 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import "./verification.css";
-import { type PageVerificationActionValue } from "./libs/types/types.js";
+import {
+	type EditConflictDraft,
+	type PageVerificationActionValue,
+} from "./libs/types/types.js";
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -47,9 +50,8 @@ const Verification: React.FC = () => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isZoomed, setIsZoomed] = useState(false);
 	const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-	const [editConflictDraft, setEditConflictDraft] = useState<null | string>(
-		null,
-	);
+	const [editConflictDraft, setEditConflictDraft] =
+		useState<EditConflictDraft | null>(null);
 
 	const pageStartedAtReference = useRef(Date.now());
 
@@ -189,7 +191,10 @@ const Verification: React.FC = () => {
 				result.error.status === HTTPCode.CONFLICT
 			) {
 				if (action === PageVerificationAction.CORRECT && text !== undefined) {
-					setEditConflictDraft(text);
+					setEditConflictDraft({
+						pageNo,
+						text,
+					});
 					setIsEditing(false);
 				}
 

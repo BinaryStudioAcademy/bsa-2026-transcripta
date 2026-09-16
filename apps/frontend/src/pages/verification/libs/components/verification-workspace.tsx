@@ -1,11 +1,14 @@
 import { Button } from "~/libs/components/components.js";
 
-import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
+import {
+	type DocumentGetPagesItemResponseDto,
+	type EditConflictDraft,
+} from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
-	editConflictDraft: null | string;
+	editConflictDraft: EditConflictDraft | null;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isVerifying: boolean;
@@ -108,10 +111,10 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 									</div>
 								</>
 							)}
-							{editConflictDraft !== null && (
+							{editConflictDraft?.pageNo === currentPage.pageNo && (
 								<p className="verification-transcription__draft">
 									<strong>Your previous draft:</strong>
-									<p>{editConflictDraft}</p>
+									<p>{editConflictDraft.text}</p>
 								</p>
 							)}
 						</>
