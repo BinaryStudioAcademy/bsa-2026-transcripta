@@ -1,5 +1,8 @@
 import { type Transaction } from "objection";
 
+import { DatabaseTableName } from "~/libs/modules/database/database.js";
+
+import { type TranscriptionDebugRow } from "./libs/types/types.js";
 import { TranscriptionModel } from "./transcription.model.js";
 
 class TranscriptionRepository {
@@ -21,6 +24,36 @@ class TranscriptionRepository {
 			})
 			.first()
 			.execute();
+	}
+
+	public async findCurrentDebugByPageId(
+		pageId: number,
+	): Promise<TranscriptionDebugRow | undefined> {
+		return await this.transcriptionModel
+			.knex()
+			.select<TranscriptionDebugRow>([
+				"t.id as transcriptionId",
+				"t.pageId",
+				"t.provider",
+				"t.model",
+				"t.presetId",
+				"pr.version as presetVersion",
+				"t.prompt",
+				"t.rawResponse",
+				"t.contextUsed",
+				"t.inputTokens",
+				"t.outputTokens",
+				"t.costUsd",
+				"t.latencyMs",
+				"t.fromCache",
+			])
+			.from(`${DatabaseTableName.TRANSCRIPTION} as t`)
+			.leftJoin(`${DatabaseTableName.PRESET} as pr`, "pr.id", "t.presetId")
+			.where({
+				"t.isCurrent": true,
+				"t.pageId": pageId,
+			})
+			.first();
 	}
 
 	public async updateEditedText(

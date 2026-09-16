@@ -58,6 +58,7 @@ export {
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {
+	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,
 	type UndoPageResponseDto,
@@ -66,6 +67,7 @@ export {
 	PageApiPath,
 	PageStatus,
 	PageVerificationAction,
+	reprocessPageParameters,
 	verifyPage,
 	verifyPageParameters,
 } from "./modules/pages/pages.js";
