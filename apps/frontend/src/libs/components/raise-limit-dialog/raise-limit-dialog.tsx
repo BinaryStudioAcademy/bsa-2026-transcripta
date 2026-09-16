@@ -1,4 +1,3 @@
-import { DocumentBudgetUpdateValidationSchema } from "@transcripta/shared";
 import React, { useState } from "react";
 
 import { Button } from "~/libs/components/components.js";
@@ -14,6 +13,7 @@ import {
 	useCallback,
 	useFormController,
 } from "~/libs/hooks/hooks.js";
+import { DocumentBudgetUpdateValidationSchema } from "~/libs/validation-schemas/validation-schemas.js";
 
 import styles from "./styles.module.css";
 import {

@@ -99,23 +99,17 @@ const Documents: React.FC = () => {
 	);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
-
 	const isEmpty =
 		dataStatus === DataStatus.FULFILLED && documents.length === EMPTY_LENGTH;
-
 	const failedDocuments = documents.filter(
 		(document) => document.status === DocumentStatus.FAILED,
 	);
-
 	const hasFailedDocuments = failedDocuments.length > EMPTY_LENGTH;
-
 	const budgetStoppedDocuments = documents.filter(
 		(document) => document.status === DocumentStatus.BUDGET_STOP,
 	);
-
 	const hasBudgetStoppedDocuments =
 		budgetStoppedDocuments.length > EMPTY_LENGTH;
-
 	const footerMessage = [
 		hasBudgetStoppedDocuments &&
 			`${budgetStoppedDocuments.map((document) => document.title).join(", ")} stopped at its budget — raise the limit to continue.`,

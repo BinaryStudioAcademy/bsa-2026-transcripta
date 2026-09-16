@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
 	BudgetIndicator,
@@ -12,7 +12,12 @@ import {
 	RaiseLimitDialog,
 	ThemeToggle,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import {
+	BUDGET_STOP_NOTIFICATION_MESSAGE,
+	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INITIAL_COUNT,
+	NOTIFICATION_DELAY_MS,
+} from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString, formatMoney } from "~/libs/helpers/helpers.js";
 import {
@@ -23,6 +28,7 @@ import {
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
@@ -57,6 +63,49 @@ const Document: React.FC = () => {
 			dispatch(documentActions.stopPolling());
 		};
 	}, [id, dispatch]);
+
+	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
+	const isNotifyingReference = useRef<boolean>(false);
+	const previousStatusReference = useRef<null | string>(null);
+
+	useEffect(() => {
+		if (!currentDocument) {
+			previousStatusReference.current = null;
+			return;
+		}
+
+		const documentIdFromParameters = Number(id);
+
+		if (currentDocument.id !== documentIdFromParameters) {
+			return;
+		}
+
+		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
+		const previousStatus = previousStatusReference.current;
+
+		previousStatusReference.current = currentDocument.status;
+
+		const hasAlreadyBeenNotified = notifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		const shouldNotify =
+			isBudgetStop &&
+			(!hasAlreadyBeenNotified ||
+				previousStatus !== DocumentStatus.BUDGET_STOP);
+
+		if (shouldNotify && !isNotifyingReference.current) {
+			isNotifyingReference.current = true;
+
+			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+
+			notifiedDocumentsReference.current.add(currentDocument.id);
+
+			setTimeout(() => {
+				isNotifyingReference.current = false;
+			}, NOTIFICATION_DELAY_MS);
+		}
+	}, [currentDocument, currentDocument?.id, currentDocument?.status, id]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -113,7 +162,9 @@ const Document: React.FC = () => {
 					setIsRaiseLimitOpen(false);
 					void dispatch(documentActions.startPolling(currentDocument.id));
 				})
-				.catch(() => {});
+				.catch(() => {
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+				});
 		},
 		[currentDocument, dispatch],
 	);
