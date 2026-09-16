@@ -4,6 +4,7 @@ const PageErrorMessage = {
 	REPROCESS_FAILED: "Failed to reprocess page",
 	TEXT_REQUIRED_FOR_CORRECTION: "Text is required for correction",
 	TRANSCRIPTION_NOT_FOUND: "Transcription is no longer current",
+	TRANSCRIPTION_UNAVAILABLE: "Transcription not found",
 } as const;
 
 export { PageErrorMessage };
