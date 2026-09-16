@@ -80,7 +80,7 @@ const VerificationBlock: React.FC<Properties> = ({
 				)}
 			</div>
 			<div className={styles["resume-row"]}>
-				<Link className={styles["resume-link"]} to={resumeRoute}>
+				<Link className={styles["resume-link"] ?? ""} to={resumeRoute}>
 					Resume at page {cursorPageNo}
 				</Link>
 				<span className="tx-kbdrow">

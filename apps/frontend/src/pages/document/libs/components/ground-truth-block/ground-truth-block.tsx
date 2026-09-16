@@ -32,7 +32,7 @@ const GroundTruthBlock: React.FC<Properties> = ({
 			blind-typed pages.
 		</p>
 		<Link
-			className={styles["link"]}
+			className={styles["link"] ?? ""}
 			to={configureString(AppRoute.GROUND_TRUTH, { id: String(documentId) })}
 		>
 			Type more pages

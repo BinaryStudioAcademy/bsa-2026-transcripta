@@ -101,7 +101,7 @@ const Document: React.FC = () => {
 					<header className={styles["document-page__header"]}>
 						<nav className={styles["document-page__breadcrumb"]}>
 							<Link
-								className={styles["document-page__breadcrumb-link"]}
+								className={styles["document-page__breadcrumb-link"] ?? ""}
 								to={AppRoute.DOCUMENTS}
 							>
 								Documents
