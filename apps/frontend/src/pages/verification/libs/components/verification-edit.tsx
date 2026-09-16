@@ -1,5 +1,5 @@
 import { Button } from "~/libs/components/components.js";
-import { useCallback, useState } from "~/libs/hooks/hooks.js";
+import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
 
 type EditModeProperties = {
 	isDisabled: boolean;
@@ -15,6 +15,10 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 	text,
 }) => {
 	const [value, setValue] = useState(text);
+
+	useEffect(() => {
+		setValue(text);
+	}, [text]);
 
 	const handleTextareaChange = useCallback(
 		(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
