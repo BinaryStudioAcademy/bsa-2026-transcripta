@@ -1,7 +1,7 @@
 import { type PageStatusValue } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
-type RestorePageAfterReprocessFailurePayload = {
+type RestorePagePayload = {
 	attempts: number;
 	lastError: null | string;
 	pageId: number;
@@ -9,4 +9,4 @@ type RestorePageAfterReprocessFailurePayload = {
 	trx?: Transaction;
 };
 
-export { RestorePageAfterReprocessFailurePayload };
+export { RestorePagePayload };

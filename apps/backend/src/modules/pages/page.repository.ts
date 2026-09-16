@@ -8,7 +8,7 @@ import { REPROCESSABLE_PAGE_STATUSES } from "./libs/constants/constants.js";
 import {
 	type PageWithText,
 	type PageWithTranscriptionRow,
-	type RestorePageAfterReprocessFailurePayload,
+	type RestorePagePayload,
 	type UpdatePageVerificationPayload,
 } from "./libs/types/types.js";
 import { PageEntity } from "./page.entity.js";
@@ -163,13 +163,13 @@ class PageRepository {
 		return updatedRows > EMPTY_LENGTH;
 	}
 
-	public async restorePageAfterReprocessFailure({
+	public async restorePage({
 		attempts,
 		lastError,
 		pageId,
 		status,
 		trx,
-	}: RestorePageAfterReprocessFailurePayload): Promise<void> {
+	}: RestorePagePayload): Promise<void> {
 		await this.pageModel
 			.query(trx)
 			.patch({
