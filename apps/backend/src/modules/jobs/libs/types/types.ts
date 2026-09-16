@@ -7,5 +7,4 @@ export { type RecordFailureOptions } from "./record-failure-options.type.js";
 export { type ResolveOptions } from "./resolve-options.type.js";
 export { type ResolvedTranscription } from "./resolved-transcription.type.js";
 export { type StoreOptions } from "./store-options.type.js";
-export { type TranscribeFailureReasonValue } from "./transcribe-failure-reason-value.type.js";
 export { type TranscribeRequestOptions } from "./transcribe-request-options.type.js";
