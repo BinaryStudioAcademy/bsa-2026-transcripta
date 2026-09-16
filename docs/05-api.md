@@ -238,7 +238,7 @@ Owner-only. Returns what was sent to the model and what came back for the
 	"provider": "anthropic",
 	"model": "claude-sonnet-4-20250514",
 	"preset": { "id": 3, "version": 2 },
-	"prompt": "…exact assembled user message…",
+	"prompt": "…exact text sent with the image (includes repair suffix if any)…",
 	"rawResponse": "…model text before validation / fence strip…",
 	"contextUsed": {
 		"pageIds": [45, 46],
@@ -254,8 +254,10 @@ Owner-only. Returns what was sent to the model and what came back for the
 }
 ```
 
-`prompt` is the stored assembled text, not a reconstruction from
-`context_used`. `rawResponse` is empty on cache hits (no model call this run)
+`prompt` is the text that produced `rawResponse` on that row — base
+`buildUserPrompt`, or the same plus the repair note when the final model
+call was a repair. Not a reconstruction from `context_used`.
+`rawResponse` is empty on cache hits (no model call this run)
 and on rows written before the column existed. After a validation failure the
 worker still stores a current row with empty `text` and the rejected
 `rawResponse`, so this endpoint can diagnose that case too. Another user's

@@ -20,7 +20,7 @@ async function up(knex: Knex): Promise<void> {
 
 	await knex.raw(`
 		COMMENT ON COLUMN ${TABLE_NAME}.${ColumnName.PROMPT} IS
-		'Assembled user prompt sent with the page image (preset + context + schema). Exact text for debug, not a reconstruction from context_used.'
+		'User prompt that produced raw_response (buildUserPrompt, plus repair suffix when the final model call was a repair).'
 	`);
 }
 

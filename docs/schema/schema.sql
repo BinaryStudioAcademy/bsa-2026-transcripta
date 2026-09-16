@@ -257,8 +257,9 @@ CREATE TABLE transcription (
   -- Format: { pageIds: [...], lexiconIds: [...], hash: "...", tokens: 1840 }
   context_used  jsonb       NOT NULL DEFAULT '{}'::jsonb,
 
-  -- Exact assembled user prompt (preset + context + schema) for debug (#153).
-  -- context_used only keeps ids/hash; this is the text that went with the image.
+  -- Exact user prompt sent with the image for debug (#153).
+  -- Usually buildUserPrompt (preset + context + schema); if the final call
+  -- was a repair, includes the repair suffix. Paired with raw_response.
   prompt        text        NOT NULL DEFAULT '',
 
   -- Raw model text before validation / code-fence strip (#153).

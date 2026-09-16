@@ -104,6 +104,7 @@ const transcribeWithRepair = async (
 	} = options;
 
 	let repairNote: string | undefined;
+	let lastPromptUsed = prompt;
 	let lastRawResponse = "";
 	let usedInputTokens = EMPTY_LENGTH;
 	let usedLatencyMs = EMPTY_LENGTH;
@@ -131,6 +132,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: false,
 				outputTokens: usedOutputTokens,
+				prompt: lastPromptUsed,
 				rawResponse: lastRawResponse,
 				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
 			};
@@ -141,6 +143,7 @@ const transcribeWithRepair = async (
 		usedOutputTokens += response.usage.outputTokens;
 
 		const rawResponse = response.text;
+		lastPromptUsed = requestPrompt;
 		lastRawResponse = rawResponse;
 		const responseText = stripCodeFence(rawResponse);
 		const parsed = parseModelJson(responseText);
@@ -152,6 +155,7 @@ const transcribeWithRepair = async (
 					latencyMs: usedLatencyMs,
 					ok: false,
 					outputTokens: usedOutputTokens,
+					prompt: requestPrompt,
 					rawResponse,
 					reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 				};
@@ -169,6 +173,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: true,
 				outputTokens: usedOutputTokens,
+				prompt: requestPrompt,
 				rawResponse,
 				structured: parsed.value,
 				text: responseText,
@@ -181,6 +186,7 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: false,
 				outputTokens: usedOutputTokens,
+				prompt: requestPrompt,
 				rawResponse,
 				reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 			};
@@ -194,6 +200,7 @@ const transcribeWithRepair = async (
 		latencyMs: usedLatencyMs,
 		ok: false,
 		outputTokens: usedOutputTokens,
+		prompt: lastPromptUsed,
 		rawResponse: lastRawResponse,
 		reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
 	};
@@ -268,7 +275,7 @@ const resolveFromCacheOrModel = async (
 			latencyMs: outcome.latencyMs,
 			ok: true,
 			outputTokens: outcome.outputTokens,
-			prompt: userPrompt,
+			prompt: outcome.prompt,
 			rawResponse: outcome.rawResponse,
 			structured: outcome.structured,
 			text: outcome.text,
@@ -282,7 +289,7 @@ const resolveFromCacheOrModel = async (
 		latencyMs: outcome.latencyMs,
 		ok: false,
 		outputTokens: outcome.outputTokens,
-		prompt: userPrompt,
+		prompt: outcome.prompt,
 		rawResponse: outcome.rawResponse,
 		reason: outcome.reason,
 	};

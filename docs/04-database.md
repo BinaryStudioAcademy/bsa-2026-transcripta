@@ -189,9 +189,11 @@ Overwriting what a human confirmed is worse than leaving the mistake in place.
 ### 3.1 `prompt` — the exact text sent with the image (#153)
 
 `context_used` keeps ids and a hash. That is not enough to see what the model
-was asked. `prompt` stores the assembled user message (`buildUserPrompt`:
-preset instructions, context blocks, output schema) so a bad page can be
-inspected without reconstructing from hashes.
+was asked. `prompt` stores the user message that produced the stored
+`raw_response`: usually `buildUserPrompt` (preset instructions, context
+blocks, output schema). If the final call was a repair attempt, the repair
+suffix is included too — so debug shows the pair that actually went to the
+model, not a reconstruction from hashes.
 
 ```sql
 prompt text NOT NULL DEFAULT ''
