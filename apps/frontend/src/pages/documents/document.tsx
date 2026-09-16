@@ -14,7 +14,7 @@ import {
 } from "~/libs/components/components.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
-import { configureString } from "~/libs/helpers/helpers.js";
+import { configureString, formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -186,7 +186,15 @@ const Document: React.FC = () => {
 							<p>
 								Stopped before page{" "}
 								<span className="tx-num">{currentDocument.cursorPageNo}</span> —
-								the budget limit was reached.
+								spent{" "}
+								<span className="tx-num">
+									{formatMoney(currentDocument.budget.spentUsd)}
+								</span>{" "}
+								of{" "}
+								<span className="tx-num">
+									{formatMoney(currentDocument.budget.limitUsd)}
+								</span>{" "}
+								budget.
 							</p>
 							<Button
 								isSecondary

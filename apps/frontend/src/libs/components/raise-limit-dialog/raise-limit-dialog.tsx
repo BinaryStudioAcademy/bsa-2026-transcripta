@@ -8,6 +8,7 @@ import {
 	GET_BUDGET_LIMIT_ERROR_MESSAGE,
 	SUGGESTED_LIMIT_INCREMENT,
 } from "~/libs/constants/constants.js";
+import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppForm,
 	useCallback,
@@ -57,7 +58,7 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 			void handleSubmit((data) => {
 				const enteredLimit = Number(data.limitUsd);
 				const currentSpent = Number(spentUsd);
-				const formattedSpent = `$${currentSpent.toFixed(CURRENCY_DECIMAL_PLACES)}`;
+				const formattedSpent = formatMoney(spentUsd);
 
 				if (enteredLimit <= currentSpent) {
 					setValidationError(GET_BUDGET_LIMIT_ERROR_MESSAGE(formattedSpent));
@@ -91,8 +92,7 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 							.filter(Boolean)
 							.join(" ")}
 					>
-						${Number(spentUsd).toFixed(CURRENCY_DECIMAL_PLACES)} / $
-						{Number(currentLimitUsd).toFixed(CURRENCY_DECIMAL_PLACES)}
+						{formatMoney(spentUsd)} / {formatMoney(currentLimitUsd)}
 					</span>
 					. It resumes as soon as the limit is higher.
 				</p>
