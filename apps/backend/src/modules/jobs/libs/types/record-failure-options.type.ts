@@ -5,7 +5,12 @@ type RecordFailureOptions = Pick<
 	Dependencies,
 	"enqueuePage" | "pageRepository"
 > & {
+	costUsd?: number;
 	documentId: number;
+	event?: {
+		details: Record<string, unknown>;
+		durationMs: number;
+	};
 	pageId: number;
 	reason: TranscribeFailureReasonValue;
 };

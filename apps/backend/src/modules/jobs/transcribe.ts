@@ -1,5 +1,6 @@
 import { DocumentStatus, EMPTY_LENGTH, PageStatus } from "@transcripta/shared";
 import { type Job } from "bullmq";
+import { type Transaction } from "objection";
 
 import {
 	AbstractModel,
@@ -66,8 +67,10 @@ const formatValidationErrors = (
 		.join("; ");
 
 const recordFailure = async ({
+	costUsd,
 	documentId,
 	enqueuePage,
+	event,
 	pageId,
 	pageRepository,
 	reason,
@@ -92,6 +95,26 @@ const recordFailure = async ({
 
 		if (failedRows === EMPTY_LENGTH) {
 			return [];
+		}
+
+		if (costUsd !== undefined) {
+			await trx.raw(
+				`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
+				[costUsd, documentId],
+			);
+			await applyBudgetStopIfExceeded(documentId, trx);
+		}
+
+		if (event) {
+			await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+				actorId: null,
+				details: event.details,
+				documentId,
+				durationMs: event.durationMs,
+				event: PageEventName.TRANSCRIBE_FAILED,
+				pageId,
+				transcriptionId: null,
+			});
 		}
 
 		return await refillPageWindow({
@@ -359,8 +382,11 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 	});
 };
 
-const applyBudgetStopIfExceeded = async (documentId: number): Promise<void> => {
-	await DocumentModel.query()
+const applyBudgetStopIfExceeded = async (
+	documentId: number,
+	trx?: Transaction,
+): Promise<void> => {
+	await DocumentModel.query(trx)
 		.patch({ status: DocumentStatus.BUDGET_STOP })
 		.where("id", documentId)
 		.whereNot("status", DocumentStatus.BUDGET_STOP)
@@ -559,38 +585,23 @@ const createTranscribeHandler =
 			}
 
 			if (!resolved.ok) {
-				await DocumentModel.transaction(async (trx) => {
-					await trx.raw(
-						`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
-						[resolved.costUsd, documentId],
-					);
-
-					await trx.from(DatabaseTableName.PAGE_EVENT).insert({
-						actorId: null,
+				await recordFailure({
+					costUsd: resolved.costUsd,
+					documentId,
+					enqueuePage,
+					event: {
 						details: {
 							costUsd: resolved.costUsd,
 							error: resolved.reason,
 							inputTokens: resolved.inputTokens,
 							outputTokens: resolved.outputTokens,
 						},
-						documentId,
 						durationMs: resolved.latencyMs,
-						event: PageEventName.TRANSCRIBE_FAILED,
-						pageId,
-						transcriptionId: null,
-					});
-
-					await trx
-						.from(DatabaseTableName.PAGE)
-						.where("id", pageId)
-						.update({
-							attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
-							lastError: resolved.reason,
-							status: PageStatus.FAILED,
-						});
+					},
+					pageId,
+					pageRepository,
+					reason: resolved.reason,
 				});
-
-				await applyBudgetStopIfExceeded(documentId);
 				return;
 			}
 
