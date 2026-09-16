@@ -6,7 +6,6 @@ import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
-import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
 import { buildContext } from "~/modules/context/builder.js";
 import { buildUserPrompt } from "~/modules/context/prompt.js";
@@ -396,42 +395,30 @@ const applyBudgetStopIfExceeded = async (
 
 const releaseClaimedPage = async ({
 	documentId,
+	enqueuePage,
 	error,
 	logger,
 	pageId,
-}: {
+	pageRepository,
+}: Pick<Dependencies, "enqueuePage" | "logger" | "pageRepository"> & {
 	documentId: number;
 	error: unknown;
-	logger: Logger;
 	pageId: number;
 }): Promise<void> => {
 	try {
-		await DocumentModel.transaction(async (trx) => {
-			const releasedRows = await trx
-				.from(DatabaseTableName.PAGE)
-				.where({ id: pageId, status: PageStatus.TRANSCRIBING })
-				.update({
-					attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
-					lastError: TranscribeFailureReason.UNEXPECTED_ERROR,
-					status: PageStatus.FAILED,
-				});
-
-			if (releasedRows === EMPTY_LENGTH) {
-				return;
-			}
-
-			await trx.from(DatabaseTableName.PAGE_EVENT).insert({
-				actorId: null,
+		await recordFailure({
+			documentId,
+			enqueuePage,
+			event: {
 				details: {
 					error: TranscribeFailureReason.UNEXPECTED_ERROR,
 					message: error instanceof Error ? error.message : String(error),
 				},
-				documentId,
 				durationMs: EMPTY_LENGTH,
-				event: PageEventName.TRANSCRIBE_FAILED,
-				pageId,
-				transcriptionId: null,
-			});
+			},
+			pageId,
+			pageRepository,
+			reason: TranscribeFailureReason.UNEXPECTED_ERROR,
 		});
 	} catch (releaseError) {
 		logger.error(`Failed to release claimed page ${String(pageId)}`, {
@@ -661,7 +648,14 @@ const createTranscribeHandler =
 				error,
 			});
 
-			await releaseClaimedPage({ documentId, error, logger, pageId });
+			await releaseClaimedPage({
+				documentId,
+				enqueuePage,
+				error,
+				logger,
+				pageId,
+				pageRepository,
+			});
 
 			throw error;
 		}
