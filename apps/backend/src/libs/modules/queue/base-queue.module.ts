@@ -14,12 +14,16 @@ import {
 	LoggerMessages,
 	QueueErrorMessage,
 } from "./libs/constants/constants.js";
-import { type QueueLifecycle } from "./libs/types/types.js";
+import {
+	type QueueLifecycle,
+	type QueueWorkerOptions,
+} from "./libs/types/types.js";
 
 type Constructor<TData> = {
 	logger: Logger;
 	name: string;
 	processor: Processor<TData>;
+	workerOptions?: QueueWorkerOptions;
 };
 
 class BaseQueue<TData> implements QueueLifecycle {
@@ -33,10 +37,18 @@ class BaseQueue<TData> implements QueueLifecycle {
 
 	private worker: null | Worker<TData, void> = null;
 
-	public constructor({ logger, name, processor }: Constructor<TData>) {
+	private workerOptions: null | QueueWorkerOptions;
+
+	public constructor({
+		logger,
+		name,
+		processor,
+		workerOptions,
+	}: Constructor<TData>) {
 		this.logger = logger;
 		this.name = name;
 		this.processor = processor;
+		this.workerOptions = workerOptions ?? null;
 	}
 
 	protected async addJob(data: TData, options: JobsOptions): Promise<void> {
@@ -90,6 +102,7 @@ class BaseQueue<TData> implements QueueLifecycle {
 				connection,
 			});
 			worker = new Worker<TData>(this.name, this.processor, {
+				...this.workerOptions,
 				connection,
 			});
 			await Promise.all([queue.waitUntilReady(), worker.waitUntilReady()]);
