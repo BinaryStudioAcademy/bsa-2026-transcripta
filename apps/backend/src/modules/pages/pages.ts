@@ -20,6 +20,7 @@ const pageRepository = new PageRepository(PageModel);
 
 const pageService = new PageService({
 	documentRepository,
+	logger,
 	pageEventRepository,
 	pageRepository,
 	pageTranscribeQueue,

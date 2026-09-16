@@ -6,6 +6,7 @@ type FailedCallOutcome = {
 	ok: false;
 	outputTokens: number;
 	reason: TranscribeFailureReasonValue;
+	retryable: boolean;
 };
 
 export { type FailedCallOutcome };
