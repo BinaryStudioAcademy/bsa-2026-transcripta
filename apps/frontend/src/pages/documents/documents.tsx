@@ -13,6 +13,7 @@ import {
 	Link,
 	LoaderOverlay,
 	OverflowMenu,
+	RaiseLimitDialog,
 	StatusChip,
 	ThemeToggle,
 } from "~/libs/components/components.js";
@@ -46,6 +47,7 @@ const Documents: React.FC = () => {
 		documents: documents.documents,
 	}));
 	const [pendingDeleteId, setPendingDeleteId] = useState<null | number>(null);
+	const [budgetDocumentId, setBudgetDocumentId] = useState<null | number>(null);
 
 	useEffect(() => {
 		void dispatch(documentActions.loadAll());
@@ -97,17 +99,23 @@ const Documents: React.FC = () => {
 	);
 
 	const isLoading = dataStatus === DataStatus.PENDING;
+
 	const isEmpty =
 		dataStatus === DataStatus.FULFILLED && documents.length === EMPTY_LENGTH;
+
 	const failedDocuments = documents.filter(
 		(document) => document.status === DocumentStatus.FAILED,
 	);
+
 	const hasFailedDocuments = failedDocuments.length > EMPTY_LENGTH;
+
 	const budgetStoppedDocuments = documents.filter(
 		(document) => document.status === DocumentStatus.BUDGET_STOP,
 	);
+
 	const hasBudgetStoppedDocuments =
 		budgetStoppedDocuments.length > EMPTY_LENGTH;
+
 	const footerMessage = [
 		hasBudgetStoppedDocuments &&
 			`${budgetStoppedDocuments.map((document) => document.title).join(", ")} stopped at its budget — raise the limit to continue.`,
@@ -129,6 +137,49 @@ const Documents: React.FC = () => {
 		void dispatch(documentActions.remove(pendingDeleteId));
 		setPendingDeleteId(null);
 	}, [dispatch, pendingDeleteId]);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setBudgetDocumentId(null);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			if (budgetDocumentId === null) {
+				return;
+			}
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: budgetDocumentId,
+					payload: { limitUsd },
+				}),
+			);
+			setBudgetDocumentId(null);
+		},
+		[budgetDocumentId, dispatch],
+	);
+
+	const handleRaiseLimitClick = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			event.preventDefault();
+			event.stopPropagation();
+
+			const documentId = event.currentTarget
+				.closest("[role=row]")
+				?.getAttribute("data-document-id");
+
+			if (!documentId) {
+				return;
+			}
+
+			setBudgetDocumentId(Number(documentId));
+		},
+		[],
+	);
+
+	const activeBudgetDocument = documents.find(
+		(document_) => document_.id === budgetDocumentId,
+	);
 
 	return (
 		<div className={styles["documents-page"]}>
@@ -249,7 +300,7 @@ const Documents: React.FC = () => {
 													isSecondary
 													isSmall
 													label="Raise the limit"
-													onClick={handleRowActionClick}
+													onClick={handleRaiseLimitClick}
 												/>
 											)}
 										</span>
@@ -316,6 +367,15 @@ const Documents: React.FC = () => {
 					onCancel={handleCancelDelete}
 					onConfirm={handleConfirmDelete}
 					title="Delete this document"
+				/>
+			)}
+
+			{budgetDocumentId !== null && activeBudgetDocument && (
+				<RaiseLimitDialog
+					currentLimitUsd={activeBudgetDocument.budgetUsd}
+					onCancel={handleCancelRaiseLimit}
+					onSubmit={handleUpdateBudget}
+					spentUsd={activeBudgetDocument.spentUsd}
 				/>
 			)}
 		</div>

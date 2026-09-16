@@ -3,26 +3,22 @@ import React, { useState } from "react";
 
 import { Button } from "~/libs/components/components.js";
 import {
+	BUDGET_FIELD_NAME,
+	CURRENCY_DECIMAL_PLACES,
+	GET_BUDGET_LIMIT_ERROR_MESSAGE,
+	SUGGESTED_LIMIT_INCREMENT,
+} from "~/libs/constants/constants.js";
+import {
 	useAppForm,
 	useCallback,
 	useFormController,
 } from "~/libs/hooks/hooks.js";
 
 import styles from "./styles.module.css";
-
-const SUGGESTED_LIMIT_INCREMENT = 10;
-const CURRENCY_DECIMAL_PLACES = 2;
-
-type FormValues = {
-	limitUsd: string;
-};
-
-type Properties = {
-	currentLimitUsd: string;
-	onCancel: () => void;
-	onSubmit: (newLimit: string) => void;
-	spentUsd: string;
-};
+import {
+	type FormValuesRaiseBudgetLimit,
+	type Properties,
+} from "./types/types.js";
 
 const RaiseLimitDialog: React.FC<Properties> = ({
 	currentLimitUsd,
@@ -33,16 +29,17 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 	const suggestedLimit = (
 		Number(currentLimitUsd) + SUGGESTED_LIMIT_INCREMENT
 	).toFixed(CURRENCY_DECIMAL_PLACES);
+
 	const [validationError, setValidationError] = useState<null | string>(null);
 
-	const { control, handleSubmit } = useAppForm<FormValues>({
+	const { control, handleSubmit } = useAppForm<FormValuesRaiseBudgetLimit>({
 		defaultValues: { limitUsd: suggestedLimit },
 		validationSchema: DocumentBudgetUpdateValidationSchema,
 	});
 
 	const { field } = useFormController({
 		control,
-		name: "limitUsd",
+		name: BUDGET_FIELD_NAME,
 	});
 
 	const handleInputChange = useCallback(
@@ -59,19 +56,18 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 		(event_: React.BaseSyntheticEvent): void => {
 			void handleSubmit((data) => {
 				const enteredLimit = Number(data.limitUsd);
-				const currentLimit = Number(currentLimitUsd);
+				const currentSpent = Number(spentUsd);
+				const formattedSpent = `$${currentSpent.toFixed(CURRENCY_DECIMAL_PLACES)}`;
 
-				if (enteredLimit <= currentLimit) {
-					setValidationError(
-						`New limit must be greater than current limit ($${Number(currentLimitUsd).toFixed(CURRENCY_DECIMAL_PLACES)}).`,
-					);
+				if (enteredLimit <= currentSpent) {
+					setValidationError(GET_BUDGET_LIMIT_ERROR_MESSAGE(formattedSpent));
 					return;
 				}
 
 				onSubmit(data.limitUsd);
 			})(event_);
 		},
-		[handleSubmit, currentLimitUsd, onSubmit],
+		[handleSubmit, spentUsd, onSubmit],
 	);
 
 	const handleScrimClick = useCallback(
