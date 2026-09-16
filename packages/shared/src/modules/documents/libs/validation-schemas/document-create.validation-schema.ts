@@ -28,14 +28,23 @@ const DocumentCreateValidationSchema = z
 			.min(DocumentValidationRule.MIN_TITLE_LENGTH, {
 				message: DocumentValidationMessage.FILE_NAME_REQUIRE,
 			})
+			.max(DocumentValidationRule.MAX_FILE_NAME_LENGTH, {
+				message: DocumentValidationMessage.FILE_NAME_MAX_LENGTH,
+			})
 			.regex(DocumentValidationRule.PDF_FILE_REGEX, {
 				message: DocumentValidationMessage.FILE_NAME_INVALID_NAME,
 			})
 			.transform(sanitizeFileName),
 		presetId: z.number().int().positive(),
-		title: z.string().trim().min(DocumentValidationRule.MIN_TITLE_LENGTH, {
-			message: DocumentValidationMessage.TITLE_REQUIRE,
-		}),
+		title: z
+			.string()
+			.trim()
+			.min(DocumentValidationRule.MIN_TITLE_LENGTH, {
+				message: DocumentValidationMessage.TITLE_REQUIRE,
+			})
+			.max(DocumentValidationRule.MAX_TITLE_LENGTH, {
+				message: DocumentValidationMessage.TITLE_MAX_LENGTH,
+			}),
 	})
 	.required();
 
