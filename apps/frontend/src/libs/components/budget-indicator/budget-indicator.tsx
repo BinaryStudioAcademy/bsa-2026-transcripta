@@ -10,8 +10,9 @@ const BudgetIndicator: React.FC<Properties> = ({
 	spentUsd,
 }: Properties) => {
 	return (
-		<span className="tabular-figures">
+		<span className="tx-num">
 			{formatMoney(spentUsd)} / {formatMoney(limitUsd)}
+			{" spent"}
 		</span>
 	);
 };

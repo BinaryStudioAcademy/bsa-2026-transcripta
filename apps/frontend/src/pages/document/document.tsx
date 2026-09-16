@@ -1,17 +1,13 @@
 import { useState } from "react";
 
 import {
-	BudgetIndicator,
 	ConfirmDialog,
-	GroundTruthBlock,
 	Link,
 	LoaderOverlay,
-	OverflowMenu,
-	ProgressBar,
+	ThemeToggle,
 } from "~/libs/components/components.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
-import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -22,7 +18,14 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
-import { DocumentStatusBlock } from "./libs/components/components.js";
+import {
+	DocumentTitleBlock,
+	ExportBlock,
+	GroundTruthBlock,
+	TranscriptionBlock,
+	VerificationBlock,
+} from "./libs/components/components.js";
+import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -82,85 +85,76 @@ const Document: React.FC = () => {
 			});
 	}, [currentDocument, dispatch, navigate]);
 
+	const pagesTranscribed = currentDocument
+		? currentDocument.progress.pagesTotal -
+			currentDocument.progress.pagesPending -
+			currentDocument.progress.pagesInWork
+		: INITIAL_COUNT;
+
 	return (
-		<>
+		<div className={styles["document-page"]}>
 			{isLoading && <LoaderOverlay label="Loading document" />}
 			{hasError && <p>Unable to load the document.</p>}
+
 			{currentDocument && (
 				<>
-					<Link to={AppRoute.DOCUMENTS}>← Back to Documents</Link>
-					<h1>{currentDocument.title}</h1>
-					<DocumentStatusBlock
-						documentId={currentDocument.id}
-						status={currentDocument.status}
-					/>
-					<OverflowMenu
-						items={[
-							{
-								isDanger: true,
-								label: "Delete",
-								onClick: handleOpenDeleteDialog,
-							},
-						]}
-					/>
+					<header className={styles["document-page__header"]}>
+						<nav className={styles["document-page__breadcrumb"]}>
+							<Link
+								className={styles["document-page__breadcrumb-link"]}
+								to={AppRoute.DOCUMENTS}
+							>
+								Documents
+							</Link>
+							<span className={styles["document-page__breadcrumb-separator"]}>
+								/
+							</span>
+							<span className={styles["document-page__breadcrumb-current"]}>
+								{currentDocument.title}
+							</span>
+						</nav>
+						<ThemeToggle />
+					</header>
 
-					<section>
-						<h2>Transcription</h2>
-						<ProgressBar
-							closedPct={currentDocument.progress.closedPct}
-							verifiedPct={currentDocument.progress.verifiedPct}
-						/>
-						<div>
-							<span className="tabular-figures">
-								{currentDocument.progress.pagesVerified}
-							</span>{" "}
-							of{" "}
-							<span className="tabular-figures">
-								{currentDocument.progress.pagesTotal}
-							</span>{" "}
-							pages verified
-							{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
-								<span>
-									{" "}
-									·{" "}
-									<span className="tabular-figures">
-										{currentDocument.progress.pagesInWork}
-									</span>{" "}
-									in work
-								</span>
+					<main className={styles["document-page__main"]}>
+						<div className={styles["document-page__content"]}>
+							<DocumentTitleBlock
+								documentId={currentDocument.id}
+								onDeleteClick={handleOpenDeleteDialog}
+								pageCount={currentDocument.pageCount}
+								presetName={currentDocument.preset.name}
+								status={currentDocument.status}
+								title={currentDocument.title}
+							/>
+							<TranscriptionBlock
+								budgetLimitUsd={currentDocument.budget.limitUsd}
+								budgetSpentUsd={currentDocument.budget.spentUsd}
+								closedPct={currentDocument.progress.closedPct}
+								pagesTotal={currentDocument.progress.pagesTotal}
+								pagesTranscribed={pagesTranscribed}
+							/>
+
+							<VerificationBlock
+								cursorPageNo={currentDocument.cursorPageNo}
+								documentId={currentDocument.id}
+								pagesInWork={currentDocument.progress.pagesInWork}
+								pagesTotal={currentDocument.progress.pagesTotal}
+								pagesTranscribed={pagesTranscribed}
+								pagesVerified={currentDocument.progress.pagesVerified}
+							/>
+
+							<ExportBlock />
+
+							{currentDocument.groundTruth && (
+								<GroundTruthBlock
+									cer={currentDocument.groundTruth.cer}
+									documentId={currentDocument.id}
+									pagesTotal={currentDocument.groundTruth.pagesTotal}
+									pagesTyped={currentDocument.groundTruth.pagesTyped}
+								/>
 							)}
 						</div>
-						<BudgetIndicator
-							limitUsd={currentDocument.budget.limitUsd}
-							spentUsd={currentDocument.budget.spentUsd}
-						/>
-					</section>
-
-					<section>
-						<h2>Verification</h2>
-						<Link
-							to={configureString(AppRoute.VERIFICATION, {
-								id: String(currentDocument.id),
-							})}
-						>
-							Resume at page{" "}
-							<span className="tabular-figures">
-								{currentDocument.cursorPageNo}
-							</span>
-						</Link>
-					</section>
-
-					{currentDocument.groundTruth && (
-						<section>
-							<h2>Ground truth</h2>
-							<GroundTruthBlock
-								cer={currentDocument.groundTruth.cer}
-								documentId={currentDocument.id}
-								pagesTotal={currentDocument.groundTruth.pagesTotal}
-								pagesTyped={currentDocument.groundTruth.pagesTyped}
-							/>
-						</section>
-					)}
+					</main>
 				</>
 			)}
 
@@ -172,7 +166,7 @@ const Document: React.FC = () => {
 					title="Delete this document"
 				/>
 			)}
-		</>
+		</div>
 	);
 };
 

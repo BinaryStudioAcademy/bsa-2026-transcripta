@@ -1,0 +1,31 @@
+.title-row {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
+	padding-bottom: var(--sp-2);
+}
+
+.title-line {
+	display: flex;
+	gap: var(--sp-3);
+	align-items: center;
+}
+
+.title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: var(--fs-xl-2);
+	font-weight: 600;
+	line-height: var(--lh-tight);
+	color: var(--text);
+}
+
+.title-spacer {
+	flex: 1;
+}
+
+.meta {
+	margin: 0;
+	font-size: var(--fs-xs);
+	color: var(--text-3);
+}

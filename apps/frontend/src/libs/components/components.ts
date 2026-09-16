@@ -2,7 +2,6 @@ export { App } from "./app/app.js";
 export { BudgetIndicator } from "./budget-indicator/budget-indicator.js";
 export { Button } from "./button/button.js";
 export { ConfirmDialog } from "./confirm-dialog/confirm-dialog.js";
-export { GroundTruthBlock } from "./ground-truth-block/ground-truth-block.js";
 export { Input } from "./input/input.js";
 export { Link } from "./link/link.js";
 export { LoaderOverlay } from "./loader/loader-overlay.js";

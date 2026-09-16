@@ -13,7 +13,7 @@ import { AppRoute } from "~/libs/enums/enums.js";
 import { store } from "~/libs/modules/store/store.js";
 import { Auth } from "~/pages/auth/auth.jsx";
 import { DocumentNew } from "~/pages/document-new/document-new.jsx";
-import { Document } from "~/pages/documents/document.jsx";
+import { Document } from "~/pages/document/document.js";
 import { Documents } from "~/pages/documents/documents.jsx";
 import { NotFound } from "~/pages/not-found/not-found.jsx";
 import { Test } from "~/pages/test/test.jsx";
