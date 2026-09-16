@@ -73,7 +73,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				/>
 
 				<span>
-					<kbd className="tx-kbd">Ctrl+Enter</kbd>
+					<kbd className="tx-kbd">Ctrl/⌘+Enter</kbd>
 					{" — Save and next"}
 				</span>
 
