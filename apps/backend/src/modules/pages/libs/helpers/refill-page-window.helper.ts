@@ -12,6 +12,7 @@ const refillPageWindow = async ({
 }: RefillPageWindowOptions): Promise<PageEntity[]> => {
 	const document = await DocumentModel.query(trx)
 		.findById(documentId)
+		.whereColumn("spentUsd", "<", "budgetUsd")
 		.forUpdate();
 
 	if (!document || !TRANSCRIBABLE_STATUSES.has(document.status)) {

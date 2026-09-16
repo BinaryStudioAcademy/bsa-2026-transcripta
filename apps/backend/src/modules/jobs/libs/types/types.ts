@@ -3,6 +3,7 @@ export { type CallOutcome } from "./call-outcome.type.js";
 export { type Dependencies } from "./dependencies.type.js";
 export { type ParseResult } from "./parse-result.type.js";
 export { type PresetHashParts } from "./preset-hash-parts.type.js";
+export { type RecordFailureOptions } from "./record-failure-options.type.js";
 export { type ResolveOptions } from "./resolve-options.type.js";
 export { type ResolvedTranscription } from "./resolved-transcription.type.js";
 export { type StoreOptions } from "./store-options.type.js";

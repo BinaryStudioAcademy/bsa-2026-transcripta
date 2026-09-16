@@ -10,6 +10,8 @@ import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/type
 import { buildContext } from "~/modules/context/builder.js";
 import { buildUserPrompt } from "~/modules/context/prompt.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
+import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
+import { refillPageWindow } from "~/modules/pages/libs/helpers/helpers.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 import { PresetModel } from "~/modules/presets/preset.model.js";
 import {
@@ -36,10 +38,10 @@ import {
 	type CallOutcome,
 	type Dependencies,
 	type ParseResult,
+	type RecordFailureOptions,
 	type ResolvedTranscription,
 	type ResolveOptions,
 	type StoreOptions,
-	type TranscribeFailureReasonValue,
 	type TranscribeRequestOptions,
 } from "./libs/types/types.js";
 
@@ -63,18 +65,50 @@ const formatValidationErrors = (
 		)
 		.join("; ");
 
-const recordFailure = async (
-	pageId: number,
-	reason: TranscribeFailureReasonValue,
-): Promise<void> => {
-	await PageModel.query()
-		.patch({
-			attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
-			lastError: reason,
-			status: PageStatus.FAILED,
-		})
-		.where("id", pageId)
-		.execute();
+const recordFailure = async ({
+	documentId,
+	enqueuePage,
+	pageId,
+	pageRepository,
+	reason,
+}: RecordFailureOptions): Promise<void> => {
+	const pages = await DocumentModel.transaction(async (trx) => {
+		const document = await DocumentModel.query(trx)
+			.findById(documentId)
+			.forUpdate();
+
+		if (!document) {
+			return [];
+		}
+
+		const failedRows = await PageModel.query(trx)
+			.patch({
+				attempts: trx.raw("attempts + ?", [ONE]),
+				lastError: reason,
+				status: PageStatus.FAILED,
+			})
+			.where({ documentId, id: pageId, status: PageStatus.TRANSCRIBING })
+			.execute();
+
+		if (failedRows === EMPTY_LENGTH) {
+			return [];
+		}
+
+		return await refillPageWindow({
+			documentId,
+			pageRepository,
+			quantity: PAGES_TO_QUEUE,
+			trx,
+		});
+	});
+
+	await Promise.all(
+		pages.map((page) => {
+			const { id, pageNo } = page.toObject();
+
+			return enqueuePage({ documentId, pageId: id, pageNo });
+		}),
+	);
 };
 
 const markDocumentStopped = async (documentId: number): Promise<void> => {
@@ -224,7 +258,6 @@ const resolveFromCacheOrModel = async (
 	}
 
 	if (!page.imageKey) {
-		await recordFailure(page.id, TranscribeFailureReason.PAGE_IMAGE_MISSING);
 		return null;
 	}
 
@@ -382,7 +415,14 @@ const releaseClaimedPage = async ({
 };
 
 const createTranscribeHandler =
-	({ config, logger, storage, transcriptionService }: Dependencies) =>
+	({
+		config,
+		enqueuePage,
+		logger,
+		pageRepository,
+		storage,
+		transcriptionService,
+	}: Dependencies) =>
 	async (job: Job<PageTranscribeJobData>): Promise<void> => {
 		const { documentId, pageId, pageNo } = job.data;
 
@@ -449,7 +489,13 @@ const createTranscribeHandler =
 			const preset = await PresetModel.query().findById(document.presetId);
 
 			if (!preset) {
-				await recordFailure(pageId, TranscribeFailureReason.PRESET_NOT_FOUND);
+				await recordFailure({
+					documentId,
+					enqueuePage,
+					pageId,
+					pageRepository,
+					reason: TranscribeFailureReason.PRESET_NOT_FOUND,
+				});
 				return;
 			}
 
@@ -464,10 +510,13 @@ const createTranscribeHandler =
 			});
 
 			if (!page.imageSha256) {
-				await recordFailure(
+				await recordFailure({
+					documentId,
+					enqueuePage,
 					pageId,
-					TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
-				);
+					pageRepository,
+					reason: TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
+				});
 				return;
 			}
 
@@ -499,6 +548,13 @@ const createTranscribeHandler =
 			});
 
 			if (!resolved) {
+				await recordFailure({
+					documentId,
+					enqueuePage,
+					pageId,
+					pageRepository,
+					reason: TranscribeFailureReason.PAGE_IMAGE_MISSING,
+				});
 				return;
 			}
 
