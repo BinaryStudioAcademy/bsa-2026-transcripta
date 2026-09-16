@@ -10,6 +10,7 @@ export {
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";
 export {
+	reprocessPageParameters,
 	verifyPage,
 	verifyPageParameters,
 } from "./libs/validation-schemas/validation-schema.js";
