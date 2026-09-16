@@ -4,6 +4,8 @@ import { config } from "~/libs/modules/config/config.js";
 import { logger } from "~/libs/modules/logger/logger.js";
 import { storage } from "~/libs/modules/storage/storage.js";
 import { createTranscribeHandler } from "~/modules/jobs/jobs.js";
+import { PageModel } from "~/modules/pages/page.model.js";
+import { PageRepository } from "~/modules/pages/page.repository.js";
 import { transcriptionService } from "~/modules/transcription/transcription.js";
 
 import { documentCleanupQueue } from "./document-cleanup/document-cleanup.js";
@@ -19,11 +21,13 @@ const redis = new Redis(config.ENV.REDIS.URL, {
 	retryStrategy: () => null,
 });
 
-const pageTranscribeQueue = new PageTranscribeQueue({
+const pageTranscribeQueue: PageTranscribeQueue = new PageTranscribeQueue({
 	logger,
 	processor: createTranscribeHandler({
 		config,
+		enqueuePage: (data): Promise<void> => pageTranscribeQueue.add(data),
 		logger,
+		pageRepository: new PageRepository(PageModel),
 		storage,
 		transcriptionService,
 	}),

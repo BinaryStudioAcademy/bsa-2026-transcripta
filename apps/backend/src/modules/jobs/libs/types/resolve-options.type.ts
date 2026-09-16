@@ -5,7 +5,10 @@ import { type PresetModel } from "~/modules/presets/preset.model.js";
 
 import { type Dependencies } from "./dependencies.type.js";
 
-type ResolveOptions = Dependencies & {
+type ResolveOptions = Pick<
+	Dependencies,
+	"config" | "logger" | "storage" | "transcriptionService"
+> & {
 	cacheKey: string;
 	context: BuiltContext;
 	documentId: number;

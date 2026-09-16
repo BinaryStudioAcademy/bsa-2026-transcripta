@@ -4,3 +4,4 @@ export { type UpdatePageVerificationPayload } from "./page-update-verification-p
 export { type VerifyPageHandlerOptions } from "./page-verify-handler-options.type.js";
 export { type VerifyPagePayload } from "./page-verify-payload.type.js";
 export { type PageWithTranscriptionRow } from "./page-with-transcription-row.type.js";
+export { type RefillPageWindowOptions } from "./refill-page-window-options.type.js";
