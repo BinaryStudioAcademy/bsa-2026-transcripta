@@ -12,7 +12,7 @@
 	box-sizing: border-box;
 	width: 100%;
 	max-width: 481.6px;
-	padding: 20px;
+	padding: var(--sp-5);
 	background: var(--surface);
 	border: 1px solid var(--hairline);
 	border-radius: var(--r-lg);
@@ -21,7 +21,7 @@
 
 .label {
 	display: block;
-	margin: 0 0 6px;
+	margin: 0 0 var(--sp-2);
 	font: 600 var(--fs-2xs) / 1 var(--font-ui);
 	color: var(--text-2);
 	text-transform: uppercase;
@@ -29,40 +29,40 @@
 }
 
 .title {
-	margin: 0 0 8px;
+	margin: 0 0 var(--sp-2);
 	font: 600 var(--fs-xl) / var(--lh-tight) var(--font-display);
 	color: var(--text);
 }
 
 .description {
-	margin: 0 0 14px;
+	margin: 0 0 var(--sp-3);
 	font: 400 var(--fs-sm) / 1.55 var(--font-ui);
 	color: var(--text-2);
 }
 
 .num-highlight {
-	font-size: 12.5px;
+	font-size: var(--fs-xs);
 }
 
 .input-container {
 	display: flex;
-	gap: 8px;
+	gap: var(--sp-2);
 	align-items: center;
-	height: 32px;
+	height: var(--ctl-md);
 }
 
 .currency-symbol {
-	font-size: 12.5px;
+	font-size: var(--fs-xs);
 	line-height: 1;
 	color: var(--text-2);
 }
 
 .input {
 	width: 120px;
-	height: 32px;
-	padding: 0 10px;
+	height: var(--ctl-md);
+	padding: 0 var(--sp-3);
 	font-family: var(--font-mono);
-	font-size: 12.5px;
+	font-size: var(--fs-xs);
 	font-variant-numeric: tabular-nums;
 	color: var(--text);
 	background: var(--surface);
@@ -77,13 +77,13 @@
 
 .actions {
 	display: flex;
-	gap: 8px;
+	gap: var(--sp-2);
 	justify-content: flex-end;
-	margin-top: 16px;
+	margin-top: var(--sp-4);
 }
 
 .error-message {
-	margin: 6px 0 0;
+	margin: var(--sp-1) 0 0;
 	font-size: var(--fs-xs);
 	line-height: var(--lh-tight);
 	color: var(--danger-text);
