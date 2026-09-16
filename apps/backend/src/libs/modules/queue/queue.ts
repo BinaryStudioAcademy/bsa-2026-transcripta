@@ -3,6 +3,8 @@ import { Redis } from "ioredis";
 import { config } from "~/libs/modules/config/config.js";
 import { logger } from "~/libs/modules/logger/logger.js";
 import { storage } from "~/libs/modules/storage/storage.js";
+import { DocumentModel } from "~/modules/documents/document.model.js";
+import { DocumentRepository } from "~/modules/documents/document.repository.js";
 import { createTranscribeHandler } from "~/modules/jobs/jobs.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 import { PageRepository } from "~/modules/pages/page.repository.js";
@@ -25,6 +27,7 @@ const pageTranscribeQueue: PageTranscribeQueue = new PageTranscribeQueue({
 	logger,
 	processor: createTranscribeHandler({
 		config,
+		documentRepository: new DocumentRepository(DocumentModel),
 		enqueuePage: (data): Promise<void> => pageTranscribeQueue.add(data),
 		logger,
 		pageRepository: new PageRepository(PageModel),

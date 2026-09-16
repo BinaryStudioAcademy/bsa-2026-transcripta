@@ -3,7 +3,7 @@ import { type TranscribeFailureReasonValue } from "./transcribe-failure-reason-v
 
 type RecordFailureOptions = Pick<
 	Dependencies,
-	"enqueuePage" | "pageRepository"
+	"documentRepository" | "enqueuePage" | "pageRepository"
 > & {
 	costUsd?: number;
 	documentId: number;

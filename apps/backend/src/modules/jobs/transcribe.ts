@@ -68,6 +68,7 @@ const formatValidationErrors = (
 const recordFailure = async ({
 	costUsd,
 	documentId,
+	documentRepository,
 	enqueuePage,
 	event,
 	pageId,
@@ -116,12 +117,15 @@ const recordFailure = async ({
 			});
 		}
 
-		return await refillPageWindow({
+		const pagesToQueue = await refillPageWindow({
 			documentId,
 			pageRepository,
 			quantity: PAGES_TO_QUEUE,
 			trx,
 		});
+		await documentRepository.markDoneIfAllPagesClosed(documentId, trx);
+
+		return pagesToQueue;
 	});
 
 	await Promise.all(
@@ -395,12 +399,16 @@ const applyBudgetStopIfExceeded = async (
 
 const releaseClaimedPage = async ({
 	documentId,
+	documentRepository,
 	enqueuePage,
 	error,
 	logger,
 	pageId,
 	pageRepository,
-}: Pick<Dependencies, "enqueuePage" | "logger" | "pageRepository"> & {
+}: Pick<
+	Dependencies,
+	"documentRepository" | "enqueuePage" | "logger" | "pageRepository"
+> & {
 	documentId: number;
 	error: unknown;
 	pageId: number;
@@ -408,6 +416,7 @@ const releaseClaimedPage = async ({
 	try {
 		await recordFailure({
 			documentId,
+			documentRepository,
 			enqueuePage,
 			event: {
 				details: {
@@ -430,6 +439,7 @@ const releaseClaimedPage = async ({
 const createTranscribeHandler =
 	({
 		config,
+		documentRepository,
 		enqueuePage,
 		logger,
 		pageRepository,
@@ -504,6 +514,7 @@ const createTranscribeHandler =
 			if (!preset) {
 				await recordFailure({
 					documentId,
+					documentRepository,
 					enqueuePage,
 					pageId,
 					pageRepository,
@@ -525,6 +536,7 @@ const createTranscribeHandler =
 			if (!page.imageSha256) {
 				await recordFailure({
 					documentId,
+					documentRepository,
 					enqueuePage,
 					pageId,
 					pageRepository,
@@ -563,6 +575,7 @@ const createTranscribeHandler =
 			if (!resolved) {
 				await recordFailure({
 					documentId,
+					documentRepository,
 					enqueuePage,
 					pageId,
 					pageRepository,
@@ -575,6 +588,7 @@ const createTranscribeHandler =
 				await recordFailure({
 					costUsd: resolved.costUsd,
 					documentId,
+					documentRepository,
 					enqueuePage,
 					event: {
 						details: {
@@ -650,6 +664,7 @@ const createTranscribeHandler =
 
 			await releaseClaimedPage({
 				documentId,
+				documentRepository,
 				enqueuePage,
 				error,
 				logger,
