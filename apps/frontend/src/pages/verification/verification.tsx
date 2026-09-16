@@ -146,9 +146,12 @@ const Verification: React.FC = () => {
 	);
 
 	const handleVerify = useCallback(
-		async (action: PageVerificationActionValue): Promise<void> => {
+		async (
+			action: PageVerificationActionValue,
+			text?: string,
+		): Promise<boolean> => {
 			if (!currentPage?.transcription || !document || isVerifying) {
-				return;
+				return false;
 			}
 
 			const pageNo = currentPage.pageNo;
@@ -156,7 +159,7 @@ const Verification: React.FC = () => {
 			const payload: VerifyPageRequestDto = {
 				action,
 				durationMs: Date.now() - pageStartedAtReference.current,
-				text: currentPage.transcription.text,
+				text: text ?? currentPage.transcription.text,
 				transcriptionId: currentPage.transcription.id,
 			};
 
@@ -187,6 +190,8 @@ const Verification: React.FC = () => {
 				);
 				reloadPage(pageNo);
 			}
+
+			return !isRejected;
 		},
 		[currentPage, dispatch, document, reloadPage, isVerifying],
 	);
@@ -199,9 +204,29 @@ const Verification: React.FC = () => {
 		void handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
+	const handleSaveEdit = useCallback(
+		(text: string): void => {
+			void (async (): Promise<void> => {
+				const success = await handleVerify(
+					PageVerificationAction.CORRECT,
+					text,
+				);
+
+				if (success) {
+					setIsEditing(false);
+				}
+			})();
+		},
+		[handleVerify],
+	);
+
 	const handleToggleEdit = useCallback((): void => {
+		if (!currentPage?.transcription || isVerifying) {
+			return;
+		}
+
 		setIsEditing((value) => !value);
-	}, []);
+	}, [currentPage, isVerifying]);
 
 	const handleToggleShortcuts = useCallback((): void => {
 		setIsShortcutsOpen((value) => !value);
@@ -267,6 +292,7 @@ const Verification: React.FC = () => {
 				isVerifying={isVerifying}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
+				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
 				pageCount={document.pageCount}

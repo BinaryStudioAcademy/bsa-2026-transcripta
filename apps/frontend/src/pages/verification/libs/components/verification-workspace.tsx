@@ -10,6 +10,7 @@ type VerificationWorkspaceProperties = {
 	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
+	onSaveEdit: (text: string) => void;
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	pageCount?: number | undefined;
@@ -22,6 +23,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	isVerifying,
 	isZoomed,
 	onConfirm,
+	onSaveEdit,
 	onSkip,
 	onToggleEdit,
 	pageCount,
@@ -67,7 +69,9 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 							{isEditing ? (
 								<VerificationEdit
+									isDisabled={isVerifying}
 									onCancel={onToggleEdit}
+									onSave={onSaveEdit}
 									text={currentPage.transcription.text}
 								/>
 							) : (
