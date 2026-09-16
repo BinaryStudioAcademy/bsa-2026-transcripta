@@ -10,6 +10,8 @@ import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetPagesQueryDto,
+	type DocumentGetPagesResponseDto,
 	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
@@ -66,6 +68,26 @@ class DocumentApi extends BaseHTTPApi {
 		);
 
 		return await response.json<DocumentGetByIdResponseDto>();
+	}
+
+	public async getPages(
+		id: number,
+		query: DocumentGetPagesQueryDto,
+	): Promise<DocumentGetPagesResponseDto> {
+		const endpoint = this.getFullEndpoint(DocumentsApiPath.BY_ID_PAGES, {
+			id: String(id),
+		});
+
+		const response = await this.load(
+			`${endpoint}?from=${String(query.from)}&limit=${String(query.limit)}`,
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.GET,
+			},
+		);
+
+		return await response.json<DocumentGetPagesResponseDto>();
 	}
 
 	public async getUploadUrl(

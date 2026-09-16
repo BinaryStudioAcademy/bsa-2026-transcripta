@@ -10,6 +10,7 @@ import {
 	OverflowMenu,
 	ProgressBar,
 	RaiseLimitDialog,
+	ThemeToggle,
 } from "~/libs/components/components.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
@@ -26,6 +27,7 @@ import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import { DocumentStatusBlock } from "./libs/components/components.js";
+import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -123,19 +125,27 @@ const Document: React.FC = () => {
 			{currentDocument && (
 				<>
 					<Link to={AppRoute.DOCUMENTS}>← Back to Documents</Link>
-					<h1>{currentDocument.title}</h1>
+
+					<header className={styles["document-page__header"]}>
+						<h1>{currentDocument.title}</h1>
+
+						<div className={styles["document-page__actions"]}>
+							<OverflowMenu
+								items={[
+									{
+										isDanger: true,
+										label: "Delete",
+										onClick: handleOpenDeleteDialog,
+									},
+								]}
+							/>
+							<ThemeToggle />
+						</div>
+					</header>
+
 					<DocumentStatusBlock
 						documentId={currentDocument.id}
 						status={currentDocument.status}
-					/>
-					<OverflowMenu
-						items={[
-							{
-								isDanger: true,
-								label: "Delete",
-								onClick: handleOpenDeleteDialog,
-							},
-						]}
 					/>
 
 					<section>

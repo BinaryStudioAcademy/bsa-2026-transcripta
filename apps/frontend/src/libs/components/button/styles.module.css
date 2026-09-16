@@ -1,4 +1,4 @@
-.button {
+:where(.button) {
 	height: var(--ctl-lg);
 	padding: 0 var(--fs-md);
 	font-family: var(--font-ui);
@@ -11,69 +11,68 @@
 	border-radius: var(--r-md);
 }
 
-.button:focus-visible {
+:where(.button):focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
-.button:active {
+:where(.button):active {
 	transform: translateY(1px);
 }
 
-.button--basic {
+:where(.button--basic) {
 	color: var(--text-2);
 	background-color: transparent;
 }
 
-.button--basic:hover,
-.button--basic:active {
-	color: var(--text);
+:where(.button--basic):hover,
+:where(.button--basic):active {
 	background-color: var(--surface-2);
 }
 
-.button--primary {
+:where(.button--primary) {
 	color: var(--on-accent);
 	background-color: var(--accent);
 }
 
-.button--primary:hover {
+:where(.button--primary):hover {
 	background-color: var(--accent-hover);
 }
 
-.button--primary:active {
+:where(.button--primary):active {
 	background-color: var(--accent-active);
 }
 
-.button--secondary {
+:where(.button--secondary) {
 	color: var(--text);
 	background: var(--surface);
 	border: 1px solid var(--hairline-strong);
 }
 
-.button--fluid {
+:where(.button--fluid) {
 	width: 100%;
 }
 
-.button--sm {
+:where(.button--sm) {
 	height: var(--ctl-sm);
 	padding: 0 var(--sp-2);
 	font-size: var(--fs-xs);
 }
 
-.button--disabled {
+:where(.button--disabled) {
 	pointer-events: none;
 	cursor: default;
 }
 
-.button--danger {
+:where(.button--danger) {
 	color: var(--on-danger);
 	background-color: var(--danger);
 }
 
-.button--danger:hover {
+:where(.button--danger):hover {
 	background-color: var(--danger-hover);
 }
 
-.button--danger:active {
+:where(.button--danger):active {
 	background-color: var(--danger-active);
 }

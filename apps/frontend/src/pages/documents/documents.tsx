@@ -189,13 +189,13 @@ const Documents: React.FC = () => {
 				<h1 className={styles["documents-page__title"]}>Documents</h1>
 
 				<div className={styles["documents-page__actions"]}>
-					<ThemeToggle />
 					<Button
 						className={styles["documents-page__new-btn"]}
 						isPrimary
 						label="+ New document"
 						onClick={handleNewDocument}
 					/>
+					<ThemeToggle />
 				</div>
 			</header>
 
