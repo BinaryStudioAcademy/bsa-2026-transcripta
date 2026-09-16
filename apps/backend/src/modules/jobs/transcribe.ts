@@ -12,8 +12,7 @@ import {
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { buildContext } from "~/modules/context/builder.js";
-import { buildUserPrompt } from "~/modules/context/prompt.js";
+import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 import { refillPageWindow } from "~/modules/pages/libs/helpers/helpers.js";
@@ -47,6 +46,7 @@ import {
 	type CallOutcome,
 	type Dependencies,
 	type FailedResolvedTranscription,
+	type ModelIdValue,
 	type ParseResult,
 	type RecordFailureOptions,
 	type ResolvedTranscription,
@@ -190,18 +190,29 @@ const transcribeWithRepair = async (
 	} = options;
 
 	let repairNote: string | undefined;
+	let lastPromptUsed = prompt;
+	let lastRawResponse = "";
 	let usedInputTokens = EMPTY_LENGTH;
 	let usedLatencyMs = EMPTY_LENGTH;
 	let usedOutputTokens = EMPTY_LENGTH;
 
-	const createFailureOutcome = (
-		reason: TranscribeFailureReasonValue,
+	const createFailureOutcome = ({
+		prompt: promptUsed,
+		rawResponse,
+		reason,
 		retryable = false,
-	): CallOutcome => ({
+	}: {
+		prompt: string;
+		rawResponse: string;
+		reason: TranscribeFailureReasonValue;
+		retryable?: boolean;
+	}): CallOutcome => ({
 		inputTokens: usedInputTokens,
 		latencyMs: usedLatencyMs,
 		ok: false,
 		outputTokens: usedOutputTokens,
+		prompt: promptUsed,
+		rawResponse,
 		reason,
 		retryable,
 	});
@@ -222,24 +233,31 @@ const transcribeWithRepair = async (
 		} catch (error) {
 			logger.error(`Model call failed for page ${String(pageId)}`, { error });
 
-			return createFailureOutcome(
-				TranscribeFailureReason.MODEL_CALL_FAILED,
-				errorIsRetryable(error),
-			);
+			return createFailureOutcome({
+				prompt: lastPromptUsed,
+				rawResponse: lastRawResponse,
+				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
+				retryable: errorIsRetryable(error),
+			});
 		}
 
 		usedInputTokens += response.usage.inputTokens;
 		usedLatencyMs += response.latencyMs;
 		usedOutputTokens += response.usage.outputTokens;
 
-		const responseText = stripCodeFence(response.text);
+		const rawResponse = response.text;
+		lastPromptUsed = requestPrompt;
+		lastRawResponse = rawResponse;
+		const responseText = stripCodeFence(rawResponse);
 		const parsed = parseModelJson(responseText);
 
 		if (!parsed.ok) {
 			if (attempt >= MAX_REPAIR_ATTEMPTS) {
-				return createFailureOutcome(
-					TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-				);
+				return createFailureOutcome({
+					prompt: requestPrompt,
+					rawResponse,
+					reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+				});
 			}
 
 			repairNote = "Your previous output was not valid JSON.";
@@ -254,25 +272,36 @@ const transcribeWithRepair = async (
 				latencyMs: usedLatencyMs,
 				ok: true,
 				outputTokens: usedOutputTokens,
+				prompt: requestPrompt,
+				rawResponse,
 				structured: parsed.value,
 				text: responseText,
 			};
 		}
 
 		if (attempt >= MAX_REPAIR_ATTEMPTS) {
-			return createFailureOutcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
+			return createFailureOutcome({
+				prompt: requestPrompt,
+				rawResponse,
+				reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+			});
 		}
 
 		repairNote = formatValidationErrors(result.errors ?? []);
 	}
 
-	return createFailureOutcome(TranscribeFailureReason.INVALID_MODEL_OUTPUT);
+	return createFailureOutcome({
+		prompt: lastPromptUsed,
+		rawResponse: lastRawResponse,
+		reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+	});
 };
 
 const resolveFromCacheOrModel = async (
 	options: ResolveOptions,
 ): Promise<null | ResolvedTranscription> => {
 	const { cacheKey, context, page, preset } = options;
+	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const cached = await TranscriptionCacheModel.query()
 		.findById(cacheKey)
@@ -296,6 +325,8 @@ const resolveFromCacheOrModel = async (
 			latencyMs: EMPTY_LENGTH,
 			ok: true,
 			outputTokens: cached.outputTokens,
+			prompt: userPrompt,
+			rawResponse: "",
 			structured,
 			text: cached.text,
 		};
@@ -308,7 +339,6 @@ const resolveFromCacheOrModel = async (
 	const { logger, modelId, storage, transcriptionService } = options;
 
 	const image = await storage.downloadPageImage(page.imageKey);
-	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const outcome = await transcribeWithRepair({
 		image,
@@ -335,6 +365,8 @@ const resolveFromCacheOrModel = async (
 			latencyMs: outcome.latencyMs,
 			ok: true,
 			outputTokens: outcome.outputTokens,
+			prompt: outcome.prompt,
+			rawResponse: outcome.rawResponse,
 			structured: outcome.structured,
 			text: outcome.text,
 		};
@@ -347,6 +379,8 @@ const resolveFromCacheOrModel = async (
 		latencyMs: outcome.latencyMs,
 		ok: false,
 		outputTokens: outcome.outputTokens,
+		prompt: outcome.prompt,
+		rawResponse: outcome.rawResponse,
 		reason: outcome.reason,
 		retryable: outcome.retryable,
 	};
@@ -364,7 +398,9 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 		outputTokens,
 		pageId,
 		presetId,
+		prompt,
 		provider,
+		rawResponse,
 		structured,
 		text,
 	} = options;
@@ -387,7 +423,9 @@ const storeTranscription = async (options: StoreOptions): Promise<void> => {
 			output_tokens: outputTokens,
 			page_id: pageId,
 			preset_id: presetId,
+			prompt,
 			provider,
+			raw_response: rawResponse,
 			structured: structured ?? null,
 			text,
 		});
@@ -552,12 +590,10 @@ const createTranscribeHandler =
 				return;
 			}
 
-			const modelId = config.ENV.BEDROCK.MODEL_ID;
-			const knex = AbstractModel.knex();
+			const modelId = (preset.settings.model ||
+				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 			const context = await buildContext({
 				documentId,
-				knex,
-				logger,
 				pageNo,
 				preset,
 			});
@@ -615,15 +651,23 @@ const createTranscribeHandler =
 
 			if (!resolved.ok) {
 				await handleFailedTranscription({
+					contextUsed: JSON.stringify({
+						hash: context.contextHash,
+						lexiconIds: context.usedLexiconIds,
+						pageIds: context.usedPageIds,
+						tokens: context.tokenEstimate,
+					}),
 					documentId,
 					documentRepository,
 					enqueuePage,
 					enqueueRetry,
 					jobData: job.data,
 					logger,
+					modelId,
 					pageAttempts: page.attempts,
 					pageId,
 					pageRepository,
+					presetId: preset.id,
 					resolved,
 				});
 
@@ -648,7 +692,9 @@ const createTranscribeHandler =
 				outputTokens: resolved.outputTokens,
 				pageId,
 				presetId: preset.id,
+				prompt: resolved.prompt,
 				provider,
+				rawResponse: resolved.rawResponse,
 				structured: resolved.structured,
 				text: resolved.text,
 			});
@@ -701,15 +747,18 @@ const createTranscribeHandler =
 	};
 
 const handleFailedTranscription = async ({
+	contextUsed,
 	documentId,
 	documentRepository,
 	enqueuePage,
 	enqueueRetry,
 	jobData,
 	logger,
+	modelId,
 	pageAttempts,
 	pageId,
 	pageRepository,
+	presetId,
 	resolved,
 }: Pick<
 	Dependencies,
@@ -719,10 +768,13 @@ const handleFailedTranscription = async ({
 	| "logger"
 	| "pageRepository"
 > & {
+	contextUsed: string;
 	documentId: number;
 	jobData: PageTranscribeJobData;
+	modelId: string;
 	pageAttempts: number;
 	pageId: number;
+	presetId: number;
 	resolved: FailedResolvedTranscription;
 }): Promise<void> => {
 	const nextAttempts = pageAttempts + ONE;
@@ -756,6 +808,45 @@ const handleFailedTranscription = async ({
 			[resolved.costUsd, documentId],
 		);
 
+		const budgetExhausted = await applyBudgetStopIfExceeded(documentId, trx);
+
+		const retry = canRetry && !budgetExhausted;
+
+		let transcriptionId: null | number = null;
+
+		if (!retry) {
+			const provider = resolveModelProvider(modelId);
+
+			await trx
+				.from(DatabaseTableName.TRANSCRIPTION)
+				.where("page_id", pageId)
+				.where("is_current", true)
+				.update({ is_current: false });
+
+			const insertedRows: Array<{ id: number }> = await trx
+				.from(DatabaseTableName.TRANSCRIPTION)
+				.insert({
+					context_used: contextUsed,
+					cost_usd: resolved.costUsd,
+					document_id: documentId,
+					from_cache: resolved.fromCache,
+					input_tokens: resolved.inputTokens,
+					latency_ms: resolved.latencyMs,
+					model: modelId,
+					output_tokens: resolved.outputTokens,
+					page_id: pageId,
+					preset_id: presetId,
+					prompt: resolved.prompt,
+					provider,
+					raw_response: resolved.rawResponse,
+					structured: null,
+					text: "",
+				})
+				.returning("id");
+
+			transcriptionId = insertedRows[EMPTY_LENGTH]?.id ?? null;
+		}
+
 		await trx.from(DatabaseTableName.PAGE_EVENT).insert({
 			actorId: null,
 			details: {
@@ -768,12 +859,8 @@ const handleFailedTranscription = async ({
 			durationMs: resolved.latencyMs,
 			event: PageEventName.TRANSCRIBE_FAILED,
 			pageId,
-			transcriptionId: null,
+			transcriptionId,
 		});
-
-		const budgetExhausted = await applyBudgetStopIfExceeded(documentId, trx);
-
-		const retry = canRetry && !budgetExhausted;
 
 		await trx
 			.from(DatabaseTableName.PAGE)

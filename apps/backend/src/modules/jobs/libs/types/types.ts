@@ -12,3 +12,5 @@ export { type StoreOptions } from "./store-options.type.js";
 export { type TranscribeDependencies } from "./transcribe-dependencies.type.js";
 export { type TranscribeFailureReasonValue } from "./transcribe-failure-reason-value.type.js";
 export { type TranscribeRequestOptions } from "./transcribe-request-options.type.js";
+
+export { type ModelIdValue } from "@transcripta/shared";
