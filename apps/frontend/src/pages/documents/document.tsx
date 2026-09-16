@@ -28,7 +28,6 @@ import {
 	DocumentStatusBlock,
 } from "./libs/components/components.js";
 import { DocumentStatus } from "./libs/enums/enums.js";
-
 import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
