@@ -27,6 +27,7 @@ const pageTranscribeQueue = new PageTranscribeQueue({
 		storage,
 		transcriptionService,
 	}),
+	workerOptions: { concurrency: config.ENV.QUEUE.PAGE_TRANSCRIBE_CONCURRENCY },
 });
 
 const queueRegistry = new QueueRegistry({

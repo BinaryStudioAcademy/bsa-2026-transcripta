@@ -20,6 +20,9 @@ type EnvironmentSchema = {
 		POOL_MAX: number;
 		POOL_MIN: number;
 	};
+	QUEUE: {
+		PAGE_TRANSCRIBE_CONCURRENCY: number;
+	};
 	REDIS: {
 		URL: string;
 	};
