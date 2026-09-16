@@ -1,4 +1,5 @@
 export { type BuildVerifyResponsePayload } from "./page-build-verify-response-payload.type.js";
+export { type GetPageDebugHandlerOptions } from "./page-get-debug-handler-options.type.js";
 export { type ReprocessPageHandlerOptions } from "./page-reprocess-handler-options.type.js";
 export { type ReprocessPagePayload } from "./page-reprocess-payload.type.js";
 export { type PageServiceDependencies } from "./page-service-dependencies.type.js";
