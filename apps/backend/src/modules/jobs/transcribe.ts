@@ -13,8 +13,7 @@ import {
 } from "~/libs/modules/database/database.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { buildContext } from "~/modules/context/builder.js";
-import { buildUserPrompt } from "~/modules/context/prompt.js";
+import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 import { PresetModel } from "~/modules/presets/preset.model.js";
@@ -46,6 +45,7 @@ import {
 	type Dependencies,
 	type EnqueueTranscribeRetry,
 	type FailedResolvedTranscription,
+	type ModelIdValue,
 	type ParseResult,
 	type ResolvedTranscription,
 	type ResolveOptions,
@@ -513,12 +513,10 @@ const createTranscribeHandler =
 				return;
 			}
 
-			const modelId = config.ENV.BEDROCK.MODEL_ID;
-			const knex = AbstractModel.knex();
+			const modelId = (preset.settings.model ||
+				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 			const context = await buildContext({
 				documentId,
-				knex,
-				logger,
 				pageNo,
 				preset,
 			});
