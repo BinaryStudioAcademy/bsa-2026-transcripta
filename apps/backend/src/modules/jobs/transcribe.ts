@@ -121,12 +121,17 @@ const transcribeWithRepair = async (
 	let usedLatencyMs = EMPTY_LENGTH;
 	let usedOutputTokens = EMPTY_LENGTH;
 
-	const createFailureOutcome = (
-		reason: TranscribeFailureReasonValue,
-		promptUsed: string,
-		rawResponse: string,
+	const createFailureOutcome = ({
+		prompt: promptUsed,
+		rawResponse,
+		reason,
 		retryable = false,
-	): CallOutcome => ({
+	}: {
+		prompt: string;
+		rawResponse: string;
+		reason: TranscribeFailureReasonValue;
+		retryable?: boolean;
+	}): CallOutcome => ({
 		inputTokens: usedInputTokens,
 		latencyMs: usedLatencyMs,
 		ok: false,
@@ -153,12 +158,12 @@ const transcribeWithRepair = async (
 		} catch (error) {
 			logger.error(`Model call failed for page ${String(pageId)}`, { error });
 
-			return createFailureOutcome(
-				TranscribeFailureReason.MODEL_CALL_FAILED,
-				lastPromptUsed,
-				lastRawResponse,
-				errorIsRetryable(error),
-			);
+			return createFailureOutcome({
+				prompt: lastPromptUsed,
+				rawResponse: lastRawResponse,
+				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
+				retryable: errorIsRetryable(error),
+			});
 		}
 
 		usedInputTokens += response.usage.inputTokens;
@@ -173,11 +178,11 @@ const transcribeWithRepair = async (
 
 		if (!parsed.ok) {
 			if (attempt >= MAX_REPAIR_ATTEMPTS) {
-				return createFailureOutcome(
-					TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-					requestPrompt,
+				return createFailureOutcome({
+					prompt: requestPrompt,
 					rawResponse,
-				);
+					reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+				});
 			}
 
 			repairNote = "Your previous output was not valid JSON.";
@@ -200,21 +205,21 @@ const transcribeWithRepair = async (
 		}
 
 		if (attempt >= MAX_REPAIR_ATTEMPTS) {
-			return createFailureOutcome(
-				TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-				requestPrompt,
+			return createFailureOutcome({
+				prompt: requestPrompt,
 				rawResponse,
-			);
+				reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+			});
 		}
 
 		repairNote = formatValidationErrors(result.errors ?? []);
 	}
 
-	return createFailureOutcome(
-		TranscribeFailureReason.INVALID_MODEL_OUTPUT,
-		lastPromptUsed,
-		lastRawResponse,
-	);
+	return createFailureOutcome({
+		prompt: lastPromptUsed,
+		rawResponse: lastRawResponse,
+		reason: TranscribeFailureReason.INVALID_MODEL_OUTPUT,
+	});
 };
 
 const resolveFromCacheOrModel = async (
