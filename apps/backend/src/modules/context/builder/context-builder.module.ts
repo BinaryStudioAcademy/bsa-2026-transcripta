@@ -8,12 +8,12 @@ import { type Preset } from "~/modules/context/libs/types/types.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 import { PageRepository } from "~/modules/pages/page.repository.js";
 
-import { EMPTY_LENGTH, ONE } from "./libs/constants/constants.js";
 import {
-	ArrayIndex,
-	DefaultPresetSettings,
-	ErrorMessage,
-} from "./libs/enums/enums.js";
+	DEFAULT_PRESET_SETTINGS,
+	EMPTY_LENGTH,
+	ONE,
+} from "./libs/constants/constants.js";
+import { ArrayIndex, ErrorMessage } from "./libs/enums/enums.js";
 import {
 	createContextHash,
 	renderLexicon,
@@ -58,7 +58,7 @@ class ContextBuilder implements IContextBuilder {
 			model,
 			neighbourPages,
 		} = {
-			...DefaultPresetSettings,
+			...DEFAULT_PRESET_SETTINGS,
 			...preset.settings,
 		};
 
