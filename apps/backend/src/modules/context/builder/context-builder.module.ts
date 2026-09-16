@@ -3,12 +3,17 @@ import {
 	fitToBudget,
 	getEffectiveContextBudget,
 } from "~/context/context.js";
+import { Logger } from "~/libs/modules/logger/logger.js";
 import { type Preset } from "~/modules/context/libs/types/types.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
 import { PageRepository } from "~/modules/pages/page.repository.js";
 
 import { EMPTY_LENGTH, ONE } from "./libs/constants/constants.js";
-import { ArrayIndex, DefaultPresetSettings } from "./libs/enums/enums.js";
+import {
+	ArrayIndex,
+	DefaultPresetSettings,
+	ErrorMessage,
+} from "./libs/enums/enums.js";
 import {
 	createContextHash,
 	renderLexicon,
@@ -22,12 +27,16 @@ import {
 	type ContextToFit,
 	type ContextBuilder as IContextBuilder,
 	type LexiconEntry,
+	type PageWithText,
 } from "./libs/types/types.js";
 
 class ContextBuilder implements IContextBuilder {
+	private logger: Logger;
+
 	private pageRepository: PageRepository;
 
-	constructor(pageRepository: PageRepository) {
+	constructor(logger: Logger, pageRepository: PageRepository) {
+		this.logger = logger;
 		this.pageRepository = pageRepository;
 	}
 
@@ -58,17 +67,26 @@ class ContextBuilder implements IContextBuilder {
 		}
 
 		// TODO: Replace with actual lexicon repository method (sorted lexiconTopK)
-		const lexicon: LexiconEntry[] = await LexiconEntryModel.query()
-			.select("id", "valueDisplay", "freq")
-			.where("documentId", documentId)
-			.whereNull("invalidatedAt")
-			.where("distinctPages", ">=", minDistinctPages)
-			.orderBy([
-				{ column: "distinctPages", order: "desc" },
-				{ column: "freq", order: "desc" },
-				{ column: "valueDisplay", order: "asc" },
-			])
-			.limit(lexiconTopK);
+		let lexicon: LexiconEntry[] = [];
+		try {
+			lexicon = await LexiconEntryModel.query()
+				.select("id", "valueDisplay", "freq")
+				.where("documentId", documentId)
+				.whereNull("invalidatedAt")
+				.where("distinctPages", ">=", minDistinctPages)
+				.orderBy([
+					{ column: "distinctPages", order: "desc" },
+					{ column: "freq", order: "desc" },
+					{ column: "valueDisplay", order: "asc" },
+				])
+				.limit(lexiconTopK);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			this.logger.error(
+				`${ErrorMessage.LEXICON_SELECT_FAILED}: ${errorMessage}`,
+			);
+		}
 
 		if (lexicon.length > EMPTY_LENGTH) {
 			contextToTrim.lexiconEntries = lexicon.map((entry) =>
@@ -76,12 +94,19 @@ class ContextBuilder implements IContextBuilder {
 			);
 		}
 
-		const neighbouringPages =
-			await this.pageRepository.getPreviousVerifiedPagesText(
-				documentId,
-				pageNo,
-				neighbourPages,
-			);
+		let neighbouringPages: PageWithText[] = [];
+		try {
+			neighbouringPages =
+				await this.pageRepository.getPreviousVerifiedPagesText(
+					documentId,
+					pageNo,
+					neighbourPages,
+				);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			this.logger.error(`${ErrorMessage.PAGES_SELECT_FAILED}: ${errorMessage}`);
+		}
 
 		if (neighbouringPages.length > EMPTY_LENGTH) {
 			contextToTrim.neighbourPages = neighbouringPages.map((page) =>
