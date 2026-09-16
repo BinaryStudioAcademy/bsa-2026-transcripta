@@ -1,3 +1,5 @@
+import { EMPTY_LENGTH, ModelId, type ModelIdValue } from "@transcripta/shared";
+
 import {
 	type APIHandlerOptions,
 	type APIHandlerResponse,
@@ -6,6 +8,10 @@ import {
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
+import {
+	calculateTokenCost,
+	resolveModelProvider,
+} from "./libs/helpers/helpers.js";
 import { type TranscriptionService } from "./transcription.service.js";
 
 type TranscribeBody = {
@@ -17,6 +23,7 @@ type TranscribeBody = {
 
 const DEFAULT_MEDIA_TYPE = "image/png";
 const DEFAULT_PROMPT = "Transcribe the handwritten text on this page.";
+const KNOWN_MODEL_IDS = new Set<string>(Object.values(ModelId));
 
 /**
  * A calibration sandbox, not a product route: no auth, nothing persisted.
@@ -45,20 +52,72 @@ class TranscriptionController extends BaseController {
 		});
 	}
 
+	/**
+	 * @swagger
+	 * /test/transcribe:
+	 *   post:
+	 *     description: Sandbox transcription with debug fields (nothing persisted)
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         multipart/form-data:
+	 *           schema:
+	 *             type: object
+	 *             required:
+	 *               - image
+	 *             properties:
+	 *               image:
+	 *                 type: string
+	 *                 format: binary
+	 *               mediaType:
+	 *                 type: string
+	 *               modelId:
+	 *                 type: string
+	 *               prompt:
+	 *                 type: string
+	 *     responses:
+	 *       200:
+	 *         description: Model output plus prompt, cost, provider and tokens
+	 */
 	private async transcribe(
 		options: APIHandlerOptions<{
 			body: TranscribeBody;
 		}>,
 	): Promise<APIHandlerResponse> {
 		const { image, mediaType, modelId, prompt } = options.body;
+		const resolvedPrompt = prompt ?? DEFAULT_PROMPT;
+
+		const response = await this.transcriptionService.transcribe({
+			image,
+			mediaType: mediaType ?? DEFAULT_MEDIA_TYPE,
+			modelId,
+			prompt: resolvedPrompt,
+		});
+
+		const knownModelId = KNOWN_MODEL_IDS.has(response.modelId)
+			? (response.modelId as ModelIdValue)
+			: null;
+
+		const costUsd =
+			knownModelId === null
+				? EMPTY_LENGTH
+				: calculateTokenCost({
+						inputTokens: response.usage.inputTokens,
+						modelId: knownModelId,
+						outputTokens: response.usage.outputTokens,
+					});
 
 		return {
-			payload: await this.transcriptionService.transcribe({
-				image,
-				mediaType: mediaType ?? DEFAULT_MEDIA_TYPE,
-				modelId,
-				prompt: prompt ?? DEFAULT_PROMPT,
-			}),
+			payload: {
+				costUsd: String(costUsd),
+				latencyMs: response.latencyMs,
+				modelId: response.modelId,
+				prompt: resolvedPrompt,
+				provider: resolveModelProvider(response.modelId),
+				rawResponse: response.text,
+				text: response.text,
+				usage: response.usage,
+			},
 			status: HTTPCode.OK,
 		};
 	}
