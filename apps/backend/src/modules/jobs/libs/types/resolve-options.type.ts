@@ -3,9 +3,9 @@ import { type BuiltContext } from "~/modules/context/libs/types/types.js";
 import { type PageModel } from "~/modules/pages/page.model.js";
 import { type PresetModel } from "~/modules/presets/preset.model.js";
 
-import { type Dependencies } from "./dependencies.type.js";
+import { type TranscribeDependencies } from "./types.js";
 
-type ResolveOptions = Dependencies & {
+type ResolveOptions = TranscribeDependencies & {
 	cacheKey: string;
 	context: BuiltContext;
 	documentId: number;
