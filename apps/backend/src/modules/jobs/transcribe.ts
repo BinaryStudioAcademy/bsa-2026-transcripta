@@ -806,20 +806,40 @@ const handleFailedTranscription = async ({
 	try {
 		await enqueueRetry(jobData);
 	} catch (error) {
-		await PageModel.query()
-			.patch({
-				status: PageStatus.FAILED,
-			})
-			.where({
-				attempts: nextAttempts,
-				id: pageId,
-				status: PageStatus.QUEUED,
-			})
-			.execute();
+		const pages = await DocumentModel.transaction(async (trx) => {
+			const document = await DocumentModel.query(trx)
+				.findById(documentId)
+				.forUpdate();
+
+			if (!document) {
+				return [];
+			}
+
+			const failedRows = await PageModel.query(trx)
+				.patch({ status: PageStatus.FAILED })
+				.where({
+					attempts: nextAttempts,
+					documentId,
+					id: pageId,
+					status: PageStatus.QUEUED,
+				})
+				.execute();
+
+			if (failedRows === EMPTY_LENGTH) {
+				return [];
+			}
+
+			return await finalizePageFailure(
+				{ documentId, documentRepository, pageRepository },
+				trx,
+			);
+		});
 
 		logger.error(`Failed to enqueue retry for page ${String(pageId)}`, {
 			error,
 		});
+
+		await enqueuePages(pages, enqueuePage);
 	}
 };
 
