@@ -57,6 +57,8 @@ class PageRepository {
 				"p.status",
 				"p.imageKey",
 				"p.thumbKey",
+				"p.attempts",
+				"p.lastError",
 				"t.id as transcriptionId",
 				"t.text as transcriptionText",
 				"t.structured as transcriptionStructured",
