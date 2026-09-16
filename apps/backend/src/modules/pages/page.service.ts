@@ -1,11 +1,13 @@
 import {
 	HTTPCode,
 	HTTPError,
+	PageStatus,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
 
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 
 import { DocumentModel } from "../documents/document.model.js";
@@ -24,6 +26,7 @@ import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
+	type ReprocessPagePayload,
 	type VerifyPagePayload,
 } from "./libs/types/types.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
@@ -31,6 +34,8 @@ import { type PageRepository } from "./page.repository.js";
 
 class PageService {
 	private documentRepository: DocumentRepository;
+
+	private logger: Logger;
 
 	private pageEventRepository: PageEventRepository;
 
@@ -42,16 +47,19 @@ class PageService {
 
 	public constructor({
 		documentRepository,
+		logger,
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
 		transcriptionRepository,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
+		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
+		this.pageTranscribeQueue = pageTranscribeQueue;
 	}
 
 	private async buildVerifyResponse(
@@ -96,6 +104,62 @@ class PageService {
 			pageId,
 			status,
 		};
+	}
+
+	public async reprocess({
+		pageId,
+		userId,
+	}: ReprocessPagePayload): Promise<void> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		if (page.status !== PageStatus.FAILED) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FAILED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const wasReset = await this.pageRepository.resetFailedPageForReprocess(
+			page.id,
+		);
+
+		if (!wasReset) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FAILED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		try {
+			await this.pageTranscribeQueue.add({
+				documentId: page.documentId,
+				pageId: page.id,
+				pageNo: page.pageNo,
+			});
+		} catch (error) {
+			await this.pageRepository.restoreFailedPageAfterReprocessFailure(
+				page.id,
+				page.attempts,
+				page.lastError,
+			);
+
+			this.logger.error(
+				`Failed to enqueue reprocess job for page ${String(page.id)}`,
+				{ error },
+			);
+
+			throw new HTTPError({
+				message: PageErrorMessage.REPROCESS_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
 	}
 
 	public async verify(

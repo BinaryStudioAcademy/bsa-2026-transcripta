@@ -5,7 +5,6 @@ type RecordFailureOptions = Pick<
 	Dependencies,
 	"documentRepository" | "enqueuePage" | "pageRepository"
 > & {
-	costUsd?: number;
 	documentId: number;
 	event?: {
 		details: Record<string, unknown>;
