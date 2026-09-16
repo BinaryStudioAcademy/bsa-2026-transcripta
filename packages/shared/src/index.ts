@@ -66,6 +66,7 @@ export {
 	PageApiPath,
 	PageStatus,
 	PageVerificationAction,
+	reprocessPageParameters,
 	verifyPage,
 	verifyPageParameters,
 } from "./modules/pages/pages.js";

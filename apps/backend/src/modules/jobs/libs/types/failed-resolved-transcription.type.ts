@@ -10,6 +10,7 @@ type FailedResolvedTranscription = {
 	prompt: string;
 	rawResponse: string;
 	reason: TranscribeFailureReasonValue;
+	retryable: boolean;
 };
 
 export { type FailedResolvedTranscription };
