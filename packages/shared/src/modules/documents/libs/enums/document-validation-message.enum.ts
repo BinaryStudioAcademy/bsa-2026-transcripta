@@ -6,6 +6,7 @@ const DocumentValidationMessage = {
 		"The file exceeds the maximum allowed size (500 MB).",
 	DOCUMENT_NOT_FOUND: "Document not found.",
 	FILE_NAME_INVALID_NAME: "Unsupported file type. PDF files only.",
+	FILE_NAME_MAX_LENGTH: "File name must not exceed 50 characters.",
 	FILE_NAME_REQUIRE: "File name is required.",
 	INVALID_STATUS_TO_PAUSE: "Document must be processing to be paused",
 	INVALID_STATUS_TO_RESUME: "Document must be paused to be resumed",
@@ -17,6 +18,7 @@ const DocumentValidationMessage = {
 	PRESET_ID_REQUIRE: "Preset ID is required.",
 	PRESET_NOT_FOUND: "Preset not found.",
 	RESUME_FAILED: "Failed to resume document processing",
+	TITLE_MAX_LENGTH: "Title must not exceed 50 characters.",
 	TITLE_REQUIRE: "Title is required.",
 	USER_NOT_FOUND: "User not found.",
 } as const;
