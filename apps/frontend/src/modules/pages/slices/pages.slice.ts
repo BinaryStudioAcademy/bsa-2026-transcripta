@@ -6,7 +6,7 @@ import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/docume
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
-import { loadPages, verifyPage } from "./actions.js";
+import { loadPages, undoPage, verifyPage } from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -18,6 +18,7 @@ type State = {
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
+	lastVerifiedPageId: null | number;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
@@ -27,6 +28,7 @@ const initialState: State = {
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
+	lastVerifiedPageId: null,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
 };
@@ -45,16 +47,16 @@ const { actions, name, reducer } = createSlice({
 
 		builder.addCase(verifyPage.fulfilled, (state, { payload }) => {
 			state.rollback[payload.pageId] = undefined;
+			state.lastVerifiedPageId = payload.pageId;
+			state.verificationDataStatus = DataStatus.FULFILLED;
 
 			if (!payload.next) {
-				state.verificationDataStatus = DataStatus.FULFILLED;
 				return;
 			}
 
 			const nextPage = state.byId[payload.next.pageId];
 
 			if (!nextPage) {
-				state.verificationDataStatus = DataStatus.FULFILLED;
 				return;
 			}
 
@@ -68,11 +70,40 @@ const { actions, name, reducer } = createSlice({
 
 				nextPage.transcription.text = payload.next.transcription.text;
 			}
-
-			state.verificationDataStatus = DataStatus.FULFILLED;
 		});
 
 		builder.addCase(verifyPage.rejected, (state, action) => {
+			const { pageId } = action.meta.arg;
+			const previous = state.rollback[pageId];
+
+			if (previous && state.byId[pageId]) {
+				state.byId[pageId].status = previous.status;
+				state.cursorPageNo = previous.cursorPageNo;
+				state.rollback[pageId] = undefined;
+			}
+
+			state.verificationDataStatus = DataStatus.REJECTED;
+		});
+
+		builder.addCase(undoPage.pending, (state) => {
+			state.verificationDataStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(undoPage.fulfilled, (state, { payload }) => {
+			const page = state.byId[payload.pageId];
+
+			if (page) {
+				page.status = payload.status;
+				page.transcription = payload.transcription;
+				state.cursorPageNo = page.pageNo;
+			}
+
+			state.rollback[payload.pageId] = undefined;
+			state.lastVerifiedPageId = null;
+			state.verificationDataStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(undoPage.rejected, (state, action) => {
 			const { pageId } = action.meta.arg;
 			const previous = state.rollback[pageId];
 
@@ -109,12 +140,35 @@ const { actions, name, reducer } = createSlice({
 			state.idsByPageNo = {};
 			state.cursorPageNo = 0;
 			state.dataStatus = DataStatus.IDLE;
+			state.lastVerifiedPageId = null;
 			state.rollback = {};
 			state.verificationDataStatus = DataStatus.IDLE;
 		},
 
 		setCursorPageNo: (state, action: PayloadAction<number>) => {
 			state.cursorPageNo = action.payload;
+		},
+
+		undoOptimistic: (
+			state,
+			action: PayloadAction<{
+				pageId: number;
+			}>,
+		) => {
+			const { pageId } = action.payload;
+			const page = state.byId[pageId];
+
+			if (!page) {
+				return;
+			}
+
+			state.rollback[pageId] = {
+				cursorPageNo: state.cursorPageNo,
+				status: page.status,
+			};
+
+			page.status = PageStatus.TRANSCRIBED;
+			state.cursorPageNo = page.pageNo;
 		},
 
 		verifyOptimistic: (

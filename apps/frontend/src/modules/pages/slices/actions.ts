@@ -7,6 +7,7 @@ import {
 	type DocumentGetPagesResponseDto,
 } from "~/modules/documents/documents.js";
 import {
+	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "~/modules/pages/pages.js";
@@ -18,10 +19,28 @@ type LoadPagesParameters = {
 	query: DocumentGetPagesQueryDto;
 };
 
+type UndoPageParameters = {
+	pageId: number;
+};
+
 type VerifyPageParameters = {
 	pageId: number;
 	payload: VerifyPageRequestDto;
 };
+
+const undoPage = createAsyncThunk<
+	UndoPageResponseDto,
+	UndoPageParameters,
+	AsyncThunkConfig
+>(
+	`${sliceName}/undo`,
+	({ pageId }, { extra }) => {
+		const { pageApi } = extra;
+
+		return pageApi.undo(pageId);
+	},
+	{ serializeError },
+);
 
 const verifyPage = createAsyncThunk<
 	VerifyPageResponseDto,
@@ -51,4 +70,4 @@ const loadPages = createAsyncThunk<
 	{ serializeError },
 );
 
-export { loadPages, verifyPage };
+export { loadPages, undoPage, verifyPage };

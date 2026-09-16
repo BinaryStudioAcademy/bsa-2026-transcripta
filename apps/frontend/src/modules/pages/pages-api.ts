@@ -5,6 +5,7 @@ import { type Storage } from "~/libs/modules/storage/storage.js";
 
 import { PageApiPath } from "./libs/enums/enums.js";
 import {
+	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";
@@ -18,6 +19,20 @@ type Constructor = {
 class PageApi extends BaseHTTPApi {
 	public constructor({ baseUrl, http, storage }: Constructor) {
 		super({ baseUrl, http, path: APIPath.PAGES, storage });
+	}
+
+	public async undo(id: number): Promise<UndoPageResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(PageApiPath.UNDO, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify({}),
+			},
+		);
+
+		return await response.json<UndoPageResponseDto>();
 	}
 
 	public async verify(
