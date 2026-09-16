@@ -22,6 +22,7 @@ class PresetModel extends AbstractModel {
 
 	public settings!: {
 		blankStdevThreshold?: number;
+		model?: string;
 	};
 
 	public version!: number;

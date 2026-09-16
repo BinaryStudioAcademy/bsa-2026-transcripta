@@ -34,6 +34,7 @@ import {
 import {
 	type CallOutcome,
 	type Dependencies,
+	type ModelIdValue,
 	type ParseResult,
 	type ResolvedTranscription,
 	type ResolveOptions,
@@ -452,7 +453,8 @@ const createTranscribeHandler =
 				return;
 			}
 
-			const modelId = config.ENV.BEDROCK.MODEL_ID;
+			const modelId = (preset.settings.model ||
+				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 			const context = await buildContext({
 				documentId,
 				pageNo,
