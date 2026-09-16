@@ -1,3 +1,0 @@
-const TOKENS_PER_CHARACTER = 4;
-
-export { TOKENS_PER_CHARACTER };
