@@ -3,8 +3,10 @@ import { PageStatus } from "../../../pages/libs/enums/page-status.enum.js";
 import { type DocumentGetPagesTranscriptionResponseDto } from "./document-get-pages-transcription-response-dto.type.js";
 
 type DocumentGetPagesItemResponseDto = {
+	attempts: number;
 	id: number;
 	imageUrl: null | string;
+	lastError: null | string;
 	pageNo: number;
 	status: ValueOf<typeof PageStatus>;
 	thumbUrl: null | string;
