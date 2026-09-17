@@ -11,7 +11,6 @@ import {
 } from "./libs/types/types.js";
 import { PageEntity } from "./page.entity.js";
 import { type PageModel } from "./page.model.js";
-import { knex } from "knex";
 
 class PageRepository {
 	private pageModel: typeof PageModel;
