@@ -27,7 +27,7 @@ async function up(knex: Knex): Promise<void> {
 		)
 		.whereNotNull(`${TABLE_NAME}.${ColumnName.PRESET_ID}`)
 		.whereNull(`${PRESET_TABLE_NAME}.${ColumnName.ID}`)
-		.first<{ id: number }>();
+		.first<undefined | { id: number }>();
 
 	if (invalidTranscription) {
 		throw new Error(

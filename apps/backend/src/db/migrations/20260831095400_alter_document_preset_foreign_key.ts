@@ -30,7 +30,7 @@ async function up(knex: Knex): Promise<void> {
 		)
 		.whereNotNull(`${TABLE_NAME}.${ColumnName.PRESET_ID}`)
 		.whereNull(`${PRESET_TABLE_NAME}.${PresetColumnName.ID}`)
-		.first<{ id: number }>();
+		.first<undefined | { id: number }>();
 
 	if (invalidDocument) {
 		throw new Error(
