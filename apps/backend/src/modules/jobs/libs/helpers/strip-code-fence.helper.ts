@@ -1,11 +1,41 @@
-import { INDEX_NOT_FOUND } from "@transcripta/shared";
+import { EMPTY_LENGTH, INDEX_NOT_FOUND } from "@transcripta/shared";
 
 import {
 	CODE_FENCE_CLOSING_PATTERN,
 	CODE_FENCE_MARKER,
 	CODE_FENCE_OPENING_PATTERN,
 	JSON_CODE_FENCE_MARKER,
+	ONE,
 } from "../constants/constants.js";
+
+const extractRawJson = (text: string): null | string => {
+	const objectStart = text.indexOf("{");
+	const arrayStart = text.indexOf("[");
+
+	const candidates = [objectStart, arrayStart].filter(
+		(index) => index !== INDEX_NOT_FOUND,
+	);
+	if (candidates.length === EMPTY_LENGTH) {
+		return null;
+	}
+
+	const startIndex = Math.min(...candidates);
+	const closingChar = text[startIndex] === "{" ? "}" : "]";
+	const endIndex = text.lastIndexOf(closingChar);
+
+	if (endIndex <= startIndex) {
+		return null;
+	}
+
+	const candidate = text.slice(startIndex, endIndex + ONE);
+
+	try {
+		JSON.parse(candidate);
+		return candidate;
+	} catch {
+		return null;
+	}
+};
 
 const extractJsonCodeFence = (text: string): null | string => {
 	const normalizedText = text.toLowerCase();
@@ -41,7 +71,9 @@ const stripCodeFence = (text: string): string => {
 			.trim();
 	}
 
-	return trimmed;
+	const rawJson = extractRawJson(trimmed);
+
+	return rawJson ?? trimmed;
 };
 
 export { stripCodeFence };
