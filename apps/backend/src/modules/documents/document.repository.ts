@@ -16,6 +16,7 @@ import {
 	type DocumentUpdateBudgetPayload,
 	type DocumentUpdateDraftMetadataPayload,
 	type DocumentUpdateOwnedStatus,
+	type DocumentWithPagesFailed,
 	type LexiconRow,
 } from "./libs/types/types.js";
 
@@ -61,11 +62,18 @@ class DocumentRepository {
 	}
 
 	public async findAllByOwnerId(ownerId: number): Promise<DocumentEntity[]> {
-		const documents = await this.documentModel
-			.query()
-			.where({ ownerId })
-			.orderBy("createdAt", "desc")
-			.execute();
+		const knex = this.documentModel.knex();
+
+		const documents = await knex
+			.select<DocumentWithPagesFailed[]>(["d.*", "dp.pagesFailed"])
+			.from(`${DatabaseTableName.DOCUMENT} as d`)
+			.innerJoin(
+				`${DatabaseTableName.DOCUMENT_PROGRESS} as dp`,
+				"dp.documentId",
+				"d.id",
+			)
+			.where("d.ownerId", ownerId)
+			.orderBy("d.createdAt", "desc");
 
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
@@ -85,6 +93,7 @@ class DocumentRepository {
 		const document = await knex
 			.select<DocumentDetailsRow>([
 				"dp.documentId as id",
+				"d.error_message as errorMessage",
 				"dp.title",
 				"dp.status",
 				"dp.pageCount",

@@ -28,7 +28,13 @@ const DocumentStatusBlock: React.FC<Properties> = ({ documentId, status }) => {
 	const handleToggleProcessing = useCallback(() => {
 		const action = isPaused ? documentActions.resume : documentActions.pause;
 
-		void dispatch(action(documentId));
+		void dispatch(action(documentId))
+			.unwrap()
+			.then(() => {
+				if (isPaused) {
+					void dispatch(documentActions.startPolling(documentId));
+				}
+			});
 	}, [dispatch, documentId, isPaused]);
 
 	const showProcessingToggle =
