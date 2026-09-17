@@ -16,6 +16,7 @@ import {
 	StatusChip,
 	ThemeToggle,
 } from "~/libs/components/components.js";
+import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
@@ -113,7 +114,9 @@ const Documents: React.FC = () => {
 	const failedPagesMessage = documentsWithFailedPages
 		.map(
 			(document) =>
-				`${document.title} has ${String(document.pagesFailed)} failed pages`,
+				`${document.title} has ${String(document.pagesFailed)} failed ${
+					document.pagesFailed === ONE_QUANTITY ? "page" : "pages"
+				}`,
 		)
 		.join(", ");
 

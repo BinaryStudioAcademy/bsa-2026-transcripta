@@ -43,6 +43,10 @@ const Document: React.FC = () => {
 
 	const { id } = useParams();
 
+	const failedPagesCount = currentDocument?.progress.pagesFailed;
+	const failedPageLabel = failedPagesCount === ONE_QUANTITY ? "page" : "pages";
+	const failedPagePronoun = failedPagesCount === ONE_QUANTITY ? "it" : "them";
+
 	useEffect(() => {
 		const documentId = Number(id);
 
@@ -191,13 +195,9 @@ const Document: React.FC = () => {
 
 								{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
 									<p>
-										<span className="tabular-figures">
-											{currentDocument.progress.pagesFailed}
-										</span>{" "}
-										{currentDocument.progress.pagesFailed === ONE_QUANTITY
-											? "page"
-											: "pages"}{" "}
-										failed — open to re-read them
+										<span className="tabular-figures">{failedPagesCount}</span>{" "}
+										{failedPageLabel} failed — open to re-read{" "}
+										{failedPagePronoun}
 									</p>
 								)}
 							</section>
