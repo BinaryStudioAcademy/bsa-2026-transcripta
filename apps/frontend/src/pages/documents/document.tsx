@@ -10,7 +10,7 @@ import {
 	ProgressBar,
 	ThemeToggle,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import { INITIAL_COUNT, ONE_QUANTITY } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -188,6 +188,18 @@ const Document: React.FC = () => {
 										{currentDocument.cursorPageNo}
 									</span>
 								</Link>
+
+								{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
+									<p>
+										<span className="tabular-figures">
+											{currentDocument.progress.pagesFailed}
+										</span>{" "}
+										{currentDocument.progress.pagesFailed === ONE_QUANTITY
+											? "page"
+											: "pages"}{" "}
+										failed — open to re-read them
+									</p>
+								)}
 							</section>
 						</>
 					)}
