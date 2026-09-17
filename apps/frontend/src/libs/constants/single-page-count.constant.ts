@@ -1,0 +1,3 @@
+const SINGLE_PAGE_COUNT = 1;
+
+export { SINGLE_PAGE_COUNT };

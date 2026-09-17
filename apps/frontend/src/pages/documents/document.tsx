@@ -10,7 +10,10 @@ import {
 	ProgressBar,
 	ThemeToggle,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import {
+	INITIAL_COUNT,
+	SINGLE_PAGE_COUNT,
+} from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -147,9 +150,11 @@ const Document: React.FC = () => {
 						{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
 							<p>
 								{currentDocument.progress.pagesFailed} page
-								{currentDocument.progress.pagesFailed === 1 ? "" : "s"} failed
-								and still count toward the {currentDocument.progress.closedPct}%
-								closed.
+								{currentDocument.progress.pagesFailed === SINGLE_PAGE_COUNT
+									? ""
+									: "s"}{" "}
+								failed and still count toward the{" "}
+								{currentDocument.progress.closedPct}% closed.
 							</p>
 						)}
 					</section>

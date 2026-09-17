@@ -2,16 +2,16 @@ import { Button } from "~/libs/components/components.js";
 
 type Properties = {
 	attempts: number;
-	reason: string;
 	isLoading: boolean;
 	onReRead: () => void;
+	reason: string;
 };
 
 const FailedStateCard: React.FC<Properties> = ({
 	attempts,
-	reason,
 	isLoading,
 	onReRead,
+	reason,
 }: Properties) => {
 	return (
 		<div className="tx-state">
@@ -19,10 +19,10 @@ const FailedStateCard: React.FC<Properties> = ({
 			<p className="tx-state-reason">{reason}</p>
 			<div className="tx-state-actions">
 				<Button
+					isDisabled={isLoading}
 					isSecondary
 					label="Re-read"
 					onClick={onReRead}
-					isDisabled={isLoading}
 				/>
 			</div>
 		</div>
