@@ -9,10 +9,10 @@ type PageWithTranscriptionRow = {
 	status: ValueOf<typeof PageStatus>;
 	thumbKey: null | string;
 	transcriptionContextUsed: null | Record<string, unknown>;
+	transcriptionEditedText: null | string;
 	transcriptionId: null | number;
 	transcriptionStructured: null | Record<string, unknown>;
 	transcriptionText: null | string;
-	transcriptionEditedText: null | string;
 };
 
 export { type PageWithTranscriptionRow };
