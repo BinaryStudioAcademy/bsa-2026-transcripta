@@ -94,10 +94,13 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		void dispatch(documentActions.ingest(currentDocument.id))
+		const documentId = currentDocument.id;
+
+		void dispatch(documentActions.ingest(documentId))
 			.unwrap()
-			.then(() => {
-				void dispatch(documentActions.loadById(currentDocument.id));
+			.then(async () => {
+				await dispatch(documentActions.loadById(documentId)).unwrap();
+				void dispatch(documentActions.startPolling(documentId));
 			});
 	}, [currentDocument, dispatch]);
 
