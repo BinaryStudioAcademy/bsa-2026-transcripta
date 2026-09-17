@@ -28,6 +28,12 @@ const extractJsonCodeFence = (text: string): null | string => {
 const stripCodeFence = (text: string): string => {
 	const trimmed = text.trim();
 
+	const jsonBlock = extractJsonCodeFence(trimmed);
+
+	if (jsonBlock !== null) {
+		return jsonBlock;
+	}
+
 	if (trimmed.startsWith(CODE_FENCE_MARKER)) {
 		return trimmed
 			.replace(CODE_FENCE_OPENING_PATTERN, "")
@@ -35,9 +41,7 @@ const stripCodeFence = (text: string): string => {
 			.trim();
 	}
 
-	const jsonBlock = extractJsonCodeFence(trimmed);
-
-	return jsonBlock ?? trimmed;
+	return trimmed;
 };
 
 export { stripCodeFence };
