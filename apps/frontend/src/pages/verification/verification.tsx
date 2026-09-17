@@ -131,6 +131,10 @@ const Verification: React.FC = () => {
 		}
 	}, [currentPage]);
 
+	useEffect(() => {
+		setIsEditing(false);
+	}, [cursorPageNo]);
+
 	const reloadPage = useCallback(
 		(pageNo: number): void => {
 			if (!document) {
@@ -195,7 +199,6 @@ const Verification: React.FC = () => {
 						pageNo,
 						text,
 					});
-					setIsEditing(false);
 				}
 
 				notification.error(
@@ -228,7 +231,8 @@ const Verification: React.FC = () => {
 
 				if (success) {
 					setEditConflictDraft(null);
-					setIsEditing(false);
+				} else {
+					setIsEditing(true);
 				}
 			})();
 		},
