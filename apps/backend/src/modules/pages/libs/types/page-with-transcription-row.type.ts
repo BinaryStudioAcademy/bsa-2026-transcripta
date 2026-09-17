@@ -12,6 +12,7 @@ type PageWithTranscriptionRow = {
 	transcriptionId: null | number;
 	transcriptionStructured: null | Record<string, unknown>;
 	transcriptionText: null | string;
+	transcriptionEditedText: null | string;
 };
 
 export { type PageWithTranscriptionRow };
