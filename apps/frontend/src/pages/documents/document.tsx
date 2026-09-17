@@ -17,6 +17,7 @@ import {
 	BUDGET_UPLOAD_FAILED_MESSAGE,
 	INITIAL_COUNT,
 	NOTIFICATION_DELAY_MS,
+	ONE_QUANTITY,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString, formatMoney } from "~/libs/helpers/helpers.js";
@@ -32,7 +33,10 @@ import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
-import { DocumentStatusBlock } from "./libs/components/components.js";
+import {
+	DocumentFailedBlock,
+	DocumentStatusBlock,
+} from "./libs/components/components.js";
 import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
@@ -48,6 +52,10 @@ const Document: React.FC = () => {
 	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
 
 	const { id } = useParams();
+
+	const failedPagesCount = currentDocument?.progress.pagesFailed;
+	const failedPageLabel = failedPagesCount === ONE_QUANTITY ? "page" : "pages";
+	const failedPagePronoun = failedPagesCount === ONE_QUANTITY ? "it" : "them";
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -111,6 +119,7 @@ const Document: React.FC = () => {
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
 	const hasError =
 		documentDataStatus === DataStatus.REJECTED && !currentDocument;
+	const isFailed = currentDocument?.status === DocumentStatus.FAILED;
 
 	const handleOpenDeleteDialog = useCallback((): void => {
 		setIsConfirmOpen(true);
@@ -169,6 +178,21 @@ const Document: React.FC = () => {
 		[currentDocument, dispatch],
 	);
 
+	const handleRetry = useCallback((): void => {
+		if (!currentDocument) {
+			return;
+		}
+
+		const documentId = currentDocument.id;
+
+		void dispatch(documentActions.ingest(documentId))
+			.unwrap()
+			.then(async () => {
+				await dispatch(documentActions.loadById(documentId)).unwrap();
+				void dispatch(documentActions.startPolling(documentId));
+			});
+	}, [currentDocument, dispatch]);
+
 	return (
 		<>
 			{isLoading && <LoaderOverlay label="Loading document" />}
@@ -199,76 +223,97 @@ const Document: React.FC = () => {
 						status={currentDocument.status}
 					/>
 
-					<section>
-						<h2>Transcription</h2>
-						<ProgressBar
-							closedPct={currentDocument.progress.closedPct}
-							verifiedPct={currentDocument.progress.verifiedPct}
-						/>
-						<div>
-							<span className="tabular-figures">
-								{currentDocument.progress.pagesVerified}
-							</span>{" "}
-							of{" "}
-							<span className="tabular-figures">
-								{currentDocument.progress.pagesTotal}
-							</span>{" "}
-							pages verified
-							{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
-								<span>
-									{" "}
-									·{" "}
-									<span className="tabular-figures">
-										{currentDocument.progress.pagesInWork}
-									</span>{" "}
-									in work
-								</span>
-							)}
-						</div>
-						<BudgetIndicator
-							limitUsd={currentDocument.budget.limitUsd}
-							spentUsd={currentDocument.budget.spentUsd}
-							usedPct={currentDocument.budget.usedPct}
-						/>
-					</section>
-
-					{currentDocument.status === DocumentStatus.BUDGET_STOP && (
-						<section className="budget-stop-banner">
-							<p>
-								Stopped before page{" "}
-								<span className="tx-num">{currentDocument.cursorPageNo}</span> —
-								spent{" "}
-								<span className="tx-num">
-									{formatMoney(currentDocument.budget.spentUsd)}
-								</span>{" "}
-								of{" "}
-								<span className="tx-num">
-									{formatMoney(currentDocument.budget.limitUsd)}
-								</span>{" "}
-								budget.
-							</p>
-							<Button
-								isSecondary
-								isSmall
-								label="Raise the limit"
-								onClick={handleOpenRaiseLimit}
+					{isFailed ? (
+						<section>
+							<h2>Ingest failed</h2>
+							<DocumentFailedBlock
+								errorMessage={currentDocument.errorMessage}
+								onRetry={handleRetry}
 							/>
 						</section>
-					)}
+					) : (
+						<>
+							<section>
+								<h2>Transcription</h2>
+								<ProgressBar
+									closedPct={currentDocument.progress.closedPct}
+									verifiedPct={currentDocument.progress.verifiedPct}
+								/>
+								<div>
+									<span className="tabular-figures">
+										{currentDocument.progress.pagesVerified}
+									</span>{" "}
+									of{" "}
+									<span className="tabular-figures">
+										{currentDocument.progress.pagesTotal}
+									</span>{" "}
+									pages verified
+									{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
+										<span>
+											{" "}
+											·{" "}
+											<span className="tabular-figures">
+												{currentDocument.progress.pagesInWork}
+											</span>{" "}
+											in work
+										</span>
+									)}
+								</div>
+								<BudgetIndicator
+									limitUsd={currentDocument.budget.limitUsd}
+									spentUsd={currentDocument.budget.spentUsd}
+								/>
+							</section>
 
-					<section>
-						<h2>Verification</h2>
-						<Link
-							to={configureString(AppRoute.VERIFICATION, {
-								id: String(currentDocument.id),
-							})}
-						>
-							Resume at page{" "}
-							<span className="tabular-figures">
-								{currentDocument.cursorPageNo}
-							</span>
-						</Link>
-					</section>
+							{currentDocument.status === DocumentStatus.BUDGET_STOP && (
+								<section className="budget-stop-banner">
+									<p>
+										Stopped before page{" "}
+										<span className="tx-num">
+											{currentDocument.cursorPageNo}
+										</span>{" "}
+										— spent{" "}
+										<span className="tx-num">
+											{formatMoney(currentDocument.budget.spentUsd)}
+										</span>{" "}
+										of{" "}
+										<span className="tx-num">
+											{formatMoney(currentDocument.budget.limitUsd)}
+										</span>{" "}
+										budget.
+									</p>
+									<Button
+										isSecondary
+										isSmall
+										label="Raise the limit"
+										onClick={handleOpenRaiseLimit}
+									/>
+								</section>
+							)}
+
+							<section>
+								<h2>Verification</h2>
+								<Link
+									to={configureString(AppRoute.VERIFICATION, {
+										id: String(currentDocument.id),
+									})}
+								>
+									Resume at page{" "}
+									<span className="tabular-figures">
+										{currentDocument.cursorPageNo}
+									</span>
+								</Link>
+
+								{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
+									<p>
+										<span className="tabular-figures">{failedPagesCount}</span>{" "}
+										{failedPageLabel} failed — open to re-read{" "}
+										{failedPagePronoun}
+									</p>
+								)}
+							</section>
+						</>
+					)}
 
 					{currentDocument.groundTruth && (
 						<section>

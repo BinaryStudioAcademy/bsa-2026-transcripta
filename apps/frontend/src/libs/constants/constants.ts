@@ -1,7 +1,7 @@
 export { BUDGET_UPLOAD_FAILED_MESSAGE } from "./budget-failed-message.constant.js";
 export { BUDGET_FIELD_NAME } from "./budget-field-name.constant.js";
 export { BUDGET_STOP_NOTIFICATION_MESSAGE } from "./budget-stop-notification.constant.js";
-export { FIRST_INDEX } from "./common.constants.js";
+export { FIRST_INDEX, ONE_QUANTITY } from "./common.constants.js";
 export { CURRENCY_DECIMAL_PLACES } from "./currency-decimal-places.constant.js";
 export { EMPTY_STRING } from "./empty-string.constant.js";
 export { GET_BUDGET_LIMIT_ERROR_MESSAGE } from "./get-budget-limit-error-message.constant.js";
