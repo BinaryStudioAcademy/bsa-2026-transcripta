@@ -11,6 +11,11 @@ import { type Transaction, UniqueViolationError } from "objection";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
+import {
+	buildContextWords,
+	buildPageLexiconMap,
+	extractLexiconIds,
+} from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
@@ -87,6 +92,13 @@ class PageService {
 
 		const nextTranscription =
 			await this.transcriptionRepository.findCurrentByPageId(nextPage.id, trx);
+		const contextUsed = nextTranscription?.contextUsed ?? null;
+		const lexiconRows = await this.documentRepository.findLexiconByIds(
+			extractLexiconIds(contextUsed),
+			trx,
+		);
+		const lexiconById = new Map(lexiconRows.map((row) => [row.id, row]));
+		const pageLexiconById = buildPageLexiconMap(contextUsed, lexiconById);
 
 		return {
 			lexiconAdded: [],
@@ -96,7 +108,10 @@ class PageService {
 				status: nextPage.status,
 				transcription: nextTranscription
 					? {
-							contextWords: [],
+							contextWords: buildContextWords({
+								lexiconById: pageLexiconById,
+								text: nextTranscription.text,
+							}),
 							text: nextTranscription.text,
 						}
 					: null,
