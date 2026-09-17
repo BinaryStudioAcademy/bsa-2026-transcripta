@@ -103,7 +103,7 @@ class PageService {
 				transcription: nextTranscription
 					? {
 							contextWords: [],
-							text: nextTranscription.text,
+							text: nextTranscription.editedText ?? nextTranscription.text,
 						}
 					: null,
 			},
