@@ -253,9 +253,13 @@ const Verification: React.FC = () => {
 
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
+			if (isEditing) {
+				notification.info("Navigation is not available in edit mode");
+				return;
+			}
 			dispatch(pageActions.setCursorPageNo(pageNo));
 		},
-		[dispatch],
+		[dispatch, isEditing],
 	);
 
 	const handlePrevious = useCallback((): void => {
