@@ -112,10 +112,10 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 								</>
 							)}
 							{editConflictDraft?.pageNo === currentPage.pageNo && (
-								<p className="verification-transcription__draft">
+								<div className="verification-transcription__draft">
 									<strong>Your previous draft:</strong>
 									<p>{editConflictDraft.text}</p>
-								</p>
+								</div>
 							)}
 						</>
 					) : (
