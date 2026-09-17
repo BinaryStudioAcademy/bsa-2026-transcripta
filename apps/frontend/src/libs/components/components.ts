@@ -11,6 +11,7 @@ export { LogoIcon } from "./logo-icon/logo-icon.js";
 export { OverflowMenu } from "./overflow-menu/overflow-menu.js";
 export { ProgressBar } from "./progress-bar/progress-bar.js";
 export { ProtectedRoute } from "./protected-route/protected-route.js";
+export { PublicRoute } from "./public-route/public-route.js";
 export { RaiseLimitDialog } from "./raise-limit-dialog/raise-limit-dialog.js";
 export { RouterProvider } from "./router-provider/router-provider.js";
 export { Sidebar } from "./sidebar/sidebar.js";
