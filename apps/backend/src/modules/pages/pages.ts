@@ -3,6 +3,7 @@ import { pageTranscribeQueue } from "~/libs/modules/queue/queue.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { DocumentRepository } from "../documents/document.repository.js";
+import { transcriptionService } from "../transcription/transcription.js";
 import { TranscriptionModel } from "../transcription/transcription.model.js";
 import { TranscriptionRepository } from "../transcription/transcription.repository.js";
 import { PageEventModel } from "./page-event/page-event.model.js";
@@ -25,6 +26,7 @@ const pageService = new PageService({
 	pageRepository,
 	pageTranscribeQueue,
 	transcriptionRepository,
+	transcriptionService,
 });
 
 const pageController = new PageController(logger, pageService);

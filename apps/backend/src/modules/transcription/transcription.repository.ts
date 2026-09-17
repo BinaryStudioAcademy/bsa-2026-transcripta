@@ -23,6 +23,18 @@ class TranscriptionRepository {
 			.execute();
 	}
 
+	public async updateEditedStructured(
+		id: number,
+		editedStructured: null | Record<string, unknown>,
+		trx?: Transaction,
+	): Promise<void> {
+		await this.transcriptionModel
+			.query(trx)
+			.patch({ editedStructured })
+			.where({ id })
+			.execute();
+	}
+
 	public async updateEditedText(
 		id: number,
 		editedText: string,

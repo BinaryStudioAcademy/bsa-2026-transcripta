@@ -143,6 +143,21 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
+	public async findByIdAndOwnerIdWithPresetForUpdate(
+		id: number,
+		ownerId: number,
+		trx: Transaction,
+	): Promise<DocumentEntity | null> {
+		const document = await this.documentModel
+			.query(trx)
+			.findById(id)
+			.where({ ownerId })
+			.withGraphFetched(DocumentRelationName.PRESET)
+			.forUpdate();
+
+		return document ? DocumentEntity.initialize(document) : null;
+	}
+
 	public async findDraftsOlderThan(date: string): Promise<DocumentEntity[]> {
 		const documents = await this.documentModel
 			.query()
@@ -334,6 +349,23 @@ class DocumentRepository {
 		await this.documentModel
 			.query(trx)
 			.patch({ sourceKey })
+			.where({ id })
+			.execute();
+	}
+
+	public updateSpentUsd(id: number, spentUsd: number, trx?: Transaction) {
+		return this.documentModel
+			.query(trx)
+			.patch({
+				spentUsd: raw("spent_usd + ?", [spentUsd]),
+				status: raw(
+					`CASE
+						WHEN (spent_usd + ?) >= budget_usd THEN ?::document_status_enum
+						ELSE status
+					END`,
+					[spentUsd, DocumentStatus.BUDGET_STOP],
+				),
+			})
 			.where({ id })
 			.execute();
 	}
