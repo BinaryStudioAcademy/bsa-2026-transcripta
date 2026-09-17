@@ -675,8 +675,10 @@ class DocumentService {
 				);
 
 				return {
+					attempts: page.attempts,
 					id: page.id,
 					imageUrl,
+					lastError: page.lastError,
 					pageNo: page.pageNo,
 					status: page.status,
 					thumbUrl,
