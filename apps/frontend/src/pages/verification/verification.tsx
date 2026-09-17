@@ -21,6 +21,7 @@ import {
 	selectCursorPageNo,
 	selectPagesDataStatus,
 	selectPagesForStrip,
+	selectReprocessDataStatus,
 	selectVerificationDataStatus,
 	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
@@ -61,8 +62,10 @@ const Verification: React.FC = () => {
 	const pagesForStrip = useAppSelector(selectPagesForStrip);
 	const cursorPageNo = useAppSelector(selectCursorPageNo);
 	const verificationDataStatus = useAppSelector(selectVerificationDataStatus);
+	const reprocessDataStatus = useAppSelector(selectReprocessDataStatus);
 
 	const isVerifying = verificationDataStatus === DataStatus.PENDING;
+	const isReprocessing = reprocessDataStatus === DataStatus.PENDING;
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 
@@ -199,6 +202,14 @@ const Verification: React.FC = () => {
 		void handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
+	const handleReRead = useCallback((): void => {
+		if (!currentPage) {
+			return;
+		}
+
+		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
+	}, [currentPage, dispatch]);
+
 	const handleToggleEdit = useCallback((): void => {
 		setIsEditing((value) => !value);
 	}, []);
@@ -264,9 +275,11 @@ const Verification: React.FC = () => {
 				currentPage={currentPage}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
+				isReprocessing={isReprocessing}
 				isVerifying={isVerifying}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
+				onReRead={handleReRead}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
 				pageCount={document.pageCount}

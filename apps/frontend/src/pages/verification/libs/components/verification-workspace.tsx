@@ -1,5 +1,7 @@
-import { Button } from "~/libs/components/components.js";
+import { Button, FailedStateCard } from "~/libs/components/components.js";
 
+import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { PageStatus } from "../enums/enums.js";
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
@@ -7,9 +9,11 @@ type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
 	isCompleted: boolean;
 	isEditing: boolean;
+	isReprocessing: boolean;
 	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
+	onReRead: () => void;
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	pageCount?: number | undefined;
@@ -19,9 +23,11 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
 	isCompleted,
 	isEditing,
+	isReprocessing,
 	isVerifying,
 	isZoomed,
 	onConfirm,
+	onReRead,
 	onSkip,
 	onToggleEdit,
 	pageCount,
@@ -58,7 +64,16 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 			<div className="tx-split-pane">
 				<section className="verification-transcription">
-					{currentPage?.transcription ? (
+					{currentPage?.status === PageStatus.FAILED ? (
+						<div className="verification-failed-state">
+							<FailedStateCard
+								attempts={currentPage.attempts}
+								isLoading={isReprocessing}
+								onReRead={onReRead}
+								reason={getFailedReason(currentPage.lastError)}
+							/>
+						</div>
+					) : currentPage?.transcription ? (
 						<>
 							<span className="verification-transcription__page">
 								page {currentPage.pageNo} of {pageCount}

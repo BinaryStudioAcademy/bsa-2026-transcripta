@@ -18,6 +18,10 @@ type LoadPagesParameters = {
 	query: DocumentGetPagesQueryDto;
 };
 
+type ReprocessPageParameters = {
+	pageId: number;
+};
+
 type VerifyPageParameters = {
 	pageId: number;
 	payload: VerifyPageRequestDto;
@@ -37,6 +41,20 @@ const verifyPage = createAsyncThunk<
 	{ serializeError },
 );
 
+const reprocessPage = createAsyncThunk<
+	void,
+	ReprocessPageParameters,
+	AsyncThunkConfig
+>(
+	`${sliceName}/reprocess`,
+	({ pageId }, { extra }) => {
+		const { pageApi } = extra;
+
+		return pageApi.reprocess(pageId);
+	},
+	{ serializeError },
+);
+
 const loadPages = createAsyncThunk<
 	DocumentGetPagesResponseDto,
 	LoadPagesParameters,
@@ -51,4 +69,4 @@ const loadPages = createAsyncThunk<
 	{ serializeError },
 );
 
-export { loadPages, verifyPage };
+export { loadPages, reprocessPage, verifyPage };

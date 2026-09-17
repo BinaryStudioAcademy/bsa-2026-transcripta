@@ -6,7 +6,7 @@ import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/docume
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
-import { loadPages, verifyPage } from "./actions.js";
+import { loadPages, reprocessPage, verifyPage } from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -18,6 +18,7 @@ type State = {
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
+	reprocessDataStatus: ValueOf<typeof DataStatus>;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
@@ -27,6 +28,7 @@ const initialState: State = {
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
+	reprocessDataStatus: DataStatus.IDLE,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
 };
@@ -85,6 +87,27 @@ const { actions, name, reducer } = createSlice({
 			state.verificationDataStatus = DataStatus.REJECTED;
 		});
 
+		builder.addCase(reprocessPage.pending, (state) => {
+			state.reprocessDataStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(reprocessPage.fulfilled, (state, action) => {
+			const { pageId } = action.meta.arg;
+			const page = state.byId[pageId];
+
+			if (page) {
+				page.status = PageStatus.QUEUED;
+				page.attempts = 0;
+				page.lastError = null;
+			}
+
+			state.reprocessDataStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(reprocessPage.rejected, (state) => {
+			state.reprocessDataStatus = DataStatus.REJECTED;
+		});
+
 		builder.addCase(loadPages.pending, (state) => {
 			state.dataStatus = DataStatus.PENDING;
 		});
@@ -109,6 +132,7 @@ const { actions, name, reducer } = createSlice({
 			state.idsByPageNo = {};
 			state.cursorPageNo = 0;
 			state.dataStatus = DataStatus.IDLE;
+			state.reprocessDataStatus = DataStatus.IDLE;
 			state.rollback = {};
 			state.verificationDataStatus = DataStatus.IDLE;
 		},

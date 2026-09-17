@@ -1,0 +1,30 @@
+.tx-state {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 320px;
+	max-width: 440px;
+	padding: 20px;
+	background: var(--surface);
+	border: 1px solid var(--hairline-strong);
+	border-radius: var(--r-lg);
+}
+
+.tx-state-h {
+	margin: 0;
+	font: 600 var(--fs-l) / var(--lh-tight) var(--font-display);
+	color: var(--text);
+}
+
+.tx-state-reason {
+	margin: 0;
+	font: 400 var(--fs-sm) / var(--lh-ui) var(--font-ui);
+	color: var(--text-2);
+}
+
+.tx-state-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 10px;
+}

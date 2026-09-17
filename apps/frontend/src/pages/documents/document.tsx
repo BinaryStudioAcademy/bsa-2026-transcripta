@@ -144,6 +144,14 @@ const Document: React.FC = () => {
 							limitUsd={currentDocument.budget.limitUsd}
 							spentUsd={currentDocument.budget.spentUsd}
 						/>
+						{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
+							<p>
+								{currentDocument.progress.pagesFailed} page
+								{currentDocument.progress.pagesFailed === 1 ? "" : "s"} failed
+								and still count toward the {currentDocument.progress.closedPct}%
+								closed.
+							</p>
+						)}
 					</section>
 
 					<section>
