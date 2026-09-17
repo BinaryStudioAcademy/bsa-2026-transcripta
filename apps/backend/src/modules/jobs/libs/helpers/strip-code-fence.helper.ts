@@ -9,34 +9,30 @@ import {
 } from "../constants/constants.js";
 
 const extractRawJson = (text: string): null | string => {
-	const objectStart = text.indexOf("{");
-	const arrayStart = text.indexOf("[");
+	const matches = text.matchAll(/[[{]/g);
 
-	const candidates = [objectStart, arrayStart].filter(
-		(index) => index !== INDEX_NOT_FOUND,
-	);
-	if (candidates.length === EMPTY_LENGTH) {
-		return null;
+	for (const match of matches) {
+		const startIndex = match.index;
+		const openingChar = match[EMPTY_LENGTH];
+		const closingChar = openingChar === "{" ? "}" : "]";
+
+		let endIndex = text.indexOf(closingChar, startIndex + ONE);
+
+		while (endIndex !== INDEX_NOT_FOUND) {
+			const candidate = text.slice(startIndex, endIndex + ONE);
+
+			try {
+				JSON.parse(candidate);
+
+				return candidate;
+			} catch {
+				endIndex = text.indexOf(closingChar, endIndex + ONE);
+			}
+		}
 	}
 
-	const startIndex = Math.min(...candidates);
-	const closingChar = text[startIndex] === "{" ? "}" : "]";
-	const endIndex = text.lastIndexOf(closingChar);
-
-	if (endIndex <= startIndex) {
-		return null;
-	}
-
-	const candidate = text.slice(startIndex, endIndex + ONE);
-
-	try {
-		JSON.parse(candidate);
-		return candidate;
-	} catch {
-		return null;
-	}
+	return null;
 };
-
 const extractJsonCodeFence = (text: string): null | string => {
 	const normalizedText = text.toLowerCase();
 	const openingIndex = normalizedText.indexOf(JSON_CODE_FENCE_MARKER);
