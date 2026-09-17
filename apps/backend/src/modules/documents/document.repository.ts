@@ -369,7 +369,7 @@ class DocumentRepository {
 				spentUsd: raw("spent_usd + ?", [spentUsd]),
 				status: raw(
 					`CASE
-						WHEN (spent_usd + ?) >= budget_usd THEN ?::document_status_enum
+						WHEN (spent_usd + ?) >= budget_usd THEN ?
 						ELSE status
 					END`,
 					[spentUsd, DocumentStatus.BUDGET_STOP],
