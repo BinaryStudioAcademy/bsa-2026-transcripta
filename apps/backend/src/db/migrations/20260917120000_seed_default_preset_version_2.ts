@@ -7,7 +7,6 @@ const DEFAULT_PRESET_DATA = {
 	description:
 		"Parish records of births, marriages and deaths. Cursive, faded ink.",
 	family_id: 1,
-	id: 1,
 	instructions: `This is a page from a late 19th-century Orthodox parish register.
 The text is written in cursive and the ink has faded in places.
 
@@ -34,6 +33,10 @@ Rules:
 							"x-entity-kind": "person_name",
 						},
 						notes: { type: ["string", "null"] },
+						place: {
+							type: ["string", "null"],
+							"x-entity-kind": "place",
+						},
 						record_no: { type: ["integer", "null"] },
 						surname: {
 							type: ["string", "null"],
@@ -67,6 +70,7 @@ Rules:
 	settings: JSON.stringify({
 		dpi: 400,
 		grayscale: true,
+		lexiconTopK: 100,
 		maxContextTokens: 6000,
 		maxImageWidth: 2048,
 		maxOutputTokens: 4096,
@@ -77,29 +81,20 @@ Rules:
 		temperature: 0,
 		windowSize: 5,
 	}),
-	version: 1,
+	version: 2,
 };
 
 async function down(knex: Knex): Promise<void> {
 	await knex(TABLE_NAME)
 		.where({
 			family_id: DEFAULT_PRESET_DATA.family_id,
-			id: DEFAULT_PRESET_DATA.id,
 			version: DEFAULT_PRESET_DATA.version,
 		})
 		.delete();
 }
 
 async function up(knex: Knex): Promise<void> {
-	await knex(TABLE_NAME)
-		.insert(DEFAULT_PRESET_DATA)
-		.onConflict(["family_id", "version"])
-		.ignore();
-
-	await knex.raw(`
-		SELECT setval(pg_get_serial_sequence('${TABLE_NAME}', 'id'), (SELECT max(id) FROM ${TABLE_NAME}));
-		SELECT setval('preset_family_seq', (SELECT max(family_id) FROM ${TABLE_NAME}));
-	`);
+	await knex(TABLE_NAME).insert(DEFAULT_PRESET_DATA);
 }
 
 export { down, up };
