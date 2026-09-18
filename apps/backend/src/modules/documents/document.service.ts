@@ -39,8 +39,8 @@ import {
 import {
 	DocumentErrorMessage,
 	DocumentStatus,
-	PageStatus,
 	DocumentValidationRule,
+	PageStatus,
 } from "./libs/enums/enums.js";
 import {
 	type DocumentGetAllResponseDto,
