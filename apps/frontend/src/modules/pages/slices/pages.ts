@@ -1,9 +1,10 @@
-import { loadPages, verifyPage } from "./actions.js";
+import { loadPages, undoPage, verifyPage } from "./actions.js";
 import { actions } from "./pages.slice.js";
 
 const allActions = {
 	...actions,
 	loadPages,
+	undoPage,
 	verifyPage,
 };
 

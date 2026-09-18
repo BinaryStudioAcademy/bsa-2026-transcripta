@@ -4,6 +4,7 @@ import {
 	type PageDebugResponseDto,
 	PageStatus,
 	PageVerificationAction,
+	type UndoPageResponseDto,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
@@ -208,6 +209,43 @@ class PageService {
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
+	}
+
+	public async undo(
+		pageId: number,
+		userId: number,
+	): Promise<UndoPageResponseDto> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const transcription =
+			await this.transcriptionRepository.findCurrentByPageId(pageId);
+
+		await this.pageRepository.updateVerification({
+			pageId,
+			status: PageStatus.TRANSCRIBED,
+			verifiedAt: null,
+			verifiedBy: null,
+		});
+
+		return {
+			pageId,
+			status: PageStatus.TRANSCRIBED,
+			transcription: transcription
+				? {
+						contextWords: [],
+						id: transcription.id,
+						structured: transcription.structured,
+						text: transcription.text,
+					}
+				: null,
+		};
 	}
 
 	public async verify(

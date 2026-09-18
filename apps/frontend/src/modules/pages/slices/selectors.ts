@@ -21,6 +21,9 @@ const selectCurrentPage = (state: RootState) => {
 
 const selectCursorPageNo = (state: RootState) => state.pages.cursorPageNo;
 
+const selectLastVerifiedPageId = (state: RootState) =>
+	state.pages.lastVerifiedPageId;
+
 const selectPagesForStrip = createSelector(
 	[
 		(state: RootState) => state.pages.byId,
@@ -62,6 +65,7 @@ const selectPagesForStrip = createSelector(
 export {
 	selectCurrentPage,
 	selectCursorPageNo,
+	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectVerificationDataStatus,
