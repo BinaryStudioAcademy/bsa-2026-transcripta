@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
 	BudgetIndicator,
+	Button,
 	ConfirmDialog,
 	GroundTruthBlock,
 	Link,
 	LoaderOverlay,
 	OverflowMenu,
 	ProgressBar,
+	RaiseLimitDialog,
 	ThemeToggle,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT, ONE_QUANTITY } from "~/libs/constants/constants.js";
+import {
+	BUDGET_STOP_NOTIFICATION_MESSAGE,
+	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INITIAL_COUNT,
+	NOTIFICATION_DELAY_MS,
+	ONE_QUANTITY,
+} from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
-import { configureString } from "~/libs/helpers/helpers.js";
+import { configureString, formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -21,13 +29,14 @@ import {
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import {
 	DocumentFailedBlock,
 	DocumentStatusBlock,
 } from "./libs/components/components.js";
-import { DocumentStatus } from "./libs/enums/enums.js";
 import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
@@ -40,6 +49,7 @@ const Document: React.FC = () => {
 		}),
 	);
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
 
 	const { id } = useParams();
 
@@ -61,6 +71,49 @@ const Document: React.FC = () => {
 			dispatch(documentActions.stopPolling());
 		};
 	}, [id, dispatch]);
+
+	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
+	const isNotifyingReference = useRef<boolean>(false);
+	const previousStatusReference = useRef<null | string>(null);
+
+	useEffect(() => {
+		if (!currentDocument) {
+			previousStatusReference.current = null;
+			return;
+		}
+
+		const documentIdFromParameters = Number(id);
+
+		if (currentDocument.id !== documentIdFromParameters) {
+			return;
+		}
+
+		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
+		const previousStatus = previousStatusReference.current;
+
+		previousStatusReference.current = currentDocument.status;
+
+		const hasAlreadyBeenNotified = notifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		const shouldNotify =
+			isBudgetStop &&
+			(!hasAlreadyBeenNotified ||
+				previousStatus !== DocumentStatus.BUDGET_STOP);
+
+		if (shouldNotify && !isNotifyingReference.current) {
+			isNotifyingReference.current = true;
+
+			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+
+			notifiedDocumentsReference.current.add(currentDocument.id);
+
+			setTimeout(() => {
+				isNotifyingReference.current = false;
+			}, NOTIFICATION_DELAY_MS);
+		}
+	}, [currentDocument, currentDocument?.id, currentDocument?.status, id]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -92,6 +145,38 @@ const Document: React.FC = () => {
 				setIsConfirmOpen(false);
 			});
 	}, [currentDocument, dispatch, navigate]);
+
+	const handleOpenRaiseLimit = useCallback((): void => {
+		setIsRaiseLimitOpen(true);
+	}, []);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setIsRaiseLimitOpen(false);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			if (!currentDocument) {
+				return;
+			}
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: currentDocument.id,
+					payload: { limitUsd },
+				}),
+			)
+				.unwrap()
+				.then(() => {
+					setIsRaiseLimitOpen(false);
+					void dispatch(documentActions.startPolling(currentDocument.id));
+				})
+				.catch(() => {
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+				});
+		},
+		[currentDocument, dispatch],
+	);
 
 	const handleRetry = useCallback((): void => {
 		if (!currentDocument) {
@@ -180,6 +265,32 @@ const Document: React.FC = () => {
 								/>
 							</section>
 
+							{currentDocument.status === DocumentStatus.BUDGET_STOP && (
+								<section className="budget-stop-banner">
+									<p>
+										Stopped before page{" "}
+										<span className="tx-num">
+											{currentDocument.cursorPageNo}
+										</span>{" "}
+										— spent{" "}
+										<span className="tx-num">
+											{formatMoney(currentDocument.budget.spentUsd)}
+										</span>{" "}
+										of{" "}
+										<span className="tx-num">
+											{formatMoney(currentDocument.budget.limitUsd)}
+										</span>{" "}
+										budget.
+									</p>
+									<Button
+										isSecondary
+										isSmall
+										label="Raise the limit"
+										onClick={handleOpenRaiseLimit}
+									/>
+								</section>
+							)}
+
 							<section>
 								<h2>Verification</h2>
 								<Link
@@ -224,6 +335,15 @@ const Document: React.FC = () => {
 					onCancel={handleCancelDelete}
 					onConfirm={handleConfirmDelete}
 					title="Delete this document"
+				/>
+			)}
+
+			{isRaiseLimitOpen && currentDocument && (
+				<RaiseLimitDialog
+					currentLimitUsd={currentDocument.budget.limitUsd}
+					onCancel={handleCancelRaiseLimit}
+					onSubmit={handleUpdateBudget}
+					spentUsd={currentDocument.budget.spentUsd}
 				/>
 			)}
 		</>
