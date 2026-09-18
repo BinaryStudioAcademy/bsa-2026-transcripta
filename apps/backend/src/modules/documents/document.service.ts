@@ -259,16 +259,15 @@ class DocumentService {
 			}
 
 			await this.documentRepository.updatePageCount(documentId, pageCount, trx);
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.READY,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
+
+			const currentStatus = currentDocument.toObject().status;
+			if (currentStatus === DocumentStatus.INGESTING) {
+				await this.documentRepository.updateStatus(
+					documentId,
+					DocumentStatus.READY,
+					trx,
+				);
+			}
 
 			return await this.pageRepository.findQueuedPages(documentId, trx);
 		});
@@ -384,12 +383,44 @@ class DocumentService {
 				continue;
 			}
 
-			await this.processPage({
+			const createdPage = await this.processPage({
 				blankStdevThreshold: blankStdevThreshold ?? null,
 				documentId,
 				filePath,
 				page,
 			});
+
+			const pageObject = createdPage.toObject();
+
+			if (pageObject.status === PageStatus.BLANK) {
+				continue;
+			}
+
+			const currentDocument =
+				await this.documentRepository.findById(documentId);
+			if (
+				!currentDocument ||
+				currentDocument.toObject().status === DocumentStatus.BUDGET_STOP ||
+				currentDocument.toObject().status === DocumentStatus.PAUSED
+			) {
+				break;
+			}
+
+			const queuedPages = await this.pageRepository.findQueuedPages(documentId);
+			if (queuedPages.length < PAGES_TO_QUEUE) {
+				await this.pageRepository.updateVerification({
+					pageId: pageObject.id,
+					status: PageStatus.QUEUED,
+					verifiedAt: null,
+					verifiedBy: null,
+				});
+
+				await this.pageTranscribeQueue.add({
+					documentId,
+					pageId: pageObject.id,
+					pageNo: page,
+				});
+			}
 		}
 
 		return pageCount;
@@ -405,7 +436,7 @@ class DocumentService {
 		documentId: number;
 		filePath: string;
 		page: number;
-	}): Promise<void> {
+	}): Promise<PageEntity> {
 		let pngPath: string;
 		try {
 			pngPath = await this.pdfPageProcessor.convertPageToPNG(filePath, page);
@@ -459,7 +490,7 @@ class DocumentService {
 			status: isBlank ? PageStatus.BLANK : PageStatus.PENDING,
 			thumbKey: thumbnailKey,
 		});
-		await this.pageRepository.create(pageEntity);
+		return await this.pageRepository.create(pageEntity);
 	}
 
 	private throwDocumentNotFoundError(): never {
