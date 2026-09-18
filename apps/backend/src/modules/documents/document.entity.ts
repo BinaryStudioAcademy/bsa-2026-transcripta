@@ -3,6 +3,7 @@ import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 import {
 	DEFAULT_BUDGET_USD,
 	DEFAULT_SPENT_USD,
+	MIN_NUMBER_OF_FAILED_PAGES,
 } from "./libs/constants/constants.js";
 import { DocumentErrorMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
@@ -28,6 +29,8 @@ class DocumentEntity {
 
 	private pageCount: number;
 
+	private pagesFailed: number;
+
 	private preset: null | Preset;
 
 	private presetId: number;
@@ -51,6 +54,7 @@ class DocumentEntity {
 		id,
 		ownerId,
 		pageCount,
+		pagesFailed,
 		preset,
 		presetId,
 		sourceBytes,
@@ -66,6 +70,7 @@ class DocumentEntity {
 		id: null | number;
 		ownerId: number;
 		pageCount: number;
+		pagesFailed?: number;
 		preset?: null | Preset;
 		presetId: number;
 		sourceBytes: null | number;
@@ -81,6 +86,7 @@ class DocumentEntity {
 		this.id = id;
 		this.ownerId = ownerId;
 		this.pageCount = pageCount;
+		this.pagesFailed = pagesFailed ?? MIN_NUMBER_OF_FAILED_PAGES;
 		this.preset = preset ?? null;
 		this.presetId = presetId;
 		this.sourceBytes = sourceBytes;
@@ -98,6 +104,7 @@ class DocumentEntity {
 		id,
 		ownerId,
 		pageCount,
+		pagesFailed,
 		preset,
 		presetId,
 		sourceBytes,
@@ -113,6 +120,7 @@ class DocumentEntity {
 		id: number;
 		ownerId: number;
 		pageCount: number;
+		pagesFailed?: number;
 		preset?: Preset;
 		presetId: number;
 		sourceBytes?: null | number;
@@ -129,6 +137,7 @@ class DocumentEntity {
 			id,
 			ownerId,
 			pageCount,
+			pagesFailed: pagesFailed ?? MIN_NUMBER_OF_FAILED_PAGES,
 			preset: preset ?? null,
 			presetId,
 			sourceBytes: sourceBytes ?? null,
@@ -162,6 +171,7 @@ class DocumentEntity {
 			id: null,
 			ownerId,
 			pageCount: 0,
+			pagesFailed: 0,
 			presetId,
 			sourceBytes: sourceBytes ?? null,
 			sourceKey: sourceKey ?? null,
@@ -210,6 +220,7 @@ class DocumentEntity {
 			id: this.id,
 			ownerId: this.ownerId,
 			pageCount: this.pageCount,
+			pagesFailed: this.pagesFailed,
 			spentUsd: this.spentUsd,
 			status: this.status,
 			title: this.title,

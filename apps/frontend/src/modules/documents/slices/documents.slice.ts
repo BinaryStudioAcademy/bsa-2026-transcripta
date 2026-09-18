@@ -11,6 +11,7 @@ import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import {
 	create,
+	ingest,
 	loadAll,
 	loadById,
 	pause,
@@ -140,6 +141,24 @@ const { actions, name, reducer } = createSlice({
 
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PAUSED;
+			}
+		});
+
+		builder.addCase(ingest.pending, (state, action) => {
+			if (state.document?.id === action.meta.arg) {
+				state.document.status = DocumentStatus.INGESTING;
+			}
+		});
+
+		builder.addCase(ingest.fulfilled, (state, action) => {
+			if (state.document?.id === action.meta.arg) {
+				state.document.status = DocumentStatus.READY;
+			}
+		});
+
+		builder.addCase(ingest.rejected, (state, action) => {
+			if (state.document?.id === action.meta.arg) {
+				state.document.status = DocumentStatus.FAILED;
 			}
 		});
 	},

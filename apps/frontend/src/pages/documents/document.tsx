@@ -10,7 +10,7 @@ import {
 	ProgressBar,
 	ThemeToggle,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import { INITIAL_COUNT, ONE_QUANTITY } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -23,7 +23,11 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 
-import { DocumentStatusBlock } from "./libs/components/components.js";
+import {
+	DocumentFailedBlock,
+	DocumentStatusBlock,
+} from "./libs/components/components.js";
+import { DocumentStatus } from "./libs/enums/enums.js";
 import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
@@ -38,6 +42,10 @@ const Document: React.FC = () => {
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 	const { id } = useParams();
+
+	const failedPagesCount = currentDocument?.progress.pagesFailed;
+	const failedPageLabel = failedPagesCount === ONE_QUANTITY ? "page" : "pages";
+	const failedPagePronoun = failedPagesCount === ONE_QUANTITY ? "it" : "them";
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -58,6 +66,7 @@ const Document: React.FC = () => {
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
 	const hasError =
 		documentDataStatus === DataStatus.REJECTED && !currentDocument;
+	const isFailed = currentDocument?.status === DocumentStatus.FAILED;
 
 	const handleOpenDeleteDialog = useCallback((): void => {
 		setIsConfirmOpen(true);
@@ -83,6 +92,21 @@ const Document: React.FC = () => {
 				setIsConfirmOpen(false);
 			});
 	}, [currentDocument, dispatch, navigate]);
+
+	const handleRetry = useCallback((): void => {
+		if (!currentDocument) {
+			return;
+		}
+
+		const documentId = currentDocument.id;
+
+		void dispatch(documentActions.ingest(documentId))
+			.unwrap()
+			.then(async () => {
+				await dispatch(documentActions.loadById(documentId)).unwrap();
+				void dispatch(documentActions.startPolling(documentId));
+			});
+	}, [currentDocument, dispatch]);
 
 	return (
 		<>
@@ -114,51 +138,71 @@ const Document: React.FC = () => {
 						status={currentDocument.status}
 					/>
 
-					<section>
-						<h2>Transcription</h2>
-						<ProgressBar
-							closedPct={currentDocument.progress.closedPct}
-							verifiedPct={currentDocument.progress.verifiedPct}
-						/>
-						<div>
-							<span className="tabular-figures">
-								{currentDocument.progress.pagesVerified}
-							</span>{" "}
-							of{" "}
-							<span className="tabular-figures">
-								{currentDocument.progress.pagesTotal}
-							</span>{" "}
-							pages verified
-							{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
-								<span>
-									{" "}
-									·{" "}
+					{isFailed ? (
+						<section>
+							<h2>Ingest failed</h2>
+							<DocumentFailedBlock
+								errorMessage={currentDocument.errorMessage}
+								onRetry={handleRetry}
+							/>
+						</section>
+					) : (
+						<>
+							<section>
+								<h2>Transcription</h2>
+								<ProgressBar
+									closedPct={currentDocument.progress.closedPct}
+									verifiedPct={currentDocument.progress.verifiedPct}
+								/>
+								<div>
 									<span className="tabular-figures">
-										{currentDocument.progress.pagesInWork}
+										{currentDocument.progress.pagesVerified}
 									</span>{" "}
-									in work
-								</span>
-							)}
-						</div>
-						<BudgetIndicator
-							limitUsd={currentDocument.budget.limitUsd}
-							spentUsd={currentDocument.budget.spentUsd}
-						/>
-					</section>
+									of{" "}
+									<span className="tabular-figures">
+										{currentDocument.progress.pagesTotal}
+									</span>{" "}
+									pages verified
+									{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
+										<span>
+											{" "}
+											·{" "}
+											<span className="tabular-figures">
+												{currentDocument.progress.pagesInWork}
+											</span>{" "}
+											in work
+										</span>
+									)}
+								</div>
+								<BudgetIndicator
+									limitUsd={currentDocument.budget.limitUsd}
+									spentUsd={currentDocument.budget.spentUsd}
+								/>
+							</section>
 
-					<section>
-						<h2>Verification</h2>
-						<Link
-							to={configureString(AppRoute.VERIFICATION, {
-								id: String(currentDocument.id),
-							})}
-						>
-							Resume at page{" "}
-							<span className="tabular-figures">
-								{currentDocument.cursorPageNo}
-							</span>
-						</Link>
-					</section>
+							<section>
+								<h2>Verification</h2>
+								<Link
+									to={configureString(AppRoute.VERIFICATION, {
+										id: String(currentDocument.id),
+									})}
+								>
+									Resume at page{" "}
+									<span className="tabular-figures">
+										{currentDocument.cursorPageNo}
+									</span>
+								</Link>
+
+								{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
+									<p>
+										<span className="tabular-figures">{failedPagesCount}</span>{" "}
+										{failedPageLabel} failed — open to re-read{" "}
+										{failedPagePronoun}
+									</p>
+								)}
+							</section>
+						</>
+					)}
 
 					{currentDocument.groundTruth && (
 						<section>
