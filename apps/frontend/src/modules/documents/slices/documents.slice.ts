@@ -165,7 +165,7 @@ const { actions, name, reducer } = createSlice({
 			const { budget, id } = action.payload;
 			if (state.document && state.document.id === id) {
 				state.document.budget = budget;
-				if (Number(budget.limitUsd) > Number(budget.spentUsd)) {
+				if (state.document.status === DocumentStatus.BUDGET_STOP) {
 					state.document.status = DocumentStatus.PROCESSING;
 				}
 			}
@@ -175,7 +175,7 @@ const { actions, name, reducer } = createSlice({
 			if (documentItem) {
 				documentItem.budgetUsd = budget.limitUsd;
 				documentItem.spentUsd = budget.spentUsd;
-				if (Number(budget.limitUsd) > Number(budget.spentUsd)) {
+				if (documentItem.status === DocumentStatus.BUDGET_STOP) {
 					documentItem.status = DocumentStatus.PROCESSING;
 				}
 			}

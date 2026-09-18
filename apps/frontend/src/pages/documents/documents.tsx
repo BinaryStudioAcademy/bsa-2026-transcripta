@@ -18,6 +18,7 @@ import {
 	ThemeToggle,
 } from "~/libs/components/components.js";
 import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
+import { BUDGET_UPLOAD_FAILED_MESSAGE } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
@@ -27,6 +28,7 @@ import {
 	useEffect,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import {
 	DEFAULT_MAX_ARCHIVE_SIZE_MB,
@@ -49,6 +51,7 @@ const Documents: React.FC = () => {
 	}));
 	const [pendingDeleteId, setPendingDeleteId] = useState<null | number>(null);
 	const [budgetDocumentId, setBudgetDocumentId] = useState<null | number>(null);
+	const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
 
 	useEffect(() => {
 		void dispatch(documentActions.loadAll());
@@ -149,19 +152,30 @@ const Documents: React.FC = () => {
 
 	const handleUpdateBudget = useCallback(
 		(limitUsd: string): void => {
-			if (budgetDocumentId === null) {
+			if (budgetDocumentId === null || isLoading || isUpdatingBudget) {
 				return;
 			}
+
+			setIsUpdatingBudget(true);
 
 			void dispatch(
 				documentActions.updateBudget({
 					id: budgetDocumentId,
 					payload: { limitUsd },
 				}),
-			);
-			setBudgetDocumentId(null);
+			)
+				.unwrap()
+				.then(() => {
+					setBudgetDocumentId(null);
+					setIsUpdatingBudget(false);
+					void dispatch(documentActions.loadAll());
+				})
+				.catch(() => {
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+					setIsUpdatingBudget(false);
+				});
 		},
-		[budgetDocumentId, dispatch],
+		[budgetDocumentId, dispatch, isLoading, isUpdatingBudget],
 	);
 
 	const handleRaiseLimitClick = useCallback(
