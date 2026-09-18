@@ -2,6 +2,7 @@ const DocumentErrorMessage = {
 	CURRENTLY_INGESTING: "The document is currently being ingested",
 	DOCUMENT_NOT_UPLOADED: "The document has not been uploaded",
 	DOWNLOAD_FAILED: "Failed to download the document",
+	EXCEEDED_MAX_FILE_SIZE: "The file exceeds the maximum allowed size (500 MB).",
 	EXCEEDED_MAX_PAGES: "The document has too many pages (over 500).",
 	INGEST_FAILED: "Failed to ingest the document",
 	NO_PRESET: "The document has no preset",
