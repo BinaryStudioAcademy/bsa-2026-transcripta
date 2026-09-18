@@ -1,15 +1,20 @@
 import { Button } from "~/libs/components/components.js";
 
-import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
+import {
+	type DocumentGetPagesItemResponseDto,
+	type EditConflictDraft,
+} from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	editConflictDraft: EditConflictDraft | null;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
+	onSaveEdit: (text: string) => void;
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	pageCount?: number | undefined;
@@ -17,11 +22,13 @@ type VerificationWorkspaceProperties = {
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
+	editConflictDraft,
 	isCompleted,
 	isEditing,
 	isVerifying,
 	isZoomed,
 	onConfirm,
+	onSaveEdit,
 	onSkip,
 	onToggleEdit,
 	pageCount,
@@ -67,7 +74,9 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 							{isEditing ? (
 								<VerificationEdit
+									isDisabled={isVerifying}
 									onCancel={onToggleEdit}
+									onSave={onSaveEdit}
 									text={currentPage.transcription.text}
 								/>
 							) : (
@@ -101,6 +110,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 										/>
 									</div>
 								</>
+							)}
+							{editConflictDraft?.pageNo === currentPage.pageNo && (
+								<div className="verification-transcription__draft">
+									<strong>Your previous draft:</strong>
+									<p>{editConflictDraft.text}</p>
+								</div>
 							)}
 						</>
 					) : (
