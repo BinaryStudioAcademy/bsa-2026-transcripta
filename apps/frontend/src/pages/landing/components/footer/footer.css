@@ -12,17 +12,6 @@
 	align-items: center;
 }
 
-.footer__logo {
-	display: block;
-	width: var(--sp-5);
-	height: var(--sp-5);
-}
-
-.footer__brand-name {
-	font: 600 var(--fs-md-plus) / 1 var(--font-display);
-	color: var(--text);
-}
-
 .footer__copyright {
 	font-size: var(--fs-2xs);
 	color: var(--text-3);
