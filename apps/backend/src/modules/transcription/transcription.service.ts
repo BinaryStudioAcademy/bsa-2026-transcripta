@@ -8,8 +8,7 @@ import {
 import { type Config } from "~/libs/modules/config/config.js";
 import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
-import { EMPTY_LENGTH } from "./libs/constants/constants.js";
-import { SYSTEM_PROMPT } from "./libs/constants/constants.js";
+import { EMPTY_LENGTH, SYSTEM_PROMPT } from "./libs/constants/constants.js";
 import {
 	buildRederiveStructuredPrompt,
 	calculateTokenCost,
