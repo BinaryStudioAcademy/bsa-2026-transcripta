@@ -1,9 +1,11 @@
 import {
+	EMPTY_LENGTH,
 	HTTPCode,
 	HTTPError,
 	type PageDebugResponseDto,
 	PageStatus,
 	PageVerificationAction,
+	type VerifyPageLexiconItemDto,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
@@ -14,6 +16,10 @@ import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-q
 import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
+import { type LexiconEntryRepository } from "../lexicon/lexicon-entry.repository.js";
+import { lexiconExtractor } from "../lexicon/lexicon-extractor/lexicon-extractor.js";
+import { normalizeLexiconValue } from "../lexicon/libs/helpers/normalize-lexicon.helper.js";
+import { type UpdateLexiconFromVerified } from "../lexicon/libs/types/types.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
 import { TranscriptionService } from "../transcription/transcription.service.js";
 import {
@@ -38,6 +44,8 @@ import { type PageRepository } from "./page.repository.js";
 class PageService {
 	private documentRepository: DocumentRepository;
 
+	private lexiconEntryRepository: LexiconEntryRepository;
+
 	private logger: Logger;
 
 	private pageEventRepository: PageEventRepository;
@@ -52,6 +60,7 @@ class PageService {
 
 	public constructor({
 		documentRepository,
+		lexiconEntryRepository,
 		logger,
 		pageEventRepository,
 		pageRepository,
@@ -61,6 +70,7 @@ class PageService {
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
 		this.logger = logger;
+		this.lexiconEntryRepository = lexiconEntryRepository;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.transcriptionService = transcriptionService;
@@ -72,7 +82,7 @@ class PageService {
 		payload: BuildVerifyResponsePayload,
 		trx?: Transaction,
 	): Promise<VerifyPageResponseDto> {
-		const { documentId, pageId, pageNo, status } = payload;
+		const { documentId, lexiconAdded, pageId, pageNo, status } = payload;
 
 		const nextPageNo = pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
 
@@ -84,7 +94,7 @@ class PageService {
 
 		if (!nextPage) {
 			return {
-				lexiconAdded: [],
+				lexiconAdded,
 				next: null,
 				pageId,
 				status,
@@ -95,7 +105,7 @@ class PageService {
 			await this.transcriptionRepository.findCurrentByPageId(nextPage.id, trx);
 
 		return {
-			lexiconAdded: [],
+			lexiconAdded,
 			next: {
 				pageId: nextPage.id,
 				pageNo: nextPage.pageNo,
@@ -164,6 +174,67 @@ class PageService {
 				trx,
 			);
 		}
+	}
+
+	private async updateLexiconFromVerifiedPage({
+		documentId,
+		isCorrection,
+		minDistinctPages,
+		pageId,
+		pageNo,
+		transcription,
+		trx,
+	}: UpdateLexiconFromVerified): Promise<VerifyPageLexiconItemDto[]> {
+		const effectiveTranscription = isCorrection
+			? await this.transcriptionRepository.findCurrentByPageId(pageId, trx)
+			: transcription;
+
+		if (!effectiveTranscription) {
+			throw new HTTPError({
+				message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const text =
+			effectiveTranscription.editedText ?? effectiveTranscription.text;
+
+		const structured =
+			effectiveTranscription.editedStructured ??
+			effectiveTranscription.structured;
+
+		const extractedEntities = lexiconExtractor.extractEntities(
+			text,
+			structured,
+		);
+
+		if (extractedEntities.length === EMPTY_LENGTH) {
+			return [];
+		}
+
+		const lexiconPayload = extractedEntities.map((entity) => ({
+			documentId,
+			kind: entity.kind,
+			pageNo,
+			valueDisplay: entity.value,
+			valueNormalized: normalizeLexiconValue(entity.value),
+		}));
+
+		const entries = await this.lexiconEntryRepository.upsertFromPage(
+			lexiconPayload,
+			trx,
+		);
+
+		return entries.map((entry) => {
+			const { distinctPages, id, valueDisplay } = entry.toObject();
+
+			return {
+				distinctPages,
+				id,
+				inContext: distinctPages >= minDistinctPages,
+				word: valueDisplay,
+			};
+		});
 	}
 
 	public async getDebug(
@@ -276,7 +347,6 @@ class PageService {
 		const { action, pageId, transcriptionId, userId } = payload;
 
 		const isCorrection = action === PageVerificationAction.CORRECT;
-
 		const isVerifiedAction = action !== PageVerificationAction.SKIP;
 
 		if (isCorrection && !payload.text) {
@@ -338,12 +408,15 @@ class PageService {
 						trx,
 					);
 
+				let lexiconAdded: VerifyPageLexiconItemDto[] = [];
+
 				if (existingEvent && !isCorrection) {
 					return {
 						pagesToQueue: [],
 						response: await this.buildVerifyResponse(
 							{
 								documentId: page.documentId,
+								lexiconAdded,
 								pageId,
 								pageNo: page.pageNo,
 								status: page.status,
@@ -358,6 +431,20 @@ class PageService {
 						document,
 						text: payload.text,
 						transcriptionId,
+						trx,
+					});
+				}
+
+				const minDistinctPages = EMPTY_LENGTH;
+
+				if (isVerifiedAction && !existingEvent) {
+					lexiconAdded = await this.updateLexiconFromVerifiedPage({
+						documentId: page.documentId,
+						isCorrection,
+						minDistinctPages,
+						pageId,
+						pageNo: page.pageNo,
+						transcription,
 						trx,
 					});
 				}
@@ -416,6 +503,7 @@ class PageService {
 					response: await this.buildVerifyResponse(
 						{
 							documentId: page.documentId,
+							lexiconAdded,
 							pageId,
 							pageNo: page.pageNo,
 							status,
@@ -454,6 +542,7 @@ class PageService {
 
 				return await this.buildVerifyResponse({
 					documentId: page.documentId,
+					lexiconAdded: [],
 					pageId,
 					pageNo: page.pageNo,
 					status: page.status,
