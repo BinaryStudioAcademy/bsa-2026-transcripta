@@ -21,7 +21,7 @@ import {
 	selectCursorPageNo,
 	selectPagesDataStatus,
 	selectPagesForStrip,
-	selectReprocessDataStatus,
+	selectReprocessingPageId,
 	selectVerificationDataStatus,
 	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
@@ -62,10 +62,11 @@ const Verification: React.FC = () => {
 	const pagesForStrip = useAppSelector(selectPagesForStrip);
 	const cursorPageNo = useAppSelector(selectCursorPageNo);
 	const verificationDataStatus = useAppSelector(selectVerificationDataStatus);
-	const reprocessDataStatus = useAppSelector(selectReprocessDataStatus);
+	const reprocessingPageId = useAppSelector(selectReprocessingPageId);
 
 	const isVerifying = verificationDataStatus === DataStatus.PENDING;
-	const isReprocessing = reprocessDataStatus === DataStatus.PENDING;
+	const isReprocessing =
+		currentPage !== undefined && reprocessingPageId === currentPage.id;
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 

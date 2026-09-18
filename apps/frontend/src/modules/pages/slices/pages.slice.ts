@@ -18,7 +18,7 @@ type State = {
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
-	reprocessDataStatus: ValueOf<typeof DataStatus>;
+	reprocessingPageId: null | number;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
@@ -28,7 +28,7 @@ const initialState: State = {
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
-	reprocessDataStatus: DataStatus.IDLE,
+	reprocessingPageId: null,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
 };
@@ -87,8 +87,8 @@ const { actions, name, reducer } = createSlice({
 			state.verificationDataStatus = DataStatus.REJECTED;
 		});
 
-		builder.addCase(reprocessPage.pending, (state) => {
-			state.reprocessDataStatus = DataStatus.PENDING;
+		builder.addCase(reprocessPage.pending, (state, action) => {
+			state.reprocessingPageId = action.meta.arg.pageId;
 		});
 
 		builder.addCase(reprocessPage.fulfilled, (state, action) => {
@@ -101,11 +101,17 @@ const { actions, name, reducer } = createSlice({
 				page.lastError = null;
 			}
 
-			state.reprocessDataStatus = DataStatus.FULFILLED;
+			if (state.reprocessingPageId === pageId) {
+				state.reprocessingPageId = null;
+			}
 		});
 
-		builder.addCase(reprocessPage.rejected, (state) => {
-			state.reprocessDataStatus = DataStatus.REJECTED;
+		builder.addCase(reprocessPage.rejected, (state, action) => {
+			const { pageId } = action.meta.arg;
+
+			if (state.reprocessingPageId === pageId) {
+				state.reprocessingPageId = null;
+			}
 		});
 
 		builder.addCase(loadPages.pending, (state) => {
@@ -132,7 +138,7 @@ const { actions, name, reducer } = createSlice({
 			state.idsByPageNo = {};
 			state.cursorPageNo = 0;
 			state.dataStatus = DataStatus.IDLE;
-			state.reprocessDataStatus = DataStatus.IDLE;
+			state.reprocessingPageId = null;
 			state.rollback = {};
 			state.verificationDataStatus = DataStatus.IDLE;
 		},

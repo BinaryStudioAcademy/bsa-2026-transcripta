@@ -10,8 +10,8 @@ import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verificati
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 
-const selectReprocessDataStatus = (state: RootState) =>
-	state.pages.reprocessDataStatus;
+const selectReprocessingPageId = (state: RootState) =>
+	state.pages.reprocessingPageId;
 
 const selectVerificationDataStatus = (state: RootState) =>
 	state.pages.verificationDataStatus;
@@ -67,6 +67,6 @@ export {
 	selectCursorPageNo,
 	selectPagesDataStatus,
 	selectPagesForStrip,
-	selectReprocessDataStatus,
+	selectReprocessingPageId,
 	selectVerificationDataStatus,
 };
