@@ -25,6 +25,7 @@ import {
 import { type TranscriptionResponse } from "~/modules/transcription/libs/types/types.js";
 import { TranscriptionCacheModel } from "~/modules/transcription/transcription-cache.model.js";
 
+import { type DocumentRepository } from "../documents/document.repository.js";
 import {
 	MAX_REPAIR_ATTEMPTS,
 	MAX_RETRYABLE_HTTP_CODE,
@@ -43,8 +44,7 @@ import {
 import {
 	type CallOutcome,
 	type Dependencies,
-	type EnqueueTranscribeRetry,
-	type FailedResolvedTranscription,
+	HandleFailedTranscriptionPayload,
 	type ModelIdValue,
 	type ParseResult,
 	type ResolvedTranscription,
@@ -74,18 +74,29 @@ const formatValidationErrors = (
 		)
 		.join("; ");
 
-const recordFailure = async (
-	pageId: number,
-	reason: TranscribeFailureReasonValue,
-): Promise<void> => {
-	await PageModel.query()
-		.patch({
-			attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
-			lastError: reason,
-			status: PageStatus.FAILED,
-		})
-		.where("id", pageId)
-		.execute();
+const recordFailure = async ({
+	documentId,
+	documentRepository,
+	pageId,
+	reason,
+}: {
+	documentId: number;
+	documentRepository: DocumentRepository;
+	pageId: number;
+	reason: TranscribeFailureReasonValue;
+}): Promise<void> => {
+	await DocumentModel.transaction(async (trx) => {
+		await PageModel.query(trx)
+			.patch({
+				attempts: AbstractModel.knex().raw("attempts + ?", [ONE]),
+				lastError: reason,
+				status: PageStatus.FAILED,
+			})
+			.where("id", pageId)
+			.execute();
+
+		await documentRepository.markDoneIfAllPagesClosed(documentId, trx);
+	});
 };
 
 const markDocumentStopped = async (documentId: number): Promise<void> => {
@@ -225,7 +236,8 @@ const transcribeWithRepair = async (
 const resolveFromCacheOrModel = async (
 	options: ResolveOptions,
 ): Promise<null | ResolvedTranscription> => {
-	const { cacheKey, context, page, preset } = options;
+	const { cacheKey, context, documentId, documentRepository, page, preset } =
+		options;
 	const userPrompt = buildUserPrompt(preset, context.blocks);
 
 	const cached = await TranscriptionCacheModel.query()
@@ -258,7 +270,12 @@ const resolveFromCacheOrModel = async (
 	}
 
 	if (!page.imageKey) {
-		await recordFailure(page.id, TranscribeFailureReason.PAGE_IMAGE_MISSING);
+		await recordFailure({
+			documentId,
+			documentRepository,
+			pageId: page.id,
+			reason: TranscribeFailureReason.PAGE_IMAGE_MISSING,
+		});
 		return null;
 	}
 
@@ -391,11 +408,13 @@ const applyBudgetStopIfExceeded = async (
 
 const releaseClaimedPage = async ({
 	documentId,
+	documentRepository,
 	error,
 	logger,
 	pageId,
 }: {
 	documentId: number;
+	documentRepository: DocumentRepository;
 	error: unknown;
 	logger: Logger;
 	pageId: number;
@@ -427,6 +446,8 @@ const releaseClaimedPage = async ({
 				pageId,
 				transcriptionId: null,
 			});
+
+			await documentRepository.markDoneIfAllPagesClosed(documentId, trx);
 		});
 	} catch (releaseError) {
 		logger.error(`Failed to release claimed page ${String(pageId)}`, {
@@ -438,6 +459,7 @@ const releaseClaimedPage = async ({
 const createTranscribeHandler =
 	({
 		config,
+		documentRepository,
 		enqueueRetry,
 		logger,
 		storage,
@@ -509,7 +531,12 @@ const createTranscribeHandler =
 			const preset = await PresetModel.query().findById(document.presetId);
 
 			if (!preset) {
-				await recordFailure(pageId, TranscribeFailureReason.PRESET_NOT_FOUND);
+				await recordFailure({
+					documentId,
+					documentRepository,
+					pageId,
+					reason: TranscribeFailureReason.PRESET_NOT_FOUND,
+				});
 				return;
 			}
 
@@ -522,10 +549,12 @@ const createTranscribeHandler =
 			});
 
 			if (!page.imageSha256) {
-				await recordFailure(
+				await recordFailure({
+					documentId,
+					documentRepository,
 					pageId,
-					TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
-				);
+					reason: TranscribeFailureReason.PAGE_IMAGE_MISSING,
+				});
 				return;
 			}
 
@@ -547,6 +576,7 @@ const createTranscribeHandler =
 				config,
 				context,
 				documentId,
+				documentRepository,
 				logger,
 				modelId,
 				page,
@@ -569,6 +599,7 @@ const createTranscribeHandler =
 						tokens: context.tokenEstimate,
 					}),
 					documentId,
+					documentRepository,
 					enqueueRetry,
 					jobData: job.data,
 					logger,
@@ -640,7 +671,13 @@ const createTranscribeHandler =
 				error,
 			});
 
-			await releaseClaimedPage({ documentId, error, logger, pageId });
+			await releaseClaimedPage({
+				documentId,
+				documentRepository,
+				error,
+				logger,
+				pageId,
+			});
 
 			throw error;
 		}
@@ -649,6 +686,7 @@ const createTranscribeHandler =
 const handleFailedTranscription = async ({
 	contextUsed,
 	documentId,
+	documentRepository,
 	enqueueRetry,
 	jobData,
 	logger,
@@ -657,18 +695,7 @@ const handleFailedTranscription = async ({
 	pageId,
 	presetId,
 	resolved,
-}: {
-	contextUsed: string;
-	documentId: number;
-	enqueueRetry: EnqueueTranscribeRetry;
-	jobData: PageTranscribeJobData;
-	logger: Logger;
-	modelId: string;
-	pageAttempts: number;
-	pageId: number;
-	presetId: number;
-	resolved: FailedResolvedTranscription;
-}): Promise<void> => {
+}: HandleFailedTranscriptionPayload): Promise<void> => {
 	const nextAttempts = pageAttempts + ONE;
 
 	const canRetry = resolved.retryable && nextAttempts < MAX_TRANSCRIBE_ATTEMPTS;
@@ -745,6 +772,10 @@ const handleFailedTranscription = async ({
 				status: retry ? PageStatus.QUEUED : PageStatus.FAILED,
 			});
 
+		if (!retry && !budgetExausted) {
+			await documentRepository.markDoneIfAllPagesClosed(documentId, trx);
+		}
+
 		return retry;
 	});
 
@@ -755,16 +786,24 @@ const handleFailedTranscription = async ({
 	try {
 		await enqueueRetry(jobData);
 	} catch (error) {
-		await PageModel.query()
-			.patch({
-				status: PageStatus.FAILED,
-			})
-			.where({
-				attempts: nextAttempts,
-				id: pageId,
-				status: PageStatus.QUEUED,
-			})
-			.execute();
+		await DocumentModel.transaction(async (trx) => {
+			const failedRows = await PageModel.query(trx)
+				.patch({
+					status: PageStatus.FAILED,
+				})
+				.where({
+					attempts: nextAttempts,
+					id: pageId,
+					status: PageStatus.QUEUED,
+				})
+				.execute();
+
+			if (failedRows === EMPTY_LENGTH) {
+				return;
+			}
+
+			await documentRepository.markDoneIfAllPagesClosed(documentId, trx);
+		});
 
 		logger.error(`Failed to enqueue retry for page ${String(pageId)}`, {
 			error,

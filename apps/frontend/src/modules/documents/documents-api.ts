@@ -8,9 +8,11 @@ import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
+	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
 } from "./libs/types/types.js";
@@ -158,6 +160,23 @@ class DocumentApi extends BaseHTTPApi {
 				payload: JSON.stringify({}),
 			},
 		);
+	}
+
+	public async updateBudget(
+		id: number,
+		payload: DocumentUpdateBudgetDto,
+	): Promise<DocumentGetByIdBudgetResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.BY_ID_BUDGET, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.PATCH,
+				payload: JSON.stringify(payload),
+			},
+		);
+
+		return await response.json<DocumentGetByIdBudgetResponseDto>();
 	}
 }
 
