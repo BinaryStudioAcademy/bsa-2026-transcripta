@@ -35,13 +35,18 @@ async function up(knex: Knex): Promise<void> {
 		);
 	}
 
-	await knex.raw(`
-		UPDATE ${TABLE_NAME}
-		SET ${ColumnName.PRESET_ID} = ${DOCUMENT_TABLE_NAME}.${ColumnName.PRESET_ID}
-		FROM ${DOCUMENT_TABLE_NAME}
-		WHERE ${TABLE_NAME}.${ColumnName.DOCUMENT_ID} = ${DOCUMENT_TABLE_NAME}.${ColumnName.ID}
-			AND ${TABLE_NAME}.${ColumnName.PRESET_ID} IS NULL
-	`);
+	await knex(TABLE_NAME)
+		.update({
+			[ColumnName.PRESET_ID]: knex.ref(
+				`${DOCUMENT_TABLE_NAME}.${ColumnName.PRESET_ID}`,
+			),
+		})
+		.updateFrom(DOCUMENT_TABLE_NAME)
+		.where(
+			`${TABLE_NAME}.${ColumnName.DOCUMENT_ID}`,
+			knex.ref(`${DOCUMENT_TABLE_NAME}.${ColumnName.ID}`),
+		)
+		.whereNull(`${TABLE_NAME}.${ColumnName.PRESET_ID}`);
 
 	await knex.schema.alterTable(TABLE_NAME, (table) => {
 		table
