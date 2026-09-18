@@ -37,7 +37,6 @@ const UsersColumnName = {
 async function down(knex: Knex): Promise<void> {
 	await knex.schema.dropTableIfExists(TableName.PRESET);
 	await knex.raw(`DROP SEQUENCE IF EXISTS ${PRESET_FAMILY_SEQUENCE}`);
-	await knex.raw("DROP FUNCTION IF EXISTS forbid_update()");
 }
 
 async function up(knex: Knex): Promise<void> {

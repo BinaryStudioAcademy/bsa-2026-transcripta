@@ -81,13 +81,7 @@ Rules:
 };
 
 async function down(knex: Knex): Promise<void> {
-	await knex(TABLE_NAME)
-		.where({
-			family_id: DEFAULT_PRESET_DATA.family_id,
-			id: DEFAULT_PRESET_DATA.id,
-			version: DEFAULT_PRESET_DATA.version,
-		})
-		.delete();
+	await knex(TABLE_NAME).where({ name: DEFAULT_PRESET_DATA.name }).delete();
 }
 
 async function up(knex: Knex): Promise<void> {
