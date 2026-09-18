@@ -1,10 +1,6 @@
 .logo-icon {
 	display: inline-grid;
 	place-items: center;
-	background-color: var(--accent);
-}
-
-.badge {
 	background-color: var(--seal-500);
 }
 
