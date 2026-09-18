@@ -45,7 +45,7 @@ import {
 import {
 	type CallOutcome,
 	type Dependencies,
-	type FailedResolvedTranscription,
+	type HandleFailedTranscriptionPayload,
 	type ModelIdValue,
 	type ParseResult,
 	type RecordFailureOptions,
@@ -628,6 +628,7 @@ const createTranscribeHandler =
 				config,
 				context,
 				documentId,
+				documentRepository,
 				logger,
 				modelId,
 				page,
@@ -760,23 +761,8 @@ const handleFailedTranscription = async ({
 	pageRepository,
 	presetId,
 	resolved,
-}: Pick<
-	Dependencies,
-	| "documentRepository"
-	| "enqueuePage"
-	| "enqueueRetry"
-	| "logger"
-	| "pageRepository"
-> & {
-	contextUsed: string;
-	documentId: number;
-	jobData: PageTranscribeJobData;
-	modelId: string;
-	pageAttempts: number;
-	pageId: number;
-	presetId: number;
-	resolved: FailedResolvedTranscription;
-}): Promise<void> => {
+}: HandleFailedTranscriptionPayload &
+	Pick<Dependencies, "enqueuePage" | "pageRepository">): Promise<void> => {
 	const nextAttempts = pageAttempts + ONE;
 
 	const canRetry = resolved.retryable && nextAttempts < MAX_TRANSCRIBE_ATTEMPTS;
@@ -874,12 +860,13 @@ const handleFailedTranscription = async ({
 				status: retry ? PageStatus.QUEUED : PageStatus.FAILED,
 			});
 
-		const pagesToQueue = retry
-			? []
-			: await finalizePageFailure(
-					{ documentId, documentRepository, pageRepository },
-					trx,
-				);
+		const pagesToQueue =
+			retry || budgetExhausted
+				? []
+				: await finalizePageFailure(
+						{ documentId, documentRepository, pageRepository },
+						trx,
+					);
 
 		return { pagesToQueue, shouldRetry: retry };
 	});

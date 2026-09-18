@@ -33,11 +33,13 @@ const enqueueRetry = async (data: PageTranscribeJobData): Promise<void> => {
 	});
 };
 
+const documentRepository = new DocumentRepository(DocumentModel);
+
 pageTranscribeQueue = new PageTranscribeQueue({
 	logger,
 	processor: createTranscribeHandler({
 		config,
-		documentRepository: new DocumentRepository(DocumentModel),
+		documentRepository,
 		enqueuePage: (data): Promise<void> => pageTranscribeQueue.add(data),
 		enqueueRetry,
 		logger,
