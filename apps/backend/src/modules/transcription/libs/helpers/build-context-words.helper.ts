@@ -4,14 +4,12 @@ import {
 } from "@transcripta/shared";
 
 import { NOT_FOUND_INDEX } from "../constants/constants.js";
+import { type BuildContextWordsPayload } from "../types/types.js";
 
 const buildContextWords = ({
 	lexiconById,
 	text,
-}: {
-	lexiconById: Map<number, { distinctPages: number; valueDisplay: string }>;
-	text: string;
-}): DocumentGetPagesContextWordResponseDto[] => {
+}: BuildContextWordsPayload): DocumentGetPagesContextWordResponseDto[] => {
 	const contextWords: DocumentGetPagesContextWordResponseDto[] = [];
 
 	for (const [lexiconId, lexicon] of lexiconById) {
