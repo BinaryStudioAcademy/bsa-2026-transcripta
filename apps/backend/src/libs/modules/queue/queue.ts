@@ -7,6 +7,8 @@ import { DocumentModel } from "~/modules/documents/document.model.js";
 import { DocumentRepository } from "~/modules/documents/document.repository.js";
 import { createTranscribeHandler } from "~/modules/jobs/jobs.js";
 import { TRANSCRIBE_RETRY_DELAY_MS } from "~/modules/jobs/libs/constants/constants.js";
+import { PageModel } from "~/modules/pages/page.model.js";
+import { PageRepository } from "~/modules/pages/page.repository.js";
 import { transcriptionService } from "~/modules/transcription/transcription.js";
 
 import { documentCleanupQueue } from "./document-cleanup/document-cleanup.js";
@@ -38,8 +40,10 @@ pageTranscribeQueue = new PageTranscribeQueue({
 	processor: createTranscribeHandler({
 		config,
 		documentRepository,
+		enqueuePage: (data): Promise<void> => pageTranscribeQueue.add(data),
 		enqueueRetry,
 		logger,
+		pageRepository: new PageRepository(PageModel),
 		storage,
 		transcriptionService,
 	}),
