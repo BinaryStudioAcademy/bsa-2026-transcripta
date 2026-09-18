@@ -40,6 +40,7 @@ import {
 	DocumentErrorMessage,
 	DocumentStatus,
 	PageStatus,
+	DocumentValidationRule,
 } from "./libs/enums/enums.js";
 import {
 	type DocumentGetAllResponseDto,
@@ -124,6 +125,36 @@ class DocumentService {
 
 	private buildSourceKey(documentId: number): string {
 		return `uploads/${documentId.toString()}/original.pdf`;
+	}
+
+	private async checkFileSize(
+		documentId: number,
+		filePath: string,
+	): Promise<void> {
+		let fileSize: number;
+		try {
+			fileSize = await this.pdfPageProcessor.getFileSize(filePath);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setError(documentId, errorMessage);
+			throw new HTTPError({
+				message: errorMessage,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		if (fileSize > DocumentValidationRule.MAX_FILE_BYTES) {
+			await this.documentRepository.setError(
+				documentId,
+				DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+			);
+			throw new HTTPError({
+				message: DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+				status: HTTPCode.CONTENT_TOO_LARGE,
+			});
+		}
 	}
 
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
@@ -371,6 +402,7 @@ class DocumentService {
 		filePath: string,
 	): Promise<number> {
 		const { id: documentId, preset } = document.toObjectWithPreset();
+		await this.checkFileSize(documentId, filePath);
 		const pageCount = await this.getIngestPageCount(documentId, filePath);
 		const {
 			settings: { blankStdevThreshold },
