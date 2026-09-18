@@ -7,6 +7,7 @@ export {
 	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,
+	type VerifyPageLexiconItemDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";

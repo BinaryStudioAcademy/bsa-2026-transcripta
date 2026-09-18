@@ -62,9 +62,14 @@ export {
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {
+	type LexiconEntryKindValue,
+	LexiconEntryKind,
+} from "./modules/lexicon/lexicon-entry.js";
+export {
 	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,
+	type VerifyPageLexiconItemDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 	PageApiPath,

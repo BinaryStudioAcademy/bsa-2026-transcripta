@@ -1,3 +1,5 @@
+import { type LexiconEntryKindValue } from "@transcripta/shared";
+
 import {
 	AbstractModel,
 	DatabaseTableName,
@@ -16,7 +18,7 @@ class LexiconEntryModel extends AbstractModel {
 
 	public invalidReason!: null | string;
 
-	public kind!: string;
+	public kind!: LexiconEntryKindValue;
 
 	public lastPageNo!: number;
 
