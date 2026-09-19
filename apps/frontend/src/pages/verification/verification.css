@@ -301,3 +301,16 @@
 		display: none;
 	}
 }
+
+[data-theme="dark"] .verification-scan {
+	background: var(--surface);
+}
+
+[data-theme="dark"] .verification-scan__placeholder-label {
+	color: var(--text-3);
+	border-color: var(--hairline-strong);
+}
+
+[data-theme="dark"] .verification-scan__text {
+	color: var(--text);
+}
