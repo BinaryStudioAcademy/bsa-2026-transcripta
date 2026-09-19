@@ -10,18 +10,34 @@ import { type Entity, type EntityFieldSpec } from "./libs/types/types.js";
 
 class LexiconExtractor {
 	private dedupe(entities: Entity[]): Entity[] {
+		const typedValues = new Set(
+			entities
+				.filter((entity) => entity.kind !== LexiconEntryKind.OTHER)
+				.map((entity) => normalizeLexiconValue(entity.value)),
+		);
+
 		const seen = new Set<string>();
 		const result: Entity[] = [];
 
 		for (const entity of entities) {
 			const normalizedValue = normalizeLexiconValue(entity.value);
+
 			if (!normalizedValue) {
 				continue;
 			}
 
+			if (
+				entity.kind === LexiconEntryKind.OTHER &&
+				typedValues.has(normalizedValue)
+			) {
+				continue;
+			}
+
 			const key = `${entity.kind}:${normalizedValue}`;
+
 			if (!seen.has(key)) {
 				seen.add(key);
+
 				result.push({
 					kind: entity.kind,
 					value: entity.value.trim(),
