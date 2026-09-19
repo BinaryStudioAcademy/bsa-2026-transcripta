@@ -116,11 +116,13 @@ class PageService {
 		document,
 		text,
 		transcriptionId,
+		transcriptionStructured,
 		trx,
 	}: {
 		document: DocumentEntity;
 		text: string;
 		transcriptionId: number;
+		transcriptionStructured: null | Record<string, unknown>;
 		trx: Transaction;
 	}) {
 		await this.transcriptionRepository.updateEditedText(
@@ -141,21 +143,24 @@ class PageService {
 		const modelId = preset.settings.model || null;
 		const outputSchema = preset.outputSchema || null;
 
-		const result = await this.transcriptionService.rederiveStructured(
-			text,
-			outputSchema,
+		const result = await this.transcriptionService.rederiveStructured({
 			modelId,
-		);
+			outputSchema,
+			text,
+			transcriptionStructured,
+		});
 
 		if (!result) {
 			return;
 		}
 
-		await this.documentRepository.updateSpentUsd(
-			documentObject.id,
-			result.costUsd,
-			trx,
-		);
+		if (result.costUsd) {
+			await this.documentRepository.updateSpentUsd(
+				documentObject.id,
+				result.costUsd,
+				trx,
+			);
+		}
 
 		if (result.structured) {
 			await this.transcriptionRepository.updateEditedStructured(
@@ -358,6 +363,7 @@ class PageService {
 						document,
 						text: payload.text,
 						transcriptionId,
+						transcriptionStructured: transcription.structured,
 						trx,
 					});
 				}

@@ -13,11 +13,13 @@ import {
 	buildRederiveStructuredPrompt,
 	calculateTokenCost,
 	createOutputValidator,
+	generateRederiveStructuredCacheKey,
 	parseModelJson,
 	stripCodeFence,
 } from "./libs/helpers/helpers.js";
 import {
 	type ModelIdValue,
+	type RederiveStructuredResponse,
 	type TranscriptionRequest,
 	type TranscriptionResponse,
 } from "./libs/types/types.js";
@@ -53,6 +55,9 @@ class TranscriptionService {
 	private client: BedrockRuntimeClient;
 
 	private defaultModelId: string;
+
+	private rederiveStructuredCache: Record<string, RederiveStructuredResponse> =
+		{};
 
 	private secrets: BaseSecrets;
 
@@ -202,17 +207,38 @@ class TranscriptionService {
 		};
 	}
 
-	public async rederiveStructured(
-		text: string,
-		outputSchema: null | Record<string, unknown>,
-		modelId: null | string,
-	) {
+	public async rederiveStructured({
+		modelId,
+		outputSchema,
+		text,
+		transcriptionStructured,
+	}: {
+		modelId: null | string;
+		outputSchema: null | Record<string, unknown>;
+		text: string;
+		transcriptionStructured: null | Record<string, unknown>;
+	}): Promise<RederiveStructuredResponse> {
 		if (!outputSchema || Object.keys(outputSchema).length === EMPTY_LENGTH) {
 			return null;
 		}
 
 		const resolvedModelId = (modelId ?? this.defaultModelId) as ModelIdValue;
-		const prompt = buildRederiveStructuredPrompt(text, outputSchema);
+		const cacheKey = generateRederiveStructuredCacheKey({
+			modelId: resolvedModelId,
+			outputSchema,
+			structured: transcriptionStructured,
+			text,
+		});
+
+		if (this.rederiveStructuredCache[cacheKey]) {
+			return this.rederiveStructuredCache[cacheKey];
+		}
+
+		const prompt = buildRederiveStructuredPrompt(
+			text,
+			outputSchema,
+			transcriptionStructured,
+		);
 		let response: TranscriptionResponse;
 
 		try {
@@ -244,6 +270,16 @@ class TranscriptionService {
 
 		const result = createOutputValidator(outputSchema)(parsed.value);
 		const structured = result.valid ? parsed.value || null : null;
+
+		if (result.valid) {
+			this.rederiveStructuredCache[cacheKey] = {
+				costUsd: 0,
+				inputTokens: response.usage.inputTokens,
+				latencyMs: 0,
+				outputTokens: response.usage.outputTokens,
+				structured,
+			};
+		}
 
 		return {
 			costUsd,
