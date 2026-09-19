@@ -3,6 +3,8 @@ import { pageTranscribeQueue } from "~/libs/modules/queue/queue.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { DocumentRepository } from "../documents/document.repository.js";
+import { LexiconEntryModel } from "../lexicon/lexicon-entry.model.js";
+import { LexiconEntryRepository } from "../lexicon/lexicon-entry.repository.js";
 import { transcriptionService } from "../transcription/transcription.js";
 import { TranscriptionModel } from "../transcription/transcription.model.js";
 import { TranscriptionRepository } from "../transcription/transcription.repository.js";
@@ -16,11 +18,12 @@ import { PageService } from "./page.service.js";
 const documentRepository = new DocumentRepository(DocumentModel);
 const transcriptionRepository = new TranscriptionRepository(TranscriptionModel);
 const pageEventRepository = new PageEventRepository(PageEventModel);
-
+const lexiconEntryRepository = new LexiconEntryRepository(LexiconEntryModel);
 const pageRepository = new PageRepository(PageModel);
 
 const pageService = new PageService({
 	documentRepository,
+	lexiconEntryRepository,
 	logger,
 	pageEventRepository,
 	pageRepository,
