@@ -372,9 +372,7 @@ class DocumentService {
 	): Promise<number> {
 		const { id: documentId, preset } = document.toObjectWithPreset();
 		const pageCount = await this.getIngestPageCount(documentId, filePath);
-		const {
-			settings: { blankStdevThreshold },
-		} = preset;
+		const { blankStdevThreshold } = preset.settings ?? {};
 		const existingPagesArray =
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
 		const existingPagesSet = new Set<number>(existingPagesArray);

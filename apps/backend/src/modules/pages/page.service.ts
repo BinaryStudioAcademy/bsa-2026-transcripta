@@ -149,7 +149,7 @@ class PageService {
 		}
 
 		const preset = documentObject.preset;
-		const modelId = preset.settings.model || null;
+		const modelId = preset.settings?.model ?? null;
 		const outputSchema = preset.outputSchema || null;
 
 		const result = await this.transcriptionService.rederiveStructured(
