@@ -171,6 +171,10 @@
 	text-align: center;
 }
 
+.verification-failed-state {
+	margin: auto;
+}
+
 .verification-empty-state h3 {
 	margin: 0 0 var(--sp-2);
 	font: 600 var(--fs-l) / var(--lh-heading) var(--font-display);
