@@ -18,6 +18,10 @@ type LoadPagesParameters = {
 	query: DocumentGetPagesQueryDto;
 };
 
+type ReprocessPageParameters = {
+	pageId: number;
+};
+
 type VerifyPageParameters = {
 	pageId: number;
 	payload: VerifyPageRequestDto;
@@ -37,6 +41,23 @@ const verifyPage = createAsyncThunk<
 	{ serializeError },
 );
 
+const reprocessPage = createAsyncThunk<
+	undefined,
+	ReprocessPageParameters,
+	AsyncThunkConfig
+>(
+	`${sliceName}/reprocess`,
+	async ({ pageId }, { extra }) => {
+		const { pageApi } = extra;
+
+		await pageApi.reprocess(pageId);
+
+		// eslint-disable-next-line unicorn/no-useless-undefined -- createAsyncThunk<undefined, ...> requires an explicit undefined return to satisfy AsyncThunkPayloadCreatorReturnValue
+		return undefined;
+	},
+	{ serializeError },
+);
+
 const loadPages = createAsyncThunk<
 	DocumentGetPagesResponseDto,
 	LoadPagesParameters,
@@ -51,4 +72,4 @@ const loadPages = createAsyncThunk<
 	{ serializeError },
 );
 
-export { loadPages, verifyPage };
+export { loadPages, reprocessPage, verifyPage };
