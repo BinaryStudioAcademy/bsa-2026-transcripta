@@ -11,8 +11,10 @@ import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
 type Preset = {
+	outputSchema?: null | Record<string, unknown>;
 	settings: {
 		blankStdevThreshold?: number;
+		model?: string;
 	};
 };
 

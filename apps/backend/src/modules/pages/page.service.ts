@@ -11,9 +11,11 @@ import { type Transaction, UniqueViolationError } from "objection";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 
+import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
+import { TranscriptionService } from "../transcription/transcription.service.js";
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
@@ -46,6 +48,8 @@ class PageService {
 
 	private transcriptionRepository: TranscriptionRepository;
 
+	private transcriptionService: TranscriptionService;
+
 	public constructor({
 		documentRepository,
 		logger,
@@ -53,11 +57,13 @@ class PageService {
 		pageRepository,
 		pageTranscribeQueue,
 		transcriptionRepository,
+		transcriptionService,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
 		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
+		this.transcriptionService = transcriptionService;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
 	}
@@ -97,13 +103,72 @@ class PageService {
 				transcription: nextTranscription
 					? {
 							contextWords: [],
-							text: nextTranscription.text,
+							text: nextTranscription.editedText ?? nextTranscription.text,
 						}
 					: null,
 			},
 			pageId,
 			status,
 		};
+	}
+
+	private async handleCorrection({
+		document,
+		text,
+		transcriptionId,
+		transcriptionStructured,
+		trx,
+	}: {
+		document: DocumentEntity;
+		text: string;
+		transcriptionId: number;
+		transcriptionStructured: null | Record<string, unknown>;
+		trx: Transaction;
+	}) {
+		await this.transcriptionRepository.updateEditedText(
+			transcriptionId,
+			text,
+			trx,
+		);
+
+		const documentObject = document.toObjectWithPreset();
+		const isBudgetAvailable =
+			Number(documentObject.spentUsd) < Number(documentObject.budgetUsd);
+
+		if (!isBudgetAvailable) {
+			return;
+		}
+
+		const preset = documentObject.preset;
+		const modelId = preset.settings.model || null;
+		const outputSchema = preset.outputSchema || null;
+
+		const result = await this.transcriptionService.rederiveStructured({
+			modelId,
+			outputSchema,
+			text,
+			transcriptionStructured,
+		});
+
+		if (!result) {
+			return;
+		}
+
+		if (result.costUsd) {
+			await this.documentRepository.updateSpentUsd(
+				documentObject.id,
+				result.costUsd,
+				trx,
+			);
+		}
+
+		if (result.structured) {
+			await this.transcriptionRepository.updateEditedStructured(
+				transcriptionId,
+				result.structured,
+				trx,
+			);
+		}
 	}
 
 	public async getDebug(
@@ -244,7 +309,7 @@ class PageService {
 				}
 
 				const document =
-					await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					await this.documentRepository.findByIdAndOwnerIdWithPresetForUpdate(
 						page.documentId,
 						userId,
 						trx,
@@ -294,11 +359,13 @@ class PageService {
 				}
 
 				if (isCorrection) {
-					await this.transcriptionRepository.updateEditedText(
-						transcription.id,
-						payload.text,
+					await this.handleCorrection({
+						document,
+						text: payload.text,
+						transcriptionId,
+						transcriptionStructured: transcription.structured,
 						trx,
-					);
+					});
 				}
 
 				const verifiedAt = isVerifiedAction ? new Date().toISOString() : null;

@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import {
 	BedrockRuntimeClient,
 	InvokeModelCommand,
@@ -7,8 +8,18 @@ import {
 import { type Config } from "~/libs/modules/config/config.js";
 import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
-import { SYSTEM_PROMPT } from "./libs/constants/constants.js";
+import { EMPTY_LENGTH, SYSTEM_PROMPT } from "./libs/constants/constants.js";
 import {
+	buildRederiveStructuredPrompt,
+	calculateTokenCost,
+	createOutputValidator,
+	generateRederiveStructuredCacheKey,
+	parseModelJson,
+	stripCodeFence,
+} from "./libs/helpers/helpers.js";
+import {
+	type ModelIdValue,
+	type RederiveStructuredResponse,
 	type TranscriptionRequest,
 	type TranscriptionResponse,
 } from "./libs/types/types.js";
@@ -45,6 +56,9 @@ class TranscriptionService {
 
 	private defaultModelId: string;
 
+	private rederiveStructuredCache: Record<string, RederiveStructuredResponse> =
+		{};
+
 	private secrets: BaseSecrets;
 
 	public constructor(config: Config, secrets: BaseSecrets) {
@@ -56,10 +70,23 @@ class TranscriptionService {
 	}
 
 	private buildAnthropicBody(
-		image: Buffer,
-		mediaType: string,
+		image: Buffer | undefined,
+		mediaType: string | undefined,
 		prompt: string,
 	): string {
+		if (image === undefined || mediaType === undefined) {
+			return JSON.stringify({
+				anthropic_version: ANTHROPIC_VERSION,
+				max_tokens: MAX_TOKENS,
+				messages: [
+					{
+						content: [{ text: prompt, type: "text" }],
+						role: "user",
+					},
+				],
+			});
+		}
+
 		return JSON.stringify({
 			anthropic_version: ANTHROPIC_VERSION,
 			max_tokens: MAX_TOKENS,
@@ -84,10 +111,22 @@ class TranscriptionService {
 	}
 
 	private buildNovaBody(
-		image: Buffer,
-		mediaType: string,
+		image: Buffer | undefined,
+		mediaType: string | undefined,
 		prompt: string,
 	): string {
+		if (image === undefined || mediaType === undefined) {
+			return JSON.stringify({
+				inferenceConfig: { maxTokens: MAX_TOKENS },
+				messages: [
+					{
+						content: [{ text: prompt }],
+						role: "user",
+					},
+				],
+			});
+		}
+
 		const [, format] = mediaType.split("/");
 
 		return JSON.stringify({
@@ -127,12 +166,9 @@ class TranscriptionService {
 			);
 		}
 
-		const startedAt = Date.now();
-		const response = await new Anthropic({ apiKey }).messages.create({
-			max_tokens: MAX_TOKENS,
-			messages: [
-				{
-					content: [
+		const content: ContentBlockParam[] =
+			image && mediaType
+				? [
 						{
 							source: {
 								data: image.toString("base64"),
@@ -142,7 +178,15 @@ class TranscriptionService {
 							type: "image",
 						},
 						{ text: prompt, type: "text" },
-					],
+					]
+				: [{ text: prompt, type: "text" }];
+
+		const startedAt = Date.now();
+		const response = await new Anthropic({ apiKey }).messages.create({
+			max_tokens: MAX_TOKENS,
+			messages: [
+				{
+					content,
 					role: "user",
 				},
 			],
@@ -160,6 +204,89 @@ class TranscriptionService {
 				inputTokens: response.usage.input_tokens,
 				outputTokens: response.usage.output_tokens,
 			},
+		};
+	}
+
+	public async rederiveStructured({
+		modelId,
+		outputSchema,
+		text,
+		transcriptionStructured,
+	}: {
+		modelId: null | string;
+		outputSchema: null | Record<string, unknown>;
+		text: string;
+		transcriptionStructured: null | Record<string, unknown>;
+	}): Promise<RederiveStructuredResponse> {
+		if (!outputSchema || Object.keys(outputSchema).length === EMPTY_LENGTH) {
+			return null;
+		}
+
+		const resolvedModelId = (modelId ?? this.defaultModelId) as ModelIdValue;
+		const cacheKey = generateRederiveStructuredCacheKey({
+			modelId: resolvedModelId,
+			outputSchema,
+			structured: transcriptionStructured,
+			text,
+		});
+
+		if (this.rederiveStructuredCache[cacheKey]) {
+			return this.rederiveStructuredCache[cacheKey];
+		}
+
+		const prompt = buildRederiveStructuredPrompt(
+			text,
+			outputSchema,
+			transcriptionStructured,
+		);
+		let response: TranscriptionResponse;
+
+		try {
+			response = await this.transcribe({
+				modelId: resolvedModelId,
+				prompt,
+			});
+		} catch {
+			return null;
+		}
+
+		const responseText = stripCodeFence(response.text);
+		const parsed = parseModelJson(responseText);
+		const costUsd = calculateTokenCost({
+			inputTokens: response.usage.inputTokens,
+			modelId: resolvedModelId,
+			outputTokens: response.usage.outputTokens,
+		});
+
+		if (!parsed.ok) {
+			return {
+				costUsd,
+				inputTokens: response.usage.inputTokens,
+				latencyMs: response.latencyMs,
+				outputTokens: response.usage.outputTokens,
+				structured: null,
+			};
+		}
+
+		const result = createOutputValidator(outputSchema)(parsed.value);
+		const structured = result.valid ? parsed.value || null : null;
+
+		if (result.valid) {
+			this.rederiveStructuredCache[cacheKey] = {
+				costUsd: 0,
+				inputTokens: response.usage.inputTokens,
+				latencyMs: 0,
+				outputTokens: response.usage.outputTokens,
+				structured,
+			};
+		}
+
+		return {
+			costUsd,
+			inputTokens: response.usage.inputTokens,
+			latencyMs: response.latencyMs,
+			outputTokens: response.usage.outputTokens,
+			structured,
 		};
 	}
 
