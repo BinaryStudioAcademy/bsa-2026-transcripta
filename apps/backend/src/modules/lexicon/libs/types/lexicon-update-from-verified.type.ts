@@ -6,6 +6,7 @@ type UpdateLexiconFromVerified = {
 	documentId: number;
 	isCorrection: boolean;
 	minDistinctPages: number;
+	outputSchema: null | Record<string, unknown>;
 	pageId: number;
 	pageNo: number;
 	transcription: TranscriptionModel;
