@@ -13,6 +13,7 @@ import { type Transaction, UniqueViolationError } from "objection";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 
+import { DEFAULT_PRESET_SETTINGS } from "../context/builder/libs/constants/constants.js";
 import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
@@ -180,6 +181,7 @@ class PageService {
 		documentId,
 		isCorrection,
 		minDistinctPages,
+		outputSchema,
 		pageId,
 		pageNo,
 		transcription,
@@ -206,6 +208,7 @@ class PageService {
 		const extractedEntities = lexiconExtractor.extractEntities(
 			text,
 			structured,
+			outputSchema ?? undefined,
 		);
 
 		if (extractedEntities.length === EMPTY_LENGTH) {
@@ -435,13 +438,19 @@ class PageService {
 					});
 				}
 
-				const minDistinctPages = EMPTY_LENGTH;
+				const { preset } = document.toObjectWithPreset();
+
+				const minDistinctPages =
+					preset.settings?.minDistinctPages ??
+					DEFAULT_PRESET_SETTINGS.minDistinctPages;
+				const outputSchema = preset.outputSchema;
 
 				if (isVerifiedAction && !existingEvent) {
 					lexiconAdded = await this.updateLexiconFromVerifiedPage({
 						documentId: page.documentId,
 						isCorrection,
 						minDistinctPages,
+						outputSchema,
 						pageId,
 						pageNo: page.pageNo,
 						transcription,
