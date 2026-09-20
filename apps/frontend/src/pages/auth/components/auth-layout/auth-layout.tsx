@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Link, LogoIcon } from "~/libs/components/components.js";
+import { Link, Logo } from "~/libs/components/components.js";
 import { type AppRoute } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 
@@ -44,8 +44,7 @@ const AuthLayout: React.FC<Properties> = ({
 			<div className={styles["auth-page__container"]}>
 				<div className={styles["auth-card"]}>
 					<div className={styles["auth-card__logo-container"]}>
-						<LogoIcon size="small" />
-						<span className={styles["auth-card__logo-text"]}>Transcripta</span>
+						<Logo size="small" />
 					</div>
 					<div className={styles["auth-card__form-container"]}>
 						<div className={styles["auth-card__header"]}>
