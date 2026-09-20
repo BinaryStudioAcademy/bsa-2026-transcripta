@@ -24,5 +24,6 @@ export {
 	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
+	selectReprocessingPageId,
 	selectVerificationDataStatus,
 } from "./slices/selectors.js";

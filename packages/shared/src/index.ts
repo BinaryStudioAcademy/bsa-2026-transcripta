@@ -1,4 +1,8 @@
-export { EMPTY_LENGTH, MILLION } from "./libs/constants/constants.js";
+export {
+	EMPTY_LENGTH,
+	INDEX_NOT_FOUND,
+	MILLION,
+} from "./libs/constants/constants.js";
 export {
 	APIPath,
 	AppEnvironment,

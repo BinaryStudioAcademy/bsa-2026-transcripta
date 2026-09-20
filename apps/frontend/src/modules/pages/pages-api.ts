@@ -21,6 +21,17 @@ class PageApi extends BaseHTTPApi {
 		super({ baseUrl, http, path: APIPath.PAGES, storage });
 	}
 
+	public async reprocess(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(PageApiPath.REPROCESS, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+			},
+		);
+	}
+
 	public async undo(id: number): Promise<UndoPageResponseDto> {
 		const response = await this.load(
 			this.getFullEndpoint(PageApiPath.UNDO, { id: String(id) }),

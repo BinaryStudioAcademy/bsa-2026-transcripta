@@ -6,7 +6,7 @@ import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/docume
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
-import { loadPages, undoPage, verifyPage } from "./actions.js";
+import { loadPages, reprocessPage, undoPage, verifyPage } from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -19,6 +19,7 @@ type State = {
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
 	lastVerifiedPageId: null | number;
+	reprocessingPageId: null | number;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
@@ -29,6 +30,7 @@ const initialState: State = {
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
 	lastVerifiedPageId: null,
+	reprocessingPageId: null,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
 };
@@ -116,6 +118,33 @@ const { actions, name, reducer } = createSlice({
 			state.verificationDataStatus = DataStatus.REJECTED;
 		});
 
+		builder.addCase(reprocessPage.pending, (state, action) => {
+			state.reprocessingPageId = action.meta.arg.pageId;
+		});
+
+		builder.addCase(reprocessPage.fulfilled, (state, action) => {
+			const { pageId } = action.meta.arg;
+			const page = state.byId[pageId];
+
+			if (page) {
+				page.status = PageStatus.QUEUED;
+				page.attempts = 0;
+				page.lastError = null;
+			}
+
+			if (state.reprocessingPageId === pageId) {
+				state.reprocessingPageId = null;
+			}
+		});
+
+		builder.addCase(reprocessPage.rejected, (state, action) => {
+			const { pageId } = action.meta.arg;
+
+			if (state.reprocessingPageId === pageId) {
+				state.reprocessingPageId = null;
+			}
+		});
+
 		builder.addCase(loadPages.pending, (state) => {
 			state.dataStatus = DataStatus.PENDING;
 		});
@@ -141,6 +170,7 @@ const { actions, name, reducer } = createSlice({
 			state.cursorPageNo = 0;
 			state.dataStatus = DataStatus.IDLE;
 			state.lastVerifiedPageId = null;
+			state.reprocessingPageId = null;
 			state.rollback = {};
 			state.verificationDataStatus = DataStatus.IDLE;
 		},
