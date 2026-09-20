@@ -215,6 +215,14 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async reopenIfDone(id: number, trx: Transaction): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.PROCESSING })
+			.where({ id, status: DocumentStatus.DONE })
+			.execute();
+	}
+
 	public async resumeFromBudgetStop(
 		id: number,
 		trx: Transaction,
@@ -224,6 +232,18 @@ class DocumentRepository {
 			.patch({ status: DocumentStatus.PROCESSING })
 			.where({ id, status: DocumentStatus.BUDGET_STOP })
 			.whereColumn("budgetUsd", ">", "spentUsd")
+			.execute();
+	}
+
+	public async setCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ cursorPageNo })
+			.where({ id: documentId })
 			.execute();
 	}
 
