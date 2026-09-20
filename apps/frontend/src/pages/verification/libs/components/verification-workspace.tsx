@@ -108,9 +108,11 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		<div className="tx-split verification-workspace">
 			<div className="tx-split-pane verification-scan-pane">
 				<div className="verification-scan">
-					<span className="verification-scan__placeholder-label">
-						scan placeholder
-					</span>
+					{!currentPage?.imageUrl && (
+						<span className="verification-scan__placeholder-label">
+							scan placeholder
+						</span>
+					)}
 
 					<div
 						className={`verification-scan__content ${
