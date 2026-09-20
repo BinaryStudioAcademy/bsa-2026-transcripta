@@ -1,4 +1,5 @@
 import {
+	type DocumentGetPagesContextWordResponseDto,
 	HTTPCode,
 	HTTPError,
 	type PageDebugResponseDto,
@@ -11,20 +12,25 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
-import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
+import {
+	EMPTY_COLLECTION_LENGTH,
+	NOT_FOUND_INDEX,
+} from "../documents/libs/constants/constants.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
+	UNDOABLE_PAGE_STATUSES,
 } from "./libs/constants/constants.js";
 import {
 	PageErrorMessage,
 	PageErrorType,
 	StatusByAction,
 } from "./libs/enums/enums.js";
+import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
@@ -61,6 +67,44 @@ class PageService {
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
+	}
+
+	private async buildContextWords(
+		contextUsed: Record<string, unknown>,
+		text: string,
+	): Promise<DocumentGetPagesContextWordResponseDto[]> {
+		const lexiconRows = await this.documentRepository.findLexiconByIds(
+			this.extractLexiconIds(contextUsed),
+		);
+		const contextWords: DocumentGetPagesContextWordResponseDto[] = [];
+
+		for (const { distinctPages, id, valueDisplay } of lexiconRows) {
+			if (valueDisplay.length === EMPTY_COLLECTION_LENGTH) {
+				continue;
+			}
+
+			let searchFrom = 0;
+
+			while (searchFrom <= text.length) {
+				const start = text.indexOf(valueDisplay, searchFrom);
+
+				if (start === NOT_FOUND_INDEX) {
+					break;
+				}
+
+				contextWords.push({
+					end: start + valueDisplay.length,
+					lexiconId: id,
+					seenOnPages: distinctPages,
+					start,
+					word: valueDisplay,
+				});
+
+				searchFrom = start + valueDisplay.length;
+			}
+		}
+
+		return contextWords;
 	}
 
 	private async buildVerifyResponse(
@@ -105,6 +149,16 @@ class PageService {
 			pageId,
 			status,
 		};
+	}
+
+	private extractLexiconIds(contextUsed: Record<string, unknown>): number[] {
+		const ids = contextUsed["lexiconIds"];
+
+		if (!Array.isArray(ids)) {
+			return [];
+		}
+
+		return ids.filter((id): id is number => typeof id === "number");
 	}
 
 	public async getDebug(
@@ -224,6 +278,13 @@ class PageService {
 			});
 		}
 
+		if (!UNDOABLE_PAGE_STATUSES.has(page.status)) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_VERIFIED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
 		const transcription =
 			await this.transcriptionRepository.findCurrentByPageId(pageId);
 
@@ -239,7 +300,10 @@ class PageService {
 			status: PageStatus.TRANSCRIBED,
 			transcription: transcription
 				? {
-						contextWords: [],
+						contextWords: await this.buildContextWords(
+							transcription.contextUsed,
+							transcription.text,
+						),
 						id: transcription.id,
 						structured: transcription.structured,
 						text: transcription.text,
@@ -373,15 +437,14 @@ class PageService {
 					trx,
 				);
 
-				const shouldAdvanceWindow =
-					!CLOSED_PAGE_STATUSES.has(page.status) &&
-					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
+				const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(page.status);
 				const pagesToQueue = shouldAdvanceWindow
-					? await this.pageRepository.updateFirstPendingPagesAsQueued(
-							page.documentId,
-							NUMBER_OF_PAGES_TO_INCREMENT,
+					? await refillPageWindow({
+							documentId: page.documentId,
+							pageRepository: this.pageRepository,
+							quantity: NUMBER_OF_PAGES_TO_INCREMENT,
 							trx,
-						)
+						})
 					: [];
 
 				await this.documentRepository.markDoneIfAllPagesClosed(
