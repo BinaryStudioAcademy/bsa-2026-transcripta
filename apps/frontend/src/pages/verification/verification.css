@@ -36,6 +36,9 @@
 }
 
 .verification-header__page {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	font-weight: 500;
 	font-variant-numeric: tabular-nums;
 	color: var(--text-2);
 	white-space: nowrap;
@@ -139,6 +142,9 @@
 }
 
 .verification-transcription__page {
+	font-family: var(--font-mono);
+	font-size: var(--fs-2xs);
+	font-weight: 500;
 	font-variant-numeric: tabular-nums;
 	color: var(--text-3);
 }
