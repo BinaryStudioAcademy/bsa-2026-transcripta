@@ -1,4 +1,3 @@
-import { ModelId } from "@transcripta/shared";
 import { type Knex } from "knex";
 
 const TABLE_NAME = "preset";
@@ -75,7 +74,7 @@ Rules:
 		maxImageWidth: 2048,
 		maxOutputTokens: 4096,
 		minDistinctPages: 2,
-		model: ModelId.CLAUDE_SONNET_4_6_BEDROCK,
+		model: "us.anthropic.claude-sonnet-4-6",
 		neighbourPages: 3,
 		provider: "anthropic",
 		temperature: 0,
