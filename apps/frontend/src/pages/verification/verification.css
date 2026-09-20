@@ -85,10 +85,6 @@
 	min-height: 0;
 }
 
-.verification-scan-pane {
-	flex: 0 0 45%;
-}
-
 .verification-scan {
 	position: relative;
 	box-sizing: border-box;

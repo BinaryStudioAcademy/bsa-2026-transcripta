@@ -2,6 +2,7 @@ import { Button, FailedStateCard } from "~/libs/components/components.js";
 
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
@@ -32,6 +33,14 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onToggleEdit,
 	pageCount,
 }) => {
+	const {
+		handleDividerPointerDown,
+		handleDividerPointerMove,
+		handleDividerPointerUp,
+		isDragging,
+		splitPosition,
+	} = useResizableSplit();
+
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
 			return (
@@ -106,7 +115,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 	return (
 		<div className="tx-split verification-workspace">
-			<div className="tx-split-pane verification-scan-pane">
+			<div
+				className="tx-split-pane verification-scan-pane"
+				style={{
+					width: `${String(splitPosition)}%`,
+				}}
+			>
 				<div className="verification-scan">
 					{!currentPage?.imageUrl && (
 						<span className="verification-scan__placeholder-label">
@@ -132,7 +146,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 				</div>
 			</div>
 
-			<div className="tx-split-divider">
+			<div
+				className={`tx-split-divider ${isDragging ? "is-dragging" : ""}`}
+				onPointerDown={handleDividerPointerDown}
+				onPointerMove={handleDividerPointerMove}
+				onPointerUp={handleDividerPointerUp}
+			>
 				<span className="tx-split-grip" />
 			</div>
 
