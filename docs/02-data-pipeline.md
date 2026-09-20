@@ -102,8 +102,8 @@ The worker picks the job off the queue and does this:
      d. is the page blank?         (sharp stats, see below)
      e. upload both to S3
      f. INSERT into the page table (status pending, or blank)
-5. document.status = 'ready'
-6. enqueue the first N pages for transcription — blank ones are skipped
+5. Loop over pages (rendering, normalization, blank check, S3 upload, inserting row, and inmediately queuing for transcription if the active window limit is below 5 and the document id neither paused nor budget-stopped).
+6. document.status = 'ready';
 ```
 
 **The most important part is step 4 — the loop, one page at a time.**

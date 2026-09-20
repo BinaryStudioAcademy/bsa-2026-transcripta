@@ -23,6 +23,7 @@ import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js"
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 
+import { refillPageWindow } from "../pages/libs/helpers/helpers.js";
 import { PageEntity } from "../pages/page.entity.js";
 import { type PageRepository } from "../pages/page.repository.js";
 import { DocumentEntity } from "./document.entity.js";
@@ -406,21 +407,25 @@ class DocumentService {
 				break;
 			}
 
-			const queuedPages = await this.pageRepository.findQueuedPages(documentId);
-			if (queuedPages.length < PAGES_TO_QUEUE) {
-				await this.pageRepository.updateVerification({
-					pageId: pageObject.id,
-					status: PageStatus.QUEUED,
-					verifiedAt: null,
-					verifiedBy: null,
+			await DocumentModel.transaction(async (trx) => {
+				const newlyQueuedPages = await refillPageWindow({
+					documentId,
+					pageRepository: this.pageRepository,
+					quantity: PAGES_TO_QUEUE,
+					trx,
 				});
 
-				await this.pageTranscribeQueue.add({
-					documentId,
-					pageId: pageObject.id,
-					pageNo: page,
-				});
-			}
+				await Promise.all(
+					newlyQueuedPages.map((queuedPage: PageEntity) => {
+						const { id, pageNo } = queuedPage.toObject();
+						return this.pageTranscribeQueue.add({
+							documentId,
+							pageId: id,
+							pageNo,
+						});
+					}),
+				);
+			});
 		}
 
 		return pageCount;
@@ -817,9 +822,7 @@ class DocumentService {
 
 		try {
 			const pageCount = await this.preparePages(document, filePath);
-			const pages = await this.finalizeIngest(documentId, userId, pageCount);
-
-			await this.enqueueTranscriptionPages(documentId, pages);
+			await this.finalizeIngest(documentId, userId, pageCount);
 		} catch (error) {
 			await this.handleIngestError(documentId, error);
 		} finally {
