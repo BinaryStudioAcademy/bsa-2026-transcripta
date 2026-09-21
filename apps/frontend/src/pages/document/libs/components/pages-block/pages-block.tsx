@@ -112,7 +112,6 @@ const PagesBlock: React.FC<Properties> = ({
 				<span>
 					model: page <span className="tx-num">{pagesTranscribed}</span>
 				</span>
-				<span className="tx-num">{pagesTotal}</span>
 			</div>
 
 			<ul className={styles["legend"]}>
