@@ -1,5 +1,5 @@
 import { type DocumentGetPagesTranscriptionResponseDto } from "../../../documents/libs/types/document-get-pages-transcription-response-dto.type.js";
-import { type PageStatusValue } from "./types.js";
+import { type PageStatusValue } from "./page-status-value.type.js";
 
 type UndoPageResponseDto = {
 	pageId: number;
@@ -7,4 +7,4 @@ type UndoPageResponseDto = {
 	transcription: DocumentGetPagesTranscriptionResponseDto | null;
 };
 
-export { UndoPageResponseDto };
+export { type UndoPageResponseDto };

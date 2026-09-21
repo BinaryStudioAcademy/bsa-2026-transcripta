@@ -221,6 +221,13 @@ const { actions, name, reducer } = createSlice({
 				status: page.status,
 			};
 
+			if (
+				payload.action === PageVerificationAction.CORRECT &&
+				page.transcription !== null
+			) {
+				page.transcription.text = payload.text;
+			}
+
 			page.status = verificationStatusMap[payload.action];
 
 			if (state.cursorPageNo < pageCount) {

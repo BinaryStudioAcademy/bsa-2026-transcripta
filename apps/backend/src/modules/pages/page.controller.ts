@@ -71,17 +71,15 @@ class PageController extends BaseController {
 			},
 		});
 
-		if (process.env["NODE_ENV"] !== "production") {
-			this.addRoute({
-				handler: (options) => this.undo(options as UndoPageHandlerOptions),
-				method: HTTPMethod.POST,
-				path: PageApiPath.UNDO,
-				preHandler: authGuard,
-				validation: {
-					params: verifyPageParameters,
-				},
-			});
-		}
+		this.addRoute({
+			handler: (options) => this.undo(options as UndoPageHandlerOptions),
+			method: HTTPMethod.POST,
+			path: PageApiPath.UNDO,
+			preHandler: authGuard,
+			validation: {
+				params: verifyPageParameters,
+			},
+		});
 	}
 
 	/**
@@ -121,7 +119,7 @@ class PageController extends BaseController {
 	 * @swagger
 	 * /pages/{id}/reprocess:
 	 *   post:
-	 *     description: Reprocess a failed page
+	 *     description: Reprocess a failed or blank page
 	 *     security:
 	 *       - bearerAuth: []
 	 *     parameters:
@@ -138,7 +136,7 @@ class PageController extends BaseController {
 	 *       404:
 	 *         description: Page not found
 	 *       409:
-	 *         description: Page is not in failed status
+	 *         description: Page is not in failed or blank status
 	 */
 	private async reprocess(
 		options: ReprocessPageHandlerOptions,
@@ -158,13 +156,12 @@ class PageController extends BaseController {
 	 * @swagger
 	 * /pages/{id}/undo:
 	 *   post:
-	 *     description: Undo the last verification of a page (local mock, dev only)
+	 *     description: Undo the latest verification of a page
 	 *     security:
 	 *       - bearerAuth: []
 	 *     parameters:
 	 *       - in: path
 	 *         name: id
-	 *         description: Page ID
 	 *         required: true
 	 *         schema:
 	 *           type: integer
@@ -174,6 +171,8 @@ class PageController extends BaseController {
 	 *         description: Page verification undone
 	 *       404:
 	 *         description: Page not found
+	 *       409:
+	 *         description: Page is not verified
 	 */
 	private async undo(
 		options: UndoPageHandlerOptions,
