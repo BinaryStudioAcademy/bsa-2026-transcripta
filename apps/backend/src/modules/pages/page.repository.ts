@@ -4,9 +4,11 @@ import { type Transaction } from "objection";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 
+import { REPROCESSABLE_PAGE_STATUSES } from "./libs/constants/constants.js";
 import {
 	type PageWithText,
 	type PageWithTranscriptionRow,
+	type RestorePagePayload,
 	type UpdatePageVerificationPayload,
 } from "./libs/types/types.js";
 import { PageEntity } from "./page.entity.js";
@@ -142,7 +144,7 @@ class PageRepository {
 		return pages;
 	}
 
-	public async resetFailedPageForReprocess(
+	public async resetPageForReprocess(
 		pageId: number,
 		trx?: Transaction,
 	): Promise<boolean> {
@@ -155,24 +157,26 @@ class PageRepository {
 			})
 			.where({
 				id: pageId,
-				status: PageStatus.FAILED,
 			})
+			.whereIn("status", [...REPROCESSABLE_PAGE_STATUSES])
 			.execute();
 
 		return updatedRows > EMPTY_LENGTH;
 	}
 
-	public async restoreFailedPageAfterReprocessFailure(
-		pageId: number,
-		attempts: number,
-		lastError: null | string,
-	): Promise<void> {
+	public async restorePage({
+		attempts,
+		lastError,
+		pageId,
+		status,
+		trx,
+	}: RestorePagePayload): Promise<void> {
 		await this.pageModel
-			.query()
+			.query(trx)
 			.patch({
 				attempts,
 				lastError,
-				status: PageStatus.FAILED,
+				status,
 			})
 			.where({
 				attempts: EMPTY_LENGTH,

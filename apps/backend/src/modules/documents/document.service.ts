@@ -3,6 +3,7 @@ import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
 	DocumentValidationMessage,
@@ -556,15 +557,6 @@ class DocumentService {
 	}
 
 	public async delete(id: number, ownerId: number): Promise<void> {
-		await this.storage.deleteByPrefix({
-			bucket: StorageBucket.UPLOADS,
-			prefix: `uploads/${id.toString()}/`,
-		});
-		await this.storage.deleteByPrefix({
-			bucket: StorageBucket.PAGES,
-			prefix: `pages/${id.toString()}/`,
-		});
-
 		await DocumentModel.transaction(async (trx) => {
 			const document =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
@@ -586,6 +578,15 @@ class DocumentService {
 					status: HTTPCode.CONFLICT,
 				});
 			}
+
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.UPLOADS,
+				prefix: `uploads/${id.toString()}/`,
+			});
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.PAGES,
+				prefix: `pages/${id.toString()}/`,
+			});
 
 			await this.documentRepository.deleteById(id, trx);
 		});
@@ -617,6 +618,30 @@ class DocumentService {
 			});
 		}
 		return document.toObject();
+	}
+
+	public async findLexicon(
+		documentId: number,
+		ownerId: number,
+	): Promise<DocumentGetLexiconResponseDto> {
+		const ownedDocumentId = await this.documentRepository.findOwnedDocumentId(
+			documentId,
+			ownerId,
+		);
+
+		if (ownedDocumentId === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const items =
+			await this.documentRepository.findLiveLexiconByDocumentId(
+				ownedDocumentId,
+			);
+
+		return { items };
 	}
 
 	public async findPages({
