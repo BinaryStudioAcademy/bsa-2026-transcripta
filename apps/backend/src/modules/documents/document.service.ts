@@ -557,15 +557,6 @@ class DocumentService {
 	}
 
 	public async delete(id: number, ownerId: number): Promise<void> {
-		await this.storage.deleteByPrefix({
-			bucket: StorageBucket.UPLOADS,
-			prefix: `uploads/${id.toString()}/`,
-		});
-		await this.storage.deleteByPrefix({
-			bucket: StorageBucket.PAGES,
-			prefix: `pages/${id.toString()}/`,
-		});
-
 		await DocumentModel.transaction(async (trx) => {
 			const document =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
@@ -587,6 +578,15 @@ class DocumentService {
 					status: HTTPCode.CONFLICT,
 				});
 			}
+
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.UPLOADS,
+				prefix: `uploads/${id.toString()}/`,
+			});
+			await this.storage.deleteByPrefix({
+				bucket: StorageBucket.PAGES,
+				prefix: `pages/${id.toString()}/`,
+			});
 
 			await this.documentRepository.deleteById(id, trx);
 		});
