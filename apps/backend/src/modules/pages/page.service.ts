@@ -125,11 +125,14 @@ class PageService {
 		trx: Transaction;
 	}) {
 		const transcriptionText = transcription.editedText ?? transcription.text;
+		const transcriptionStructured =
+			transcription.editedStructured ?? transcription.structured;
 		const documentObject = document.toObjectWithPreset();
 
 		if (
 			transcriptionText === text &&
-			documentObject.presetId === transcription.presetId
+			documentObject.presetId === transcription.presetId &&
+			transcriptionStructured !== null
 		) {
 			return;
 		}
