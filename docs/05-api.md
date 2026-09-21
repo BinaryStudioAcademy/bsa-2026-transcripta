@@ -66,6 +66,7 @@ list below needs its own block — 19 blocks that nobody will write for us.
 |          |                                  |                                                |
 | `GET`    | `/api/v1/documents/:id/pages`    | Pages with their transcriptions                |
 | `POST`   | `/api/v1/pages/:id/verify`       | **The main endpoint**                          |
+| `POST`   | `/api/v1/pages/:id/undo`         | Undo the latest page verification              |
 | `GET`    | `/api/v1/pages/:id/debug`        | Prompt + raw response + context (owner only)   |
 | `POST`   | `/api/v1/pages/:id/reprocess`    | Re-read a page                                 |
 |          |                                  |                                                |

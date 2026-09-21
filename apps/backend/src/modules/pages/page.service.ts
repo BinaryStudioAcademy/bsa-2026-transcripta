@@ -2,7 +2,9 @@ import {
 	HTTPCode,
 	HTTPError,
 	type PageDebugResponseDto,
+	PageStatus,
 	PageVerificationAction,
+	type UndoPageResponseDto,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
@@ -16,7 +18,9 @@ import { type TranscriptionRepository } from "../transcription/transcription.rep
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
+	PAGE_EVENT_ATTEMPT_INCREMENT,
 	REPROCESSABLE_PAGE_STATUSES,
+	UNDOABLE_PAGE_STATUSES,
 } from "./libs/constants/constants.js";
 import {
 	PageErrorMessage,
@@ -97,7 +101,7 @@ class PageService {
 				transcription: nextTranscription
 					? {
 							contextWords: [],
-							text: nextTranscription.text,
+							text: nextTranscription.editedText ?? nextTranscription.text,
 						}
 					: null,
 			},
@@ -226,6 +230,105 @@ class PageService {
 		}
 	}
 
+	public async undo(
+		pageId: number,
+		userId: number,
+	): Promise<UndoPageResponseDto> {
+		return await DocumentModel.transaction(async (trx) => {
+			const initialPage = await this.pageRepository.findByIdForOwner(
+				pageId,
+				userId,
+				trx,
+			);
+
+			if (!initialPage) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					initialPage.documentId,
+					userId,
+					trx,
+				);
+			const page = await this.pageRepository.findByIdForOwner(
+				pageId,
+				userId,
+				trx,
+			);
+
+			if (!document || !page) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			if (!UNDOABLE_PAGE_STATUSES.has(page.status)) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_VERIFIED,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			const transcription =
+				await this.transcriptionRepository.findCurrentByPageId(pageId, trx);
+
+			if (!transcription) {
+				throw new HTTPError({
+					message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			const attempt =
+				(await this.pageEventRepository.findLatestAttempt(pageId, trx)) +
+				PAGE_EVENT_ATTEMPT_INCREMENT;
+
+			await this.pageRepository.updateVerification(
+				{
+					pageId,
+					status: PageStatus.TRANSCRIBED,
+					verifiedAt: null,
+					verifiedBy: null,
+				},
+				trx,
+			);
+
+			await this.pageEventRepository.createUndoEvent(
+				{
+					actorId: userId,
+					attempt,
+					documentId: page.documentId,
+					pageId,
+					transcriptionId: transcription.id,
+				},
+				trx,
+			);
+
+			await this.documentRepository.setCursorPageNo(
+				page.documentId,
+				page.pageNo,
+				trx,
+			);
+			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
+
+			return {
+				pageId,
+				status: PageStatus.TRANSCRIBED,
+				transcription: {
+					contextWords: [],
+					id: transcription.id,
+					structured: transcription.structured,
+					text: transcription.text,
+				},
+			};
+		});
+	}
+
 	public async verify(
 		payload: VerifyPagePayload,
 	): Promise<VerifyPageResponseDto> {
@@ -284,9 +387,15 @@ class PageService {
 					});
 				}
 
+				const attempt = await this.pageEventRepository.findLatestAttempt(
+					pageId,
+					trx,
+				);
+
 				const existingEvent =
 					await this.pageEventRepository.findVerificationEvent(
 						{
+							attempt,
 							event: action,
 							pageId,
 							transcriptionId,
@@ -333,6 +442,7 @@ class PageService {
 					await this.pageEventRepository.createVerificationEvent(
 						{
 							actorId: userId,
+							attempt,
 							documentId: page.documentId,
 							durationMs: payload.durationMs,
 							event: action,
