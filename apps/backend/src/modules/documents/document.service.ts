@@ -3,6 +3,7 @@ import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
 	DocumentValidationMessage,
@@ -617,6 +618,30 @@ class DocumentService {
 			});
 		}
 		return document.toObject();
+	}
+
+	public async findLexicon(
+		documentId: number,
+		ownerId: number,
+	): Promise<DocumentGetLexiconResponseDto> {
+		const ownedDocumentId = await this.documentRepository.findOwnedDocumentId(
+			documentId,
+			ownerId,
+		);
+
+		if (ownedDocumentId === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const items =
+			await this.documentRepository.findLiveLexiconByDocumentId(
+				ownedDocumentId,
+			);
+
+		return { items };
 	}
 
 	public async findPages({
