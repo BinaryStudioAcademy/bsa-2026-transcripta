@@ -1,6 +1,7 @@
 export type { ContextWordDto } from "./page-context-word.dto.type.js";
 export type { PageDebugResponseDto } from "./page-debug-response-dto.type.js";
 export type { PageStatusValue } from "./page-status-value.type.js";
+export type { UndoPageResponseDto } from "./page-undo-response-dto.type.js";
 export type { PageVerificationActionValue } from "./page-verification-action-value.type.js";
 export type { VerifyPageLexiconItemDto } from "./page-verify-lexicon-item.type.js";
 export type { VerifyPageNextDto } from "./page-verify-next-page.dto.type.js";
