@@ -231,6 +231,7 @@ class DocumentEntity {
 
 	public toObjectWithPreset(): DocumentGetAllItemResponseDto & {
 		preset: Preset;
+		presetId: number;
 		sourceKey: string;
 	} {
 		if (this.sourceKey === null) {
@@ -244,6 +245,7 @@ class DocumentEntity {
 		return {
 			...this.toObject(),
 			preset: this.preset,
+			presetId: this.presetId,
 			sourceKey: this.sourceKey,
 		};
 	}

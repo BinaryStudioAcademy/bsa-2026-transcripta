@@ -10,6 +10,7 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
+import { TranscriptionModel } from "~/modules/transcription/transcription.model.js";
 
 import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
@@ -115,23 +116,32 @@ class PageService {
 	private async handleCorrection({
 		document,
 		text,
-		transcriptionId,
-		transcriptionStructured,
+		transcription,
 		trx,
 	}: {
 		document: DocumentEntity;
 		text: string;
-		transcriptionId: number;
-		transcriptionStructured: null | Record<string, unknown>;
+		transcription: TranscriptionModel;
 		trx: Transaction;
 	}) {
-		await this.transcriptionRepository.updateEditedText(
-			transcriptionId,
-			text,
-			trx,
-		);
-
+		const transcriptionText = transcription.editedText ?? transcription.text;
 		const documentObject = document.toObjectWithPreset();
+
+		if (
+			transcriptionText === text &&
+			documentObject.presetId === transcription.presetId
+		) {
+			return;
+		}
+
+		if (transcriptionText !== text) {
+			await this.transcriptionRepository.updateEditedText(
+				transcription.id,
+				text,
+				trx,
+			);
+		}
+
 		const isBudgetAvailable =
 			Number(documentObject.spentUsd) < Number(documentObject.budgetUsd);
 
@@ -147,7 +157,7 @@ class PageService {
 			modelId,
 			outputSchema,
 			text,
-			transcriptionStructured,
+			transcriptionStructured: transcription.structured,
 		});
 
 		if (!result) {
@@ -164,7 +174,7 @@ class PageService {
 
 		if (result.structured) {
 			await this.transcriptionRepository.updateEditedStructured(
-				transcriptionId,
+				transcription.id,
 				result.structured,
 				trx,
 			);
@@ -362,8 +372,7 @@ class PageService {
 					await this.handleCorrection({
 						document,
 						text: payload.text,
-						transcriptionId,
-						transcriptionStructured: transcription.structured,
+						transcription,
 						trx,
 					});
 				}
