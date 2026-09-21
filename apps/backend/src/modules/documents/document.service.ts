@@ -213,23 +213,6 @@ class DocumentService {
 		}
 	}
 
-	private async enqueueTranscriptionPages(
-		documentId: number,
-		pages: PageEntity[],
-	): Promise<void> {
-		await Promise.all(
-			pages.map((page) => {
-				const { id, pageNo } = page.toObject();
-
-				return this.pageTranscribeQueue.add({
-					documentId,
-					pageId: id,
-					pageNo,
-				});
-			}),
-		);
-	}
-
 	private extractLexiconIds(
 		contextUsed: null | Record<string, unknown>,
 	): number[] {
@@ -246,8 +229,8 @@ class DocumentService {
 		documentId: number,
 		userId: number,
 		pageCount: number,
-	): Promise<PageEntity[]> {
-		return await DocumentModel.transaction(async (trx) => {
+	): Promise<void> {
+		await DocumentModel.transaction(async (trx) => {
 			const currentDocument =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
 					documentId,
@@ -269,8 +252,6 @@ class DocumentService {
 					trx,
 				);
 			}
-
-			return await this.pageRepository.findQueuedPages(documentId, trx);
 		});
 	}
 
@@ -415,16 +396,18 @@ class DocumentService {
 					trx,
 				});
 
-				await Promise.all(
-					newlyQueuedPages.map((queuedPage: PageEntity) => {
-						const { id, pageNo } = queuedPage.toObject();
-						return this.pageTranscribeQueue.add({
-							documentId,
-							pageId: id,
-							pageNo,
-						});
-					}),
-				);
+				if (newlyQueuedPages.length > EMPTY_LENGTH) {
+					await Promise.all(
+						newlyQueuedPages.map((queuedPage: PageEntity) => {
+							const { id, pageNo } = queuedPage.toObject();
+							return this.pageTranscribeQueue.add({
+								documentId,
+								pageId: id,
+								pageNo,
+							});
+						}),
+					);
+				}
 			});
 		}
 
