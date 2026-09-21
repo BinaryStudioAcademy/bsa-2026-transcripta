@@ -64,6 +64,14 @@ export {
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {
+	type LexiconIdRequestDto,
+	type LexiconInvalidateRequestDto,
+	type LexiconInvalidateResponseDto,
+	LexiconApiPath,
+	LexiconIdValidationSchema,
+	LexiconInvalidateValidationSchema,
+} from "./modules/lexicon/lexicon.js";
+export {
 	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,

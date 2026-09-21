@@ -1,6 +1,5 @@
-import { raw, type Transaction } from "objection";
-
 import { type DocumentGetLexiconItemResponseDto } from "@transcripta/shared";
+import { raw, type Transaction } from "objection";
 
 import { LEXICON_CONTEXT_ORDER } from "~/context/context.js";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
