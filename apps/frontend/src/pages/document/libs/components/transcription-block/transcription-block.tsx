@@ -3,7 +3,10 @@ import {
 	Button,
 	ProgressBar,
 } from "~/libs/components/components.js";
-import { EMPTY_LENGTH } from "~/libs/constants/common.constants.js";
+import {
+	EMPTY_LENGTH,
+	PERCENTAGE_MULTIPLIER,
+} from "~/libs/constants/common.constants.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
@@ -32,44 +35,49 @@ const TranscriptionBlock: React.FC<Properties> = ({
 	pagesTotal,
 	pagesTranscribed,
 	status,
-}: Properties) => (
-	<DocumentSection
-		count={
-			<>
-				{pagesTranscribed} of {pagesTotal} pages transcribed
-			</>
-		}
-		title="Transcription"
-	>
-		<ProgressBar percent={pagesTranscribed} />
-		<div className={styles["budget-row"]}>
-			<BudgetIndicator limitUsd={budgetLimitUsd} spentUsd={budgetSpentUsd} />
-			{status === DocumentStatus.BUDGET_STOP && (
+}: Properties) => {
+	const transcribedPct =
+		(pagesTranscribed / pagesTotal) * PERCENTAGE_MULTIPLIER;
+
+	return (
+		<DocumentSection
+			count={
 				<>
-					<span>
-						{" "}
-						Stopped before page <span>{cursorPageNo}</span>
-					</span>
-					<Button
-						isSecondary
-						isSmall
-						label="Raise the limit"
-						onClick={onRaiseLimitClick}
-					/>
+					{pagesTranscribed} of {pagesTotal} pages transcribed
 				</>
-			)}
-		</div>
-		<div className={styles["stats-row"]}>
-			{pagesBlank > EMPTY_LENGTH && (
-				<span>{pagesBlank} blank pages never sent to the model</span>
-			)}
-			{pagesFailed > EMPTY_LENGTH && (
-				<span className={styles["stats-row__failed"]}>
-					{pagesFailed} failed
-				</span>
-			)}
-		</div>
-	</DocumentSection>
-);
+			}
+			title="Transcription"
+		>
+			<ProgressBar percent={transcribedPct} />
+			<div className={styles["budget-row"]}>
+				<BudgetIndicator limitUsd={budgetLimitUsd} spentUsd={budgetSpentUsd} />
+				{status === DocumentStatus.BUDGET_STOP && (
+					<>
+						<span>
+							{" "}
+							Stopped before page <span>{cursorPageNo}</span>
+						</span>
+						<Button
+							isSecondary
+							isSmall
+							label="Raise the limit"
+							onClick={onRaiseLimitClick}
+						/>
+					</>
+				)}
+			</div>
+			<div className={styles["stats-row"]}>
+				{pagesBlank > EMPTY_LENGTH && (
+					<span>{pagesBlank} blank pages never sent to the model</span>
+				)}
+				{pagesFailed > EMPTY_LENGTH && (
+					<span className={styles["stats-row__failed"]}>
+						{pagesFailed} failed
+					</span>
+				)}
+			</div>
+		</DocumentSection>
+	);
+};
 
 export { TranscriptionBlock };
