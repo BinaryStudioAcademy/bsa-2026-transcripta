@@ -22,10 +22,6 @@
 	height: 30px;
 }
 
-.header-title {
-	font: 600 var(--fs-xl) / 1 var(--font-display);
-}
-
 .header-nav__list {
 	display: flex;
 	gap: var(--sp-7);
