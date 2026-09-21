@@ -9,6 +9,7 @@ import styles from "./styles.module.css";
 type Properties = {
 	cursorPageNo: number;
 	documentId: number;
+	pagesReadyToCheck: number;
 	pagesSkipped: number;
 	pagesTranscribed: number;
 	pagesVerified: number;
@@ -17,6 +18,7 @@ type Properties = {
 const VerificationBlock: React.FC<Properties> = ({
 	cursorPageNo,
 	documentId,
+	pagesReadyToCheck,
 	pagesSkipped,
 	pagesTranscribed,
 	pagesVerified,
@@ -57,14 +59,11 @@ const VerificationBlock: React.FC<Properties> = ({
 		};
 	}, [navigate, resumeRoute]);
 
-	const reviewedCount = pagesVerified + pagesSkipped;
-	const readyAheadCount = pagesTranscribed - reviewedCount;
-
 	return (
 		<DocumentSection
 			count={
 				<>
-					{pagesVerified} of {pagesTranscribed} reviewed
+					{pagesVerified + pagesSkipped} of {pagesTranscribed} reviewed
 				</>
 			}
 			title="Verification"
@@ -74,8 +73,8 @@ const VerificationBlock: React.FC<Properties> = ({
 				<span className="tx-num">{cursorPageNo}</span>. So far:{" "}
 				<span className="tx-num">{pagesVerified}</span> verified,{" "}
 				<span className="tx-num">{pagesSkipped}</span> skipped.{" "}
-				<span className="tx-num">{readyAheadCount}</span> transcribed pages are
-				ready ahead of the cursor.
+				<span className="tx-num">{pagesReadyToCheck}</span> transcribed pages
+				are ready ahead of the cursor.
 			</div>
 			<div className={styles["resume-row"]}>
 				<Link className={styles["resume-link"] ?? ""} to={resumeRoute}>

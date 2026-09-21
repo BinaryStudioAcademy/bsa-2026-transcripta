@@ -188,9 +188,9 @@ const Document: React.FC = () => {
 	}, [currentDocument, dispatch]);
 
 	const pagesTranscribed = currentDocument
-		? currentDocument.progress.pagesTotal -
-			currentDocument.progress.pagesPending -
-			currentDocument.progress.pagesInWork
+		? currentDocument.progress.pagesVerified +
+			currentDocument.progress.pagesReadyToCheck +
+			currentDocument.progress.pagesSkipped
 		: INITIAL_COUNT;
 
 	return (
@@ -257,6 +257,9 @@ const Document: React.FC = () => {
 									<VerificationBlock
 										cursorPageNo={currentDocument.cursorPageNo}
 										documentId={currentDocument.id}
+										pagesReadyToCheck={
+											currentDocument.progress.pagesReadyToCheck
+										}
 										pagesSkipped={currentDocument.progress.pagesSkipped}
 										pagesTranscribed={pagesTranscribed}
 										pagesVerified={currentDocument.progress.pagesVerified}
