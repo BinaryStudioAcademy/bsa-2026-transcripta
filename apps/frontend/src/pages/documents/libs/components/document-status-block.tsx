@@ -26,15 +26,15 @@ const DocumentStatusBlock: React.FC<Properties> = ({ documentId, status }) => {
 	const isPauseResumeLoading = pauseResumeDataStatus === DataStatus.PENDING;
 
 	const handleToggleProcessing = useCallback(() => {
-		const action = isPaused ? documentActions.resume : documentActions.pause;
+		const togglePromise = isPaused
+			? dispatch(documentActions.resume(documentId))
+			: dispatch(documentActions.pause(documentId));
 
-		void dispatch(action(documentId))
-			.unwrap()
-			.then(() => {
-				if (isPaused) {
-					void dispatch(documentActions.startPolling(documentId));
-				}
-			});
+		void togglePromise.unwrap().then(() => {
+			if (isPaused) {
+				void dispatch(documentActions.startPolling(documentId));
+			}
+		});
 	}, [dispatch, documentId, isPaused]);
 
 	const showProcessingToggle =
