@@ -92,8 +92,7 @@ class PageService {
 
 		const nextTranscription =
 			await this.transcriptionRepository.findCurrentByPageId(nextPage.id, trx);
-		const text = 
-          nextTranscription?.editedText ?? nextTranscription?.text ?? "";
+		const text = nextTranscription?.editedText ?? nextTranscription?.text ?? "";
 		const contextUsed = nextTranscription?.contextUsed ?? null;
 		const lexiconRows = await this.documentRepository.findLexiconByIds(
 			extractLexiconIds(contextUsed),
