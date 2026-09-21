@@ -347,6 +347,32 @@ influencing later transcriptions.
 
 ---
 
+## `GET /api/v1/documents/:id/lexicon`
+
+Owner-only. Live lexicon entries for the document (`invalidated_at IS NULL`),
+ordered like context: `distinct_pages DESC`, `freq DESC`, `value_display ASC`.
+
+```jsonc
+// response 200
+{
+	"items": [
+		{
+			"id": 5,
+			"kind": "surname",
+			"valueDisplay": "Ivanenko",
+			"freq": 12,
+			"distinctPages": 4,
+			"firstPageNo": 3,
+			"lastPageNo": 47,
+		},
+	],
+}
+```
+
+Another user's document — or a missing id — returns `404`.
+
+---
+
 ## `POST /api/v1/lexicon/:id/invalidate`
 
 Fixing context poisoning.
@@ -357,9 +383,9 @@ Fixing context poisoning.
 
 // response
 {
-  "invalidatedId": 5,
-  "pagesQueuedForReprocess": 12,   // unconfirmed pages that used this word
-  "verifiedPagesFlagged": 3        // confirmed ones are only flagged, NOT rewritten
+	"invalidatedId": 5,
+	"pagesQueuedForReprocess": 12, // unconfirmed pages that used this word
+	"verifiedPagesFlagged": 3, // confirmed ones are only flagged, NOT rewritten
 }
 ```
 
