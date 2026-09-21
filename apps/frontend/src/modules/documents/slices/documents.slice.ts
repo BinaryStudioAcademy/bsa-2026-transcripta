@@ -118,7 +118,7 @@ const { actions, name, reducer } = createSlice({
 			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.FULFILLED;
 
 			if (state.document && state.document.id === action.meta.arg) {
-				state.document.status = DocumentStatus.PROCESSING;
+				state.document = action.payload;
 			}
 		});
 		builder.addCase(pause.pending, (state, action) => {
