@@ -90,7 +90,12 @@ const { actions, name, reducer } = createSlice({
 		});
 		builder.addCase(pollDocumentById.fulfilled, (state, action) => {
 			if (state.document && state.document.id === action.payload.id) {
-				state.document = action.payload;
+				const nextStatus =
+					state.document.status === DocumentStatus.PAUSED
+						? DocumentStatus.PAUSED
+						: action.payload.status;
+
+				state.document = { ...action.payload, status: nextStatus };
 			}
 		});
 		builder.addCase(remove.fulfilled, (state, action) => {
