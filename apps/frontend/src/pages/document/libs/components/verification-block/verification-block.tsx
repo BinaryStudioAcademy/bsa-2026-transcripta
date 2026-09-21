@@ -1,5 +1,4 @@
 import { Link } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import { useEffect, useNavigate } from "~/libs/hooks/hooks.js";
@@ -10,8 +9,7 @@ import styles from "./styles.module.css";
 type Properties = {
 	cursorPageNo: number;
 	documentId: number;
-	pagesInWork: number;
-	pagesTotal: number;
+	pagesSkipped: number;
 	pagesTranscribed: number;
 	pagesVerified: number;
 };
@@ -19,8 +17,7 @@ type Properties = {
 const VerificationBlock: React.FC<Properties> = ({
 	cursorPageNo,
 	documentId,
-	pagesInWork,
-	pagesTotal,
+	pagesSkipped,
 	pagesTranscribed,
 	pagesVerified,
 }: Properties) => {
@@ -60,6 +57,9 @@ const VerificationBlock: React.FC<Properties> = ({
 		};
 	}, [navigate, resumeRoute]);
 
+	const reviewedCount = pagesVerified + pagesSkipped;
+	const readyAheadCount = pagesTranscribed - reviewedCount;
+
 	return (
 		<DocumentSection
 			count={
@@ -70,14 +70,12 @@ const VerificationBlock: React.FC<Properties> = ({
 			title="Verification"
 		>
 			<div className={styles["body"]}>
-				<span className="tx-num">{pagesVerified}</span> of{" "}
-				<span className="tx-num">{pagesTotal}</span> pages verified
-				{pagesInWork > INITIAL_COUNT && (
-					<span>
-						{" "}
-						· <span className="tx-num">{pagesInWork}</span> in work
-					</span>
-				)}
+				Your cursor is saved at page{" "}
+				<span className="tx-num">{cursorPageNo}</span>. So far:{" "}
+				<span className="tx-num">{pagesVerified}</span> verified,{" "}
+				<span className="tx-num">{pagesSkipped}</span> skipped.{" "}
+				<span className="tx-num">{readyAheadCount}</span> transcribed pages are
+				ready ahead of the cursor.
 			</div>
 			<div className={styles["resume-row"]}>
 				<Link className={styles["resume-link"] ?? ""} to={resumeRoute}>

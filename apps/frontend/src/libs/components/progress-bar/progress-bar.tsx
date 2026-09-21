@@ -1,18 +1,18 @@
 type Properties = {
-	closedPct: number;
+	percent: number;
 };
 
-const ProgressBar: React.FC<Properties> = ({ closedPct }: Properties) => (
+const ProgressBar: React.FC<Properties> = ({ percent }: Properties) => (
 	<div
 		aria-valuemax={100}
 		aria-valuemin={0}
-		aria-valuenow={closedPct}
+		aria-valuenow={percent}
 		className="tx-progress-track"
 		role="progressbar"
 	>
 		<div
 			className="tx-progress-fill"
-			style={{ width: `${String(closedPct)}%` }}
+			style={{ width: `${String(percent)}%` }}
 		/>
 	</div>
 );

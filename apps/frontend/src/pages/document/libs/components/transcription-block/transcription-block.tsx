@@ -3,6 +3,7 @@ import {
 	Button,
 	ProgressBar,
 } from "~/libs/components/components.js";
+import { EMPTY_LENGTH } from "~/libs/constants/common.constants.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
@@ -12,9 +13,10 @@ import styles from "./styles.module.css";
 type Properties = {
 	budgetLimitUsd: string;
 	budgetSpentUsd: string;
-	closedPct: number;
 	cursorPageNo: number;
 	onRaiseLimitClick: () => void;
+	pagesBlank: number;
+	pagesFailed: number;
 	pagesTotal: number;
 	pagesTranscribed: number;
 	status: ValueOf<typeof DocumentStatus>;
@@ -23,9 +25,10 @@ type Properties = {
 const TranscriptionBlock: React.FC<Properties> = ({
 	budgetLimitUsd,
 	budgetSpentUsd,
-	closedPct,
 	cursorPageNo,
 	onRaiseLimitClick,
+	pagesBlank,
+	pagesFailed,
 	pagesTotal,
 	pagesTranscribed,
 	status,
@@ -38,7 +41,7 @@ const TranscriptionBlock: React.FC<Properties> = ({
 		}
 		title="Transcription"
 	>
-		<ProgressBar closedPct={closedPct} />
+		<ProgressBar percent={pagesTranscribed} />
 		<div className={styles["budget-row"]}>
 			<BudgetIndicator limitUsd={budgetLimitUsd} spentUsd={budgetSpentUsd} />
 			{status === DocumentStatus.BUDGET_STOP && (
@@ -54,6 +57,16 @@ const TranscriptionBlock: React.FC<Properties> = ({
 						onClick={onRaiseLimitClick}
 					/>
 				</>
+			)}
+		</div>
+		<div className={styles["stats-row"]}>
+			{pagesBlank > EMPTY_LENGTH && (
+				<span>{pagesBlank} blank pages never sent to the model</span>
+			)}
+			{pagesFailed > EMPTY_LENGTH && (
+				<span className={styles["stats-row__failed"]}>
+					{pagesFailed} failed
+				</span>
 			)}
 		</div>
 	</DocumentSection>

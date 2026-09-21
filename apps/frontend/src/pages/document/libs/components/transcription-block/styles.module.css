@@ -5,3 +5,15 @@
 	font-size: 12px;
 	color: var(--text-2);
 }
+
+.stats-row {
+	display: flex;
+	gap: var(--sp-4);
+	margin-top: var(--sp-3);
+	font-size: var(--fs-sm);
+	color: var(--text-2);
+}
+
+.stats-row__failed {
+	margin-left: auto;
+}

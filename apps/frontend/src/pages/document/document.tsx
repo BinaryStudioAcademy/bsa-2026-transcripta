@@ -254,24 +254,24 @@ const Document: React.FC = () => {
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
 
-									<TranscriptionBlock
-										budgetLimitUsd={currentDocument.budget.limitUsd}
-										budgetSpentUsd={currentDocument.budget.spentUsd}
-										closedPct={currentDocument.progress.closedPct}
-										cursorPageNo={currentDocument.cursorPageNo}
-										onRaiseLimitClick={handleOpenRaiseLimit}
-										pagesTotal={currentDocument.progress.pagesTotal}
-										pagesTranscribed={pagesTranscribed}
-										status={currentDocument.status}
-									/>
-
 									<VerificationBlock
 										cursorPageNo={currentDocument.cursorPageNo}
 										documentId={currentDocument.id}
-										pagesInWork={currentDocument.progress.pagesInWork}
-										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesSkipped={currentDocument.progress.pagesSkipped}
 										pagesTranscribed={pagesTranscribed}
 										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
+
+									<TranscriptionBlock
+										budgetLimitUsd={currentDocument.budget.limitUsd}
+										budgetSpentUsd={currentDocument.budget.spentUsd}
+										cursorPageNo={currentDocument.cursorPageNo}
+										onRaiseLimitClick={handleOpenRaiseLimit}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										status={currentDocument.status}
 									/>
 
 									<ExportBlock />
