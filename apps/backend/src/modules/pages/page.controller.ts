@@ -100,7 +100,7 @@ class PageController extends BaseController {
 	 * @swagger
 	 * /pages/{id}/reprocess:
 	 *   post:
-	 *     description: Reprocess a failed page
+	 *     description: Reprocess a failed or blank page
 	 *     security:
 	 *       - bearerAuth: []
 	 *     parameters:
@@ -117,7 +117,7 @@ class PageController extends BaseController {
 	 *       404:
 	 *         description: Page not found
 	 *       409:
-	 *         description: Page is not in failed status
+	 *         description: Page is not in failed or blank status
 	 */
 	private async reprocess(
 		options: ReprocessPageHandlerOptions,
