@@ -63,6 +63,7 @@ class PageRepository {
 				"p.lastError",
 				"t.id as transcriptionId",
 				"t.text as transcriptionText",
+				"t.editedText as transcriptionEditedText",
 				"t.structured as transcriptionStructured",
 				"t.contextUsed as transcriptionContextUsed",
 			])
