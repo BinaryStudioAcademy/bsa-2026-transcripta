@@ -39,7 +39,10 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import "./verification.css";
-import { type PageVerificationActionValue } from "./libs/types/types.js";
+import {
+	type EditConflictDraft,
+	type PageVerificationActionValue,
+} from "./libs/types/types.js";
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -48,6 +51,8 @@ const Verification: React.FC = () => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isZoomed, setIsZoomed] = useState(false);
 	const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+	const [editConflictDraft, setEditConflictDraft] =
+		useState<EditConflictDraft | null>(null);
 
 	const pageStartedAtReference = useRef(Date.now());
 
@@ -130,6 +135,10 @@ const Verification: React.FC = () => {
 		}
 	}, [currentPage]);
 
+	useEffect(() => {
+		setIsEditing(false);
+	}, [cursorPageNo]);
+
 	const reloadPage = useCallback(
 		(pageNo: number): void => {
 			if (!document) {
@@ -150,9 +159,12 @@ const Verification: React.FC = () => {
 	);
 
 	const handleVerify = useCallback(
-		async (action: PageVerificationActionValue): Promise<void> => {
+		async (
+			action: PageVerificationActionValue,
+			text?: string,
+		): Promise<boolean> => {
 			if (!currentPage?.transcription || !document || isVerifying) {
-				return;
+				return false;
 			}
 
 			const pageNo = currentPage.pageNo;
@@ -160,7 +172,7 @@ const Verification: React.FC = () => {
 			const payload: VerifyPageRequestDto = {
 				action,
 				durationMs: Date.now() - pageStartedAtReference.current,
-				text: currentPage.transcription.text,
+				text: text ?? currentPage.transcription.text,
 				transcriptionId: currentPage.transcription.id,
 			};
 
@@ -186,11 +198,21 @@ const Verification: React.FC = () => {
 				"status" in result.error &&
 				result.error.status === HTTPCode.CONFLICT
 			) {
+				if (action === PageVerificationAction.CORRECT && text !== undefined) {
+					setEditConflictDraft({
+						pageNo,
+						text,
+					});
+				}
+
 				notification.error(
 					"The verification could not be completed. The latest page version has been loaded.",
 				);
+
 				reloadPage(pageNo);
 			}
+
+			return !isRejected;
 		},
 		[currentPage, dispatch, document, reloadPage, isVerifying],
 	);
@@ -203,6 +225,24 @@ const Verification: React.FC = () => {
 		void handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
+	const handleSaveEdit = useCallback(
+		(text: string): void => {
+			void (async (): Promise<void> => {
+				const success = await handleVerify(
+					PageVerificationAction.CORRECT,
+					text,
+				);
+
+				if (success) {
+					setEditConflictDraft(null);
+				} else {
+					setIsEditing(true);
+				}
+			})();
+		},
+		[handleVerify],
+	);
+
 	const handleReRead = useCallback((): void => {
 		if (!currentPage) {
 			return;
@@ -212,8 +252,12 @@ const Verification: React.FC = () => {
 	}, [currentPage, dispatch]);
 
 	const handleToggleEdit = useCallback((): void => {
+		if (!currentPage?.transcription || isVerifying) {
+			return;
+		}
+
 		setIsEditing((value) => !value);
-	}, []);
+	}, [currentPage, isVerifying]);
 
 	const handleToggleShortcuts = useCallback((): void => {
 		setIsShortcutsOpen((value) => !value);
@@ -225,9 +269,13 @@ const Verification: React.FC = () => {
 
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
+			if (isEditing) {
+				notification.info("Navigation is not available in edit mode");
+				return;
+			}
 			dispatch(pageActions.setCursorPageNo(pageNo));
 		},
-		[dispatch],
+		[dispatch, isEditing],
 	);
 
 	const handlePrevious = useCallback((): void => {
@@ -274,6 +322,7 @@ const Verification: React.FC = () => {
 			/>
 			<VerificationWorkspace
 				currentPage={currentPage}
+				editConflictDraft={editConflictDraft}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isReprocessing={isReprocessing}
@@ -281,6 +330,7 @@ const Verification: React.FC = () => {
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
 				onReRead={handleReRead}
+				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
 				pageCount={document.pageCount}
