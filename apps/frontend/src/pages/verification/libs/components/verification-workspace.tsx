@@ -3,6 +3,7 @@ import { Button, FailedStateCard } from "~/libs/components/components.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
+import { useScanZoom } from "../hooks/use-scan-zoom.js";
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
@@ -40,6 +41,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		isDragging,
 		splitPosition,
 	} = useResizableSplit();
+	const { scanRef, zoom } = useScanZoom();
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
@@ -132,12 +134,16 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						className={`verification-scan__content ${
 							isZoomed ? "verification-scan__content--zoomed" : ""
 						}`}
+						ref={scanRef}
 					>
 						{currentPage?.imageUrl ? (
 							<img
 								alt={`Page ${String(currentPage.pageNo)}`}
 								className="verification-scan__image"
 								src={currentPage.imageUrl}
+								style={{
+									transform: `scale(${String(zoom)})`,
+								}}
 							/>
 						) : (
 							<div className="verification-scan__text">No scan available</div>
