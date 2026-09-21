@@ -20,6 +20,17 @@ class PageApi extends BaseHTTPApi {
 		super({ baseUrl, http, path: APIPath.PAGES, storage });
 	}
 
+	public async reprocess(id: number): Promise<void> {
+		await this.load(
+			this.getFullEndpoint(PageApiPath.REPROCESS, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+			},
+		);
+	}
+
 	public async verify(
 		id: number,
 		payload: VerifyPageRequestDto,

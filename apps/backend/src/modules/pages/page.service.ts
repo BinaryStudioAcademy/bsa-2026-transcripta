@@ -10,7 +10,6 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
-import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
 import {
 	buildContextWords,
 	buildPageLexiconMap,
@@ -29,6 +28,7 @@ import {
 	PageErrorType,
 	StatusByAction,
 } from "./libs/enums/enums.js";
+import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
@@ -351,15 +351,14 @@ class PageService {
 					trx,
 				);
 
-				const shouldAdvanceWindow =
-					!CLOSED_PAGE_STATUSES.has(page.status) &&
-					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
+				const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(page.status);
 				const pagesToQueue = shouldAdvanceWindow
-					? await this.pageRepository.updateFirstPendingPagesAsQueued(
-							page.documentId,
-							NUMBER_OF_PAGES_TO_INCREMENT,
+					? await refillPageWindow({
+							documentId: page.documentId,
+							pageRepository: this.pageRepository,
+							quantity: NUMBER_OF_PAGES_TO_INCREMENT,
 							trx,
-						)
+						})
 					: [];
 
 				await this.documentRepository.markDoneIfAllPagesClosed(

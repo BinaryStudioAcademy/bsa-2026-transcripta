@@ -11,7 +11,9 @@ import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetAllResponseDto,
+	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
 } from "~/modules/documents/documents.js";
@@ -28,6 +30,11 @@ type GetUploadUrlPayload = {
 	id: number;
 	payload?: DocumentUploadUrlRequestDto;
 	signal?: AbortSignal;
+};
+
+type UpdateBudgetPayload = {
+	id: number;
+	payload: DocumentUpdateBudgetDto;
 };
 
 let pollingIntervalId: null | ReturnType<typeof setInterval> = null;
@@ -228,6 +235,20 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 	},
 );
 
+const updateBudget = createAsyncThunk<
+	{ budget: DocumentGetByIdBudgetResponseDto; id: number },
+	UpdateBudgetPayload,
+	AsyncThunkConfig
+>(
+	`${sliceName}/update-budget`,
+	async ({ id, payload }, { extra }) => {
+		const { documentApi } = extra;
+		const budget = await documentApi.updateBudget(id, payload);
+		return { budget, id };
+	},
+	{ serializeError },
+);
+
 export {
 	create,
 	getUploadUrl,
@@ -240,4 +261,5 @@ export {
 	resume,
 	startPolling,
 	stopPolling,
+	updateBudget,
 };
