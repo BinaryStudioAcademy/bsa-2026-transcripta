@@ -262,6 +262,18 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async setCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ cursorPageNo })
+			.where({ id: documentId })
+			.execute();
+	}
+
 	public async setError(id: number, errorMessage: string): Promise<void> {
 		await this.documentModel
 			.query()
