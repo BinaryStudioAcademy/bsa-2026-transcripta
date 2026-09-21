@@ -1,4 +1,8 @@
-export { EMPTY_LENGTH, MILLION } from "./libs/constants/constants.js";
+export {
+	EMPTY_LENGTH,
+	INDEX_NOT_FOUND,
+	MILLION,
+} from "./libs/constants/constants.js";
 export {
 	APIPath,
 	AppEnvironment,
@@ -58,6 +62,7 @@ export {
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {
+	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,
 	type VerifyPageRequestDto,

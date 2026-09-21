@@ -8,6 +8,7 @@ import { type DocumentGetByIdProgressResponseDto } from "./document-get-by-id-pr
 type DocumentGetByIdResponseDto = {
 	budget: DocumentGetByIdBudgetResponseDto;
 	cursorPageNo: number;
+	errorMessage: null | string;
 	groundTruth: DocumentGetByIdGroundTruthResponseDto | null;
 	id: number;
 	pageCount: number;

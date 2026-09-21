@@ -6,6 +6,7 @@ type DocumentDetailsProperties = {
 	budgetUsd: string;
 	closedPct: number;
 	cursorPageNo: number;
+	errorMessage: null | string;
 	id: number;
 	pageCount: number;
 	pagesBlank: number;
@@ -34,6 +35,8 @@ class DocumentDetailsEntity {
 	private closedPct: number;
 
 	private cursorPageNo: number;
+
+	private errorMessage: null | string;
 
 	private id: number;
 
@@ -75,6 +78,7 @@ class DocumentDetailsEntity {
 		budgetUsd,
 		closedPct,
 		cursorPageNo,
+		errorMessage,
 		id,
 		pageCount,
 		pagesBlank,
@@ -102,6 +106,7 @@ class DocumentDetailsEntity {
 		this.pagesBlank = pagesBlank;
 		this.pagesFailed = pagesFailed;
 		this.pagesInWork = pagesInWork;
+		this.errorMessage = errorMessage;
 		this.pagesPending = pagesPending;
 		this.pagesReadyToCheck = pagesReadyToCheck;
 		this.pagesSkipped = pagesSkipped;
@@ -131,6 +136,7 @@ class DocumentDetailsEntity {
 				usedPct: this.usedPct,
 			},
 			cursorPageNo: this.cursorPageNo,
+			errorMessage: this.errorMessage,
 			groundTruth: null,
 			id: this.id,
 			pageCount: this.pageCount,

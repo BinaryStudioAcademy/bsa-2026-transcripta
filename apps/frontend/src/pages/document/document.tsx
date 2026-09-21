@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
 	ConfirmDialog,
 	Link,
 	LoaderOverlay,
+	RaiseLimitDialog,
 	ThemeToggle,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import {
+	BUDGET_STOP_NOTIFICATION_MESSAGE,
+	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INITIAL_COUNT,
+	NOTIFICATION_DELAY_MS,
+} from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -16,9 +22,12 @@ import {
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import {
+	DocumentFailedBlock,
 	DocumentTitleBlock,
 	ExportBlock,
 	GroundTruthBlock,
@@ -37,6 +46,7 @@ const Document: React.FC = () => {
 		}),
 	);
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
 
 	const { id } = useParams();
 
@@ -55,10 +65,54 @@ const Document: React.FC = () => {
 		};
 	}, [id, dispatch]);
 
+	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
+	const isNotifyingReference = useRef<boolean>(false);
+	const previousStatusReference = useRef<null | string>(null);
+
+	useEffect(() => {
+		if (!currentDocument) {
+			previousStatusReference.current = null;
+			return;
+		}
+
+		const documentIdFromParameters = Number(id);
+
+		if (currentDocument.id !== documentIdFromParameters) {
+			return;
+		}
+
+		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
+		const previousStatus = previousStatusReference.current;
+
+		previousStatusReference.current = currentDocument.status;
+
+		const hasAlreadyBeenNotified = notifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		const shouldNotify =
+			isBudgetStop &&
+			(!hasAlreadyBeenNotified ||
+				previousStatus !== DocumentStatus.BUDGET_STOP);
+
+		if (shouldNotify && !isNotifyingReference.current) {
+			isNotifyingReference.current = true;
+
+			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+
+			notifiedDocumentsReference.current.add(currentDocument.id);
+
+			setTimeout(() => {
+				isNotifyingReference.current = false;
+			}, NOTIFICATION_DELAY_MS);
+		}
+	}, [currentDocument, currentDocument?.id, currentDocument?.status, id]);
+
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
 	const hasError =
 		documentDataStatus === DataStatus.REJECTED && !currentDocument;
+	const isFailed = currentDocument?.status === DocumentStatus.FAILED;
 
 	const handleOpenDeleteDialog = useCallback((): void => {
 		setIsConfirmOpen(true);
@@ -84,6 +138,53 @@ const Document: React.FC = () => {
 				setIsConfirmOpen(false);
 			});
 	}, [currentDocument, dispatch, navigate]);
+
+	const handleOpenRaiseLimit = useCallback((): void => {
+		setIsRaiseLimitOpen(true);
+	}, []);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setIsRaiseLimitOpen(false);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			if (!currentDocument) {
+				return;
+			}
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: currentDocument.id,
+					payload: { limitUsd },
+				}),
+			)
+				.unwrap()
+				.then(() => {
+					setIsRaiseLimitOpen(false);
+					void dispatch(documentActions.startPolling(currentDocument.id));
+				})
+				.catch(() => {
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+				});
+		},
+		[currentDocument, dispatch],
+	);
+
+	const handleRetry = useCallback((): void => {
+		if (!currentDocument) {
+			return;
+		}
+
+		const documentId = currentDocument.id;
+
+		void dispatch(documentActions.ingest(documentId))
+			.unwrap()
+			.then(async () => {
+				await dispatch(documentActions.loadById(documentId)).unwrap();
+				void dispatch(documentActions.startPolling(documentId));
+			});
+	}, [currentDocument, dispatch]);
 
 	const pagesTranscribed = currentDocument
 		? currentDocument.progress.pagesTotal -
@@ -126,32 +227,48 @@ const Document: React.FC = () => {
 								status={currentDocument.status}
 								title={currentDocument.title}
 							/>
-							<TranscriptionBlock
-								budgetLimitUsd={currentDocument.budget.limitUsd}
-								budgetSpentUsd={currentDocument.budget.spentUsd}
-								closedPct={currentDocument.progress.closedPct}
-								pagesTotal={currentDocument.progress.pagesTotal}
-								pagesTranscribed={pagesTranscribed}
-							/>
 
-							<VerificationBlock
-								cursorPageNo={currentDocument.cursorPageNo}
-								documentId={currentDocument.id}
-								pagesInWork={currentDocument.progress.pagesInWork}
-								pagesTotal={currentDocument.progress.pagesTotal}
-								pagesTranscribed={pagesTranscribed}
-								pagesVerified={currentDocument.progress.pagesVerified}
-							/>
+							{isFailed ? (
+								<section>
+									<h2>Ingest failed</h2>
+									<DocumentFailedBlock
+										errorMessage={currentDocument.errorMessage}
+										onRetry={handleRetry}
+									/>
+								</section>
+							) : (
+								<>
+									<TranscriptionBlock
+										budgetLimitUsd={currentDocument.budget.limitUsd}
+										budgetSpentUsd={currentDocument.budget.spentUsd}
+										closedPct={currentDocument.progress.closedPct}
+										cursorPageNo={currentDocument.cursorPageNo}
+										onRaiseLimitClick={handleOpenRaiseLimit}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										status={currentDocument.status}
+									/>
 
-							<ExportBlock />
+									<VerificationBlock
+										cursorPageNo={currentDocument.cursorPageNo}
+										documentId={currentDocument.id}
+										pagesInWork={currentDocument.progress.pagesInWork}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
 
-							{currentDocument.groundTruth && (
-								<GroundTruthBlock
-									cer={currentDocument.groundTruth.cer}
-									documentId={currentDocument.id}
-									pagesTotal={currentDocument.groundTruth.pagesTotal}
-									pagesTyped={currentDocument.groundTruth.pagesTyped}
-								/>
+									<ExportBlock />
+
+									{currentDocument.groundTruth && (
+										<GroundTruthBlock
+											cer={currentDocument.groundTruth.cer}
+											documentId={currentDocument.id}
+											pagesTotal={currentDocument.groundTruth.pagesTotal}
+											pagesTyped={currentDocument.groundTruth.pagesTyped}
+										/>
+									)}
+								</>
 							)}
 						</div>
 					</main>
@@ -164,6 +281,15 @@ const Document: React.FC = () => {
 					onCancel={handleCancelDelete}
 					onConfirm={handleConfirmDelete}
 					title="Delete this document"
+				/>
+			)}
+
+			{isRaiseLimitOpen && currentDocument && (
+				<RaiseLimitDialog
+					currentLimitUsd={currentDocument.budget.limitUsd}
+					onCancel={handleCancelRaiseLimit}
+					onSubmit={handleUpdateBudget}
+					spentUsd={currentDocument.budget.spentUsd}
 				/>
 			)}
 		</div>

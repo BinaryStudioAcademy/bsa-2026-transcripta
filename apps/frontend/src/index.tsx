@@ -6,6 +6,7 @@ import "~/assets/css/styles.css";
 import {
 	App,
 	ProtectedRoute,
+	PublicRoute,
 	RouterProvider,
 	StoreProvider,
 } from "~/libs/components/components.js";
@@ -27,12 +28,17 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 					{
 						children: [
 							{
-								element: <Auth />,
-								path: AppRoute.SIGN_IN,
-							},
-							{
-								element: <Auth />,
-								path: AppRoute.SIGN_UP,
+								children: [
+									{
+										element: <Auth />,
+										path: AppRoute.SIGN_IN,
+									},
+									{
+										element: <Auth />,
+										path: AppRoute.SIGN_UP,
+									},
+								],
+								element: <PublicRoute />,
 							},
 							{
 								children: [

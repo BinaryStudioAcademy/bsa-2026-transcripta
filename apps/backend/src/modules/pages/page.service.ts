@@ -1,6 +1,7 @@
 import {
 	HTTPCode,
 	HTTPError,
+	type PageDebugResponseDto,
 	PageStatus,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
@@ -9,7 +10,6 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
-import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
@@ -23,6 +23,7 @@ import {
 	PageErrorType,
 	StatusByAction,
 } from "./libs/enums/enums.js";
+import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
@@ -59,7 +60,6 @@ class PageService {
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
-		this.pageTranscribeQueue = pageTranscribeQueue;
 	}
 
 	private async buildVerifyResponse(
@@ -103,6 +103,54 @@ class PageService {
 			},
 			pageId,
 			status,
+		};
+	}
+
+	public async getDebug(
+		pageId: number,
+		userId: number,
+	): Promise<PageDebugResponseDto> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const transcription =
+			await this.transcriptionRepository.findCurrentDebugByPageId(pageId);
+
+		if (!transcription) {
+			throw new HTTPError({
+				message: PageErrorMessage.TRANSCRIPTION_UNAVAILABLE,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const { presetId, presetVersion } = transcription;
+
+		return {
+			contextUsed: transcription.contextUsed,
+			costUsd: transcription.costUsd,
+			fromCache: transcription.fromCache,
+			inputTokens: transcription.inputTokens,
+			latencyMs: transcription.latencyMs,
+			model: transcription.model,
+			outputTokens: transcription.outputTokens,
+			pageId: transcription.pageId,
+			preset:
+				presetId === null || presetVersion === null
+					? null
+					: {
+							id: presetId,
+							version: presetVersion,
+						},
+			prompt: transcription.prompt,
+			provider: transcription.provider,
+			rawResponse: transcription.rawResponse,
+			transcriptionId: transcription.transcriptionId,
 		};
 	}
 
@@ -287,15 +335,14 @@ class PageService {
 					trx,
 				);
 
-				const shouldAdvanceWindow =
-					!CLOSED_PAGE_STATUSES.has(page.status) &&
-					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
+				const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(page.status);
 				const pagesToQueue = shouldAdvanceWindow
-					? await this.pageRepository.updateFirstPendingPagesAsQueued(
-							page.documentId,
-							NUMBER_OF_PAGES_TO_INCREMENT,
+					? await refillPageWindow({
+							documentId: page.documentId,
+							pageRepository: this.pageRepository,
+							quantity: NUMBER_OF_PAGES_TO_INCREMENT,
 							trx,
-						)
+						})
 					: [];
 
 				await this.documentRepository.markDoneIfAllPagesClosed(

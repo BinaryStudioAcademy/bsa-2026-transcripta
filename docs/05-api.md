@@ -66,8 +66,10 @@ list below needs its own block — 19 blocks that nobody will write for us.
 |          |                                  |                                                |
 | `GET`    | `/api/v1/documents/:id/pages`    | Pages with their transcriptions                |
 | `POST`   | `/api/v1/pages/:id/verify`       | **The main endpoint**                          |
+| `GET`    | `/api/v1/pages/:id/debug`        | Prompt + raw response + context (owner only)   |
 | `POST`   | `/api/v1/pages/:id/reprocess`    | Re-read a page                                 |
 |          |                                  |                                                |
+| `POST`   | `/api/v1/test/transcribe`        | Model sandbox (no auth, nothing stored)        |
 | `GET`    | `/api/v1/documents/:id/lexicon`  | The lexicon                                    |
 | `POST`   | `/api/v1/lexicon/:id/invalidate` | Mark a word as wrong                           |
 |          |                                  |                                                |
@@ -93,6 +95,7 @@ sorted by `created_at` descending (newest first). No pagination in release 1.
 			"title": "Birth records, Kharkiv county, 1892",
 			"status": "draft",
 			"pageCount": 0,
+			"pagesFailed": 0,
 			"createdAt": "2026-08-28T08:15:00.000Z",
 		},
 		{
@@ -100,11 +103,14 @@ sorted by `created_at` descending (newest first). No pagination in release 1.
 			"title": "Parish register of Dykanka, 1887",
 			"status": "processing",
 			"pageCount": 300,
+			"pagesFailed": 0,
 			"createdAt": "2026-08-07T10:00:00.000Z",
 		},
 	],
 }
 ```
+
+`pagesFailed` is the number of pages whose transcription failed. A document with `status: "failed"` can still have `pagesFailed: 0`: that status means the document ingest itself failed, not that individual page transcription failed.
 
 An empty library is still `200` with `{ "items": [] }`.
 
@@ -152,6 +158,7 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 	"id": 1,
 	"title": "Parish register of Dykanka, 1887",
 	"status": "processing",
+	"errorMessage": null,
 	"preset": { "id": 1, "name": "19th-century parish register", "version": 1 },
 	"pageCount": 300,
 	"cursorPageNo": 47,
@@ -173,6 +180,12 @@ await fetch(`/api/v1/documents/${id}/ingest`, { method: "POST" });
 
 The `progress` block is read with a single query from the `document_progress`
 view.
+
+`errorMessage` contains the reason why document ingest or processing failed.
+It is `null` when no document-level error has been recorded.
+
+`errorMessage` describes a document-level failure and is separate from
+`progress.pagesFailed`, which counts individual pages that failed processing.
 
 `verifiedPct` and `closedPct` are not the same number and must not be swapped.
 The first counts only what a human read; the second also counts `skipped`,
@@ -220,6 +233,70 @@ Without them the first page window is returned; pass both to page further.
 `contextWords` are the words the context suggested. The frontend highlights
 exactly these, because they carry the highest risk of context poisoning. See
 [03-core-logic.md](03-core-logic.md#6-context-poisoning--the-main-danger).
+
+---
+
+## `GET /api/v1/pages/:id/debug` — inspect a bad transcription (#153)
+
+Owner-only. Returns what was sent to the model and what came back for the
+**current** transcription of the page — without opening the database.
+
+```jsonc
+// response 200
+{
+	"pageId": 47,
+	"transcriptionId": 312,
+	"provider": "anthropic",
+	"model": "claude-sonnet-4-20250514",
+	"preset": { "id": 3, "version": 2 },
+	"prompt": "…exact text sent with the image (includes repair suffix if any)…",
+	"rawResponse": "…model text before validation / fence strip…",
+	"contextUsed": {
+		"pageIds": [45, 46],
+		"lexiconIds": [1, 8],
+		"hash": "…",
+		"tokens": 1840,
+	},
+	"inputTokens": 2100,
+	"outputTokens": 420,
+	"costUsd": "0.012300",
+	"latencyMs": 3400,
+	"fromCache": false,
+}
+```
+
+`prompt` is the text that produced `rawResponse` on that row — base
+`buildUserPrompt`, or the same plus the repair note when the final model
+call was a repair. Not a reconstruction from `context_used`.
+`rawResponse` is empty on cache hits (no model call this run)
+and on rows written before the column existed. After a validation failure the
+worker still stores a current row with empty `text` and the rejected
+`rawResponse`, so this endpoint can diagnose that case too. Another user's
+page — or a page with no current transcription — returns `404`.
+
+---
+
+## `POST /api/v1/test/transcribe` — model sandbox (#153 / #65)
+
+No auth. Nothing is persisted. Used for model comparison on real scans.
+Returns the same debug surface as page debug where it applies: the prompt
+that was sent, the raw model text, provider, model, tokens, estimated cost
+and latency. There is no preset, context breakdown or cache flag here —
+the sandbox sends a freeform prompt with an image only.
+
+```jsonc
+// response 200
+{
+	"prompt": "…exact prompt from the request…",
+	"rawResponse": "…model text…",
+	"text": "…same as rawResponse (no schema validation in sandbox)…",
+	"provider": "anthropic",
+	"modelId": "us.anthropic.claude-sonnet-4-6",
+	"costUsd": "0.0123",
+	"latencyMs": 3400,
+	"usage": { "inputTokens": 2100, "outputTokens": 420 },
+}
+```
 
 ---
 
