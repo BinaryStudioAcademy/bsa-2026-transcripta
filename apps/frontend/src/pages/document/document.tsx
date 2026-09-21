@@ -31,6 +31,7 @@ import {
 	DocumentTitleBlock,
 	ExportBlock,
 	GroundTruthBlock,
+	PagesBlock,
 	TranscriptionBlock,
 	VerificationBlock,
 } from "./libs/components/components.js";
@@ -238,6 +239,21 @@ const Document: React.FC = () => {
 								</section>
 							) : (
 								<>
+									<PagesBlock
+										cursorPageNo={currentDocument.cursorPageNo}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesInWork={currentDocument.progress.pagesInWork}
+										pagesPending={currentDocument.progress.pagesPending}
+										pagesReadyToCheck={
+											currentDocument.progress.pagesReadyToCheck
+										}
+										pagesSkipped={currentDocument.progress.pagesSkipped}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
+
 									<TranscriptionBlock
 										budgetLimitUsd={currentDocument.budget.limitUsd}
 										budgetSpentUsd={currentDocument.budget.spentUsd}
