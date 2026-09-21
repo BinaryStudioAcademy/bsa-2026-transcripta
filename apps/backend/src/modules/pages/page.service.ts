@@ -2,7 +2,6 @@ import {
 	HTTPCode,
 	HTTPError,
 	type PageDebugResponseDto,
-	PageStatus,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
@@ -20,6 +19,7 @@ import { TranscriptionService } from "../transcription/transcription.service.js"
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
+	REPROCESSABLE_PAGE_STATUSES,
 } from "./libs/constants/constants.js";
 import {
 	PageErrorMessage,
@@ -242,23 +242,30 @@ class PageService {
 			});
 		}
 
-		if (page.status !== PageStatus.FAILED) {
+		if (!REPROCESSABLE_PAGE_STATUSES.has(page.status)) {
 			throw new HTTPError({
-				message: PageErrorMessage.PAGE_NOT_FAILED,
+				message: PageErrorMessage.PAGE_NOT_REPROCESSABLE,
 				status: HTTPCode.CONFLICT,
 			});
 		}
 
-		const wasReset = await this.pageRepository.resetFailedPageForReprocess(
-			page.id,
-		);
+		const originalStatus = page.status;
 
-		if (!wasReset) {
-			throw new HTTPError({
-				message: PageErrorMessage.PAGE_NOT_FAILED,
-				status: HTTPCode.CONFLICT,
-			});
-		}
+		await DocumentModel.transaction(async (trx) => {
+			const wasReset = await this.pageRepository.resetPageForReprocess(
+				page.id,
+				trx,
+			);
+
+			if (!wasReset) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_REPROCESSABLE,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
+		});
 
 		try {
 			await this.pageTranscribeQueue.add({
@@ -267,11 +274,20 @@ class PageService {
 				pageNo: page.pageNo,
 			});
 		} catch (error) {
-			await this.pageRepository.restoreFailedPageAfterReprocessFailure(
-				page.id,
-				page.attempts,
-				page.lastError,
-			);
+			await DocumentModel.transaction(async (trx) => {
+				await this.pageRepository.restorePage({
+					attempts: page.attempts,
+					lastError: page.lastError,
+					pageId: page.id,
+					status: originalStatus,
+					trx,
+				});
+
+				await this.documentRepository.markDoneIfAllPagesClosed(
+					page.documentId,
+					trx,
+				);
+			});
 
 			this.logger.error(
 				`Failed to enqueue reprocess job for page ${String(page.id)}`,

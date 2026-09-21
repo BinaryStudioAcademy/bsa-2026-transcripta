@@ -1,5 +1,7 @@
+import { type DocumentGetLexiconItemResponseDto } from "@transcripta/shared";
 import { raw, type Transaction } from "objection";
 
+import { LEXICON_CONTEXT_ORDER } from "~/context/context.js";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentDetailsEntity } from "~/modules/documents/document-details.entity.js";
@@ -188,6 +190,25 @@ class DocumentRepository {
 			.castTo<LexiconRow[]>();
 	}
 
+	public async findLiveLexiconByDocumentId(
+		documentId: number,
+	): Promise<DocumentGetLexiconItemResponseDto[]> {
+		return await LexiconEntryModel.query()
+			.select(
+				"id",
+				"kind",
+				"valueDisplay",
+				"freq",
+				"distinctPages",
+				"firstPageNo",
+				"lastPageNo",
+			)
+			.where("documentId", documentId)
+			.whereNull("invalidatedAt")
+			.orderBy([...LEXICON_CONTEXT_ORDER])
+			.castTo<DocumentGetLexiconItemResponseDto[]>();
+	}
+
 	public async findOwnedDocumentId(
 		id: number,
 		ownerId: number,
@@ -227,6 +248,20 @@ class DocumentRepository {
 			.patch({ status: DocumentStatus.DONE })
 			.where({ id })
 			.whereNotExists(openPages)
+			.execute();
+	}
+
+	public async markProcessingIfDone(
+		id: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.PROCESSING })
+			.where({
+				id,
+				status: DocumentStatus.DONE,
+			})
 			.execute();
 	}
 

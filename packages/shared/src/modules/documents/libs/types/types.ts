@@ -5,6 +5,8 @@ export { type DocumentGetAllResponseDto } from "./document-get-all-response-dto.
 export { type DocumentGetByIdBudgetResponseDto } from "./document-get-by-id-budget-response-dto.type.js";
 export { type DocumentGetByIdParametersDto } from "./document-get-by-id-parameters-dto.type.js";
 export { type DocumentGetByIdResponseDto } from "./document-get-by-id-response-dto.type.js";
+export { type DocumentGetLexiconItemResponseDto } from "./document-get-lexicon-item-response-dto.type.js";
+export { type DocumentGetLexiconResponseDto } from "./document-get-lexicon-response-dto.type.js";
 export { type DocumentGetPagesContextWordResponseDto } from "./document-get-pages-context-word-response-dto.type.js";
 export { type DocumentGetPagesItemResponseDto } from "./document-get-pages-item-response-dto.type.js";
 export { type DocumentGetPagesQueryDto } from "./document-get-pages-query-dto.type.js";
