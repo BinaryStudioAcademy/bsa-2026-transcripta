@@ -7,6 +7,7 @@ import {
 import { type Config } from "~/libs/modules/config/config.js";
 import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
+import { SYSTEM_PROMPT } from "./libs/constants/constants.js";
 import { toProviderRateLimitError } from "./libs/helpers/helpers.js";
 import {
 	type TranscriptionRequest,
@@ -79,6 +80,7 @@ class TranscriptionService {
 					role: "user",
 				},
 			],
+			system: SYSTEM_PROMPT,
 		});
 	}
 
@@ -105,6 +107,7 @@ class TranscriptionService {
 					role: "user",
 				},
 			],
+			system: [{ text: SYSTEM_PROMPT }],
 		});
 	}
 
@@ -145,6 +148,7 @@ class TranscriptionService {
 				},
 			],
 			model: modelId,
+			system: SYSTEM_PROMPT,
 		});
 
 		return {

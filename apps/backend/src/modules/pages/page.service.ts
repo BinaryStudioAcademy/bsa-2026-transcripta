@@ -1,13 +1,15 @@
 import {
 	HTTPCode,
 	HTTPError,
+	type PageDebugResponseDto,
+	PageStatus,
 	PageVerificationAction,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
 
+import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
-import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
@@ -21,9 +23,11 @@ import {
 	PageErrorType,
 	StatusByAction,
 } from "./libs/enums/enums.js";
+import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
+	type ReprocessPagePayload,
 	type VerifyPagePayload,
 } from "./libs/types/types.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
@@ -31,6 +35,8 @@ import { type PageRepository } from "./page.repository.js";
 
 class PageService {
 	private documentRepository: DocumentRepository;
+
+	private logger: Logger;
 
 	private pageEventRepository: PageEventRepository;
 
@@ -42,12 +48,14 @@ class PageService {
 
 	public constructor({
 		documentRepository,
+		logger,
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
 		transcriptionRepository,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
+		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
@@ -96,6 +104,110 @@ class PageService {
 			pageId,
 			status,
 		};
+	}
+
+	public async getDebug(
+		pageId: number,
+		userId: number,
+	): Promise<PageDebugResponseDto> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const transcription =
+			await this.transcriptionRepository.findCurrentDebugByPageId(pageId);
+
+		if (!transcription) {
+			throw new HTTPError({
+				message: PageErrorMessage.TRANSCRIPTION_UNAVAILABLE,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const { presetId, presetVersion } = transcription;
+
+		return {
+			contextUsed: transcription.contextUsed,
+			costUsd: transcription.costUsd,
+			fromCache: transcription.fromCache,
+			inputTokens: transcription.inputTokens,
+			latencyMs: transcription.latencyMs,
+			model: transcription.model,
+			outputTokens: transcription.outputTokens,
+			pageId: transcription.pageId,
+			preset:
+				presetId === null || presetVersion === null
+					? null
+					: {
+							id: presetId,
+							version: presetVersion,
+						},
+			prompt: transcription.prompt,
+			provider: transcription.provider,
+			rawResponse: transcription.rawResponse,
+			transcriptionId: transcription.transcriptionId,
+		};
+	}
+
+	public async reprocess({
+		pageId,
+		userId,
+	}: ReprocessPagePayload): Promise<void> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		if (page.status !== PageStatus.FAILED) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FAILED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const wasReset = await this.pageRepository.resetFailedPageForReprocess(
+			page.id,
+		);
+
+		if (!wasReset) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FAILED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		try {
+			await this.pageTranscribeQueue.add({
+				documentId: page.documentId,
+				pageId: page.id,
+				pageNo: page.pageNo,
+			});
+		} catch (error) {
+			await this.pageRepository.restoreFailedPageAfterReprocessFailure(
+				page.id,
+				page.attempts,
+				page.lastError,
+			);
+
+			this.logger.error(
+				`Failed to enqueue reprocess job for page ${String(page.id)}`,
+				{ error },
+			);
+
+			throw new HTTPError({
+				message: PageErrorMessage.REPROCESS_FAILED,
+				status: HTTPCode.INTERNAL_SERVER_ERROR,
+			});
+		}
 	}
 
 	public async verify(
@@ -223,15 +335,14 @@ class PageService {
 					trx,
 				);
 
-				const shouldAdvanceWindow =
-					!CLOSED_PAGE_STATUSES.has(page.status) &&
-					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
+				const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(page.status);
 				const pagesToQueue = shouldAdvanceWindow
-					? await this.pageRepository.updateFirstPendingPagesAsQueued(
-							page.documentId,
-							NUMBER_OF_PAGES_TO_INCREMENT,
+					? await refillPageWindow({
+							documentId: page.documentId,
+							pageRepository: this.pageRepository,
+							quantity: NUMBER_OF_PAGES_TO_INCREMENT,
 							trx,
-						)
+						})
 					: [];
 
 				await this.documentRepository.markDoneIfAllPagesClosed(

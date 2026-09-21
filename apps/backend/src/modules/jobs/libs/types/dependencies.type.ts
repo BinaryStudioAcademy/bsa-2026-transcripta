@@ -1,13 +1,17 @@
-import { type Config } from "~/libs/modules/config/config.js";
-import { type Logger } from "~/libs/modules/logger/logger.js";
-import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
-import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
+import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
+import { type DocumentRepository } from "~/modules/documents/document.repository.js";
+import { type PageRepository } from "~/modules/pages/page.repository.js";
 
-type Dependencies = {
-	config: Config;
-	logger: Logger;
-	storage: BaseStorage;
-	transcriptionService: TranscriptionService;
+import {
+	type EnqueueTranscribeRetry,
+	type TranscribeDependencies,
+} from "./types.js";
+
+type Dependencies = TranscribeDependencies & {
+	documentRepository: DocumentRepository;
+	enqueuePage: (data: PageTranscribeJobData) => Promise<void>;
+	enqueueRetry: EnqueueTranscribeRetry;
+	pageRepository: PageRepository;
 };
 
 export { type Dependencies };

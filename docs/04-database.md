@@ -58,7 +58,7 @@ transcription_cache     (standalone, unrelated)
 | 2   | `preset`              | Settings for a document type. The row is never updated              |
 | 3   | `document`            | Uploaded file, status, budget, cursor position                      |
 | 4   | `page`                | A page: image keys, status, who verified it                         |
-| 5   | `transcription`       | What the model read + corrections + cost + which context was used   |
+| 5   | `transcription`       | Model read + corrections + cost + context + prompt + raw response   |
 | 6   | `lexicon_entry`       | Document lexicon with frequencies                                   |
 | 7   | `page_event`          | Action history. Append-only                                         |
 | 8   | `transcription_cache` | So we never pay twice for the same thing                            |
@@ -185,6 +185,40 @@ The GIN index on `context_used` makes this query fast.
 
 **Confirmed pages are not reprocessed automatically** — they are only flagged.
 Overwriting what a human confirmed is worse than leaving the mistake in place.
+
+### 3.1 `prompt` — the exact text sent with the image (#153)
+
+`context_used` keeps ids and a hash. That is not enough to see what the model
+was asked. `prompt` stores the user message that produced the stored
+`raw_response`: usually `buildUserPrompt` (preset instructions, context
+blocks, output schema). If the final call was a repair attempt, the repair
+suffix is included too — so debug shows the pair that actually went to the
+model, not a reconstruction from hashes.
+
+```sql
+prompt text NOT NULL DEFAULT ''
+```
+
+Old rows stay empty until re-transcribed. Validation failures after repair
+still write a current transcription row (empty `text`, filled `prompt` /
+`raw_response`) so debug works; the page status stays `failed`. Read via
+`GET /api/v1/pages/:id/debug`.
+
+### 3.2 `raw_response` — model output before validation (#153)
+
+`text` / `structured` are the accepted output. When the model misbehaves you
+need the string it actually returned — fences, broken JSON, schema drift —
+before the worker cleaned it up.
+
+```sql
+raw_response text NOT NULL DEFAULT ''
+```
+
+Filled on a live model call with `response.text`. Cache hits leave it empty
+(no call this run). On validation failure after repair the worker still
+inserts a current transcription row (`text` empty, `raw_response` filled)
+so `GET /api/v1/pages/:id/debug` can show what the model returned while the
+page stays `failed`.
 
 ### 4. `distinct_pages` separately from `freq`
 

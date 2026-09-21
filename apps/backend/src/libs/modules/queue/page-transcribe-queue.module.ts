@@ -26,8 +26,14 @@ class PageTranscribeQueue extends BaseQueue<PageTranscribeJobData> {
 		});
 	}
 
-	public async add(data: PageTranscribeJobData): Promise<void> {
-		await this.addJob(data, { attempts: PAGE_TRANSCRIBE_JOB_ATTEMPTS });
+	public async add(
+		data: PageTranscribeJobData,
+		options?: { delay?: number },
+	): Promise<void> {
+		await this.addJob(data, {
+			attempts: PAGE_TRANSCRIBE_JOB_ATTEMPTS,
+			...(options?.delay === undefined ? {} : { delay: options.delay }),
+		});
 	}
 }
 

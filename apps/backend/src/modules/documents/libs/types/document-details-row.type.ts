@@ -4,6 +4,7 @@ type DocumentDetailsRow = {
 	budgetUsd: string;
 	closedPct: number;
 	cursorPageNo: number;
+	errorMessage: null | string;
 	id: number;
 	pageCount: number;
 	pagesBlank: number;

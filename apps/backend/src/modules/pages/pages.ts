@@ -20,6 +20,7 @@ const pageRepository = new PageRepository(PageModel);
 
 const pageService = new PageService({
 	documentRepository,
+	logger,
 	pageEventRepository,
 	pageRepository,
 	pageTranscribeQueue,
@@ -29,3 +30,4 @@ const pageService = new PageService({
 const pageController = new PageController(logger, pageService);
 
 export { pageController, pageRepository };
+export { type PageWithText } from "./libs/types/types.js";

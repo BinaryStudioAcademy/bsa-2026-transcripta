@@ -5,6 +5,7 @@ import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 
 import {
+	type PageWithText,
 	type PageWithTranscriptionRow,
 	type UpdatePageVerificationPayload,
 } from "./libs/types/types.js";
@@ -56,6 +57,8 @@ class PageRepository {
 				"p.status",
 				"p.imageKey",
 				"p.thumbKey",
+				"p.attempts",
+				"p.lastError",
 				"t.id as transcriptionId",
 				"t.text as transcriptionText",
 				"t.structured as transcriptionStructured",
@@ -111,6 +114,71 @@ class PageRepository {
 			.execute();
 
 		return pages.map((page) => PageEntity.initialize(page));
+	}
+
+	public async getPreviousVerifiedPagesText(
+		documentId: number,
+		pageNo: number,
+		quantity: number,
+	): Promise<PageWithText[]> {
+		const pages = await this.pageModel
+			.query()
+			.alias("p")
+			.innerJoin(`${DatabaseTableName.TRANSCRIPTION} as t`, "t.page_id", "p.id")
+			.where("p.document_id", documentId)
+			.where("p.page_no", "<", pageNo)
+			.whereIn("p.status", [PageStatus.CONFIRMED, PageStatus.CORRECTED])
+			.where("t.is_current", true)
+			.select(
+				"p.id",
+				"p.page_no",
+				this.pageModel.raw("COALESCE(t.edited_text, t.text)").as("text"),
+			)
+			.orderBy("p.page_no", "desc")
+			.limit(quantity)
+			.castTo<PageWithText[]>();
+
+		return pages;
+	}
+
+	public async resetFailedPageForReprocess(
+		pageId: number,
+		trx?: Transaction,
+	): Promise<boolean> {
+		const updatedRows = await this.pageModel
+			.query(trx)
+			.patch({
+				attempts: EMPTY_LENGTH,
+				lastError: null,
+				status: PageStatus.QUEUED,
+			})
+			.where({
+				id: pageId,
+				status: PageStatus.FAILED,
+			})
+			.execute();
+
+		return updatedRows > EMPTY_LENGTH;
+	}
+
+	public async restoreFailedPageAfterReprocessFailure(
+		pageId: number,
+		attempts: number,
+		lastError: null | string,
+	): Promise<void> {
+		await this.pageModel
+			.query()
+			.patch({
+				attempts,
+				lastError,
+				status: PageStatus.FAILED,
+			})
+			.where({
+				attempts: EMPTY_LENGTH,
+				id: pageId,
+				status: PageStatus.QUEUED,
+			})
+			.execute();
 	}
 
 	public async updateFirstPendingPagesAsQueued(
