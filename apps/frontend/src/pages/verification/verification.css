@@ -89,7 +89,6 @@
 	position: relative;
 	box-sizing: border-box;
 	height: 100%;
-	padding: var(--sp-7) var(--sp-8);
 	overflow: auto;
 	background: var(--surface);
 }
