@@ -16,6 +16,8 @@ export {
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetLexiconItemResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type DocumentGetPagesQueryDto,
