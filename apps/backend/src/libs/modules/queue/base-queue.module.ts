@@ -139,6 +139,7 @@ class BaseQueue<TData> implements QueueLifecycle {
 		await this.worker.pause(true);
 
 		setTimeout(() => {
+			// eslint-disable-next-line sonarjs/void-use
 			void this.worker?.resume();
 		}, durationMs);
 	}
