@@ -373,18 +373,18 @@ class DocumentService {
 				page,
 			});
 
-			const pageObject = createdPage.toObject();
+			const pageData = createdPage.toObject();
 
-			if (pageObject.status === PageStatus.BLANK) {
+			if (pageData.status === PageStatus.BLANK) {
 				continue;
 			}
 
-			const currentDocument =
-				await this.documentRepository.findById(documentId);
+			const documentRecord = await this.documentRepository.findById(documentId);
+			const currentDocument = documentRecord ? documentRecord.toObject() : null;
 			if (
 				!currentDocument ||
-				currentDocument.toObject().status === DocumentStatus.BUDGET_STOP ||
-				currentDocument.toObject().status === DocumentStatus.PAUSED
+				currentDocument.status === DocumentStatus.BUDGET_STOP ||
+				currentDocument.status === DocumentStatus.PAUSED
 			) {
 				break;
 			}
