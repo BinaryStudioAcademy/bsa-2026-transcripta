@@ -125,14 +125,12 @@ class PageService {
 		trx: Transaction;
 	}) {
 		const transcriptionText = transcription.editedText ?? transcription.text;
-		const transcriptionStructured =
-			transcription.editedStructured ?? transcription.structured;
 		const documentObject = document.toObjectWithPreset();
 
 		if (
 			transcriptionText === text &&
 			documentObject.presetId === transcription.presetId &&
-			transcriptionStructured !== null
+			transcription.editedStructured !== null
 		) {
 			return;
 		}
@@ -160,7 +158,8 @@ class PageService {
 			modelId,
 			outputSchema,
 			text,
-			transcriptionStructured: transcription.structured,
+			transcriptionStructured:
+				transcription.editedStructured ?? transcription.structured,
 		});
 
 		if (!result) {
