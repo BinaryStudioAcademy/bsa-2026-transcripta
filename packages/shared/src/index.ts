@@ -40,6 +40,8 @@ export {
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetLexiconItemResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type DocumentGetPagesQueryDto,
@@ -61,6 +63,14 @@ export {
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
+export {
+	type LexiconIdRequestDto,
+	type LexiconInvalidateRequestDto,
+	type LexiconInvalidateResponseDto,
+	LexiconApiPath,
+	LexiconIdValidationSchema,
+	LexiconInvalidateValidationSchema,
+} from "./modules/lexicon/lexicon.js";
 export {
 	type PageDebugResponseDto,
 	type PageStatusValue,
