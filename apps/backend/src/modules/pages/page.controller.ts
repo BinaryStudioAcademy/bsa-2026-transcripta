@@ -8,11 +8,13 @@ import {
 import { APIPath } from "~/libs/enums/enums.js";
 import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
+	type APIHandlerOptions,
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
+import { type TokenPayload } from "~/libs/modules/token/token.js";
 
 import {
 	type GetPageDebugHandlerOptions,
@@ -20,6 +22,13 @@ import {
 	type VerifyPageHandlerOptions,
 } from "./libs/types/types.js";
 import { type PageService } from "./page.service.js";
+
+type UndoPageHandlerOptions = APIHandlerOptions<{
+	params: {
+		id: number;
+	};
+	user: TokenPayload;
+}>;
 
 class PageController extends BaseController {
 	private pageService: PageService;
@@ -59,6 +68,16 @@ class PageController extends BaseController {
 			preHandler: authGuard,
 			validation: {
 				params: reprocessPageParameters,
+			},
+		});
+
+		this.addRoute({
+			handler: (options) => this.undo(options as UndoPageHandlerOptions),
+			method: HTTPMethod.POST,
+			path: PageApiPath.UNDO,
+			preHandler: authGuard,
+			validation: {
+				params: verifyPageParameters,
 			},
 		});
 	}
@@ -129,6 +148,40 @@ class PageController extends BaseController {
 
 		return {
 			payload: null,
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /pages/{id}/undo:
+	 *   post:
+	 *     description: Undo the latest verification of a page
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *     responses:
+	 *       200:
+	 *         description: Page verification undone
+	 *       404:
+	 *         description: Page not found
+	 *       409:
+	 *         description: Page is not verified
+	 */
+	private async undo(
+		options: UndoPageHandlerOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.pageService.undo(
+				options.params.id,
+				options.user.userId,
+			),
 			status: HTTPCode.OK,
 		};
 	}

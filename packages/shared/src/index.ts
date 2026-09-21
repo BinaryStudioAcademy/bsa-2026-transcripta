@@ -75,6 +75,7 @@ export {
 	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,
+	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 	PageApiPath,
