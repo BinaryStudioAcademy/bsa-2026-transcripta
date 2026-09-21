@@ -575,7 +575,7 @@ class DocumentController extends BaseController {
 	 * @swagger
 	 * /documents/{id}/resume:
 	 *   post:
-	 *     description: Back to processing, and re-enqueue what still needs work
+	 *     description: Back to processing, and re-enqueue what still needs work. Returns current document DTO
 	 *     security:
 	 *       - bearerAuth: []
 	 *     parameters:
@@ -598,9 +598,12 @@ class DocumentController extends BaseController {
 	private async resume(
 		options: DocumentIdHandlerOptions,
 	): Promise<APIHandlerResponse> {
-		await this.documentService.resume(options.params.id, options.user.userId);
+		const document = await this.documentService.resume(
+			options.params.id,
+			options.user.userId,
+		);
 		return {
-			payload: null,
+			payload: document,
 			status: HTTPCode.OK,
 		};
 	}
