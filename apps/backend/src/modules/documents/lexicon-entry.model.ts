@@ -10,7 +10,7 @@ class LexiconEntryModel extends AbstractModel {
 
 	public firstPageNo!: number;
 
-	public freq!: number;
+	public pageCount!: number;
 
 	public invalidatedAt!: null | string;
 

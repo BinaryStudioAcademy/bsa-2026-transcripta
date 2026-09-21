@@ -308,10 +308,11 @@ CREATE TABLE lexicon_entry (
   value_normalized text         NOT NULL,   -- for deduplication: "ivanenko"
   value_display    text         NOT NULL,   -- for the prompt: "Ivanenko"
 
-  freq             integer      NOT NULL DEFAULT 1,
-  -- The threshold for entering the context is counted ON THIS field, not on freq.
-  -- A surname 30 times on one page is a weaker signal than
-  -- a surname once on each of three pages.
+  -- Pages this value was confirmed on (one increment per confirmed page after
+  -- per-page dedupe by kind + normalized value). Not raw occurrence count.
+  page_count       integer      NOT NULL DEFAULT 1,
+  -- Eligibility for the context prompt. Increments only when last_page_no
+  -- changes, so confirming the same page twice cannot inflate it.
   distinct_pages   integer      NOT NULL DEFAULT 1,
   first_page_no    integer      NOT NULL,
   last_page_no     integer      NOT NULL,
@@ -324,12 +325,12 @@ CREATE TABLE lexicon_entry (
   updated_at       timestamptz  NOT NULL DEFAULT now(),
 
   CONSTRAINT lexicon_unique UNIQUE (document_id, kind, value_normalized),
-  CONSTRAINT lexicon_freq_positive CHECK (freq >= 1)
+  CONSTRAINT lexicon_page_count_positive CHECK (page_count >= 1)
 );
 
 -- The main context-building query: top-K live words
 CREATE INDEX lexicon_topk_idx
-  ON lexicon_entry (document_id, distinct_pages DESC, freq DESC)
+  ON lexicon_entry (document_id, distinct_pages DESC, page_count DESC)
   WHERE invalidated_at IS NULL;
 
 

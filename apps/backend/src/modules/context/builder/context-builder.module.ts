@@ -70,13 +70,13 @@ class ContextBuilder implements IContextBuilder {
 		let lexicon: LexiconEntry[] = [];
 		try {
 			lexicon = await LexiconEntryModel.query()
-				.select("id", "valueDisplay", "freq")
+				.select("id", "valueDisplay", "pageCount")
 				.where("documentId", documentId)
 				.whereNull("invalidatedAt")
 				.where("distinctPages", ">=", minDistinctPages)
 				.orderBy([
 					{ column: "distinctPages", order: "desc" },
-					{ column: "freq", order: "desc" },
+					{ column: "pageCount", order: "desc" },
 					{ column: "valueDisplay", order: "asc" },
 				])
 				.limit(lexiconTopK);
