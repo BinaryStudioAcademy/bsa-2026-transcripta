@@ -130,6 +130,18 @@ class BaseQueue<TData> implements QueueLifecycle {
 			throw error;
 		}
 	}
+
+	public async pauseWorkerFor(durationMs: number): Promise<void> {
+		if (!this.worker || this.worker.isPaused()) {
+			return;
+		}
+
+		await this.worker.pause(true);
+
+		setTimeout(() => {
+			void this.worker?.resume();
+		}, durationMs);
+	}
 }
 
 export { BaseQueue };

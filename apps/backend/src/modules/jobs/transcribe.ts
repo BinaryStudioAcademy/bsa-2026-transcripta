@@ -15,8 +15,8 @@ import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
+import { Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { type ModelIdValue } from "~/libs/types/types.js";
 import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
@@ -533,6 +533,7 @@ const deferRateLimitedPage = async ({
 	logger,
 	modelId,
 	pageId,
+	pauseWorkerFor,
 	token,
 }: {
 	documentId: number;
@@ -541,6 +542,7 @@ const deferRateLimitedPage = async ({
 	logger: Logger;
 	modelId: ModelIdValue;
 	pageId: number;
+	pauseWorkerFor: (delayMs: number) => Promise<void>;
 	token: string | undefined;
 }): Promise<void> => {
 	const { retryAfterMs } = error;
@@ -579,15 +581,19 @@ const deferRateLimitedPage = async ({
 		`Rate limited on page ${String(pageId)}, retrying in ${String(delayMs)} ms`,
 	);
 
+	await pauseWorkerFor(delayMs);
+
 	await job.moveToDelayed(Date.now() + delayMs, token);
 };
 
 const resolveOrDefer = async ({
 	job,
+	pauseWorkerFor,
 	token,
 	...options
 }: ResolveOptions & {
 	job: Job<PageTranscribeJobData>;
+	pauseWorkerFor: (delayMs: number) => Promise<void>;
 	token: string | undefined;
 }): Promise<null | ResolvedTranscription> => {
 	try {
@@ -604,6 +610,7 @@ const resolveOrDefer = async ({
 			logger: options.logger,
 			modelId: options.modelId,
 			pageId: options.page.id,
+			pauseWorkerFor,
 			token,
 		});
 
@@ -619,6 +626,7 @@ const createTranscribeHandler =
 		enqueueRetry,
 		logger,
 		pageRepository,
+		pauseWorkerFor,
 		storage,
 		transcriptionService,
 	}: Dependencies) =>
@@ -743,6 +751,7 @@ const createTranscribeHandler =
 				modelId,
 				page,
 				pageNo,
+				pauseWorkerFor,
 				preset,
 				storage,
 				token,

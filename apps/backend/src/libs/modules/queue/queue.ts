@@ -44,6 +44,8 @@ pageTranscribeQueue = new PageTranscribeQueue({
 		enqueueRetry,
 		logger,
 		pageRepository: new PageRepository(PageModel),
+		pauseWorkerFor: (delayMs: number) =>
+			pageTranscribeQueue.pauseWorkerFor(delayMs),
 		storage,
 		transcriptionService,
 	}),
