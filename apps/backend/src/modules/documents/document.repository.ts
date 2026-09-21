@@ -236,6 +236,20 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async markProcessingIfDone(
+		id: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.PROCESSING })
+			.where({
+				id,
+				status: DocumentStatus.DONE,
+			})
+			.execute();
+	}
+
 	public async resumeFromBudgetStop(
 		id: number,
 		trx: Transaction,
