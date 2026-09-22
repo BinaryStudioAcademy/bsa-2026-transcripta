@@ -4,13 +4,18 @@ import {
 	HTTPCode,
 	PageStatus,
 } from "@transcripta/shared";
-import { type Job } from "bullmq";
+import { DelayedError, type Job } from "bullmq";
 import { type Transaction } from "objection";
 
+import {
+	ProviderRateLimitError,
+	TranscriptionRateLimitedError,
+} from "~/libs/exceptions/exceptions.js";
 import {
 	AbstractModel,
 	DatabaseTableName,
 } from "~/libs/modules/database/database.js";
+import { Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
 import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
@@ -33,6 +38,7 @@ import {
 	MAX_TRANSCRIBE_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
+	RATE_LIMIT_RETRY_DELAY_MS,
 	RETRYABLE_ERROR_NAMES,
 	TRANSCRIBABLE_STATUSES,
 } from "./libs/constants/constants.js";
@@ -61,6 +67,19 @@ const parseModelJson = (text: string): ParseResult => {
 		return { ok: true, value: JSON.parse(text) };
 	} catch {
 		return { ok: false };
+	}
+};
+
+const throwIfRateLimited = (
+	error: unknown,
+	usage: { inputTokens: number; outputTokens: number },
+): void => {
+	if (error instanceof ProviderRateLimitError) {
+		throw new TranscriptionRateLimitedError({
+			inputTokens: usage.inputTokens,
+			outputTokens: usage.outputTokens,
+			retryAfterMs: error.retryAfterMs,
+		});
 	}
 };
 
@@ -231,6 +250,11 @@ const transcribeWithRepair = async (
 				prompt: requestPrompt,
 			});
 		} catch (error) {
+			throwIfRateLimited(error, {
+				inputTokens: usedInputTokens,
+				outputTokens: usedOutputTokens,
+			});
+
 			logger.error(`Model call failed for page ${String(pageId)}`, { error });
 
 			return createFailureOutcome({
@@ -502,6 +526,98 @@ const releaseClaimedPage = async ({
 	}
 };
 
+const deferRateLimitedPage = async ({
+	documentId,
+	error,
+	job,
+	logger,
+	modelId,
+	pageId,
+	pauseWorkerFor,
+	token,
+}: {
+	documentId: number;
+	error: TranscriptionRateLimitedError;
+	job: Job<PageTranscribeJobData>;
+	logger: Logger;
+	modelId: ModelIdValue;
+	pageId: number;
+	pauseWorkerFor: (delayMs: number) => Promise<void>;
+	token: string | undefined;
+}): Promise<void> => {
+	const { retryAfterMs } = error;
+	const delayMs = retryAfterMs ?? RATE_LIMIT_RETRY_DELAY_MS;
+	const costUsd = calculateTokenCost({
+		inputTokens: error.inputTokens,
+		modelId,
+		outputTokens: error.outputTokens,
+	});
+
+	await DocumentModel.transaction(async (trx) => {
+		await trx.raw(
+			`UPDATE ${DatabaseTableName.DOCUMENT} SET spent_usd = spent_usd + ? WHERE id = ?`,
+			[costUsd, documentId],
+		);
+
+		await trx
+			.from(DatabaseTableName.PAGE)
+			.where({ id: pageId, status: PageStatus.TRANSCRIBING })
+			.update({ status: PageStatus.QUEUED });
+
+		await trx.from(DatabaseTableName.PAGE_EVENT).insert({
+			actorId: null,
+			details: { costUsd, retryAfterMs },
+			documentId,
+			durationMs: EMPTY_LENGTH,
+			event: PageEventName.TRANSCRIBE_RATE_LIMITED,
+			pageId,
+			transcriptionId: null,
+		});
+	});
+
+	await applyBudgetStopIfExceeded(documentId);
+
+	logger.warn(
+		`Rate limited on page ${String(pageId)}, retrying in ${String(delayMs)} ms`,
+	);
+
+	await pauseWorkerFor(delayMs);
+
+	await job.moveToDelayed(Date.now() + delayMs, token);
+};
+
+const resolveOrDefer = async ({
+	job,
+	pauseWorkerFor,
+	token,
+	...options
+}: ResolveOptions & {
+	job: Job<PageTranscribeJobData>;
+	pauseWorkerFor: (delayMs: number) => Promise<void>;
+	token: string | undefined;
+}): Promise<null | ResolvedTranscription> => {
+	try {
+		return await resolveFromCacheOrModel(options);
+	} catch (error) {
+		if (!(error instanceof TranscriptionRateLimitedError)) {
+			throw error;
+		}
+
+		await deferRateLimitedPage({
+			documentId: options.documentId,
+			error,
+			job,
+			logger: options.logger,
+			modelId: options.modelId,
+			pageId: options.page.id,
+			pauseWorkerFor,
+			token,
+		});
+
+		throw new DelayedError();
+	}
+};
+
 const createTranscribeHandler =
 	({
 		config,
@@ -510,10 +626,11 @@ const createTranscribeHandler =
 		enqueueRetry,
 		logger,
 		pageRepository,
+		pauseWorkerFor,
 		storage,
 		transcriptionService,
 	}: Dependencies) =>
-	async (job: Job<PageTranscribeJobData>): Promise<void> => {
+	async (job: Job<PageTranscribeJobData>, token?: string): Promise<void> => {
 		const { documentId, pageId, pageNo } = job.data;
 
 		const document = await DocumentModel.query().findById(documentId);
@@ -527,9 +644,18 @@ const createTranscribeHandler =
 			return;
 		}
 
+		if (page.documentId !== documentId) {
+			logger.warn(
+				`Skip page.transcribe ${String(pageId)}: page belongs to document ${String(page.documentId)}, not ${String(documentId)}`,
+			);
+
+			return;
+		}
+
 		const claimedRows = await PageModel.query()
 			.patch({ status: PageStatus.TRANSCRIBING })
 			.where({
+				documentId,
 				id: pageId,
 				status: PageStatus.QUEUED,
 			})
@@ -623,18 +749,21 @@ const createTranscribeHandler =
 				}),
 			});
 
-			const resolved = await resolveFromCacheOrModel({
+			const resolved = await resolveOrDefer({
 				cacheKey,
 				config,
 				context,
 				documentId,
 				documentRepository,
+				job,
 				logger,
 				modelId,
 				page,
 				pageNo,
+				pauseWorkerFor,
 				preset,
 				storage,
+				token,
 				transcriptionService,
 			});
 
@@ -729,6 +858,10 @@ const createTranscribeHandler =
 				},
 			);
 		} catch (error) {
+			if (error instanceof DelayedError) {
+				throw error;
+			}
+
 			logger.error(`page.transcribe failed for page ${String(pageId)}`, {
 				error,
 			});

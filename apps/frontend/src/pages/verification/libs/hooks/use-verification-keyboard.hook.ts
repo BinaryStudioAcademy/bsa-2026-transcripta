@@ -7,6 +7,16 @@ type UseVerificationKeyboardProperties = {
 	onSkip: () => void;
 	onToggleShortcuts: () => void;
 	onToggleZoom: () => void;
+	onUndo: () => void;
+};
+
+const canHandleShortcut = (target: EventTarget | null): boolean => {
+	return !(
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLTextAreaElement ||
+		target instanceof HTMLSelectElement ||
+		(target instanceof HTMLElement && target.isContentEditable)
+	);
 };
 
 const useVerificationKeyboard = ({
@@ -16,17 +26,31 @@ const useVerificationKeyboard = ({
 	onSkip,
 	onToggleShortcuts,
 	onToggleZoom,
+	onUndo,
 }: UseVerificationKeyboardProperties): void => {
 	useEffect(() => {
-		const handleKeyUp = (event: KeyboardEvent): void => {
-			const target = event.target;
+		const handleKeyDown = (event: KeyboardEvent): void => {
+			if (!canHandleShortcut(event.target)) {
+				return;
+			}
 
-			if (
-				target instanceof HTMLInputElement ||
-				target instanceof HTMLTextAreaElement ||
-				target instanceof HTMLSelectElement ||
-				(target instanceof HTMLElement && target.isContentEditable)
-			) {
+			if (event.repeat) {
+				return;
+			}
+
+			const isUndoShortcut =
+				(event.ctrlKey || event.metaKey) &&
+				!event.altKey &&
+				(event.key === "z" || event.key === "Z");
+
+			if (isUndoShortcut) {
+				event.preventDefault();
+				onUndo();
+			}
+		};
+
+		const handleKeyUp = (event: KeyboardEvent): void => {
+			if (!canHandleShortcut(event.target)) {
 				return;
 			}
 
@@ -65,12 +89,22 @@ const useVerificationKeyboard = ({
 			}
 		};
 
+		globalThis.addEventListener("keydown", handleKeyDown);
 		globalThis.addEventListener("keyup", handleKeyUp);
 
 		return () => {
+			globalThis.removeEventListener("keydown", handleKeyDown);
 			globalThis.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [onConfirm, onEdit, onSkip, onPrevious, onToggleShortcuts, onToggleZoom]);
+	}, [
+		onConfirm,
+		onEdit,
+		onSkip,
+		onPrevious,
+		onToggleShortcuts,
+		onToggleZoom,
+		onUndo,
+	]);
 };
 
 export { useVerificationKeyboard };

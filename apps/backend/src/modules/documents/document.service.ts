@@ -10,7 +10,6 @@ import {
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
-import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
 import {
@@ -28,6 +27,7 @@ import {
 	extractLexiconIds,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
+import { sha256 } from "../context/libs/helpers/hash.helper.js";
 import { refillPageWindow } from "../pages/libs/helpers/helpers.js";
 import { PageEntity } from "../pages/page.entity.js";
 import { type PageRepository } from "../pages/page.repository.js";
@@ -407,7 +407,7 @@ class DocumentService {
 			});
 		}
 
-		const imageSha256 = createHash("sha256").update(pageImage).digest("hex");
+		const imageSha256 = sha256(pageImage);
 
 		const pageEntity = PageEntity.initializeNew({
 			documentId,
@@ -897,6 +897,27 @@ class DocumentService {
 		ownerId: number,
 	): Promise<DocumentGetByIdBudgetResponseDto> {
 		const resumedRows = await DocumentModel.transaction(async (trx) => {
+			const currentDocument =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					id,
+					ownerId,
+					trx,
+				);
+
+			if (!currentDocument) {
+				this.throwDocumentNotFoundError();
+			}
+
+			const { budgetUsd, spentUsd } = currentDocument.toObject();
+			const nextLimit = Number(limitUsd);
+
+			if (nextLimit < Number(budgetUsd) || nextLimit < Number(spentUsd)) {
+				throw new HTTPError({
+					message: DocumentErrorMessage.NOT_A_BUDGET_INCREASE,
+					status: HTTPCode.UNPROCESSED_ENTITY,
+				});
+			}
+
 			const updatedRows = await this.documentRepository.updateBudget(
 				{ id, limitUsd, ownerId },
 				trx,

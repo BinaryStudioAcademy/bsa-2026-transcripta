@@ -12,6 +12,7 @@ const pageApi = new PageApi({
 
 export { pageApi };
 export {
+	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";
@@ -20,6 +21,7 @@ export { /** @public */ actions, reducer } from "./slices/pages.js";
 export {
 	selectCurrentPage,
 	selectCursorPageNo,
+	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
