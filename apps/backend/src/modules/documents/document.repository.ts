@@ -234,6 +234,15 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
+	public async findWithPresetById(id: number): Promise<DocumentEntity | null> {
+		const document = await this.documentModel
+			.query()
+			.findById(id)
+			.withGraphFetched(DocumentRelationName.PRESET);
+
+		return document ? DocumentEntity.initialize(document) : null;
+	}
+
 	public async markDoneIfAllPagesClosed(
 		id: number,
 		trx: Transaction,
