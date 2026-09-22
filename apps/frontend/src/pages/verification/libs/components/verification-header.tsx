@@ -60,6 +60,9 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 						<kbd className="tx-kbd">S</kbd>Skip
 					</span>
 					<span>
+						<kbd className="tx-kbd">Ctrl+Z</kbd>Undo
+					</span>
+					<span>
 						<kbd className="tx-kbd">?</kbd>Shortcuts
 					</span>
 				</span>
