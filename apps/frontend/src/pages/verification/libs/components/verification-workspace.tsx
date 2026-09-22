@@ -142,7 +142,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	return (
 		<div className="tx-split verification-workspace">
 			<div
-				className="tx-split-pane verification-scan-pane"
+				className="tx-split-pane tx-split-pane--fixed verification-scan-pane"
 				style={{
 					width: `${String(splitPosition)}%`,
 				}}
