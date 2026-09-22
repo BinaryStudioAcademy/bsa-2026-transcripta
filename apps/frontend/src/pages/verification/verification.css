@@ -36,6 +36,9 @@
 }
 
 .verification-header__page {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	font-weight: 500;
 	font-variant-numeric: tabular-nums;
 	color: var(--text-2);
 	white-space: nowrap;
@@ -80,10 +83,6 @@
 .verification-workspace {
 	flex: 1 1 0;
 	min-height: 0;
-}
-
-.verification-scan-pane {
-	flex: 0 0 45%;
 }
 
 .verification-scan {
@@ -152,6 +151,9 @@
 }
 
 .verification-transcription__page {
+	font-family: var(--font-mono);
+	font-size: var(--fs-2xs);
+	font-weight: 500;
 	font-variant-numeric: tabular-nums;
 	color: var(--text-3);
 }
@@ -251,75 +253,4 @@
 .tx-dialog-shortcut-keys {
 	display: inline-flex;
 	gap: var(--sp-1);
-}
-
-@media (width <= 900px) {
-	.verification-header {
-		gap: var(--sp-2);
-	}
-
-	.verification-header__shortcuts {
-		display: none;
-	}
-
-	.verification-header__budget {
-		display: none;
-	}
-
-	.verification-scan-pane {
-		flex-basis: 45%;
-	}
-
-	.verification-scan {
-		padding: var(--sp-5);
-	}
-
-	.verification-transcription {
-		padding: var(--sp-5);
-	}
-
-	.verification-footer {
-		gap: var(--sp-2);
-	}
-
-	.verification-footer .tx-pstrip {
-		max-width: 100%;
-		overflow-x: auto;
-	}
-}
-
-@media (width <= 640px) {
-	.verification-header__title {
-		max-width: 160px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.verification-header__page {
-		display: none;
-	}
-
-	.verification-header__queue {
-		display: none;
-	}
-
-	.verification-scan-pane {
-		flex-basis: 50%;
-	}
-
-	.verification-scan {
-		padding: var(--sp-4);
-	}
-
-	.verification-transcription {
-		padding: var(--sp-4);
-	}
-
-	.verification-transcription__text {
-		font-size: 14px;
-	}
-
-	.verification-footer .tx-pstrip-legend {
-		display: none;
-	}
 }

@@ -554,9 +554,9 @@ the structured response has already done.
 **10.3. The words land in the document lexicon** with counters:
 
 ```
-Ivanenko    occurred 4 times     on 3 different pages
-Dykanka     occurred 7 times     on 5 different pages
-Maria       occurred 1 time      on 1 page              ← not in the hint yet
+Ivanenko    page_count 4     distinct_pages 3
+Dykanka     page_count 7     distinct_pages 5
+Maria       page_count 1     distinct_pages 1   ← not in the hint yet (threshold is 2)
 ```
 
 **10.4. The cursor moves to page 48**, and page 53 is queued — the window of 5
@@ -611,12 +611,11 @@ a mistake is highest.
 
 **Guard 2. A word enters the hint only after 2 different pages.**
 
-That is why the lexicon has two counters: how many times in total, and **on how
-many different pages**. The threshold is counted on the second one.
-
-A surname mentioned 30 times on one page may be a single mistake repeated
-inside a table. A surname appearing once on three pages is three independent
-confirmations.
+That is why the lexicon has two counters: **`page_count`** (confirmed pages
+after per-page dedupe) and **`distinct_pages`**. The threshold is counted on
+the second one. They usually move together; they diverge only if the same page
+is confirmed more than once — then `page_count` rises again while
+`distinct_pages` stays put.
 
 **Guard 3. We remember which hint went into each page.**
 

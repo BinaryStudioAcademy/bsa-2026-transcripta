@@ -17,7 +17,7 @@ const useScanZoom = (): UseScanZoomReturn => {
 	const scanReference = useRef<HTMLDivElement>(null);
 
 	const resetToTopLeft = useCallback((): void => {
-		const scanElement = scanReference.current;
+		const scanElement = scanReference.current?.parentElement;
 
 		if (!scanElement) {
 			return;
