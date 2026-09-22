@@ -644,9 +644,18 @@ const createTranscribeHandler =
 			return;
 		}
 
+		if (page.documentId !== documentId) {
+			logger.warn(
+				`Skip page.transcribe ${String(pageId)}: page belongs to document ${String(page.documentId)}, not ${String(documentId)}`,
+			);
+
+			return;
+		}
+
 		const claimedRows = await PageModel.query()
 			.patch({ status: PageStatus.TRANSCRIBING })
 			.where({
+				documentId,
 				id: pageId,
 				status: PageStatus.QUEUED,
 			})
