@@ -1,4 +1,4 @@
-import { GLYPH, SIZE_CLASS_NAME } from "./libs/constants/constants.js";
+import { GLYPH, SIZE_CLASS_NAME, SIZE_PX } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
 
 type Properties = {
@@ -8,12 +8,13 @@ type Properties = {
 const LogoIcon: React.FC<Properties> = ({ size = "medium" }: Properties) => {
 	const sizeClassName = SIZE_CLASS_NAME[size];
 	const glyph = size === "large" ? GLYPH.large : GLYPH.small;
+	const sizePx = SIZE_PX[size];
 
 	const className = [styles["logo-icon"], styles[sizeClassName]].join(" ");
 
 	return (
 		<span className={className}>
-			<svg viewBox="0 0 48 48">
+			<svg height={sizePx} viewBox="0 0 48 48" width={sizePx}>
 				<path d={glyph.crossbar} fill="var(--paper-100)"></path>
 				<path d={glyph.stem} fill="var(--paper-100)"></path>
 				<circle
