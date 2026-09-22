@@ -631,8 +631,7 @@ class DocumentService {
 					this.getPresignedUrl(page.thumbKey),
 				]);
 
-				const text =
-					page.transcriptionEditedText ?? page.transcriptionText ?? "";
+				const text = page.transcriptionText ?? "";
 				const pageLexiconById = buildPageLexiconMap(
 					page.transcriptionContextUsed,
 					lexiconById,
