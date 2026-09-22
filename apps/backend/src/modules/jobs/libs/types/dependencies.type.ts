@@ -12,6 +12,7 @@ type Dependencies = TranscribeDependencies & {
 	enqueuePage: (data: PageTranscribeJobData) => Promise<void>;
 	enqueueRetry: EnqueueTranscribeRetry;
 	pageRepository: PageRepository;
+	pauseWorkerFor: (delayMs: number) => Promise<void>;
 };
 
 export { type Dependencies };

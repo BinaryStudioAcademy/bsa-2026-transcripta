@@ -44,9 +44,12 @@ pageTranscribeQueue = new PageTranscribeQueue({
 		enqueueRetry,
 		logger,
 		pageRepository: new PageRepository(PageModel),
+		pauseWorkerFor: (delayMs: number) =>
+			pageTranscribeQueue.pauseWorkerFor(delayMs),
 		storage,
 		transcriptionService,
 	}),
+	workerOptions: { concurrency: config.ENV.QUEUE.PAGE_TRANSCRIBE_CONCURRENCY },
 });
 
 const queueRegistry = new QueueRegistry({
