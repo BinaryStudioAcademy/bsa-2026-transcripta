@@ -9,5 +9,5 @@ const presetRepository = new PresetRepository(PresetModel);
 const presetService = new PresetService(presetRepository);
 const presetController = new PresetController(logger, presetService);
 
-export { presetController, presetService };
+export { presetController };
 export { PresetModel } from "./preset.model.js";

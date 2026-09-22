@@ -1,3 +1,5 @@
+import { type PresetGetAllItemResponseDto } from "@transcripta/shared";
+
 import { type Entity } from "~/libs/types/types.js";
 
 class PresetEntity implements Entity {
@@ -61,11 +63,7 @@ class PresetEntity implements Entity {
 		};
 	}
 
-	public toObject(): {
-		description: string;
-		id: number;
-		name: string;
-	} {
+	public toObject(): PresetGetAllItemResponseDto {
 		return {
 			description: this.description,
 			id: this.id as number,
