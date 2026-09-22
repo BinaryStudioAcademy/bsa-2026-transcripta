@@ -243,7 +243,7 @@ class DocumentRepository {
 				"id",
 				"kind",
 				"valueDisplay",
-				"freq",
+				"pageCount",
 				"distinctPages",
 				"firstPageNo",
 				"lastPageNo",

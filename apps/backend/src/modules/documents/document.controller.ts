@@ -236,6 +236,9 @@ class DocumentController extends BaseController {
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
 			preHandler: authGuard,
+			validation: {
+				params: DocumentIdValidationSchema,
+			},
 		});
 
 		this.addRoute({
@@ -409,7 +412,7 @@ class DocumentController extends BaseController {
 	 *           minimum: 1
 	 *     responses:
 	 *       200:
-	 *         description: Lexicon entries ordered by distinct pages then frequency
+	 *         description: Lexicon entries ordered by distinct pages then page count
 	 *       404:
 	 *         description: Document not found
 	 */
