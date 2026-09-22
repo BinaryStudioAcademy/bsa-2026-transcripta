@@ -129,11 +129,11 @@ export async function buildContext(
 	// 2. Document lexicon: the top-100 words that passed the threshold.
 	//    Objection works fine with the partial index, but SQL reads better here.
 	const lexicon = await LexiconEntryModel.query()
-		.select("id", "valueDisplay", "freq")
+		.select("id", "valueDisplay", "pageCount")
 		.where("documentId", documentId)
 		.whereNull("invalidatedAt")
 		.where("distinctPages", ">=", preset.settings.minDistinctPages) // threshold: 2 pages
-		.orderBy(LEXICON_CONTEXT_ORDER) // distinctPages DESC, freq DESC, valueDisplay ASC
+		.orderBy(LEXICON_CONTEXT_ORDER) // distinctPages DESC, pageCount DESC, valueDisplay ASC
 		.limit(preset.settings.lexiconTopK);
 
 	// 3. Text of the last 3 confirmed pages before the current one.
@@ -333,7 +333,7 @@ identical prompt.
 Lexicon top-K uses `LEXICON_CONTEXT_ORDER`:
 
 ```
-distinct_pages DESC → freq DESC → value_display ASC
+distinct_pages DESC → page_count DESC → value_display ASC
 ```
 
 The last key is the tie-break. Neighbouring pages are already total-ordered by
@@ -381,7 +381,7 @@ export async function updateLexicon(
 		kind: e.kind,
 		value_normalized: normalize(e.value),
 		value_display: e.value,
-		freq: 1,
+		page_count: 1,
 		distinct_pages: 1,
 		first_page_no: page.pageNo,
 		last_page_no: page.pageNo,
@@ -392,10 +392,10 @@ export async function updateLexicon(
 		`
     INSERT INTO lexicon_entry
       (document_id, kind, value_normalized, value_display,
-       freq, distinct_pages, first_page_no, last_page_no)
+       page_count, distinct_pages, first_page_no, last_page_no)
     VALUES ${rows.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(", ")}
     ON CONFLICT (document_id, kind, value_normalized) DO UPDATE SET
-      freq = lexicon_entry.freq + 1,
+      page_count = lexicon_entry.page_count + 1,
       distinct_pages = lexicon_entry.distinct_pages +
         CASE WHEN lexicon_entry.last_page_no <> EXCLUDED.last_page_no THEN 1 ELSE 0 END,
       last_page_no = EXCLUDED.last_page_no,
@@ -449,14 +449,15 @@ the structured output has already done.
 and Postgres fails with "ON CONFLICT DO UPDATE command cannot affect row a
 second time".
 
-### `distinct_pages` — why it is separate from `freq`
+### `distinct_pages` — why it is separate from `page_count`
 
-The threshold for entering the context is counted in **distinct pages**, not in
-total frequency.
+`page_count` increments once per confirmed page after per-page dedupe (so a
+surname written thirty times on one page still adds **one**). It is not an
+occurrence counter.
 
-A surname mentioned 30 times on one page may be a single mistake repeated
-inside a table. A surname mentioned once on three pages is three independent
-confirmations.
+`distinct_pages` is the eligibility threshold for the context prompt. It
+increments only when `last_page_no` changes, so confirming the same page twice
+cannot inflate it. That is the one practical difference from `page_count`.
 
 ---
 

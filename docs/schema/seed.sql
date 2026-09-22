@@ -149,7 +149,7 @@ ON CONFLICT (document_id, page_no) DO NOTHING;
 -- references the ids of these rows.
 
 INSERT INTO lexicon_entry (document_id, kind, value_normalized, value_display,
-                           freq, distinct_pages, first_page_no, last_page_no) VALUES
+                           page_count, distinct_pages, first_page_no, last_page_no) VALUES
   (1, 'surname',     'ivanenko', 'Ivanenko', 3, 2, 1, 2),
   (1, 'place',       'dykanka',  'Dykanka',  2, 2, 1, 2),
   -- distinct_pages = 1 -> DOES NOT feed the context yet (threshold is 2)

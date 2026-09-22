@@ -6,7 +6,13 @@
 }
 
 .tx-split-pane {
+	flex: 1 1 0;
+	min-width: 0;
 	overflow: auto;
+}
+
+.tx-split-pane--fixed {
+	flex: none;
 }
 
 .tx-split-divider {

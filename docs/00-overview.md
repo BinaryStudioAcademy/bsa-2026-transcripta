@@ -71,18 +71,18 @@ own material.
 
 ## Key concepts
 
-| Term                  | What it means                                                                  |
-| --------------------- | ------------------------------------------------------------------------------ |
-| **Document**          | One uploaded PDF or archive                                                    |
-| **Page**              | One page with an image in storage                                              |
-| **Transcription**     | What the model read on a page                                                  |
-| **Verification**      | The human's decision: correct / corrected / skipped                            |
-| **Preset**            | Settings for a document type: prompt, output schema, seed glossary             |
-| **Context**           | What is given to the model on top of the image: neighbouring pages + lexicon   |
-| **Lexicon**           | List of the document's words with frequencies, built from confirmed pages      |
-| **Sliding window**    | N pages prepared in advance, ahead of the user                                 |
-| **CER**               | Character Error Rate — percentage of wrong characters. The main quality metric |
-| **Context poisoning** | A confirmed mistake entered the lexicon and now spoils the following pages     |
+| Term                  | What it means                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------- |
+| **Document**          | One uploaded PDF or archive                                                         |
+| **Page**              | One page with an image in storage                                                   |
+| **Transcription**     | What the model read on a page                                                       |
+| **Verification**      | The human's decision: correct / corrected / skipped                                 |
+| **Preset**            | Settings for a document type: prompt, output schema, seed glossary                  |
+| **Context**           | What is given to the model on top of the image: neighbouring pages + lexicon        |
+| **Lexicon**           | List of the document's learned words with page counters, built from confirmed pages |
+| **Sliding window**    | N pages prepared in advance, ahead of the user                                      |
+| **CER**               | Character Error Rate — percentage of wrong characters. The main quality metric      |
+| **Context poisoning** | A confirmed mistake entered the lexicon and now spoils the following pages          |
 
 ---
 
