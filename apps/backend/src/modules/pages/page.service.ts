@@ -11,6 +11,7 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
+import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
 import {
 	buildContextWords,
 	buildPageLexiconMap,
@@ -41,7 +42,6 @@ import {
 } from "./libs/types/types.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
 import { type PageRepository } from "./page.repository.js";
-import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
 
 class PageService {
 	private documentRepository: DocumentRepository;
