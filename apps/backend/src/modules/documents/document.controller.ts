@@ -236,6 +236,9 @@ class DocumentController extends BaseController {
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
 			preHandler: authGuard,
+			validation: {
+				params: DocumentIdValidationSchema,
+			},
 		});
 
 		this.addRoute({
