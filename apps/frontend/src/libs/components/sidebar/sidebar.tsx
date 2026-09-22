@@ -1,4 +1,4 @@
-import { Link, LogoIcon } from "~/libs/components/components.js";
+import { Link, Logo } from "~/libs/components/components.js";
 import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
@@ -77,14 +77,14 @@ const Sidebar: React.FC = () => {
 				}
 			}
 
+			dispatch(authActions.logout());
+			void storage.drop(StorageKey.TOKEN);
+
 			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
 			void navigate(AppRoute.SIGN_IN, {
 				flushSync: true,
 				replace: true,
 			});
-
-			dispatch(authActions.logout());
-			void storage.drop(StorageKey.TOKEN);
 		},
 		[dispatch, navigate],
 	);
@@ -98,8 +98,7 @@ const Sidebar: React.FC = () => {
 				title={isCollapsed ? "Transcripta" : undefined}
 				to={AppRoute.ROOT}
 			>
-				<LogoIcon size="medium" />
-				<span className="sidebar__brand-wordmark">Transcripta</span>
+				<Logo size="medium" withWordmark={!isCollapsed} />
 			</Link>
 
 			<nav className="sidebar__nav">

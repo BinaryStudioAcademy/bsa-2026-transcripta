@@ -257,6 +257,16 @@ CREATE TABLE transcription (
   -- Format: { pageIds: [...], lexiconIds: [...], hash: "...", tokens: 1840 }
   context_used  jsonb       NOT NULL DEFAULT '{}'::jsonb,
 
+  -- Exact user prompt sent with the image for debug (#153).
+  -- Usually buildUserPrompt (preset + context + schema); if the final call
+  -- was a repair, includes the repair suffix. Paired with raw_response.
+  prompt        text        NOT NULL DEFAULT '',
+
+  -- Raw model text before validation / code-fence strip (#153).
+  -- Empty for cache hits (no model call on this run) and pre-feature rows.
+  -- On validation failure after repair: still stored; text stays empty.
+  raw_response  text        NOT NULL DEFAULT '',
+
   -- What it cost. In the same table to avoid extra joins.
   provider      text,
   model         text,
@@ -350,6 +360,9 @@ CREATE TABLE page_event (
   -- How long the human spent on the page. The headline product metric.
   duration_ms integer,
 
+  -- Undo increments this so a later confirmation is not a replay.
+  attempt     integer      NOT NULL DEFAULT 0,
+
   created_at  timestamptz NOT NULL DEFAULT now(),
   -- append-only, but the column is required by the base model's $beforeInsert
   updated_at  timestamptz NOT NULL DEFAULT now()
@@ -362,7 +375,7 @@ CREATE TABLE page_event (
 -- the prompt without having earned it.
 -- Partial: only human actions are unique. transcribed/failed repeat on re-runs.
 CREATE UNIQUE INDEX page_event_once
-  ON page_event (page_id, transcription_id, event)
+  ON page_event (page_id, transcription_id, event, attempt)
   WHERE event IN ('confirm', 'correct', 'skip');
 
 CREATE INDEX page_event_page_idx ON page_event (page_id, created_at DESC);

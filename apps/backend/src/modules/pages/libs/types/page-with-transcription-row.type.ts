@@ -1,12 +1,15 @@
 import { type PageStatus, type ValueOf } from "@transcripta/shared";
 
 type PageWithTranscriptionRow = {
+	attempts: number;
 	id: number;
 	imageKey: null | string;
+	lastError: null | string;
 	pageNo: number;
 	status: ValueOf<typeof PageStatus>;
 	thumbKey: null | string;
 	transcriptionContextUsed: null | Record<string, unknown>;
+	transcriptionEditedText: null | string;
 	transcriptionId: null | number;
 	transcriptionStructured: null | Record<string, unknown>;
 	transcriptionText: null | string;

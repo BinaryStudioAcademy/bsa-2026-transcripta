@@ -1,3 +1,5 @@
+export { type EditConflictDraft } from "./edit-conflict-draft.type.js";
+
 export {
 	type DocumentGetPagesItemResponseDto,
 	type PageStatusValue,

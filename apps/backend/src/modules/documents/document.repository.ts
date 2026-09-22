@@ -1,5 +1,7 @@
+import { type DocumentGetLexiconItemResponseDto } from "@transcripta/shared";
 import { raw, type Transaction } from "objection";
 
+import { LEXICON_CONTEXT_ORDER } from "~/context/context.js";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentDetailsEntity } from "~/modules/documents/document-details.entity.js";
@@ -16,6 +18,7 @@ import {
 	type DocumentUpdateBudgetPayload,
 	type DocumentUpdateDraftMetadataPayload,
 	type DocumentUpdateOwnedStatus,
+	type DocumentWithPagesFailed,
 	type LexiconRow,
 } from "./libs/types/types.js";
 
@@ -61,11 +64,18 @@ class DocumentRepository {
 	}
 
 	public async findAllByOwnerId(ownerId: number): Promise<DocumentEntity[]> {
-		const documents = await this.documentModel
-			.query()
-			.where({ ownerId })
-			.orderBy("createdAt", "desc")
-			.execute();
+		const knex = this.documentModel.knex();
+
+		const documents = await knex
+			.select<DocumentWithPagesFailed[]>(["d.*", "dp.pagesFailed"])
+			.from(`${DatabaseTableName.DOCUMENT} as d`)
+			.innerJoin(
+				`${DatabaseTableName.DOCUMENT_PROGRESS} as dp`,
+				"dp.documentId",
+				"d.id",
+			)
+			.where("d.ownerId", ownerId)
+			.orderBy("d.createdAt", "desc");
 
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
@@ -85,6 +95,7 @@ class DocumentRepository {
 		const document = await knex
 			.select<DocumentDetailsRow>([
 				"dp.documentId as id",
+				"d.error_message as errorMessage",
 				"dp.title",
 				"dp.status",
 				"dp.pageCount",
@@ -153,15 +164,37 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
-	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
+	public async findLexiconByIds(
+		ids: number[],
+		trx?: Transaction,
+	): Promise<LexiconRow[]> {
 		if (ids.length === EMPTY_COLLECTION_LENGTH) {
 			return [];
 		}
 
-		return await LexiconEntryModel.query()
+		return await LexiconEntryModel.query(trx)
 			.select("id", "valueDisplay", "distinctPages")
 			.whereIn("id", ids)
 			.castTo<LexiconRow[]>();
+	}
+
+	public async findLiveLexiconByDocumentId(
+		documentId: number,
+	): Promise<DocumentGetLexiconItemResponseDto[]> {
+		return await LexiconEntryModel.query()
+			.select(
+				"id",
+				"kind",
+				"valueDisplay",
+				"freq",
+				"distinctPages",
+				"firstPageNo",
+				"lastPageNo",
+			)
+			.where("documentId", documentId)
+			.whereNull("invalidatedAt")
+			.orderBy([...LEXICON_CONTEXT_ORDER])
+			.castTo<DocumentGetLexiconItemResponseDto[]>();
 	}
 
 	public async findOwnedDocumentId(
@@ -206,6 +239,20 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async markProcessingIfDone(
+		id: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.PROCESSING })
+			.where({
+				id,
+				status: DocumentStatus.DONE,
+			})
+			.execute();
+	}
+
 	public async resumeFromBudgetStop(
 		id: number,
 		trx: Transaction,
@@ -215,6 +262,18 @@ class DocumentRepository {
 			.patch({ status: DocumentStatus.PROCESSING })
 			.where({ id, status: DocumentStatus.BUDGET_STOP })
 			.whereColumn("budgetUsd", ">", "spentUsd")
+			.execute();
+	}
+
+	public async setCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ cursorPageNo })
+			.where({ id: documentId })
 			.execute();
 	}
 

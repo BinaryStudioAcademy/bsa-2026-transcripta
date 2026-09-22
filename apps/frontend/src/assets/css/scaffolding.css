@@ -171,15 +171,6 @@ samp {
 	text-decoration: none;
 }
 
-.sidebar__brand-wordmark {
-	font:
-		600 16px/1 var(--font-display),
-		georgia,
-		"times new roman",
-		serif;
-	color: var(--text);
-}
-
 .sidebar__nav {
 	display: flex;
 	flex-direction: column;
@@ -296,22 +287,10 @@ samp {
 	height: 16px;
 }
 
-.sidebar--collapsed .sidebar__brand {
-	justify-content: center;
-	width: 100%;
-	padding-right: 0;
-	padding-left: 0;
-}
-
 .sidebar--collapsed .sidebar__brand-wordmark,
 .sidebar--collapsed .sidebar__nav-label,
 .sidebar--collapsed .sidebar__user-email {
 	display: none;
-}
-
-.sidebar--collapsed .sidebar__link {
-	justify-content: center;
-	padding: 0;
 }
 
 .sidebar--collapsed .sidebar__user {

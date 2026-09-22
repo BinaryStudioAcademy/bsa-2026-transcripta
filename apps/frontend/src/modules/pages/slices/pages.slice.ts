@@ -6,7 +6,7 @@ import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/docume
 import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
-import { loadPages, verifyPage } from "./actions.js";
+import { loadPages, reprocessPage, verifyPage } from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -18,6 +18,7 @@ type State = {
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
+	reprocessingPageId: null | number;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
 };
@@ -27,6 +28,7 @@ const initialState: State = {
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
+	reprocessingPageId: null,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
 };
@@ -85,6 +87,33 @@ const { actions, name, reducer } = createSlice({
 			state.verificationDataStatus = DataStatus.REJECTED;
 		});
 
+		builder.addCase(reprocessPage.pending, (state, action) => {
+			state.reprocessingPageId = action.meta.arg.pageId;
+		});
+
+		builder.addCase(reprocessPage.fulfilled, (state, action) => {
+			const { pageId } = action.meta.arg;
+			const page = state.byId[pageId];
+
+			if (page) {
+				page.status = PageStatus.QUEUED;
+				page.attempts = 0;
+				page.lastError = null;
+			}
+
+			if (state.reprocessingPageId === pageId) {
+				state.reprocessingPageId = null;
+			}
+		});
+
+		builder.addCase(reprocessPage.rejected, (state, action) => {
+			const { pageId } = action.meta.arg;
+
+			if (state.reprocessingPageId === pageId) {
+				state.reprocessingPageId = null;
+			}
+		});
+
 		builder.addCase(loadPages.pending, (state) => {
 			state.dataStatus = DataStatus.PENDING;
 		});
@@ -109,6 +138,7 @@ const { actions, name, reducer } = createSlice({
 			state.idsByPageNo = {};
 			state.cursorPageNo = 0;
 			state.dataStatus = DataStatus.IDLE;
+			state.reprocessingPageId = null;
 			state.rollback = {};
 			state.verificationDataStatus = DataStatus.IDLE;
 		},
@@ -136,6 +166,13 @@ const { actions, name, reducer } = createSlice({
 				cursorPageNo: state.cursorPageNo,
 				status: page.status,
 			};
+
+			if (
+				payload.action === PageVerificationAction.CORRECT &&
+				page.transcription !== null
+			) {
+				page.transcription.text = payload.text;
+			}
 
 			page.status = verificationStatusMap[payload.action];
 

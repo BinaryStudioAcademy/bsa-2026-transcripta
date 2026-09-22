@@ -1,4 +1,8 @@
-export { EMPTY_LENGTH, MILLION } from "./libs/constants/constants.js";
+export {
+	EMPTY_LENGTH,
+	INDEX_NOT_FOUND,
+	MILLION,
+} from "./libs/constants/constants.js";
 export {
 	APIPath,
 	AppEnvironment,
@@ -36,6 +40,8 @@ export {
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdParametersDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetLexiconItemResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type DocumentGetPagesQueryDto,
@@ -58,13 +64,24 @@ export {
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {
+	type LexiconIdRequestDto,
+	type LexiconInvalidateRequestDto,
+	type LexiconInvalidateResponseDto,
+	LexiconApiPath,
+	LexiconIdValidationSchema,
+	LexiconInvalidateValidationSchema,
+} from "./modules/lexicon/lexicon.js";
+export {
+	type PageDebugResponseDto,
 	type PageStatusValue,
 	type PageVerificationActionValue,
+	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 	PageApiPath,
 	PageStatus,
 	PageVerificationAction,
+	reprocessPageParameters,
 	verifyPage,
 	verifyPageParameters,
 } from "./modules/pages/pages.js";

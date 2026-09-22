@@ -12,6 +12,7 @@ import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import {
 	create,
+	ingest,
 	loadAll,
 	loadById,
 	pause,
@@ -19,6 +20,7 @@ import {
 	remove,
 	requestExport,
 	resume,
+	updateBudget,
 } from "./actions.js";
 
 const NOT_FOUND_INDEX = -1;
@@ -171,6 +173,49 @@ const { actions, name, reducer } = createSlice({
 				ready: true,
 				readyMeta: action.payload.readyMeta,
 			};
+		});
+
+		builder.addCase(ingest.pending, (state, action) => {
+			if (state.document?.id === action.meta.arg) {
+				state.document.status = DocumentStatus.INGESTING;
+			}
+		});
+
+		builder.addCase(ingest.fulfilled, (state, action) => {
+			if (state.document?.id === action.meta.arg) {
+				state.document.status = DocumentStatus.READY;
+			}
+		});
+
+		builder.addCase(ingest.rejected, (state, action) => {
+			if (state.document?.id === action.meta.arg) {
+				state.document.status = DocumentStatus.FAILED;
+			}
+		});
+		builder.addCase(updateBudget.fulfilled, (state, action) => {
+			const { budget, id } = action.payload;
+			if (state.document && state.document.id === id) {
+				state.document.budget = budget;
+				if (
+					Number(budget.limitUsd) > Number(budget.spentUsd) &&
+					state.document.status === DocumentStatus.BUDGET_STOP
+				) {
+					state.document.status = DocumentStatus.PROCESSING;
+				}
+			}
+			const documentItem = state.documents.find(
+				(document_) => document_.id === id,
+			);
+			if (documentItem) {
+				documentItem.budgetUsd = budget.limitUsd;
+				documentItem.spentUsd = budget.spentUsd;
+				if (
+					Number(budget.limitUsd) > Number(budget.spentUsd) &&
+					documentItem.status === DocumentStatus.BUDGET_STOP
+				) {
+					documentItem.status = DocumentStatus.PROCESSING;
+				}
+			}
 		});
 	},
 	initialState,
