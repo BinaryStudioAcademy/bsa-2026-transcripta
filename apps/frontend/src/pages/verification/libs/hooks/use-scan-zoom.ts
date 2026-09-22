@@ -9,11 +9,7 @@ import {
 	ZOOM_OUT_DIRECTION,
 	ZOOM_STEP,
 } from "../constants/verification.constants.js";
-
-type UseScanZoomReturn = {
-	scanRef: React.RefObject<HTMLDivElement | null>;
-	zoom: number;
-};
+import { type UseScanZoomReturn } from "../types/types.js";
 
 const useScanZoom = (): UseScanZoomReturn => {
 	const [zoom, setZoom] = useState(INITIAL_ZOOM);

@@ -6,14 +6,7 @@ import {
 	MAX_SPLIT_POSITION,
 	MIN_SPLIT_POSITION,
 } from "../constants/verification.constants.js";
-
-type UseResizableSplitReturn = {
-	handleDividerPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
-	handleDividerPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
-	handleDividerPointerUp: (event: React.PointerEvent<HTMLDivElement>) => void;
-	isDragging: boolean;
-	splitPosition: number;
-};
+import { type UseResizableSplitReturn } from "../types/types.js";
 
 const useResizableSplit = (): UseResizableSplitReturn => {
 	const [splitPosition, setSplitPosition] = useState(INITIAL_SPLIT_POSITION);
