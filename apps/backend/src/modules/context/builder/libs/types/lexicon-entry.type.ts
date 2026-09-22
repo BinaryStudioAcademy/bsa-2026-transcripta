@@ -1,6 +1,6 @@
 type LexiconEntry = {
-	freq: number;
 	id: number;
+	pageCount: number;
 	valueDisplay: string;
 };
 
