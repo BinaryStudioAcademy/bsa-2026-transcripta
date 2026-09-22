@@ -40,7 +40,9 @@ const PageButton: React.FC<PageButtonProperties> = ({
 			type="button"
 		>
 			{page.pageNo}
-			<span aria-hidden="true">{statusSymbolMap[status]}</span>
+			<span aria-hidden="true" className="tx-status-icon">
+				{statusSymbolMap[status]}
+			</span>
 
 			{!isCurrent && <span aria-hidden="true" className="tx-page-thumb" />}
 		</Button>

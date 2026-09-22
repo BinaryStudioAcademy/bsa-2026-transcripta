@@ -925,6 +925,27 @@ class DocumentService {
 		ownerId: number,
 	): Promise<DocumentGetByIdBudgetResponseDto> {
 		const resumedRows = await DocumentModel.transaction(async (trx) => {
+			const currentDocument =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					id,
+					ownerId,
+					trx,
+				);
+
+			if (!currentDocument) {
+				this.throwDocumentNotFoundError();
+			}
+
+			const { budgetUsd, spentUsd } = currentDocument.toObject();
+			const nextLimit = Number(limitUsd);
+
+			if (nextLimit < Number(budgetUsd) || nextLimit < Number(spentUsd)) {
+				throw new HTTPError({
+					message: DocumentErrorMessage.NOT_A_BUDGET_INCREASE,
+					status: HTTPCode.UNPROCESSED_ENTITY,
+				});
+			}
+
 			const updatedRows = await this.documentRepository.updateBudget(
 				{ id, limitUsd, ownerId },
 				trx,
