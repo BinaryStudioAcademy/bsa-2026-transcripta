@@ -35,6 +35,7 @@ import {
 } from "./libs/types/types.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
 import { type PageRepository } from "./page.repository.js";
+import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
 
 class PageService {
 	private documentRepository: DocumentRepository;
@@ -47,6 +48,8 @@ class PageService {
 
 	private pageTranscribeQueue: PageTranscribeQueue;
 
+	private rederiveStructuredQueue: RederiveStructuredQueue;
+
 	private transcriptionRepository: TranscriptionRepository;
 
 	private transcriptionService: TranscriptionService;
@@ -57,6 +60,7 @@ class PageService {
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
+		rederiveStructuredQueue,
 		transcriptionRepository,
 		transcriptionService,
 	}: PageServiceDependencies) {
@@ -67,6 +71,7 @@ class PageService {
 		this.transcriptionService = transcriptionService;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
+		this.rederiveStructuredQueue = rederiveStructuredQueue;
 	}
 
 	private async buildVerifyResponse(
@@ -123,7 +128,7 @@ class PageService {
 		text: string;
 		transcription: TranscriptionModel;
 		trx: Transaction;
-	}) {
+	}): Promise<boolean> {
 		const transcriptionText = transcription.editedText ?? transcription.text;
 		const documentObject = document.toObjectWithPreset();
 
@@ -132,7 +137,7 @@ class PageService {
 			documentObject.presetId === transcription.presetId &&
 			transcription.editedStructured !== null
 		) {
-			return;
+			return false;
 		}
 
 		if (transcriptionText !== text) {
@@ -143,44 +148,7 @@ class PageService {
 			);
 		}
 
-		const isBudgetAvailable =
-			Number(documentObject.spentUsd) < Number(documentObject.budgetUsd);
-
-		if (!isBudgetAvailable) {
-			return;
-		}
-
-		const preset = documentObject.preset;
-		const modelId = preset.settings.model || null;
-		const outputSchema = preset.outputSchema || null;
-
-		const result = await this.transcriptionService.rederiveStructured({
-			modelId,
-			outputSchema,
-			text,
-			transcriptionStructured:
-				transcription.editedStructured ?? transcription.structured,
-		});
-
-		if (!result) {
-			return;
-		}
-
-		if (result.costUsd) {
-			await this.documentRepository.updateSpentUsd(
-				documentObject.id,
-				result.costUsd,
-				trx,
-			);
-		}
-
-		if (result.structured) {
-			await this.transcriptionRepository.updateEditedStructured(
-				transcription.id,
-				result.structured,
-				trx,
-			);
-		}
+		return true;
 	}
 
 	public async getDebug(
@@ -386,8 +354,9 @@ class PageService {
 					};
 				}
 
+				let needRederiveStructured = false;
 				if (isCorrection) {
-					await this.handleCorrection({
+					needRederiveStructured = await this.handleCorrection({
 						document,
 						text: payload.text,
 						transcription,
@@ -445,6 +414,8 @@ class PageService {
 				);
 
 				return {
+					documentId: page.documentId,
+					needRederiveStructured,
 					pagesToQueue,
 					response: await this.buildVerifyResponse(
 						{
@@ -455,8 +426,18 @@ class PageService {
 						},
 						trx,
 					),
+					transcriptionId: transcription.id,
 				};
 			});
+
+			if (result.needRederiveStructured) {
+				await this.rederiveStructuredQueue.add({
+					currentTranscriptionId: result.transcriptionId,
+					documentId: result.documentId,
+					pageId,
+					text: payload.text,
+				});
+			}
 
 			await Promise.all(
 				result.pagesToQueue.map((page) => {
