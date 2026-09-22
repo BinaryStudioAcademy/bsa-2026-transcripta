@@ -505,9 +505,9 @@ closely. And never auto-confirmation by model confidence: confidence correlates
 poorly with correctness precisely on rare surnames, where the cost of a mistake
 is highest.
 
-**The two-distinct-pages threshold.** A word enters the lexicon not after the
-first confirmation but after appearing on 2 different pages. A surname
-mentioned 30 times on one page may be a single mistake repeated inside a table.
+**The two-distinct-pages threshold.** A word enters the context prompt only
+after it has been confirmed on 2 different pages (`distinct_pages`). One busy
+page is not enough — that is what separates eligibility from `page_count`.
 
 **Context poisoning is the main danger of the system.** A confirmed mistake
 enters the lexicon, the model confidently repeats it on the following pages,
@@ -693,7 +693,7 @@ erDiagram
     lexicon_entry {
         int id PK "serial, NOT bigserial - pg would return int8 as a string"
         text value_display "as written in the document"
-        int freq "how many times it occurred"
+        int page_count "confirmed pages after per-page dedupe"
         int distinct_pages "threshold for entering the context = 2"
         timestamptz invalidated_at "not NULL - the word was ruled wrong"
     }
@@ -737,7 +737,7 @@ The full DDL is [schema/schema.sql](../schema/schema.sql).
 | `document`            | File, status, budget, cursor                         | `cursor_page_no` — where the verifier is now                 |
 | `page`                | A page: image, status, who verified it               | `image_sha256` — part of the cache key                       |
 | `transcription`       | What the model read + edits + which context was used | `is_current` — exactly one current row per page              |
-| `lexicon_entry`       | Document lexicon with frequencies                    | `distinct_pages` — the threshold for entering the context    |
+| `lexicon_entry`       | Document lexicon with page counters                  | `distinct_pages` — the threshold for entering the context    |
 | `page_event`          | Action history, append-only                          | `duration_ms` — the headline product metric                  |
 | `transcription_cache` | So we never pay twice for the same thing             | In Postgres, not Redis                                       |
 | `document_export`     | Generated exports                                    | The file is in S3, the key is here                           |
@@ -898,7 +898,7 @@ three times.
 
 **`Ctrl+Z` moves the page back but deliberately does not touch the lexicon.**
 It is tempting to expect the counters to be rolled back too, and that turns out
-to be the wrong instinct: `freq` and `distinct_pages` are shared between pages,
+to be the wrong instinct: `page_count` and `distinct_pages` are shared between pages,
 so a word may have arrived from five of them. Decrementing blindly corrupts the
 counters for the other four.
 
