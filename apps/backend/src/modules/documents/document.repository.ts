@@ -164,12 +164,15 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
-	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
+	public async findLexiconByIds(
+		ids: number[],
+		trx?: Transaction,
+	): Promise<LexiconRow[]> {
 		if (ids.length === EMPTY_COLLECTION_LENGTH) {
 			return [];
 		}
 
-		return await LexiconEntryModel.query()
+		return await LexiconEntryModel.query(trx)
 			.select("id", "valueDisplay", "distinctPages")
 			.whereIn("id", ids)
 			.castTo<LexiconRow[]>();
@@ -259,6 +262,18 @@ class DocumentRepository {
 			.patch({ status: DocumentStatus.PROCESSING })
 			.where({ id, status: DocumentStatus.BUDGET_STOP })
 			.whereColumn("budgetUsd", ">", "spentUsd")
+			.execute();
+	}
+
+	public async setCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ cursorPageNo })
+			.where({ id: documentId })
 			.execute();
 	}
 

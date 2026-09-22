@@ -6,6 +6,8 @@ import {
 class PageEventModel extends AbstractModel {
 	public actorId!: null | number;
 
+	public attempt!: number;
+
 	public details!: Record<string, unknown>;
 
 	public documentId!: number;

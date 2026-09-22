@@ -4,7 +4,6 @@ import {
 	type DocumentCreateResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetLexiconResponseDto,
-	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesResponseDto,
 	DocumentValidationMessage,
 	EMPTY_LENGTH,
@@ -23,6 +22,11 @@ import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-q
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
+import {
+	buildContextWords,
+	buildPageLexiconMap,
+	extractLexiconIds,
+} from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { refillPageWindow } from "../pages/libs/helpers/helpers.js";
 import { PageEntity } from "../pages/page.entity.js";
@@ -35,7 +39,6 @@ import {
 	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
 	NON_DELETABLE_DOCUMENT_STATUSES,
-	NOT_FOUND_INDEX,
 	PAGES_TO_QUEUE,
 } from "./libs/constants/constants.js";
 import {
@@ -71,59 +74,6 @@ class DocumentService {
 		this.pageTranscribeQueue = pageTranscribeQueue;
 	}
 
-	private buildContextWords({
-		lexiconById,
-		text,
-	}: {
-		lexiconById: Map<number, { distinctPages: number; valueDisplay: string }>;
-		text: string;
-	}): DocumentGetPagesContextWordResponseDto[] {
-		const contextWords: DocumentGetPagesContextWordResponseDto[] = [];
-
-		for (const [lexiconId, lexicon] of lexiconById) {
-			const { valueDisplay } = lexicon;
-
-			if (valueDisplay.length === EMPTY_COLLECTION_LENGTH) {
-				continue;
-			}
-
-			let searchFrom = 0;
-
-			while (searchFrom <= text.length) {
-				const start = text.indexOf(valueDisplay, searchFrom);
-
-				if (start === NOT_FOUND_INDEX) {
-					break;
-				}
-
-				contextWords.push({
-					end: start + valueDisplay.length,
-					lexiconId,
-					seenOnPages: lexicon.distinctPages,
-					start,
-					word: valueDisplay,
-				});
-
-				searchFrom = start + valueDisplay.length;
-			}
-		}
-
-		return contextWords;
-	}
-
-	private buildPageLexiconMap(
-		contextUsed: null | Record<string, unknown>,
-		lexiconById: Map<number, { distinctPages: number; valueDisplay: string }>,
-	): Map<number, { distinctPages: number; valueDisplay: string }> {
-		return new Map(
-			this.extractLexiconIds(contextUsed).flatMap((id) => {
-				const lexicon = lexiconById.get(id);
-
-				return lexicon ? [[id, lexicon] as const] : [];
-			}),
-		);
-	}
-
 	private buildSourceKey(documentId: number): string {
 		return `uploads/${documentId.toString()}/original.pdf`;
 	}
@@ -132,7 +82,7 @@ class DocumentService {
 		const lexiconIds = new Set<number>();
 
 		for (const page of pages) {
-			for (const id of this.extractLexiconIds(page.transcriptionContextUsed)) {
+			for (const id of extractLexiconIds(page.transcriptionContextUsed)) {
 				lexiconIds.add(id);
 			}
 		}
@@ -212,18 +162,6 @@ class DocumentService {
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
-	}
-
-	private extractLexiconIds(
-		contextUsed: null | Record<string, unknown>,
-	): number[] {
-		const ids = contextUsed?.["lexiconIds"];
-
-		if (!Array.isArray(ids)) {
-			return [];
-		}
-
-		return ids.filter((id): id is number => typeof id === "number");
 	}
 
 	private async finalizeIngest(
@@ -712,8 +650,9 @@ class DocumentService {
 					this.getPresignedUrl(page.thumbKey),
 				]);
 
-				const text = page.transcriptionText ?? "";
-				const pageLexiconById = this.buildPageLexiconMap(
+				const text =
+					page.transcriptionEditedText ?? page.transcriptionText ?? "";
+				const pageLexiconById = buildPageLexiconMap(
 					page.transcriptionContextUsed,
 					lexiconById,
 				);
@@ -730,7 +669,7 @@ class DocumentService {
 						page.transcriptionId === null
 							? null
 							: {
-									contextWords: this.buildContextWords({
+									contextWords: buildContextWords({
 										lexiconById: pageLexiconById,
 										text,
 									}),
