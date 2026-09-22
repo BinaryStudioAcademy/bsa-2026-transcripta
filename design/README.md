@@ -89,6 +89,7 @@ The antechamber before verification: drop or choose a file, confirm Title (prefi
 **Single-document hub: transcription progress, resume-verification CTA, export list with dialog, budget-stop recovery, and the ground-truth entry point.**
 
 The antechamber of one document — verification is the destination. Three jobs: show transcription progress, resume verification at the saved cursor, and host export (the dialog opens here; the finished file lands back here as a download row). A single 640px column of four stacked cards inside the app shell: Transcription (determinate bar, spend, ETA), Verification (cursor at page 47 + Resume CTA), Export (info line + rows), and a conditional dashed Ground truth card (CER 3.2%). The overflow menu (⋯) next to the title holds exactly one item, "Ground-truth mode".
+Approved by PO - new design for the document page is added to `design/document-page/Document Page design v4 (standalone).html`
 
 ### verification
 

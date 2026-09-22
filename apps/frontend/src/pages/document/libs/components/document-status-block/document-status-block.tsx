@@ -7,8 +7,9 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
-import { DocumentStatus, ToggleProcessingLabel } from "../enums/enums.js";
+import { ToggleProcessingLabel } from "../../enums/enums.js";
 
 type Properties = {
 	documentId: number;
