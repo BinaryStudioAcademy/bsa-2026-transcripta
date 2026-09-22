@@ -64,7 +64,7 @@ erDiagram
     lexicon_entry {
         int id PK "serial, NOT bigserial - pg would return int8 as a string"
         text value_display "as written in the document"
-        int freq "how many times it occurred"
+        int page_count "confirmed pages after per-page dedupe"
         int distinct_pages "threshold for entering the context = 2"
         timestamptz invalidated_at "not NULL - the word was ruled wrong"
     }

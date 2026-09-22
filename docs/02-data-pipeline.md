@@ -244,7 +244,7 @@ This is the heart of the system. One job = one page.
        if exhausted → stop the document, exit
 3. BUILD THE CONTEXT:
        - text of the last 3 CONFIRMED pages
-       - document lexicon (top-100 words by frequency)
+       - document lexicon (top-100 words by distinct_pages / page_count)
        - seed glossary from the preset
 4. check the cache: have we computed this with the same context already?
        if yes → take it from the cache, pay nothing
