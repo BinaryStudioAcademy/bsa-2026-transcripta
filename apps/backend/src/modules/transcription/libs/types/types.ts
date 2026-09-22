@@ -1,3 +1,5 @@
+export { type BuildContextWordsPayload } from "./build-context-words-payload.type.js";
+export { type ContextLexiconMap } from "./context-lexicon-map.type.js";
 export { type ModelProviderValue } from "./model-provider-value.type.js";
 export { type ModelRate } from "./model-rate.type.js";
 export { type RederiveStructuredResponse } from "./rederive-structured-response.type.js";

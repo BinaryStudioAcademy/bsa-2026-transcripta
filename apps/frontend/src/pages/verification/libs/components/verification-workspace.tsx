@@ -2,11 +2,17 @@ import { Button, FailedStateCard } from "~/libs/components/components.js";
 
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
-import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
+import { useResizableSplit } from "../hooks/use-resizable-split.js";
+import { useScanZoom } from "../hooks/use-scan-zoom.js";
+import {
+	type DocumentGetPagesItemResponseDto,
+	type EditConflictDraft,
+} from "../types/types.js";
 import { VerificationEdit } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	editConflictDraft: EditConflictDraft | null;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isReprocessing: boolean;
@@ -14,6 +20,7 @@ type VerificationWorkspaceProperties = {
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onReRead: () => void;
+	onSaveEdit: (text: string) => void;
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	pageCount?: number | undefined;
@@ -21,6 +28,7 @@ type VerificationWorkspaceProperties = {
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
+	editConflictDraft,
 	isCompleted,
 	isEditing,
 	isReprocessing,
@@ -28,10 +36,20 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	isZoomed,
 	onConfirm,
 	onReRead,
+	onSaveEdit,
 	onSkip,
 	onToggleEdit,
 	pageCount,
 }) => {
+	const {
+		handleDividerPointerDown,
+		handleDividerPointerMove,
+		handleDividerPointerUp,
+		isDragging,
+		splitPosition,
+	} = useResizableSplit();
+	const { scanRef, zoom } = useScanZoom();
+
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
 			return (
@@ -56,7 +74,9 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					{isEditing ? (
 						<VerificationEdit
+							isDisabled={isVerifying}
 							onCancel={onToggleEdit}
+							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
 						/>
 					) : (
@@ -91,6 +111,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 							</div>
 						</>
 					)}
+					{editConflictDraft?.pageNo === currentPage.pageNo && (
+						<div className="verification-transcription__draft">
+							<strong>Your previous draft:</strong>
+							<p>{editConflictDraft.text}</p>
+						</div>
+					)}
 				</>
 			);
 		}
@@ -106,22 +132,33 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 	return (
 		<div className="tx-split verification-workspace">
-			<div className="tx-split-pane verification-scan-pane">
+			<div
+				className="tx-split-pane verification-scan-pane"
+				style={{
+					width: `${String(splitPosition)}%`,
+				}}
+			>
 				<div className="verification-scan">
-					<span className="verification-scan__placeholder-label">
-						scan placeholder
-					</span>
+					{!currentPage?.imageUrl && (
+						<span className="verification-scan__placeholder-label">
+							scan placeholder
+						</span>
+					)}
 
 					<div
 						className={`verification-scan__content ${
 							isZoomed ? "verification-scan__content--zoomed" : ""
 						}`}
+						ref={scanRef}
 					>
 						{currentPage?.imageUrl ? (
 							<img
 								alt={`Page ${String(currentPage.pageNo)}`}
 								className="verification-scan__image"
 								src={currentPage.imageUrl}
+								style={{
+									transform: `scale(${String(zoom)})`,
+								}}
 							/>
 						) : (
 							<div className="verification-scan__text">No scan available</div>
@@ -130,7 +167,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 				</div>
 			</div>
 
-			<div className="tx-split-divider">
+			<div
+				className={`tx-split-divider ${isDragging ? "is-dragging" : ""}`}
+				onPointerDown={handleDividerPointerDown}
+				onPointerMove={handleDividerPointerMove}
+				onPointerUp={handleDividerPointerUp}
+			>
 				<span className="tx-split-grip" />
 			</div>
 

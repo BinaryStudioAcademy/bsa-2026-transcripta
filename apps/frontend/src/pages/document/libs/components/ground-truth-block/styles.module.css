@@ -1,0 +1,19 @@
+.cer {
+	margin: var(--sp-2) 0 0;
+	font-size: var(--fs-sm);
+	line-height: var(--lh-body-wide);
+	color: var(--text-2);
+}
+
+.link {
+	display: inline-block;
+	margin-top: var(--sp-2);
+	font-size: var(--fs-xs);
+	font-weight: 500;
+	color: var(--link);
+}
+
+.link:hover {
+	color: var(--accent-active);
+	text-decoration-color: currentcolor;
+}

@@ -15,6 +15,7 @@ import {
 	createOutputValidator,
 	parseModelJson,
 	stripCodeFence,
+	toProviderRateLimitError,
 } from "./libs/helpers/helpers.js";
 import {
 	type ModelIdValue,
@@ -203,6 +204,65 @@ class TranscriptionService {
 		};
 	}
 
+	private async transcribeWithProvider({
+		image,
+		mediaType,
+		modelId,
+		prompt,
+	}: TranscriptionRequest): Promise<TranscriptionResponse> {
+		const resolvedModelId = modelId ?? this.defaultModelId;
+
+		if (resolvedModelId.startsWith(DIRECT_PREFIX)) {
+			return await this.transcribeDirect(
+				{ image, mediaType, modelId, prompt },
+				resolvedModelId.slice(DIRECT_PREFIX.length),
+			);
+		}
+
+		const isNova = isNovaModel(resolvedModelId);
+		const startedAt = Date.now();
+
+		const response = await this.client.send(
+			new InvokeModelCommand({
+				body: isNova
+					? this.buildNovaBody(image, mediaType, prompt)
+					: this.buildAnthropicBody(image, mediaType, prompt),
+				contentType: "application/json",
+				modelId: resolvedModelId,
+			}),
+		);
+
+		const payload = JSON.parse(new TextDecoder().decode(response.body)) as
+			| AnthropicPayload
+			| NovaPayload;
+
+		if (isNova) {
+			const nova = payload as NovaPayload;
+
+			return {
+				latencyMs: Date.now() - startedAt,
+				modelId: resolvedModelId,
+				text: nova.output.message.content.map((block) => block.text).join(""),
+				usage: {
+					inputTokens: nova.usage.inputTokens,
+					outputTokens: nova.usage.outputTokens,
+				},
+			};
+		}
+
+		const anthropic = payload as AnthropicPayload;
+
+		return {
+			latencyMs: Date.now() - startedAt,
+			modelId: resolvedModelId,
+			text: anthropic.content.map((block) => block.text).join(""),
+			usage: {
+				inputTokens: anthropic.usage.input_tokens,
+				outputTokens: anthropic.usage.output_tokens,
+			},
+		};
+	}
+
 	public async rederiveStructured({
 		modelId,
 		outputSchema,
@@ -262,63 +322,14 @@ class TranscriptionService {
 		};
 	}
 
-	public async transcribe({
-		image,
-		mediaType,
-		modelId,
-		prompt,
-	}: TranscriptionRequest): Promise<TranscriptionResponse> {
-		const resolvedModelId = modelId ?? this.defaultModelId;
-
-		if (resolvedModelId.startsWith(DIRECT_PREFIX)) {
-			return await this.transcribeDirect(
-				{ image, mediaType, modelId, prompt },
-				resolvedModelId.slice(DIRECT_PREFIX.length),
-			);
+	public async transcribe(
+		request: TranscriptionRequest,
+	): Promise<TranscriptionResponse> {
+		try {
+			return await this.transcribeWithProvider(request);
+		} catch (error) {
+			throw toProviderRateLimitError(error) ?? error;
 		}
-
-		const isNova = isNovaModel(resolvedModelId);
-		const startedAt = Date.now();
-
-		const response = await this.client.send(
-			new InvokeModelCommand({
-				body: isNova
-					? this.buildNovaBody(image, mediaType, prompt)
-					: this.buildAnthropicBody(image, mediaType, prompt),
-				contentType: "application/json",
-				modelId: resolvedModelId,
-			}),
-		);
-
-		const payload = JSON.parse(new TextDecoder().decode(response.body)) as
-			| AnthropicPayload
-			| NovaPayload;
-
-		if (isNova) {
-			const nova = payload as NovaPayload;
-
-			return {
-				latencyMs: Date.now() - startedAt,
-				modelId: resolvedModelId,
-				text: nova.output.message.content.map((block) => block.text).join(""),
-				usage: {
-					inputTokens: nova.usage.inputTokens,
-					outputTokens: nova.usage.outputTokens,
-				},
-			};
-		}
-
-		const anthropic = payload as AnthropicPayload;
-
-		return {
-			latencyMs: Date.now() - startedAt,
-			modelId: resolvedModelId,
-			text: anthropic.content.map((block) => block.text).join(""),
-			usage: {
-				inputTokens: anthropic.usage.input_tokens,
-				outputTokens: anthropic.usage.output_tokens,
-			},
-		};
 	}
 }
 
