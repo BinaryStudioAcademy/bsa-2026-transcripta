@@ -70,7 +70,6 @@
 
 .dropzone__button--secondary:active:not(:disabled) {
 	background: var(--surface-2);
-	transform: translateY(1px);
 }
 
 .dropzone b {
