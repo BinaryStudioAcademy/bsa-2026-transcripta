@@ -25,6 +25,7 @@ import {
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { NotFound } from "~/pages/not-found/not-found.js";
 
 import {
 	DocumentFailedBlock,
@@ -51,10 +52,11 @@ const Document: React.FC = () => {
 
 	const { id } = useParams();
 
-	useEffect(() => {
-		const documentId = Number(id);
+	const documentId = Number(id);
+	const isValidId = Number.isInteger(documentId) && documentId > 0;
 
-		if (!Number.isFinite(documentId)) {
+	useEffect(() => {
+		if (!isValidId) {
 			return;
 		}
 
@@ -64,7 +66,7 @@ const Document: React.FC = () => {
 		return () => {
 			dispatch(documentActions.stopPolling());
 		};
-	}, [id, dispatch]);
+	}, [documentId, isValidId, dispatch]);
 
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const isNotifyingReference = useRef<boolean>(false);
@@ -177,13 +179,13 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		const documentId = currentDocument.id;
+		const retryDocumentId = currentDocument.id;
 
-		void dispatch(documentActions.ingest(documentId))
+		void dispatch(documentActions.ingest(retryDocumentId))
 			.unwrap()
 			.then(async () => {
-				await dispatch(documentActions.loadById(documentId)).unwrap();
-				void dispatch(documentActions.startPolling(documentId));
+				await dispatch(documentActions.loadById(retryDocumentId)).unwrap();
+				void dispatch(documentActions.startPolling(retryDocumentId));
 			});
 	}, [currentDocument, dispatch]);
 
@@ -193,10 +195,13 @@ const Document: React.FC = () => {
 			currentDocument.progress.pagesSkipped
 		: INITIAL_COUNT;
 
+	if (!isValidId || hasError) {
+		return <NotFound />;
+	}
+
 	return (
 		<div className={styles["document-page"]}>
 			{isLoading && <LoaderOverlay label="Loading document" />}
-			{hasError && <p>Unable to load the document.</p>}
 
 			{currentDocument && (
 				<>
