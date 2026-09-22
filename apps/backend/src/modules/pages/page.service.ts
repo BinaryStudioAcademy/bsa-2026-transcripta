@@ -4,13 +4,18 @@ import {
 	type PageDebugResponseDto,
 	PageStatus,
 	PageVerificationAction,
+	type UndoPageResponseDto,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
-import { TRANSCRIBABLE_STATUSES } from "~/modules/jobs/libs/constants/constants.js";
+import {
+	buildContextWords,
+	buildPageLexiconMap,
+	extractLexiconIds,
+} from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
@@ -18,12 +23,16 @@ import { type TranscriptionRepository } from "../transcription/transcription.rep
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
+	PAGE_EVENT_ATTEMPT_INCREMENT,
+	REPROCESSABLE_PAGE_STATUSES,
+	UNDOABLE_PAGE_STATUSES,
 } from "./libs/constants/constants.js";
 import {
 	PageErrorMessage,
 	PageErrorType,
 	StatusByAction,
 } from "./libs/enums/enums.js";
+import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
@@ -87,6 +96,14 @@ class PageService {
 
 		const nextTranscription =
 			await this.transcriptionRepository.findCurrentByPageId(nextPage.id, trx);
+		const text = nextTranscription?.editedText ?? nextTranscription?.text ?? "";
+		const contextUsed = nextTranscription?.contextUsed ?? null;
+		const lexiconRows = await this.documentRepository.findLexiconByIds(
+			extractLexiconIds(contextUsed),
+			trx,
+		);
+		const lexiconById = new Map(lexiconRows.map((row) => [row.id, row]));
+		const pageLexiconById = buildPageLexiconMap(contextUsed, lexiconById);
 
 		return {
 			lexiconAdded: [],
@@ -96,8 +113,11 @@ class PageService {
 				status: nextPage.status,
 				transcription: nextTranscription
 					? {
-							contextWords: [],
-							text: nextTranscription.text,
+							contextWords: buildContextWords({
+								lexiconById: pageLexiconById,
+								text,
+							}),
+							text,
 						}
 					: null,
 			},
@@ -167,23 +187,30 @@ class PageService {
 			});
 		}
 
-		if (page.status !== PageStatus.FAILED) {
+		if (!REPROCESSABLE_PAGE_STATUSES.has(page.status)) {
 			throw new HTTPError({
-				message: PageErrorMessage.PAGE_NOT_FAILED,
+				message: PageErrorMessage.PAGE_NOT_REPROCESSABLE,
 				status: HTTPCode.CONFLICT,
 			});
 		}
 
-		const wasReset = await this.pageRepository.resetFailedPageForReprocess(
-			page.id,
-		);
+		const originalStatus = page.status;
 
-		if (!wasReset) {
-			throw new HTTPError({
-				message: PageErrorMessage.PAGE_NOT_FAILED,
-				status: HTTPCode.CONFLICT,
-			});
-		}
+		await DocumentModel.transaction(async (trx) => {
+			const wasReset = await this.pageRepository.resetPageForReprocess(
+				page.id,
+				trx,
+			);
+
+			if (!wasReset) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_REPROCESSABLE,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
+		});
 
 		try {
 			await this.pageTranscribeQueue.add({
@@ -192,11 +219,20 @@ class PageService {
 				pageNo: page.pageNo,
 			});
 		} catch (error) {
-			await this.pageRepository.restoreFailedPageAfterReprocessFailure(
-				page.id,
-				page.attempts,
-				page.lastError,
-			);
+			await DocumentModel.transaction(async (trx) => {
+				await this.pageRepository.restorePage({
+					attempts: page.attempts,
+					lastError: page.lastError,
+					pageId: page.id,
+					status: originalStatus,
+					trx,
+				});
+
+				await this.documentRepository.markDoneIfAllPagesClosed(
+					page.documentId,
+					trx,
+				);
+			});
 
 			this.logger.error(
 				`Failed to enqueue reprocess job for page ${String(page.id)}`,
@@ -208,6 +244,105 @@ class PageService {
 				status: HTTPCode.INTERNAL_SERVER_ERROR,
 			});
 		}
+	}
+
+	public async undo(
+		pageId: number,
+		userId: number,
+	): Promise<UndoPageResponseDto> {
+		return await DocumentModel.transaction(async (trx) => {
+			const initialPage = await this.pageRepository.findByIdForOwner(
+				pageId,
+				userId,
+				trx,
+			);
+
+			if (!initialPage) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			const document =
+				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					initialPage.documentId,
+					userId,
+					trx,
+				);
+			const page = await this.pageRepository.findByIdForOwner(
+				pageId,
+				userId,
+				trx,
+			);
+
+			if (!document || !page) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			if (!UNDOABLE_PAGE_STATUSES.has(page.status)) {
+				throw new HTTPError({
+					message: PageErrorMessage.PAGE_NOT_VERIFIED,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			const transcription =
+				await this.transcriptionRepository.findCurrentByPageId(pageId, trx);
+
+			if (!transcription) {
+				throw new HTTPError({
+					message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			const attempt =
+				(await this.pageEventRepository.findLatestAttempt(pageId, trx)) +
+				PAGE_EVENT_ATTEMPT_INCREMENT;
+
+			await this.pageRepository.updateVerification(
+				{
+					pageId,
+					status: PageStatus.TRANSCRIBED,
+					verifiedAt: null,
+					verifiedBy: null,
+				},
+				trx,
+			);
+
+			await this.pageEventRepository.createUndoEvent(
+				{
+					actorId: userId,
+					attempt,
+					documentId: page.documentId,
+					pageId,
+					transcriptionId: transcription.id,
+				},
+				trx,
+			);
+
+			await this.documentRepository.setCursorPageNo(
+				page.documentId,
+				page.pageNo,
+				trx,
+			);
+			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
+
+			return {
+				pageId,
+				status: PageStatus.TRANSCRIBED,
+				transcription: {
+					contextWords: [],
+					id: transcription.id,
+					structured: transcription.structured,
+					text: transcription.text,
+				},
+			};
+		});
 	}
 
 	public async verify(
@@ -268,9 +403,15 @@ class PageService {
 					});
 				}
 
+				const attempt = await this.pageEventRepository.findLatestAttempt(
+					pageId,
+					trx,
+				);
+
 				const existingEvent =
 					await this.pageEventRepository.findVerificationEvent(
 						{
+							attempt,
 							event: action,
 							pageId,
 							transcriptionId,
@@ -317,6 +458,7 @@ class PageService {
 					await this.pageEventRepository.createVerificationEvent(
 						{
 							actorId: userId,
+							attempt,
 							documentId: page.documentId,
 							durationMs: payload.durationMs,
 							event: action,
@@ -335,15 +477,14 @@ class PageService {
 					trx,
 				);
 
-				const shouldAdvanceWindow =
-					!CLOSED_PAGE_STATUSES.has(page.status) &&
-					TRANSCRIBABLE_STATUSES.has(document.toObject().status);
+				const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(page.status);
 				const pagesToQueue = shouldAdvanceWindow
-					? await this.pageRepository.updateFirstPendingPagesAsQueued(
-							page.documentId,
-							NUMBER_OF_PAGES_TO_INCREMENT,
+					? await refillPageWindow({
+							documentId: page.documentId,
+							pageRepository: this.pageRepository,
+							quantity: NUMBER_OF_PAGES_TO_INCREMENT,
 							trx,
-						)
+						})
 					: [];
 
 				await this.documentRepository.markDoneIfAllPagesClosed(

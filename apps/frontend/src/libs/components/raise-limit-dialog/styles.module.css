@@ -1,0 +1,90 @@
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--scrim);
+}
+
+.dialog {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 481.6px;
+	padding: var(--sp-5);
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+	box-shadow: var(--shadow-modal);
+}
+
+.label {
+	display: block;
+	margin: 0 0 var(--sp-2);
+	font: 600 var(--fs-2xs) / 1 var(--font-ui);
+	color: var(--text-2);
+	text-transform: uppercase;
+	letter-spacing: var(--ls-caps);
+}
+
+.title {
+	margin: 0 0 var(--sp-2);
+	font: 600 var(--fs-xl) / var(--lh-tight) var(--font-display);
+	color: var(--text);
+}
+
+.description {
+	margin: 0 0 var(--sp-3);
+	font: 400 var(--fs-sm) / 1.55 var(--font-ui);
+	color: var(--text-2);
+}
+
+.num-highlight {
+	font-size: var(--fs-xs);
+}
+
+.input-container {
+	display: flex;
+	gap: var(--sp-2);
+	align-items: center;
+	height: var(--ctl-md);
+}
+
+.currency-symbol {
+	font-size: var(--fs-xs);
+	line-height: 1;
+	color: var(--text-2);
+}
+
+.input {
+	width: 120px;
+	height: var(--ctl-md);
+	padding: 0 var(--sp-3);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	font-variant-numeric: tabular-nums;
+	color: var(--text);
+	background: var(--surface);
+	border: 1px solid var(--hairline-strong);
+	border-radius: var(--r-md);
+}
+
+.input:focus-visible {
+	outline: var(--ring-w) solid var(--ring);
+	outline-offset: 1px;
+}
+
+.actions {
+	display: flex;
+	gap: var(--sp-2);
+	justify-content: flex-end;
+	margin-top: var(--sp-4);
+}
+
+.error-message {
+	margin: var(--sp-1) 0 0;
+	font-size: var(--fs-xs);
+	line-height: var(--lh-tight);
+	color: var(--danger-text);
+}
