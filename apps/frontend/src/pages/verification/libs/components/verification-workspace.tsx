@@ -1,9 +1,19 @@
 import { Button, FailedStateCard } from "~/libs/components/components.js";
+<<<<<<< HEAD
 import { useRef } from "~/libs/hooks/hooks.js";
+=======
+import { useEffect, useRef } from "~/libs/hooks/hooks.js";
+>>>>>>> 366260c (TSA-336: + drag-to-pan for zoomed scan)
 
+import { INITIAL_ZOOM } from "../constants/verification.constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
+<<<<<<< HEAD
+=======
+import { useResizableSplit } from "../hooks/use-resizable-split.js";
+import { useScanZoom } from "../hooks/use-scan-zoom.js";
+>>>>>>> 366260c (TSA-336: + drag-to-pan for zoomed scan)
 import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
@@ -49,10 +59,34 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		handlePointerMove,
 		handlePointerUp,
 		isDragging,
+<<<<<<< HEAD
 	} = useDragToPan({
 		isEnabled: isZoomed,
 		viewportReference,
 	});
+=======
+		splitPosition,
+	} = useResizableSplit();
+	const viewportReference = useRef<HTMLDivElement>(null);
+	const { resetToTopLeft, scanRef, zoom } = useScanZoom();
+	const isZoomedViewport = isZoomed || zoom > INITIAL_ZOOM;
+	const {
+		handlePointerCancel,
+		handlePointerDown,
+		handlePointerMove,
+		handlePointerUp,
+		isDragging: isPanning,
+	} = useDragToPan({
+		isEnabled: isZoomedViewport,
+		viewportReference,
+	});
+
+	useEffect(() => {
+		if (isZoomedViewport) {
+			resetToTopLeft();
+		}
+	}, [isZoomedViewport, resetToTopLeft]);
+>>>>>>> 366260c (TSA-336: + drag-to-pan for zoomed scan)
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
@@ -144,12 +178,27 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					<div
 						className={`verification-scan__content ${
+<<<<<<< HEAD
 							isZoomed ? "verification-scan__content--zoomed" : ""
 						} ${isDragging ? "verification-scan__content--dragging" : ""}`}
+=======
+							isZoomedViewport ? "verification-scan__content--zoomed" : ""
+						} ${isPanning ? "verification-scan__content--dragging" : ""}`}
+>>>>>>> 366260c (TSA-336: + drag-to-pan for zoomed scan)
 						onPointerCancel={handlePointerCancel}
 						onPointerDown={handlePointerDown}
 						onPointerMove={handlePointerMove}
 						onPointerUp={handlePointerUp}
+<<<<<<< HEAD
+=======
+						ref={(node) => {
+							scanRef.current = node;
+							viewportReference.current =
+								node?.parentElement instanceof HTMLDivElement
+									? node.parentElement
+									: null;
+						}}
+>>>>>>> 366260c (TSA-336: + drag-to-pan for zoomed scan)
 					>
 						{currentPage?.imageUrl ? (
 							<img

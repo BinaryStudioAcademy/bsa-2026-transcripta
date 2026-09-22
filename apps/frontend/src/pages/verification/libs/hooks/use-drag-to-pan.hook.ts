@@ -1,102 +1,117 @@
-import { type PointerEvent, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState } from "~/libs/hooks/hooks.js";
 
-import { FIRST_INDEX } from "~/libs/constants/constants.js";
-import { useEffect, useRef, useState } from "~/libs/hooks/hooks.js";
-
-import {
-	PRIMARY_MOUSE_BUTTON,
-	ZOOM_PAN_ADJUST,
-} from "../constants/verification.constants.js";
+const PRIMARY_MOUSE_BUTTON = 0;
 
 type DragStart = {
 	pointerX: number;
 	pointerY: number;
 };
 
-type UseDragToPanParameters = {
+type UseDragToPanProperties = {
 	isEnabled: boolean;
-	viewportReference: RefObject<HTMLDivElement | null>;
+	viewportReference: React.RefObject<HTMLDivElement | null>;
 };
 
-type UseDragToPanResult = {
-	handlePointerCancel: (event: PointerEvent<HTMLDivElement>) => void;
-	handlePointerDown: (event: PointerEvent<HTMLDivElement>) => void;
-	handlePointerMove: (event: PointerEvent<HTMLDivElement>) => void;
-	handlePointerUp: (event: PointerEvent<HTMLDivElement>) => void;
+type UseDragToPanReturn = {
+	handlePointerCancel: (event: React.PointerEvent<HTMLDivElement>) => void;
+	handlePointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
+	handlePointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
+	handlePointerUp: (event: React.PointerEvent<HTMLDivElement>) => void;
 	isDragging: boolean;
 };
 
 const useDragToPan = ({
 	isEnabled,
 	viewportReference,
-}: UseDragToPanParameters): UseDragToPanResult => {
+}: UseDragToPanProperties): UseDragToPanReturn => {
 	const [isDragging, setIsDragging] = useState(false);
 	const dragStartReference = useRef<DragStart | null>(null);
 
 	useEffect(() => {
 		if (!isEnabled) {
-			return;
+			setIsDragging(false);
+			dragStartReference.current = null;
 		}
+	}, [isEnabled]);
 
-		const viewport = viewportReference.current;
+	const handlePointerDown = useCallback(
+		(event: React.PointerEvent<HTMLDivElement>): void => {
+			if (!isEnabled || event.button !== PRIMARY_MOUSE_BUTTON) {
+				return;
+			}
 
-		if (!viewport) {
-			return;
-		}
+			const viewport = viewportReference.current;
 
-		viewport.scrollLeft = FIRST_INDEX;
-		viewport.scrollTop = FIRST_INDEX;
-	}, [isEnabled, viewportReference]);
+			if (!viewport) {
+				return;
+			}
 
-	const handlePointerDown = (event: PointerEvent<HTMLDivElement>): void => {
-		if (!isEnabled || event.button !== PRIMARY_MOUSE_BUTTON) {
-			return;
-		}
+			event.preventDefault();
+			event.currentTarget.setPointerCapture(event.pointerId);
+			dragStartReference.current = {
+				pointerX: event.clientX,
+				pointerY: event.clientY,
+			};
+			setIsDragging(true);
+		},
+		[isEnabled, viewportReference],
+	);
 
-		event.preventDefault();
-		event.currentTarget.setPointerCapture(event.pointerId);
+	const handlePointerMove = useCallback(
+		(event: React.PointerEvent<HTMLDivElement>): void => {
+			if (!isEnabled || !isDragging || dragStartReference.current === null) {
+				return;
+			}
 
-		dragStartReference.current = {
-			pointerX: event.clientX,
-			pointerY: event.clientY,
-		};
-		setIsDragging(true);
-	};
+			const viewport = viewportReference.current;
 
-	const handlePointerMove = (event: PointerEvent<HTMLDivElement>): void => {
-		const dragStart = dragStartReference.current;
-		const viewport = viewportReference.current;
+			if (!viewport) {
+				return;
+			}
 
-		if (!dragStart || !viewport) {
-			return;
-		}
+			const deltaX = event.clientX - dragStartReference.current.pointerX;
+			const deltaY = event.clientY - dragStartReference.current.pointerY;
 
-		event.preventDefault();
+			viewport.scrollLeft -= deltaX;
+			viewport.scrollTop -= deltaY;
 
-		viewport.scrollLeft -=
-			(event.clientX - dragStart.pointerX) / ZOOM_PAN_ADJUST;
-		viewport.scrollTop -=
-			(event.clientY - dragStart.pointerY) / ZOOM_PAN_ADJUST;
-	};
+			dragStartReference.current = {
+				pointerX: event.clientX,
+				pointerY: event.clientY,
+			};
+		},
+		[isDragging, isEnabled, viewportReference],
+	);
 
-	const finishDrag = (event: PointerEvent<HTMLDivElement>): void => {
-		if (!dragStartReference.current) {
-			return;
-		}
+	const handlePointerUp = useCallback(
+		(event: React.PointerEvent<HTMLDivElement>): void => {
+			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+				event.currentTarget.releasePointerCapture(event.pointerId);
+			}
 
-		if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-			event.currentTarget.releasePointerCapture(event.pointerId);
-		}
+			dragStartReference.current = null;
+			setIsDragging(false);
+		},
+		[],
+	);
 
-		dragStartReference.current = null;
-		setIsDragging(false);
-	};
+	const handlePointerCancel = useCallback(
+		(event: React.PointerEvent<HTMLDivElement>): void => {
+			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+				event.currentTarget.releasePointerCapture(event.pointerId);
+			}
+
+			dragStartReference.current = null;
+			setIsDragging(false);
+		},
+		[],
+	);
 
 	return {
-		handlePointerCancel: finishDrag,
+		handlePointerCancel,
 		handlePointerDown,
 		handlePointerMove,
-		handlePointerUp: finishDrag,
+		handlePointerUp,
 		isDragging,
 	};
 };
