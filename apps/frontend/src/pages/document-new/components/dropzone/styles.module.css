@@ -83,11 +83,6 @@
 	color: var(--text-3);
 }
 
-.dropzone--selected {
-	border-color: var(--hairline-strong);
-	border-style: solid;
-}
-
 .dropzone--rejected {
 	color: var(--danger-text);
 	background: var(--danger-tint);
