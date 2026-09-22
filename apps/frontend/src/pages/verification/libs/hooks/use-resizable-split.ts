@@ -1,5 +1,6 @@
 import { PERCENTAGE_MULTIPLIER } from "~/libs/constants/common.constants.js";
-import { useCallback, useState } from "~/libs/hooks/hooks.js";
+import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
+import { storage, StorageKey } from "~/libs/modules/storage/storage.js";
 
 import {
 	INITIAL_SPLIT_POSITION,
@@ -11,6 +12,42 @@ import { type UseResizableSplitReturn } from "../types/types.js";
 const useResizableSplit = (): UseResizableSplitReturn => {
 	const [splitPosition, setSplitPosition] = useState(INITIAL_SPLIT_POSITION);
 	const [isDragging, setIsDragging] = useState(false);
+	const [isLoaded, setIsLoaded] = useState(false);
+
+	useEffect(() => {
+		const loadSplitPosition = async (): Promise<void> => {
+			const storedPosition = await storage.get(
+				StorageKey.VERIFICATION_SPLIT_POSITION,
+			);
+
+			if (storedPosition !== null) {
+				const parsedPosition = Number(storedPosition);
+
+				if (
+					Number.isFinite(parsedPosition) &&
+					parsedPosition >= MIN_SPLIT_POSITION &&
+					parsedPosition <= MAX_SPLIT_POSITION
+				) {
+					setSplitPosition(parsedPosition);
+				}
+			}
+
+			setIsLoaded(true);
+		};
+
+		void loadSplitPosition();
+	}, []);
+
+	useEffect(() => {
+		if (!isLoaded) {
+			return;
+		}
+
+		void storage.set(
+			StorageKey.VERIFICATION_SPLIT_POSITION,
+			String(splitPosition),
+		);
+	}, [splitPosition, isLoaded]);
 
 	const handleDividerPointerDown = useCallback(
 		(event: React.PointerEvent<HTMLDivElement>): void => {
