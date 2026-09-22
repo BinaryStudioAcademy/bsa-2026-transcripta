@@ -231,11 +231,11 @@ retries. Idempotency here is not automatic and has to be built, because
 `updateLexicon` increments counters unconditionally:
 
 ```sql
-freq = lexicon_entry.freq + 1,
+page_count = lexicon_entry.page_count + 1,
 distinct_pages = lexicon_entry.distinct_pages + CASE WHEN … END
 ```
 
-A second application of the same action inflates `freq` and, worse,
+A second application of the same action inflates `page_count` and, worse,
 `distinct_pages` — and that is the threshold for entering the context. A word
 would reach the prompt without having earned it, which is exactly the poisoning
 [03-core-logic.md](03-core-logic.md#6-context-poisoning--the-main-danger)
@@ -272,9 +272,10 @@ that is a decision rather than an omission.
 
 The counters are shared: the word "Ivanenko" may have arrived from five
 different pages. `lexicon_entry` stores only the totals, so there is no way to
-tell how much of `freq` came from the page being undone. Decrementing blindly
-corrupts the count for the other four pages; the alternatives are an extra
-occurrences table or recomputing the whole document's lexicon on every undo.
+tell how much of `page_count` came from the page being undone. Decrementing
+blindly corrupts the count for the other four pages; the alternatives are an
+extra per-page contribution table or recomputing the whole document's lexicon
+on every undo.
 
 Neither is worth it, because the residual problem is already solved by another
 route. If an undone page contributed a wrong word, the way to remove it is the
