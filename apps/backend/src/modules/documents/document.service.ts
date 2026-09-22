@@ -10,7 +10,6 @@ import {
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
-import { createHash } from "node:crypto";
 import { ForeignKeyViolationError } from "objection";
 
 import {
@@ -29,6 +28,7 @@ import {
 	extractLexiconIds,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
+import { sha256 } from "../context/libs/helpers/hash.helper.js";
 import { PageEntity } from "../pages/page.entity.js";
 import { type PageRepository } from "../pages/page.repository.js";
 import { DocumentEntity } from "./document.entity.js";
@@ -433,7 +433,7 @@ class DocumentService {
 			});
 		}
 
-		const imageSha256 = createHash("sha256").update(pageImage).digest("hex");
+		const imageSha256 = sha256(pageImage);
 
 		const pageEntity = PageEntity.initializeNew({
 			documentId,

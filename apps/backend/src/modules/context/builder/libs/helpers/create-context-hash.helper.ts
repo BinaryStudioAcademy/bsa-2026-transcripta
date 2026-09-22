@@ -1,7 +1,7 @@
-import { createHash } from "node:crypto";
+import { sha256 } from "~/modules/context/libs/helpers/hash.helper.js";
 
 const createContextHash = (contextBlocks: string[]): string => {
-	return createHash("sha256").update(contextBlocks.join("\n")).digest("hex");
+	return sha256(contextBlocks.join("\n"));
 };
 
 export { createContextHash };

@@ -15,6 +15,7 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
@@ -38,8 +39,9 @@ import {
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
 } from "./libs/constants/verification.constants.js";
-import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import "./verification.css";
+import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
 	type EditConflictDraft,
 	type PageVerificationActionValue,
@@ -124,7 +126,7 @@ const Verification: React.FC = () => {
 			pageActions.loadPages({
 				documentId: document.id,
 				query: {
-					from: cursorPageNo,
+					from: getPagesFrom(cursorPageNo),
 					limit: MAX_LOADED_PAGES,
 				},
 			}),
@@ -273,6 +275,14 @@ const Verification: React.FC = () => {
 		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
 	}, [currentPage, dispatch]);
 
+	const handlePause = useCallback((): void => {
+		if (!document) {
+			return;
+		}
+
+		void dispatch(documentActions.pause(document.id));
+	}, [dispatch, document]);
+
 	const handleToggleEdit = useCallback((): void => {
 		if (!currentPage?.transcription || isVerifying) {
 			return;
@@ -348,10 +358,12 @@ const Verification: React.FC = () => {
 				editConflictDraft={editConflictDraft}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
+				isPauseDisabled={document.status !== DocumentStatus.PROCESSING}
 				isReprocessing={isReprocessing}
 				isVerifying={isVerifying}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
+				onPause={handlePause}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
