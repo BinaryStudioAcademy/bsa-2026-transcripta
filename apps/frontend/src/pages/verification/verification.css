@@ -113,7 +113,15 @@
 }
 
 .verification-scan__content--zoomed {
+	touch-action: none;
+	cursor: grab;
+	user-select: none;
 	transform: scale(1.5);
+}
+
+.verification-scan__content--dragging {
+	cursor: grabbing;
+	transition: none;
 }
 
 .verification-scan__image {

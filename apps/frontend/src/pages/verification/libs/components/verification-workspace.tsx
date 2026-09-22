@@ -1,7 +1,9 @@
 import { Button, FailedStateCard } from "~/libs/components/components.js";
+import { useRef } from "~/libs/hooks/hooks.js";
 
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
@@ -39,6 +41,19 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onToggleEdit,
 	pageCount,
 }) => {
+	const viewportReference = useRef<HTMLDivElement>(null);
+
+	const {
+		handlePointerCancel,
+		handlePointerDown,
+		handlePointerMove,
+		handlePointerUp,
+		isDragging,
+	} = useDragToPan({
+		isEnabled: isZoomed,
+		viewportReference,
+	});
+
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
 			return (
@@ -122,7 +137,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	return (
 		<div className="tx-split verification-workspace">
 			<div className="tx-split-pane verification-scan-pane">
-				<div className="verification-scan">
+				<div className="verification-scan" ref={viewportReference}>
 					<span className="verification-scan__placeholder-label">
 						scan placeholder
 					</span>
@@ -130,12 +145,17 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 					<div
 						className={`verification-scan__content ${
 							isZoomed ? "verification-scan__content--zoomed" : ""
-						}`}
+						} ${isDragging ? "verification-scan__content--dragging" : ""}`}
+						onPointerCancel={handlePointerCancel}
+						onPointerDown={handlePointerDown}
+						onPointerMove={handlePointerMove}
+						onPointerUp={handlePointerUp}
 					>
 						{currentPage?.imageUrl ? (
 							<img
 								alt={`Page ${String(currentPage.pageNo)}`}
 								className="verification-scan__image"
+								draggable={false}
 								src={currentPage.imageUrl}
 							/>
 						) : (
