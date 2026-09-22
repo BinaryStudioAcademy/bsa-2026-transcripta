@@ -1,5 +1,7 @@
+import { type DocumentGetLexiconItemResponseDto } from "@transcripta/shared";
 import { raw, type Transaction } from "objection";
 
+import { LEXICON_CONTEXT_ORDER } from "~/context/context.js";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentDetailsEntity } from "~/modules/documents/document-details.entity.js";
@@ -162,15 +164,37 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
-	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
+	public async findLexiconByIds(
+		ids: number[],
+		trx?: Transaction,
+	): Promise<LexiconRow[]> {
 		if (ids.length === EMPTY_COLLECTION_LENGTH) {
 			return [];
 		}
 
-		return await LexiconEntryModel.query()
+		return await LexiconEntryModel.query(trx)
 			.select("id", "valueDisplay", "distinctPages")
 			.whereIn("id", ids)
 			.castTo<LexiconRow[]>();
+	}
+
+	public async findLiveLexiconByDocumentId(
+		documentId: number,
+	): Promise<DocumentGetLexiconItemResponseDto[]> {
+		return await LexiconEntryModel.query()
+			.select(
+				"id",
+				"kind",
+				"valueDisplay",
+				"freq",
+				"distinctPages",
+				"firstPageNo",
+				"lastPageNo",
+			)
+			.where("documentId", documentId)
+			.whereNull("invalidatedAt")
+			.orderBy([...LEXICON_CONTEXT_ORDER])
+			.castTo<DocumentGetLexiconItemResponseDto[]>();
 	}
 
 	public async findOwnedDocumentId(
@@ -215,6 +239,20 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async markProcessingIfDone(
+		id: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ status: DocumentStatus.PROCESSING })
+			.where({
+				id,
+				status: DocumentStatus.DONE,
+			})
+			.execute();
+	}
+
 	public async resumeFromBudgetStop(
 		id: number,
 		trx: Transaction,
@@ -224,6 +262,18 @@ class DocumentRepository {
 			.patch({ status: DocumentStatus.PROCESSING })
 			.where({ id, status: DocumentStatus.BUDGET_STOP })
 			.whereColumn("budgetUsd", ">", "spentUsd")
+			.execute();
+	}
+
+	public async setCursorPageNo(
+		documentId: number,
+		cursorPageNo: number,
+		trx: Transaction,
+	): Promise<void> {
+		await this.documentModel
+			.query(trx)
+			.patch({ cursorPageNo })
+			.where({ id: documentId })
 			.execute();
 	}
 

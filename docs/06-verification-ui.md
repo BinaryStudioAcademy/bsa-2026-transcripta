@@ -245,7 +245,7 @@ The guard is a unique index on the history table, which is append-only anyway:
 
 ```sql
 CREATE UNIQUE INDEX page_event_once
-  ON page_event (page_id, transcription_id, event)
+	ON page_event (page_id, transcription_id, event, attempt)
   WHERE event IN ('confirm', 'correct', 'skip');
 ```
 
@@ -255,10 +255,12 @@ the endpoint answers `200` with the current page state — the client sees
 success and drops the action from its queue.
 
 Both the column and the index are already in
-[schema.sql](schema/schema.sql) — `page_event.transcription_id` and
-`page_event_once`. The index is partial on purpose: `transcribed` and `failed`
-are system events that legitimately repeat on a re-run, so only the three human
-actions are constrained.
+[schema.sql](schema/schema.sql) — `page_event.transcription_id`,
+`page_event.attempt` and `page_event_once`. Undo increments `attempt`, so the
+same human action after undo is a new attempt while a retry within the same
+attempt is still absorbed. The index is partial on purpose: `transcribed` and
+`failed` are system events that legitimately repeat on a re-run, so only the
+three human actions are constrained.
 
 Answering `200` rather than `409` matters: a replay is not a conflict. The
 human did confirm this page against this transcription, and the outcome the
