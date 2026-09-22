@@ -13,7 +13,6 @@ import {
 	buildRederiveStructuredPrompt,
 	calculateTokenCost,
 	createOutputValidator,
-	generateRederiveStructuredCacheKey,
 	parseModelJson,
 	stripCodeFence,
 } from "./libs/helpers/helpers.js";
@@ -55,9 +54,6 @@ class TranscriptionService {
 	private client: BedrockRuntimeClient;
 
 	private defaultModelId: string;
-
-	private rederiveStructuredCache: Record<string, RederiveStructuredResponse> =
-		{};
 
 	private secrets: BaseSecrets;
 
@@ -223,16 +219,6 @@ class TranscriptionService {
 		}
 
 		const resolvedModelId = (modelId ?? this.defaultModelId) as ModelIdValue;
-		const cacheKey = generateRederiveStructuredCacheKey({
-			modelId: resolvedModelId,
-			outputSchema,
-			structured: transcriptionStructured,
-			text,
-		});
-
-		if (this.rederiveStructuredCache[cacheKey]) {
-			return this.rederiveStructuredCache[cacheKey];
-		}
 
 		const prompt = buildRederiveStructuredPrompt(
 			text,
@@ -241,14 +227,10 @@ class TranscriptionService {
 		);
 		let response: TranscriptionResponse;
 
-		try {
-			response = await this.transcribe({
-				modelId: resolvedModelId,
-				prompt,
-			});
-		} catch {
-			return null;
-		}
+		response = await this.transcribe({
+			modelId: resolvedModelId,
+			prompt,
+		});
 
 		const responseText = stripCodeFence(response.text);
 		const parsed = parseModelJson(responseText);
@@ -270,16 +252,6 @@ class TranscriptionService {
 
 		const result = createOutputValidator(outputSchema)(parsed.value);
 		const structured = result.valid ? parsed.value || null : null;
-
-		if (result.valid) {
-			this.rederiveStructuredCache[cacheKey] = {
-				costUsd: 0,
-				inputTokens: response.usage.inputTokens,
-				latencyMs: 0,
-				outputTokens: response.usage.outputTokens,
-				structured,
-			};
-		}
 
 		return {
 			costUsd,
