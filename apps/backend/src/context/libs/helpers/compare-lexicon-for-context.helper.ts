@@ -13,8 +13,8 @@ const compareLexiconForContext = (
 		return right.distinctPages - left.distinctPages;
 	}
 
-	if (left.freq !== right.freq) {
-		return right.freq - left.freq;
+	if (left.pageCount !== right.pageCount) {
+		return right.pageCount - left.pageCount;
 	}
 
 	if (left.valueDisplay < right.valueDisplay) {
