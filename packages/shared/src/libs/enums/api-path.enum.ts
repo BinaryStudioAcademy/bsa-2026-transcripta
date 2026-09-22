@@ -3,6 +3,7 @@ const APIPath = {
 	DOCUMENTS: "/documents",
 	LEXICON: "/lexicon",
 	PAGES: "/pages",
+	PRESETS: "/presets",
 	USERS: "/users",
 } as const;
 
