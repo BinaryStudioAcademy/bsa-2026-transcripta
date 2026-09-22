@@ -92,7 +92,7 @@
 	height: 100%;
 	padding: var(--sp-7) var(--sp-8);
 	overflow: auto;
-	background: var(--paper-100);
+	background: var(--surface);
 }
 
 .verification-scan__placeholder-label {
@@ -143,11 +143,20 @@
 	color: var(--text-3);
 }
 
-.verification-transcription__text {
+.verification-transcription__text,
+.verification-transcription__draft {
 	max-width: 560px;
 	margin: 0;
 	font: 400 16px/1.65 var(--font-ui);
 	color: var(--text);
+}
+
+.verification-transcription__draft {
+	margin-top: var(--sp-4);
+}
+
+.verification-transcription__draft p {
+	margin: 0;
 }
 
 .verification-actions {

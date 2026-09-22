@@ -172,6 +172,17 @@ class DocumentController extends BaseController {
 		});
 
 		this.addRoute({
+			handler: (options) =>
+				this.findLexicon(options as DocumentFindByIdOptions),
+			method: HTTPMethod.GET,
+			path: DocumentsApiPath.BY_ID_LEXICON,
+			preHandler: authGuard,
+			validation: {
+				params: DocumentGetByIdParametersValidationSchema,
+			},
+		});
+
+		this.addRoute({
 			handler: (options) => this.findPages(options as DocumentFindPagesOptions),
 			method: HTTPMethod.GET,
 			path: DocumentsApiPath.BY_ID_PAGES,
@@ -375,6 +386,38 @@ class DocumentController extends BaseController {
 	): Promise<APIHandlerResponse> {
 		return {
 			payload: await this.documentService.findById(
+				options.params.id,
+				options.user.userId,
+			),
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/lexicon:
+	 *   get:
+	 *     description: Returns live lexicon entries for a document owned by the caller
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *           minimum: 1
+	 *     responses:
+	 *       200:
+	 *         description: Lexicon entries ordered by distinct pages then frequency
+	 *       404:
+	 *         description: Document not found
+	 */
+	private async findLexicon(
+		options: DocumentFindByIdOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.findLexicon(
 				options.params.id,
 				options.user.userId,
 			),
