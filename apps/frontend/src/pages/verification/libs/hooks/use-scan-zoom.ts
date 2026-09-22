@@ -10,7 +10,7 @@ import {
 	ZOOM_PAN_RESET,
 	ZOOM_STEP,
 } from "../constants/verification.constants.js";
-import { type UseScanZoomReturn } from "../types/types.js";
+import { type UseScanZoomReturn } from "../types/use-scan-zoom-return.type.js";
 
 const useScanZoom = (): UseScanZoomReturn => {
 	const [zoom, setZoom] = useState(INITIAL_ZOOM);
