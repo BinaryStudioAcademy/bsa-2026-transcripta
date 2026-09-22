@@ -27,3 +27,5 @@ declare module "eslint-plugin-jsx-a11y" {
 		configs,
 	};
 }
+
+declare module "react18-json-view";

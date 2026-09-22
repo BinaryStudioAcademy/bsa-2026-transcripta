@@ -1,3 +1,6 @@
+import JsonView from "react18-json-view";
+import "react18-json-view/src/style.css";
+
 import { Button, FailedStateCard } from "~/libs/components/components.js";
 
 import { PageStatus } from "../enums/enums.js";
@@ -70,9 +73,10 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						/>
 					) : (
 						<>
-							<p className="verification-transcription__text">
-								{currentPage.transcription.text}
-							</p>
+							<JsonView
+								collapsed={2}
+								src={currentPage.transcription.structured}
+							/>
 
 							<div className="verification-actions">
 								<Button

@@ -138,6 +138,18 @@
 	overflow: auto;
 }
 
+.json-view {
+	--json-property: var(--accent-text);
+	--json-string: var(--ok-text);
+	--json-number: var(--link);
+	--json-index: var(--link);
+	--json-boolean: var(--warn-text);
+	--json-null: var(--text-3);
+
+	font: 400 16px/1.65 var(--font-ui);
+	color: var(--text);
+}
+
 .verification-transcription__page {
 	font-variant-numeric: tabular-nums;
 	color: var(--text-3);
