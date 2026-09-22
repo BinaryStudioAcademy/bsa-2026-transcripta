@@ -164,12 +164,15 @@ class DocumentRepository {
 		return documents.map((document) => DocumentEntity.initialize(document));
 	}
 
-	public async findLexiconByIds(ids: number[]): Promise<LexiconRow[]> {
+	public async findLexiconByIds(
+		ids: number[],
+		trx?: Transaction,
+	): Promise<LexiconRow[]> {
 		if (ids.length === EMPTY_COLLECTION_LENGTH) {
 			return [];
 		}
 
-		return await LexiconEntryModel.query()
+		return await LexiconEntryModel.query(trx)
 			.select("id", "valueDisplay", "distinctPages")
 			.whereIn("id", ids)
 			.castTo<LexiconRow[]>();
