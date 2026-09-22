@@ -1,6 +1,7 @@
 import {
 	DeleteObjectsCommand,
 	GetObjectCommand,
+	HeadObjectCommand,
 	ListObjectsV2Command,
 	NoSuchKey,
 	PutObjectCommand,
@@ -15,7 +16,10 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
-import { ObjectNotUploadedError } from "~/libs/exceptions/exceptions.js";
+import {
+	ObjectNotUploadedError,
+	ObjectTooLargeError,
+} from "~/libs/exceptions/exceptions.js";
 import { type Config } from "~/libs/modules/config/config.js";
 
 import {
@@ -156,7 +160,10 @@ class BaseStorage implements Storage {
 		return Buffer.from(body);
 	}
 
-	public async downloadToTempFolder(sourceKey: string): Promise<{
+	public async downloadToTempFolder(
+		sourceKey: string,
+		maxSize?: number,
+	): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;
 	}> {
@@ -168,12 +175,29 @@ class BaseStorage implements Storage {
 		};
 
 		try {
+			const bucket = this.buckets[StorageBucket.UPLOADS];
+
+			if (maxSize) {
+				const headCommand = new HeadObjectCommand({
+					Bucket: bucket,
+					Key: sourceKey,
+				});
+				const headResponse = await this.client.send(headCommand);
+
+				if (
+					headResponse.ContentLength &&
+					headResponse.ContentLength > maxSize
+				) {
+					throw new ObjectTooLargeError(StorageErrorMessage.OBJECT_TOO_LARGE);
+				}
+			}
+
 			const temporaryFilePath = path.join(
 				temporaryDirectoryPath,
 				`${TMPFILE_NAME}.pdf`,
 			);
 			const command = new GetObjectCommand({
-				Bucket: this.buckets[StorageBucket.UPLOADS],
+				Bucket: bucket,
 				Key: sourceKey,
 			});
 

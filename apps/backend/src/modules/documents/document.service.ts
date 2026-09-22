@@ -15,6 +15,7 @@ import { ForeignKeyViolationError } from "objection";
 
 import {
 	ObjectNotUploadedError,
+	ObjectTooLargeError,
 	PDFTimeoutError,
 } from "~/libs/exceptions/exceptions.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
@@ -47,6 +48,7 @@ import {
 	type DocumentGetByIdResponseDto,
 	type DocumentServiceDependencies,
 	type DocumentUploadUrlRequestDto,
+	type ValueOf,
 } from "./libs/types/types.js";
 
 class DocumentService {
@@ -180,17 +182,28 @@ class DocumentService {
 		let filePath: string;
 
 		try {
-			const downloadResult = await this.storage.downloadToTempFolder(sourceKey);
+			const downloadResult = await this.storage.downloadToTempFolder(
+				sourceKey,
+				DocumentValidationRule.MAX_FILE_BYTES,
+			);
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
 			const isObjectNotUploaded = error instanceof ObjectNotUploadedError;
-			const finalErrorMessage = isObjectNotUploaded
-				? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
-				: DocumentErrorMessage.DOWNLOAD_FAILED;
-			const statusCode = isObjectNotUploaded
-				? HTTPCode.NOT_FOUND
-				: HTTPCode.INTERNAL_SERVER_ERROR;
+			const isObjectTooLarge = error instanceof ObjectTooLargeError;
+			let finalErrorMessage: string;
+			let statusCode: ValueOf<typeof HTTPCode>;
+
+			if (isObjectNotUploaded) {
+				finalErrorMessage = DocumentErrorMessage.DOCUMENT_NOT_UPLOADED;
+				statusCode = HTTPCode.NOT_FOUND;
+			} else if (isObjectTooLarge) {
+				finalErrorMessage = DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE;
+				statusCode = HTTPCode.CONTENT_TOO_LARGE;
+			} else {
+				finalErrorMessage = DocumentErrorMessage.DOWNLOAD_FAILED;
+				statusCode = HTTPCode.INTERNAL_SERVER_ERROR;
+			}
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
