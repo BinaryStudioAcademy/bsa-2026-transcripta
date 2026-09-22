@@ -30,7 +30,7 @@ type State = {
 	dataStatus: DataStatusValue;
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: DataStatusValue;
-	documentExports: DocumentExport[];
+	documentExports: Record<number, DocumentExport[]>;
 	documents: DocumentGetAllItemResponseDto[];
 	pauseResumeDataStatuses: Record<number, DataStatusValue>;
 	requestedDocumentId: null | number;
@@ -41,7 +41,7 @@ const initialState: State = {
 	dataStatus: DataStatus.IDLE,
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
-	documentExports: [],
+	documentExports: {},
 	documents: [],
 	pauseResumeDataStatuses: {},
 	requestedDocumentId: null,
@@ -151,7 +151,13 @@ const { actions, name, reducer } = createSlice({
 			}
 		});
 		builder.addCase(requestExport.pending, (state, action) => {
-			state.documentExports.unshift({
+			const { documentId } = action.meta.arg;
+
+			if (!state.documentExports[documentId]) {
+				state.documentExports[documentId] = [];
+			}
+
+			state.documentExports[documentId].unshift({
 				id: action.meta.requestId,
 				name: `export.${action.meta.arg.format}`,
 				ready: false,
@@ -159,7 +165,14 @@ const { actions, name, reducer } = createSlice({
 			});
 		});
 		builder.addCase(requestExport.fulfilled, (state, action) => {
-			const index = state.documentExports.findIndex(
+			const { documentId } = action.meta.arg;
+			const exports = state.documentExports[documentId];
+
+			if (!exports) {
+				return;
+			}
+
+			const index = exports.findIndex(
 				(export_) => export_.id === action.meta.requestId,
 			);
 
@@ -167,7 +180,7 @@ const { actions, name, reducer } = createSlice({
 				return;
 			}
 
-			state.documentExports[index] = {
+			exports[index] = {
 				id: action.meta.requestId,
 				name: action.payload.name,
 				ready: true,
