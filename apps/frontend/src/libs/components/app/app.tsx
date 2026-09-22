@@ -58,9 +58,9 @@ const App: React.FC = () => {
 	return (
 		<div className="app-layout">
 			<Sidebar />
-			<main className="app-main">
+			<div className="app-main">
 				<RouterOutlet />
-			</main>
+			</div>
 		</div>
 	);
 };
