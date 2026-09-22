@@ -8,6 +8,7 @@ import { type Config } from "~/libs/modules/config/config.js";
 import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
 import { SYSTEM_PROMPT } from "./libs/constants/constants.js";
+import { toProviderRateLimitError } from "./libs/helpers/helpers.js";
 import {
 	type TranscriptionRequest,
 	type TranscriptionResponse,
@@ -163,7 +164,7 @@ class TranscriptionService {
 		};
 	}
 
-	public async transcribe({
+	private async transcribeWithProvider({
 		image,
 		mediaType,
 		modelId,
@@ -220,6 +221,16 @@ class TranscriptionService {
 				outputTokens: anthropic.usage.output_tokens,
 			},
 		};
+	}
+
+	public async transcribe(
+		request: TranscriptionRequest,
+	): Promise<TranscriptionResponse> {
+		try {
+			return await this.transcribeWithProvider(request);
+		} catch (error) {
+			throw toProviderRateLimitError(error) ?? error;
+		}
 	}
 }
 
