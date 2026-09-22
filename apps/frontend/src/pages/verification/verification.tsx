@@ -106,7 +106,11 @@ const Verification: React.FC = () => {
 			return;
 		}
 
-		dispatch(pageActions.setCursorPageNo(document.cursorPageNo));
+		dispatch(
+			pageActions.setCursorPageNo(
+				Math.min(document.cursorPageNo, document.pageCount),
+			),
+		);
 	}, [document, dispatch]);
 
 	useEffect(() => {
