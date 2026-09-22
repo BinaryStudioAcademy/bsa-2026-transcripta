@@ -1,0 +1,101 @@
+import { Button } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
+import { type ExportFormatValue } from "~/modules/documents/documents.js";
+import { ExportFormat } from "~/modules/documents/libs/enums/enums.js";
+
+type Properties = {
+	documentTitle: string;
+	onCancel: () => void;
+	onConfirm: (format: ExportFormatValue) => void;
+	pagesTotal: number;
+	pagesVerified: number;
+};
+
+const FORMAT_OPTIONS = [ExportFormat.JSON, ExportFormat.CSV, ExportFormat.TXT];
+
+const ExportDialog: React.FC<Properties> = ({
+	documentTitle,
+	onCancel,
+	onConfirm,
+	pagesTotal,
+	pagesVerified,
+}) => {
+	const [format, setFormat] = useState<ExportFormatValue>(ExportFormat.CSV);
+	const pagesUnverified = pagesTotal - pagesVerified;
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent): void => {
+			if (event.key === "Escape") {
+				onCancel();
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [onCancel]);
+
+	const handleScrimClick = useCallback(
+		(event: React.MouseEvent<HTMLDivElement>): void => {
+			if (event.target === event.currentTarget) {
+				onCancel();
+			}
+		},
+		[onCancel],
+	);
+
+	const handleConfirmClick = useCallback((): void => {
+		onConfirm(format);
+	}, [format, onConfirm]);
+
+	const handleFormatChange = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => {
+			setFormat(event.target.value as ExportFormatValue);
+		},
+		[],
+	);
+
+	return (
+		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape (handled above) is the keyboard equivalent for dismissing the scrim
+		<div onClick={handleScrimClick}>
+			<div aria-modal="true" role="dialog">
+				<h2>Export &ldquo;{documentTitle}&rdquo;</h2>
+
+				<fieldset>
+					<legend>Format</legend>
+					{FORMAT_OPTIONS.map((value) => (
+						<label key={value}>
+							<input
+								checked={format === value}
+								name="export-format"
+								onChange={handleFormatChange}
+								type="radio"
+								value={value}
+							/>
+							{value.toUpperCase()}
+						</label>
+					))}
+				</fieldset>
+
+				{pagesUnverified > INITIAL_COUNT && (
+					<p>
+						<span className="tabular-figures">{pagesUnverified}</span> of{" "}
+						<span className="tabular-figures">{pagesTotal}</span> pages are
+						still unverified. They will be exported as the model read them,
+						unchecked.
+					</p>
+				)}
+
+				<div>
+					<Button label="Cancel" onClick={onCancel} />
+					<Button isPrimary label="Export" onClick={handleConfirmClick} />
+				</div>
+			</div>
+		</div>
+	);
+};
+
+export { ExportDialog };

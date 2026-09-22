@@ -4,6 +4,7 @@ import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
 import {
 	type DocumentCreateResponseDto,
+	type DocumentExport,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
@@ -16,14 +17,18 @@ import {
 	pause,
 	pollDocumentById,
 	remove,
+	requestExport,
 	resume,
 } from "./actions.js";
+
+const NOT_FOUND_INDEX = -1;
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
 	dataStatus: DataStatusValue;
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: DataStatusValue;
+	documentExports: DocumentExport[];
 	documents: DocumentGetAllItemResponseDto[];
 	pauseResumeDataStatuses: Record<number, DataStatusValue>;
 	requestedDocumentId: null | number;
@@ -34,6 +39,7 @@ const initialState: State = {
 	dataStatus: DataStatus.IDLE,
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
+	documentExports: [],
 	documents: [],
 	pauseResumeDataStatuses: {},
 	requestedDocumentId: null,
@@ -141,6 +147,30 @@ const { actions, name, reducer } = createSlice({
 			if (state.document && state.document.id === action.meta.arg) {
 				state.document.status = DocumentStatus.PAUSED;
 			}
+		});
+		builder.addCase(requestExport.pending, (state, action) => {
+			state.documentExports.unshift({
+				id: action.meta.requestId,
+				name: `export.${action.meta.arg.format}`,
+				ready: false,
+				readyMeta: "Preparing…",
+			});
+		});
+		builder.addCase(requestExport.fulfilled, (state, action) => {
+			const index = state.documentExports.findIndex(
+				(export_) => export_.id === action.meta.requestId,
+			);
+
+			if (index === NOT_FOUND_INDEX) {
+				return;
+			}
+
+			state.documentExports[index] = {
+				id: action.meta.requestId,
+				name: action.payload.name,
+				ready: true,
+				readyMeta: action.payload.readyMeta,
+			};
 		});
 	},
 	initialState,

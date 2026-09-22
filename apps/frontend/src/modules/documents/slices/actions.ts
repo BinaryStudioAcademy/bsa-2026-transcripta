@@ -14,6 +14,7 @@ import {
 	type DocumentGetByIdResponseDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
+	type ExportFormatValue,
 } from "~/modules/documents/documents.js";
 
 import {
@@ -23,6 +24,8 @@ import {
 } from "../libs/constants/constants.js";
 import { PollingIntervalsMS } from "../libs/enums/enums.js";
 import { name as sliceName } from "./documents.slice.js";
+
+const MOCK_EXPORT_DELAY_MS = 2000;
 
 type GetUploadUrlPayload = {
 	id: number;
@@ -228,6 +231,20 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 	},
 );
 
+const requestExport = createAsyncThunk<
+	{ name: string; readyMeta: string },
+	{ documentId: number; format: ExportFormatValue },
+	AsyncThunkConfig
+>(
+	`${sliceName}/request-export`,
+	async ({ format }) => {
+		await new Promise((resolve) => setTimeout(resolve, MOCK_EXPORT_DELAY_MS));
+
+		return { name: `export.${format}`, readyMeta: "just now" };
+	},
+	{ serializeError },
+);
+
 export {
 	create,
 	getUploadUrl,
@@ -237,6 +254,7 @@ export {
 	pause,
 	pollDocumentById,
 	remove,
+	requestExport,
 	resume,
 	startPolling,
 	stopPolling,
