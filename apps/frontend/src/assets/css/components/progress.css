@@ -1,0 +1,22 @@
+.tx-progress-track {
+	height: 6px;
+	margin-top: var(--sp-3);
+	overflow: hidden;
+	background: var(--hairline);
+	border-radius: 3px;
+}
+
+.tx-progress-fill {
+	height: 100%;
+	background: var(--accent);
+}
+
+.tx-progress-cap {
+	display: flex;
+	gap: var(--sp-3);
+	justify-content: space-between;
+	margin-top: var(--sp-2);
+	font: 400 var(--fs-xs) / 1.4 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-2);
+}

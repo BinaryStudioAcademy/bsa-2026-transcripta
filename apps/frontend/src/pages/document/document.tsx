@@ -1,14 +1,9 @@
 import { useRef, useState } from "react";
 
 import {
-	BudgetIndicator,
-	Button,
 	ConfirmDialog,
-	GroundTruthBlock,
 	Link,
 	LoaderOverlay,
-	OverflowMenu,
-	ProgressBar,
 	RaiseLimitDialog,
 	ThemeToggle,
 } from "~/libs/components/components.js";
@@ -17,10 +12,8 @@ import {
 	BUDGET_UPLOAD_FAILED_MESSAGE,
 	INITIAL_COUNT,
 	NOTIFICATION_DELAY_MS,
-	ONE_QUANTITY,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
-import { configureString, formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -35,7 +28,12 @@ import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import {
 	DocumentFailedBlock,
-	DocumentStatusBlock,
+	DocumentTitleBlock,
+	ExportBlock,
+	GroundTruthBlock,
+	PagesBlock,
+	TranscriptionBlock,
+	VerificationBlock,
 } from "./libs/components/components.js";
 import styles from "./styles.module.css";
 
@@ -52,10 +50,6 @@ const Document: React.FC = () => {
 	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
 
 	const { id } = useParams();
-
-	const failedPagesCount = currentDocument?.progress.pagesFailed;
-	const failedPageLabel = failedPagesCount === ONE_QUANTITY ? "page" : "pages";
-	const failedPagePronoun = failedPagesCount === ONE_QUANTITY ? "it" : "them";
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -193,139 +187,110 @@ const Document: React.FC = () => {
 			});
 	}, [currentDocument, dispatch]);
 
+	const pagesTranscribed = currentDocument
+		? currentDocument.progress.pagesVerified +
+			currentDocument.progress.pagesReadyToCheck +
+			currentDocument.progress.pagesSkipped
+		: INITIAL_COUNT;
+
 	return (
-		<>
+		<div className={styles["document-page"]}>
 			{isLoading && <LoaderOverlay label="Loading document" />}
 			{hasError && <p>Unable to load the document.</p>}
+
 			{currentDocument && (
 				<>
-					<Link to={AppRoute.DOCUMENTS}>← Back to Documents</Link>
-
 					<header className={styles["document-page__header"]}>
-						<h1>{currentDocument.title}</h1>
-
-						<div className={styles["document-page__actions"]}>
-							<OverflowMenu
-								items={[
-									{
-										isDanger: true,
-										label: "Delete",
-										onClick: handleOpenDeleteDialog,
-									},
-								]}
-							/>
-							<ThemeToggle />
-						</div>
+						<nav className={styles["document-page__breadcrumb"]}>
+							<Link
+								className={styles["document-page__breadcrumb-link"] ?? ""}
+								to={AppRoute.DOCUMENTS}
+							>
+								Documents
+							</Link>
+							<span className={styles["document-page__breadcrumb-separator"]}>
+								/
+							</span>
+							<span className={styles["document-page__breadcrumb-current"]}>
+								{currentDocument.title}
+							</span>
+						</nav>
+						<ThemeToggle />
 					</header>
 
-					<DocumentStatusBlock
-						documentId={currentDocument.id}
-						status={currentDocument.status}
-					/>
-
-					{isFailed ? (
-						<section>
-							<h2>Ingest failed</h2>
-							<DocumentFailedBlock
-								errorMessage={currentDocument.errorMessage}
-								onRetry={handleRetry}
+					<main className={styles["document-page__main"]}>
+						<div className={styles["document-page__content"]}>
+							<DocumentTitleBlock
+								documentId={currentDocument.id}
+								onDeleteClick={handleOpenDeleteDialog}
+								pageCount={currentDocument.pageCount}
+								presetName={currentDocument.preset.name}
+								status={currentDocument.status}
+								title={currentDocument.title}
 							/>
-						</section>
-					) : (
-						<>
-							<section>
-								<h2>Transcription</h2>
-								<ProgressBar
-									closedPct={currentDocument.progress.closedPct}
-									verifiedPct={currentDocument.progress.verifiedPct}
-								/>
-								<div>
-									<span className="tabular-figures">
-										{currentDocument.progress.pagesVerified}
-									</span>{" "}
-									of{" "}
-									<span className="tabular-figures">
-										{currentDocument.progress.pagesTotal}
-									</span>{" "}
-									pages verified
-									{currentDocument.progress.pagesInWork > INITIAL_COUNT && (
-										<span>
-											{" "}
-											·{" "}
-											<span className="tabular-figures">
-												{currentDocument.progress.pagesInWork}
-											</span>{" "}
-											in work
-										</span>
-									)}
-								</div>
-								<BudgetIndicator
-									limitUsd={currentDocument.budget.limitUsd}
-									spentUsd={currentDocument.budget.spentUsd}
-								/>
-							</section>
 
-							{currentDocument.status === DocumentStatus.BUDGET_STOP && (
-								<section className="budget-stop-banner">
-									<p>
-										Stopped before page{" "}
-										<span className="tx-num">
-											{currentDocument.cursorPageNo}
-										</span>{" "}
-										— spent{" "}
-										<span className="tx-num">
-											{formatMoney(currentDocument.budget.spentUsd)}
-										</span>{" "}
-										of{" "}
-										<span className="tx-num">
-											{formatMoney(currentDocument.budget.limitUsd)}
-										</span>{" "}
-										budget.
-									</p>
-									<Button
-										isSecondary
-										isSmall
-										label="Raise the limit"
-										onClick={handleOpenRaiseLimit}
+							{isFailed ? (
+								<section>
+									<h2>Ingest failed</h2>
+									<DocumentFailedBlock
+										errorMessage={currentDocument.errorMessage}
+										onRetry={handleRetry}
 									/>
 								</section>
+							) : (
+								<>
+									<PagesBlock
+										cursorPageNo={currentDocument.cursorPageNo}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesInWork={currentDocument.progress.pagesInWork}
+										pagesPending={currentDocument.progress.pagesPending}
+										pagesReadyToCheck={
+											currentDocument.progress.pagesReadyToCheck
+										}
+										pagesSkipped={currentDocument.progress.pagesSkipped}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
+
+									<VerificationBlock
+										cursorPageNo={currentDocument.cursorPageNo}
+										documentId={currentDocument.id}
+										pagesReadyToCheck={
+											currentDocument.progress.pagesReadyToCheck
+										}
+										pagesSkipped={currentDocument.progress.pagesSkipped}
+										pagesTranscribed={pagesTranscribed}
+										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
+
+									<TranscriptionBlock
+										budgetLimitUsd={currentDocument.budget.limitUsd}
+										budgetSpentUsd={currentDocument.budget.spentUsd}
+										cursorPageNo={currentDocument.cursorPageNo}
+										onRaiseLimitClick={handleOpenRaiseLimit}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										status={currentDocument.status}
+									/>
+
+									<ExportBlock />
+
+									{currentDocument.groundTruth && (
+										<GroundTruthBlock
+											cer={currentDocument.groundTruth.cer}
+											documentId={currentDocument.id}
+											pagesTotal={currentDocument.groundTruth.pagesTotal}
+											pagesTyped={currentDocument.groundTruth.pagesTyped}
+										/>
+									)}
+								</>
 							)}
-
-							<section>
-								<h2>Verification</h2>
-								<Link
-									to={configureString(AppRoute.VERIFICATION, {
-										id: String(currentDocument.id),
-									})}
-								>
-									Resume at page{" "}
-									<span className="tabular-figures">
-										{currentDocument.cursorPageNo}
-									</span>
-								</Link>
-
-								{currentDocument.progress.pagesFailed > INITIAL_COUNT && (
-									<p>
-										<span className="tabular-figures">{failedPagesCount}</span>{" "}
-										{failedPageLabel} failed — open to re-read{" "}
-										{failedPagePronoun}
-									</p>
-								)}
-							</section>
-						</>
-					)}
-
-					{currentDocument.groundTruth && (
-						<section>
-							<h2>Ground truth</h2>
-							<GroundTruthBlock
-								cer={currentDocument.groundTruth.cer}
-								documentId={currentDocument.id}
-								pagesTotal={currentDocument.groundTruth.pagesTotal}
-								pagesTyped={currentDocument.groundTruth.pagesTyped}
-							/>
-						</section>
-					)}
+						</div>
+					</main>
 				</>
 			)}
 
@@ -346,7 +311,7 @@ const Document: React.FC = () => {
 					spentUsd={currentDocument.budget.spentUsd}
 				/>
 			)}
-		</>
+		</div>
 	);
 };
 

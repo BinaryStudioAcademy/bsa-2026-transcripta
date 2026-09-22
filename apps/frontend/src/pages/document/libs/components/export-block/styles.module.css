@@ -1,0 +1,6 @@
+.note {
+	margin: var(--sp-3) 0 0;
+	font-size: var(--fs-xs);
+	line-height: var(--lh-body-wide);
+	color: var(--text-3);
+}
