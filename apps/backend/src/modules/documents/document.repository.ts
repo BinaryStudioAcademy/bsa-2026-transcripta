@@ -8,7 +8,10 @@ import { DocumentDetailsEntity } from "~/modules/documents/document-details.enti
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
 import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
-import { CLOSED_PAGE_STATUSES } from "~/modules/pages/libs/constants/constants.js";
+import {
+	CLOSED_PAGE_STATUSES,
+	VERIFIED_PAGE_STATUSES,
+} from "~/modules/pages/libs/constants/constants.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
@@ -99,7 +102,17 @@ class DocumentRepository {
 				"dp.title",
 				"dp.status",
 				"dp.pageCount",
-				"dp.cursorPageNo",
+				knex.raw(
+					`coalesce(
+						case when dp.cursor_page_no > dp.page_count then (
+							select min(p.page_no) from ?? p
+							where p.document_id = dp.document_id
+								and p.status not in (${VERIFIED_PAGE_STATUSES.map(() => "?").join(", ")})
+						) end,
+						least(dp.cursor_page_no, dp.page_count)
+					) as ??`,
+					[DatabaseTableName.PAGE, ...VERIFIED_PAGE_STATUSES, "cursorPageNo"],
+				),
 				knex.raw("round(dp.budget_usd, 2)::text as ??", ["budgetUsd"]),
 				knex.raw("round(dp.spent_usd, 2)::text as ??", ["spentUsd"]),
 				knex.raw(

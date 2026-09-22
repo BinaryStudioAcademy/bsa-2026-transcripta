@@ -180,25 +180,14 @@
 	align-items: center;
 }
 
-.verification-empty-state {
-	max-width: 420px;
-	margin: auto;
-	text-align: center;
-}
-
 .verification-failed-state {
 	margin: auto;
 }
 
-.verification-empty-state h3 {
-	margin: 0 0 var(--sp-2);
-	font: 600 var(--fs-l) / var(--lh-heading) var(--font-display);
-}
-
-.verification-empty-state p {
-	margin: 0;
-	line-height: 1.5;
-	color: var(--text-2);
+.verification-preparing-state {
+	display: flex;
+	justify-content: center;
+	margin: auto;
 }
 
 .verification-edit {

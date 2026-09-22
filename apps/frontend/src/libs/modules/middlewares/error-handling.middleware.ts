@@ -18,7 +18,10 @@ errorHandlingMiddleware.startListening({
 			return;
 		}
 
-		if (action.type === documentActions.pollDocumentById.rejected.type) {
+		if (
+			action.type === documentActions.pollDocumentById.rejected.type ||
+			action.type === documentActions.loadById.rejected.type
+		) {
 			return;
 		}
 
