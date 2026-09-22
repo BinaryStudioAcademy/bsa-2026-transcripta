@@ -17,11 +17,6 @@
 	text-decoration: none;
 }
 
-.header-logo {
-	width: 30px;
-	height: 30px;
-}
-
 .header-nav__list {
 	display: flex;
 	gap: var(--sp-7);
