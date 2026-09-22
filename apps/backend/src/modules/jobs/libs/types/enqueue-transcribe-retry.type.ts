@@ -2,4 +2,4 @@ import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/type
 
 type EnqueueTranscribeRetry = (data: PageTranscribeJobData) => Promise<void>;
 
-export { EnqueueTranscribeRetry };
+export { type EnqueueTranscribeRetry };

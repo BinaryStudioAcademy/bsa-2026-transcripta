@@ -38,8 +38,9 @@ import {
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
 } from "./libs/constants/verification.constants.js";
-import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import "./verification.css";
+import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
 	type EditConflictDraft,
 	type PageVerificationActionValue,
@@ -124,7 +125,7 @@ const Verification: React.FC = () => {
 			pageActions.loadPages({
 				documentId: document.id,
 				query: {
-					from: cursorPageNo,
+					from: getPagesFrom(cursorPageNo),
 					limit: MAX_LOADED_PAGES,
 				},
 			}),
