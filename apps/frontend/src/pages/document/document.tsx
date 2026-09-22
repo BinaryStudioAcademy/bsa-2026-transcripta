@@ -11,6 +11,7 @@ import {
 	BUDGET_STOP_NOTIFICATION_MESSAGE,
 	BUDGET_UPLOAD_FAILED_MESSAGE,
 	INITIAL_COUNT,
+	MINIMUM_VALID_DOCUMENT_ID,
 	NOTIFICATION_DELAY_MS,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
@@ -53,7 +54,8 @@ const Document: React.FC = () => {
 	const { id } = useParams();
 
 	const documentId = Number(id);
-	const isValidId = Number.isInteger(documentId) && documentId > 0;
+	const isValidId =
+		Number.isInteger(documentId) && documentId >= MINIMUM_VALID_DOCUMENT_ID;
 
 	useEffect(() => {
 		if (!isValidId) {
