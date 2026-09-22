@@ -1,4 +1,8 @@
-import { Button, FailedStateCard } from "~/libs/components/components.js";
+import {
+	Button,
+	FailedStateCard,
+	PreparingStateCard,
+} from "~/libs/components/components.js";
 
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
@@ -15,10 +19,12 @@ type VerificationWorkspaceProperties = {
 	editConflictDraft: EditConflictDraft | null;
 	isCompleted: boolean;
 	isEditing: boolean;
+	isPauseDisabled: boolean;
 	isReprocessing: boolean;
 	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
+	onPause: () => void;
 	onReRead: () => void;
 	onSaveEdit: (text: string) => void;
 	onSkip: () => void;
@@ -31,10 +37,12 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	editConflictDraft,
 	isCompleted,
 	isEditing,
+	isPauseDisabled,
 	isReprocessing,
 	isVerifying,
 	isZoomed,
 	onConfirm,
+	onPause,
 	onReRead,
 	onSaveEdit,
 	onSkip,
@@ -122,10 +130,11 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		}
 
 		return (
-			<div className="verification-empty-state">
-				<h3>Preparing the next page</h3>
-				<p>Everything ready has been verified; the model is still reading.</p>
-				{isCompleted && <p>This is the last page!</p>}
+			<div className="verification-preparing-state">
+				<PreparingStateCard
+					isPauseDisabled={isPauseDisabled}
+					onPause={onPause}
+				/>
 			</div>
 		);
 	})();
