@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "~/libs/hooks/hooks.js";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "~/libs/hooks/hooks.js";
 
 import {
 	INITIAL_ZOOM,
@@ -10,7 +15,7 @@ import {
 	ZOOM_PAN_RESET,
 	ZOOM_STEP,
 } from "../constants/verification.constants.js";
-import { type UseScanZoomReturn } from "../types/use-scan-zoom-return.type.js";
+import { type UseScanZoomReturn } from "../types/types.js";
 
 const useScanZoom = (): UseScanZoomReturn => {
 	const [zoom, setZoom] = useState(INITIAL_ZOOM);
@@ -44,10 +49,7 @@ const useScanZoom = (): UseScanZoomReturn => {
 						: ZOOM_OUT_DIRECTION;
 
 				const nextZoom = previousZoom + zoomDirection * ZOOM_STEP;
-				const clampedZoom = Math.min(
-					MAX_ZOOM,
-					Math.max(MIN_ZOOM, nextZoom),
-				);
+				const clampedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
 
 				if (clampedZoom > INITIAL_ZOOM) {
 					resetToTopLeft();

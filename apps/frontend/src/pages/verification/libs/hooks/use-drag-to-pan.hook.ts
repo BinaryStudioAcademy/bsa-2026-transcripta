@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "~/libs/hooks/hooks.js";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "~/libs/hooks/hooks.js";
 
 const PRIMARY_MOUSE_BUTTON = 0;
 
