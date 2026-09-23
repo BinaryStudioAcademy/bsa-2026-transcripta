@@ -363,36 +363,38 @@ class DocumentService {
 			}
 
 			const documentRecord = await this.documentRepository.findById(documentId);
-			const currentDocument = documentRecord ? documentRecord.toObject() : null;
-			if (
-				!currentDocument ||
-				currentDocument.status === DocumentStatus.BUDGET_STOP ||
-				currentDocument.status === DocumentStatus.PAUSED
-			) {
-				break;
+			const currentStatus = documentRecord?.toObject().status;
+
+			const isStoppedOrPaused =
+				!currentStatus ||
+				currentStatus === DocumentStatus.BUDGET_STOP ||
+				currentStatus === DocumentStatus.PAUSED;
+
+			if (isStoppedOrPaused) {
+				continue;
 			}
 
-			await DocumentModel.transaction(async (trx) => {
-				const newlyQueuedPages = await refillPageWindow({
+			const newlyQueuedPages = await DocumentModel.transaction(async (trx) => {
+				return await refillPageWindow({
 					documentId,
 					pageRepository: this.pageRepository,
 					quantity: PAGES_TO_QUEUE,
 					trx,
 				});
-
-				if (newlyQueuedPages.length > EMPTY_LENGTH) {
-					await Promise.all(
-						newlyQueuedPages.map((queuedPage: PageEntity) => {
-							const { id, pageNo } = queuedPage.toObject();
-							return this.pageTranscribeQueue.add({
-								documentId,
-								pageId: id,
-								pageNo,
-							});
-						}),
-					);
-				}
 			});
+
+			if (newlyQueuedPages.length > EMPTY_LENGTH) {
+				await Promise.all(
+					newlyQueuedPages.map((queuedPage: PageEntity) => {
+						const { id, pageNo } = queuedPage.toObject();
+						return this.pageTranscribeQueue.add({
+							documentId,
+							pageId: id,
+							pageNo,
+						});
+					}),
+				);
+			}
 		}
 
 		return pageCount;
