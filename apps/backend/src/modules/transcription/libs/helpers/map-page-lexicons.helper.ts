@@ -1,7 +1,7 @@
 import { type ContextLexiconMap } from "../types/types.js";
 import { extractLexiconIds } from "./extract-lexicon-ids.helper.js";
 
-const buildPageLexiconMap = (
+const mapPageLexicons = (
 	contextUsed: null | Record<string, unknown>,
 	lexiconById: ContextLexiconMap,
 ): ContextLexiconMap => {
@@ -14,4 +14,4 @@ const buildPageLexiconMap = (
 	);
 };
 
-export { buildPageLexiconMap };
+export { mapPageLexicons };

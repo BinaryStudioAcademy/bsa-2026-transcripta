@@ -24,8 +24,8 @@ import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 import {
 	buildContextWords,
-	buildPageLexiconMap,
 	extractLexiconIds,
+	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { sha256 } from "../context/libs/helpers/hash.helper.js";
@@ -359,12 +359,12 @@ class DocumentService {
 		const {
 			settings: { blankStdevThreshold },
 		} = preset;
-		const existingPagesArray =
+		const existingPageNumbers =
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
-		const existingPagesSet = new Set<number>(existingPagesArray);
+		const seenPageNumbers = new Set<number>(existingPageNumbers);
 
 		for (let page = 1; page <= pageCount; page++) {
-			if (existingPagesSet.has(page)) {
+			if (seenPageNumbers.has(page)) {
 				continue;
 			}
 
@@ -456,13 +456,6 @@ class DocumentService {
 	private throwInvalidStatusToPauseError(): never {
 		throw new HTTPError({
 			message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
-			status: HTTPCode.CONFLICT,
-		});
-	}
-
-	private throwInvalidStatusToResumeError(): never {
-		throw new HTTPError({
-			message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
 			status: HTTPCode.CONFLICT,
 		});
 	}
@@ -678,7 +671,7 @@ class DocumentService {
 
 				const text =
 					page.transcriptionEditedText ?? page.transcriptionText ?? "";
-				const pageLexiconById = buildPageLexiconMap(
+				const pageLexiconById = mapPageLexicons(
 					page.transcriptionContextUsed,
 					lexiconById,
 				);
@@ -730,9 +723,9 @@ class DocumentService {
 				});
 			}
 
-			const documentObject = document.toObject();
+			const documentData = document.toObject();
 
-			if (documentObject.status !== DocumentStatus.DRAFT) {
+			if (documentData.status !== DocumentStatus.DRAFT) {
 				throw new HTTPError({
 					message: DocumentErrorMessage.NOT_DRAFT,
 					status: HTTPCode.CONFLICT,
@@ -849,39 +842,62 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
-	public async resume(documentId: number, userId: number): Promise<void> {
-		const pages = await DocumentModel.transaction(async (trx) => {
-			const document =
-				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+	public async resume(
+		documentId: number,
+		userId: number,
+	): Promise<DocumentGetByIdResponseDto> {
+		const { document, isPaused, pages } = await DocumentModel.transaction(
+			async (trx) => {
+				const document =
+					await this.documentRepository.findByIdAndOwnerIdForUpdateWithDetails(
+						documentId,
+						userId,
+						trx,
+					);
+
+				if (!document) {
+					this.throwDocumentNotFoundError();
+				}
+
+				const documentObject = document.toObject();
+
+				if (documentObject.status !== DocumentStatus.PAUSED) {
+					return { document: documentObject, isPaused: false, pages: [] };
+				}
+
+				await this.documentRepository.updateStatus(
 					documentId,
-					userId,
+					DocumentStatus.PROCESSING,
+					trx,
+				);
+				await this.pageRepository.updateFirstPendingPagesAsQueued(
+					documentId,
+					PAGES_TO_QUEUE,
 					trx,
 				);
 
-			if (!document) {
-				this.throwDocumentNotFoundError();
-			}
+				const pages = await this.pageRepository.findQueuedPages(
+					documentId,
+					trx,
+				);
 
-			if (document.toObject().status !== DocumentStatus.PAUSED) {
-				this.throwInvalidStatusToResumeError();
-			}
+				return {
+					document: {
+						...documentObject,
+						status: DocumentStatus.PROCESSING,
+					},
+					isPaused: true,
+					pages,
+				};
+			},
+		);
 
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.PROCESSING,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
-
-			return await this.pageRepository.findQueuedPages(documentId, trx);
-		});
+		if (!isPaused) {
+			return document;
+		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
-			return;
+			return document;
 		}
 
 		try {
@@ -896,6 +912,8 @@ class DocumentService {
 					});
 				}),
 			);
+
+			return document;
 		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,

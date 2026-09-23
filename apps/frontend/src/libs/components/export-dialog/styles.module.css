@@ -1,0 +1,63 @@
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--scrim);
+}
+
+.dialog {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 481.6px;
+	padding: var(--sp-5);
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+	box-shadow: var(--shadow-modal);
+}
+
+.title {
+	margin: 0 0 var(--sp-2);
+	font: 600 var(--fs-xl) / var(--lh-tight) var(--font-display);
+	color: var(--text);
+}
+
+.label {
+	display: block;
+	margin: 0 0 var(--sp-2);
+	font: 600 var(--fs-2xs) / 1 var(--font-ui);
+	color: var(--text-2);
+	text-transform: uppercase;
+	letter-spacing: var(--ls-caps);
+}
+
+.fieldset {
+	padding: 0;
+	margin: 0 0 var(--sp-3);
+	border: none;
+}
+
+.option {
+	display: flex;
+	gap: var(--sp-2);
+	align-items: center;
+	margin: 0 0 var(--sp-2);
+	font-size: var(--fs-xs);
+	color: var(--text);
+}
+
+.description {
+	margin: 0 0 var(--sp-3);
+	font: 400 var(--fs-sm) / 1.55 var(--font-ui);
+	color: var(--text-2);
+}
+
+.actions {
+	display: flex;
+	gap: var(--sp-2);
+	justify-content: flex-end;
+	margin-top: var(--sp-4);
+}
