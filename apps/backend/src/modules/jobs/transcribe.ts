@@ -17,7 +17,11 @@ import {
 } from "~/libs/modules/database/database.js";
 import { Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
+import {
+	buildContext,
+	buildUserPrompt,
+	validateSeedGlossaryBudget,
+} from "~/modules/context/context.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 import { refillPageWindow } from "~/modules/pages/libs/helpers/helpers.js";
@@ -38,6 +42,7 @@ import {
 	MAX_TRANSCRIBE_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
+	PAGE_TEXT_KEY,
 	RATE_LIMIT_RETRY_DELAY_MS,
 	RETRYABLE_ERROR_NAMES,
 	TRANSCRIBABLE_STATUSES,
@@ -61,6 +66,16 @@ import {
 	type TranscribeFailureReasonValue,
 	type TranscribeRequestOptions,
 } from "./libs/types/types.js";
+
+const readPageText = (value: unknown): null | string => {
+	if (typeof value !== "object" || value === null) {
+		return null;
+	}
+
+	const pageText = (value as Record<string, unknown>)[PAGE_TEXT_KEY];
+
+	return typeof pageText === "string" ? pageText : null;
+};
 
 const parseModelJson = (text: string): ParseResult => {
 	try {
@@ -135,6 +150,7 @@ const recordFailure = async ({
 	documentRepository,
 	enqueuePage,
 	event,
+	lastError,
 	pageId,
 	pageRepository,
 	reason,
@@ -151,7 +167,7 @@ const recordFailure = async ({
 		const failedRows = await PageModel.query(trx)
 			.patch({
 				attempts: trx.raw("attempts + ?", [ONE]),
-				lastError: reason,
+				lastError: lastError ?? reason,
 				status: PageStatus.FAILED,
 			})
 			.where({ documentId, id: pageId, status: PageStatus.TRANSCRIBING })
@@ -180,6 +196,58 @@ const recordFailure = async ({
 	});
 
 	await enqueuePages(pages, enqueuePage);
+};
+
+const failIfSeedGlossaryExceedsBudget = async ({
+	documentId,
+	documentRepository,
+	enqueuePage,
+	modelId,
+	pageId,
+	pageRepository,
+	preset,
+}: Pick<
+	RecordFailureOptions,
+	| "documentId"
+	| "documentRepository"
+	| "enqueuePage"
+	| "pageId"
+	| "pageRepository"
+> & {
+	modelId: ModelIdValue;
+	preset: PresetModel;
+}): Promise<boolean> => {
+	const check = await validateSeedGlossaryBudget({
+		...(preset.settings.maxContextTokens === undefined
+			? {}
+			: { maxContextTokens: preset.settings.maxContextTokens }),
+		model: modelId,
+		seedGlossary: preset.seedGlossary,
+	});
+
+	if (check.ok) {
+		return false;
+	}
+
+	await recordFailure({
+		documentId,
+		documentRepository,
+		enqueuePage,
+		event: {
+			details: {
+				ceiling: check.ceiling,
+				error: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
+				glossaryTokens: check.glossaryTokens,
+			},
+			durationMs: EMPTY_LENGTH,
+		},
+		lastError: check.message,
+		pageId,
+		pageRepository,
+		reason: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
+	});
+
+	return true;
 };
 
 const markDocumentStopped = async (documentId: number): Promise<void> => {
@@ -299,7 +367,7 @@ const transcribeWithRepair = async (
 				prompt: requestPrompt,
 				rawResponse,
 				structured: parsed.value,
-				text: responseText,
+				text: readPageText(parsed.value) ?? responseText,
 			};
 		}
 
@@ -718,6 +786,21 @@ const createTranscribeHandler =
 
 			const modelId = (preset.settings.model ||
 				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
+
+			if (
+				await failIfSeedGlossaryExceedsBudget({
+					documentId,
+					documentRepository,
+					enqueuePage,
+					modelId,
+					pageId,
+					pageRepository,
+					preset,
+				})
+			) {
+				return;
+			}
+
 			const context = await buildContext({
 				documentId,
 				pageNo,
