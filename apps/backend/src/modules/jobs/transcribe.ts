@@ -272,7 +272,7 @@ const transcribeWithRepair = async (
 				prompt: lastPromptUsed,
 				rawResponse: lastRawResponse,
 				reason: TranscribeFailureReason.MODEL_CALL_FAILED,
-				retryable: errorIsRetryable(error),
+				retryable: isErrorRetryable(error),
 			});
 		}
 
@@ -1061,7 +1061,7 @@ const handleFailedTranscription = async ({
 	}
 };
 
-const errorIsRetryable = (error: unknown): boolean => {
+const isErrorRetryable = (error: unknown): boolean => {
 	if (!(error instanceof Error)) {
 		return false;
 	}

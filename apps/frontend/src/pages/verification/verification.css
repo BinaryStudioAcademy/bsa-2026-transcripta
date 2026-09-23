@@ -282,8 +282,11 @@
 	justify-content: center;
 	height: 46px;
 	padding: 0 var(--sp-4);
-	overflow: hidden;
 	border-top: 1px solid var(--hairline);
+}
+
+.verification-footer > * {
+	min-width: 0;
 }
 
 .tx-dialog-shortcuts {
