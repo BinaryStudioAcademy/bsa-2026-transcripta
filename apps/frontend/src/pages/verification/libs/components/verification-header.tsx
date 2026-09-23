@@ -78,7 +78,10 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			<div className="verification-header__budget">
 				<span className="tx-budget">
 					<span className="tx-budget-bar">
-						<i style={{ width: `${String(budgetPercentage)}%` }} />
+						<i
+							className="tx-budget-bar__fill"
+							style={{ width: `${String(budgetPercentage)}%` }}
+						/>
 					</span>
 					${budgetSpent} / ${budgetLimit}
 				</span>
