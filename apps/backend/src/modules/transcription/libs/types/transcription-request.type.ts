@@ -1,6 +1,6 @@
 type TranscriptionRequest = {
-	image: Buffer;
-	mediaType: string;
+	image?: Buffer | undefined;
+	mediaType?: string | undefined;
 	modelId?: string | undefined;
 	prompt: string;
 };
