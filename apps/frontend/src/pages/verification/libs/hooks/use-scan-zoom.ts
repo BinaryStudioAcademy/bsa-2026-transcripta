@@ -66,7 +66,7 @@ const useScanZoom = (): UseScanZoomReturn => {
 				const nextZoom = previousZoom + zoomDirection * ZOOM_STEP;
 				const clampedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
 
-				if (clampedZoom > INITIAL_ZOOM) {
+				if (previousZoom === INITIAL_ZOOM && clampedZoom > INITIAL_ZOOM) {
 					resetToTopLeft();
 				}
 
