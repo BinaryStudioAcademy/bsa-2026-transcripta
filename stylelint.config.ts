@@ -8,6 +8,7 @@ const config: Config = {
 		"max-nesting-depth": 0,
 		"no-descending-specificity": true,
 		"selector-class-pattern": null,
+		"selector-max-compound-selectors": 2,
 		"unit-disallowed-list": ["em", "rem"],
 	},
 };
