@@ -24,14 +24,11 @@ import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
 	PAGE_EVENT_ATTEMPT_INCREMENT,
+	PAGE_STATUS_BY_ACTION,
 	REPROCESSABLE_PAGE_STATUSES,
 	UNDOABLE_PAGE_STATUSES,
 } from "./libs/constants/constants.js";
-import {
-	PageErrorMessage,
-	PageErrorType,
-	StatusByAction,
-} from "./libs/enums/enums.js";
+import { PageErrorMessage, PageErrorType } from "./libs/enums/enums.js";
 import { refillPageWindow } from "./libs/helpers/helpers.js";
 import {
 	type BuildVerifyResponsePayload,
@@ -361,7 +358,7 @@ class PageService {
 			});
 		}
 
-		const status = StatusByAction[action];
+		const status = PAGE_STATUS_BY_ACTION[action];
 
 		try {
 			const result = await DocumentModel.transaction(async (trx) => {

@@ -70,7 +70,6 @@
 
 .dropzone__button--secondary:active:not(:disabled) {
 	background: var(--surface-2);
-	transform: translateY(1px);
 }
 
 .dropzone b {
@@ -81,11 +80,6 @@
 .dropzone small {
 	font: 400 var(--fs-xs) / 1.4 var(--font-ui);
 	color: var(--text-3);
-}
-
-.dropzone--selected {
-	border-color: var(--hairline-strong);
-	border-style: solid;
 }
 
 .dropzone--rejected {

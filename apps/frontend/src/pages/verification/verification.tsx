@@ -19,6 +19,7 @@ import {
 	actions as pageActions,
 	selectCurrentPage,
 	selectCursorPageNo,
+	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
@@ -37,8 +38,9 @@ import {
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
 } from "./libs/constants/verification.constants.js";
-import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import "./verification.css";
+import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
 	type EditConflictDraft,
 	type PageVerificationActionValue,
@@ -63,6 +65,7 @@ const Verification: React.FC = () => {
 	);
 
 	const currentPage = useAppSelector(selectCurrentPage);
+	const lastVerifiedPageId = useAppSelector(selectLastVerifiedPageId);
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
 	const pagesForStrip = useAppSelector(selectPagesForStrip);
 	const cursorPageNo = useAppSelector(selectCursorPageNo);
@@ -122,7 +125,7 @@ const Verification: React.FC = () => {
 			pageActions.loadPages({
 				documentId: document.id,
 				query: {
-					from: cursorPageNo,
+					from: getPagesFrom(cursorPageNo),
 					limit: MAX_LOADED_PAGES,
 				},
 			}),
@@ -225,6 +228,26 @@ const Verification: React.FC = () => {
 		void handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
+	const handleUndo = useCallback((): void => {
+		if (lastVerifiedPageId === null || isVerifying || isEditing) {
+			return;
+		}
+
+		dispatch(pageActions.undoOptimistic({ pageId: lastVerifiedPageId }));
+
+		void dispatch(pageActions.undoPage({ pageId: lastVerifiedPageId })).then(
+			(result) => {
+				const isRejected = pageActions.undoPage.rejected.match(result);
+
+				if (isRejected) {
+					notification.error(
+						"The undo could not be completed. The page state has been restored.",
+					);
+				}
+			},
+		);
+	}, [dispatch, isEditing, isVerifying, lastVerifiedPageId]);
+
 	const handleSaveEdit = useCallback(
 		(text: string): void => {
 			void (async (): Promise<void> => {
@@ -301,6 +324,7 @@ const Verification: React.FC = () => {
 		onSkip: handleSkip,
 		onToggleShortcuts: handleToggleShortcuts,
 		onToggleZoom: handleToggleZoom,
+		onUndo: handleUndo,
 	});
 
 	if (isDocumentLoading) {

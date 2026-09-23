@@ -351,7 +351,7 @@ influencing later transcriptions.
 ## `GET /api/v1/documents/:id/lexicon`
 
 Owner-only. Live lexicon entries for the document (`invalidated_at IS NULL`),
-ordered like context: `distinct_pages DESC`, `freq DESC`, `value_display ASC`.
+ordered like context: `distinct_pages DESC`, `page_count DESC`, `value_display ASC`.
 
 ```jsonc
 // response 200
@@ -361,7 +361,7 @@ ordered like context: `distinct_pages DESC`, `freq DESC`, `value_display ASC`.
 			"id": 5,
 			"kind": "surname",
 			"valueDisplay": "Ivanenko",
-			"freq": 12,
+			"pageCount": 12,
 			"distinctPages": 4,
 			"firstPageNo": 3,
 			"lastPageNo": 47,
