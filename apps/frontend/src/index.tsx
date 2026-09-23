@@ -17,6 +17,7 @@ import { DocumentNew } from "~/pages/document-new/document-new.jsx";
 import { Document } from "~/pages/document/document.js";
 import { Documents } from "~/pages/documents/documents.jsx";
 import { NotFound } from "~/pages/not-found/not-found.jsx";
+import { PresetEditor } from "~/pages/preset-editor/preset-editor.js";
 import { Test } from "~/pages/test/test.jsx";
 import { Verification } from "~/pages/verification/verification.jsx";
 
@@ -61,6 +62,10 @@ createRoot(document.querySelector("#root") as HTMLElement).render(
 									{
 										element: <DocumentNew />,
 										path: AppRoute.DOCUMENTS_NEW,
+									},
+									{
+										element: <PresetEditor />,
+										path: AppRoute.PRESET,
 									},
 								],
 								element: <ProtectedRoute />,

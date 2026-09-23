@@ -3,6 +3,7 @@ const AppRoute = {
 	DOCUMENTS: "/",
 	DOCUMENTS_NEW: "/documents/new",
 	GROUND_TRUTH: "/documents/:id/ground-truth",
+	PRESET: "/presets/:id",
 	PRESETS: "/presets",
 	ROOT: "/",
 	SIGN_IN: "/sign-in",
