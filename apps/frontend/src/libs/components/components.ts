@@ -2,6 +2,7 @@ export { App } from "./app/app.js";
 export { BudgetIndicator } from "./budget-indicator/budget-indicator.js";
 export { Button } from "./button/button.js";
 export { ConfirmDialog } from "./confirm-dialog/confirm-dialog.js";
+export { ExportDialog } from "./export-dialog/export-dialog.js";
 export { FailedStateCard } from "./failed-state-card/failed-state-card.js";
 export { Input } from "./input/input.js";
 export { Link } from "./link/link.js";

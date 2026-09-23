@@ -1,9 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { INDEX_NOT_FOUND } from "@transcripta/shared";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
 import {
 	type DocumentCreateResponseDto,
+	type DocumentExport,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
@@ -17,6 +19,7 @@ import {
 	pause,
 	pollDocumentById,
 	remove,
+	requestExport,
 	resume,
 	updateBudget,
 } from "./actions.js";
@@ -26,6 +29,7 @@ type State = {
 	dataStatus: DataStatusValue;
 	document: DocumentGetByIdResponseDto | null;
 	documentDataStatus: DataStatusValue;
+	documentExports: Record<number, DocumentExport[]>;
 	documents: DocumentGetAllItemResponseDto[];
 	pauseResumeDataStatuses: Record<number, DataStatusValue>;
 	requestedDocumentId: null | number;
@@ -36,6 +40,7 @@ const initialState: State = {
 	dataStatus: DataStatus.IDLE,
 	document: null,
 	documentDataStatus: DataStatus.IDLE,
+	documentExports: {},
 	documents: [],
 	pauseResumeDataStatuses: {},
 	requestedDocumentId: null,
@@ -144,6 +149,56 @@ const { actions, name, reducer } = createSlice({
 				state.document.status = DocumentStatus.PAUSED;
 			}
 		});
+		builder.addCase(requestExport.pending, (state, action) => {
+			const { documentId } = action.meta.arg;
+
+			if (!state.documentExports[documentId]) {
+				state.documentExports[documentId] = [];
+			}
+
+			state.documentExports[documentId].unshift({
+				id: action.meta.requestId,
+				name: `export.${action.meta.arg.format}`,
+				ready: false,
+				readyMeta: "Preparing…",
+			});
+		});
+		builder.addCase(requestExport.fulfilled, (state, action) => {
+			const { documentId } = action.meta.arg;
+			const exports = state.documentExports[documentId];
+
+			if (!exports) {
+				return;
+			}
+
+			const index = exports.findIndex(
+				(export_) => export_.id === action.meta.requestId,
+			);
+
+			if (index === INDEX_NOT_FOUND) {
+				return;
+			}
+
+			exports[index] = {
+				id: action.meta.requestId,
+				name: action.payload.name,
+				ready: true,
+				readyMeta: action.payload.readyMeta,
+			};
+		});
+		builder.addCase(requestExport.rejected, (state, action) => {
+			const { documentId } = action.meta.arg;
+			const exports = state.documentExports[documentId];
+
+			if (!exports) {
+				return;
+			}
+
+			state.documentExports[documentId] = exports.filter(
+				(export_) => export_.id !== action.meta.requestId,
+			);
+		});
+
 		builder.addCase(ingest.pending, (state, action) => {
 			if (state.document?.id === action.meta.arg) {
 				state.document.status = DocumentStatus.INGESTING;
