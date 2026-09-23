@@ -20,14 +20,13 @@ import {
 } from "~/modules/documents/documents.js";
 
 import {
+	MOCK_EXPORT_DELAY_MS,
 	POLLING_FAILED_MESSAGE,
 	POLLING_FAILED_NOTIFICATION,
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
 import { PollingIntervalsMS } from "../libs/enums/enums.js";
 import { name as sliceName } from "./documents.slice.js";
-
-const MOCK_EXPORT_DELAY_MS = 2000;
 
 type GetUploadUrlPayload = {
 	id: number;

@@ -187,7 +187,18 @@ const { actions, name, reducer } = createSlice({
 				readyMeta: action.payload.readyMeta,
 			};
 		});
+		builder.addCase(requestExport.rejected, (state, action) => {
+			const { documentId } = action.meta.arg;
+			const exports = state.documentExports[documentId];
 
+			if (!exports) {
+				return;
+			}
+
+			state.documentExports[documentId] = exports.filter(
+				(export_) => export_.id !== action.meta.requestId,
+			);
+		});
 		builder.addCase(ingest.pending, (state, action) => {
 			if (state.document?.id === action.meta.arg) {
 				state.document.status = DocumentStatus.INGESTING;
