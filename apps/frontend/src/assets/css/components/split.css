@@ -6,9 +6,13 @@
 }
 
 .tx-split-pane {
-	flex-grow: 1;
+	flex: 1 1 0;
 	min-width: 0;
 	overflow: auto;
+}
+
+.tx-split-pane--fixed {
+	flex: none;
 }
 
 .tx-split-divider {
@@ -17,7 +21,9 @@
 	align-items: center;
 	justify-content: center;
 	width: var(--sp-3);
+	touch-action: none;
 	cursor: col-resize;
+	user-select: none;
 	background: var(--bg);
 	border-right: 1px solid var(--hairline);
 	border-left: 1px solid var(--hairline);

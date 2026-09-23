@@ -13,12 +13,11 @@
 	gap: 4px;
 	align-items: center;
 	height: 24px;
-	padding: 0 7px;
+	padding: 2px 7px;
 	font: inherit;
 	color: var(--text-2);
 	cursor: pointer;
 	background: none;
-	border: 1px solid transparent;
 	border-radius: var(--r-sm);
 }
 
@@ -102,6 +101,12 @@
 }
 
 .tx-pstrip-legend {
+	overflow: hidden;
 	font: 400 11px/1 var(--font-mono);
 	color: var(--text-3);
+	white-space: nowrap;
+}
+
+.tx-status-icon {
+	overflow: hidden;
 }
