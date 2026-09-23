@@ -1,6 +1,6 @@
 import { Button } from "~/libs/components/components.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
-import { useCallback, useState } from "~/libs/hooks/hooks.js";
+import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
 import { type ExportFormatValue } from "~/modules/documents/documents.js";
 import { ExportFormat } from "~/modules/documents/libs/enums/enums.js";
 
@@ -26,6 +26,20 @@ const ExportDialog: React.FC<Properties> = ({
 	const [format, setFormat] = useState<ExportFormatValue>(ExportFormat.CSV);
 	const pagesUnverified = pagesTotal - pagesVerified;
 
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent): void => {
+			if (event.key === "Escape") {
+				onCancel();
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [onCancel]);
+
 	const handleScrimClick = useCallback(
 		(event: React.MouseEvent<HTMLDivElement>): void => {
 			if (event.target === event.currentTarget) {
@@ -47,7 +61,7 @@ const ExportDialog: React.FC<Properties> = ({
 	}, [format, onConfirm]);
 
 	return (
-		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- matches RaiseLimitDialog's scrim pattern
+		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape (handled above) is the keyboard equivalent for dismissing the scrim
 		<div className={styles["scrim"]} onClick={handleScrimClick}>
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>
