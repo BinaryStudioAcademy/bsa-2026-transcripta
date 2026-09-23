@@ -23,10 +23,7 @@ const Auth: React.FC = () => {
 			void dispatch(authActions.signIn(payload))
 				.unwrap()
 				.then(() => navigate(AppRoute.ROOT))
-				.catch((error: unknown) => {
-					// eslint-disable-next-line no-console
-					console.error(error);
-				});
+				.catch(() => null);
 		},
 		[dispatch, navigate],
 	);

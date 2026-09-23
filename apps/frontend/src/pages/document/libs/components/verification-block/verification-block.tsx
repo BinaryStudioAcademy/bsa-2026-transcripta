@@ -48,8 +48,7 @@ const VerificationBlock: React.FC<Properties> = ({
 				return;
 			}
 
-			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-			void navigate(resumeRoute);
+			Promise.resolve(navigate(resumeRoute)).catch(() => null);
 		};
 
 		document.addEventListener("keydown", handleKeyDown);

@@ -80,9 +80,25 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 		[onCancel],
 	);
 
+	const handleScrimKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLDivElement>): void => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				onCancel();
+			}
+		},
+		[onCancel],
+	);
+
 	return (
-		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-		<div className={styles["scrim"]} onClick={handleScrimClick}>
+		<div
+			aria-label="Close dialog"
+			className={styles["scrim"]}
+			onClick={handleScrimClick}
+			onKeyDown={handleScrimKeyDown}
+			role="button"
+			tabIndex={0}
+		>
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>Raise the limit</h2>
 				<p className={styles["description"]}>

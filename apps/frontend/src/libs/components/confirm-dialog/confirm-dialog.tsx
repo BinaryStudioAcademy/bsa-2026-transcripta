@@ -41,9 +41,25 @@ const ConfirmDialog: React.FC<Properties> = ({
 		[onCancel],
 	);
 
+	const handleScrimKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLDivElement>): void => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				onCancel();
+			}
+		},
+		[onCancel],
+	);
+
 	return (
-		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape (handled above) is the keyboard equivalent for dismissing the scrim
-		<div className={styles["scrim"]} onClick={handleScrimClick}>
+		<div
+			aria-label="Close dialog"
+			className={styles["scrim"]}
+			onClick={handleScrimClick}
+			onKeyDown={handleScrimKeyDown}
+			role="button"
+			tabIndex={0}
+		>
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>{title}</h2>
 				<p className={styles["description"]}>{description}</p>

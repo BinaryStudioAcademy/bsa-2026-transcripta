@@ -31,6 +31,8 @@ const isPng = (fileName: string): boolean => {
 	return fileName.toLowerCase().endsWith(PNG_EXTENSION);
 };
 
+const loadZip = JSZip.loadAsync.bind(JSZip);
+
 const embedImage = async (
 	document: PDFDocument,
 	bytes: Uint8Array,
@@ -43,18 +45,20 @@ const embedImage = async (
 	return await document.embedJpg(bytes);
 };
 
-// eslint-disable-next-line sonarjs/post-message
 globalThis.addEventListener(
 	"message",
 	(event: MessageEvent<InitMessage>): void => {
+		if (event.origin !== globalThis.location.origin) {
+			return;
+		}
+
 		void (async (): Promise<void> => {
 			const { arrayBuffer, maxPages } = event.data;
 
 			let zip: JSZip;
 
 			try {
-				// eslint-disable-next-line sonarjs/no-unsafe-unzip
-				zip = await JSZip.loadAsync(arrayBuffer);
+				zip = await loadZip(arrayBuffer, { checkCRC32: true });
 			} catch {
 				self.postMessage({
 					message: "The file is not a valid ZIP archive.",
