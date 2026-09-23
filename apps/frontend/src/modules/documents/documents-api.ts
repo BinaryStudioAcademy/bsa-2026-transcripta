@@ -148,8 +148,8 @@ class DocumentApi extends BaseHTTPApi {
 		);
 	}
 
-	public async resume(id: number): Promise<void> {
-		await this.load(
+	public async resume(id: number): Promise<DocumentGetByIdResponseDto> {
+		const response = await this.load(
 			this.getFullEndpoint(DocumentsApiPath.RESUME, {
 				id: String(id),
 			}),
@@ -160,6 +160,8 @@ class DocumentApi extends BaseHTTPApi {
 				payload: JSON.stringify({}),
 			},
 		);
+
+		return await response.json<DocumentGetByIdResponseDto>();
 	}
 
 	public async updateBudget(

@@ -95,7 +95,18 @@ const { actions, name, reducer } = createSlice({
 		});
 		builder.addCase(pollDocumentById.fulfilled, (state, action) => {
 			if (state.document && state.document.id === action.payload.id) {
-				state.document = action.payload;
+				const isProcessingOrPaused =
+					action.payload.status === DocumentStatus.PROCESSING ||
+					action.payload.status === DocumentStatus.PAUSED;
+
+				if (
+					state.document.status === DocumentStatus.PAUSED &&
+					isProcessingOrPaused
+				) {
+					return;
+				}
+
+				state.document = { ...action.payload };
 			}
 		});
 		builder.addCase(remove.fulfilled, (state, action) => {
@@ -109,16 +120,12 @@ const { actions, name, reducer } = createSlice({
 		});
 		builder.addCase(pause.fulfilled, (state, action) => {
 			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.FULFILLED;
-
-			if (state.document && state.document.id === action.meta.arg) {
-				state.document.status = DocumentStatus.PAUSED;
-			}
 		});
 		builder.addCase(resume.fulfilled, (state, action) => {
 			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.FULFILLED;
 
 			if (state.document && state.document.id === action.meta.arg) {
-				state.document.status = DocumentStatus.PROCESSING;
+				state.document = action.payload;
 			}
 		});
 		builder.addCase(pause.pending, (state, action) => {
@@ -138,7 +145,11 @@ const { actions, name, reducer } = createSlice({
 		builder.addCase(pause.rejected, (state, action) => {
 			state.pauseResumeDataStatuses[action.meta.arg] = DataStatus.REJECTED;
 
-			if (state.document && state.document.id === action.meta.arg) {
+			if (
+				state.document &&
+				state.document.id === action.meta.arg &&
+				state.document.status === DocumentStatus.PAUSED
+			) {
 				state.document.status = DocumentStatus.PROCESSING;
 			}
 		});

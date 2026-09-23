@@ -145,14 +145,18 @@ const pollDocumentById = createAsyncThunk<
 	{ serializeError },
 );
 
-const resume = createAsyncThunk<number, number, AsyncThunkConfig>(
+const resume = createAsyncThunk<
+	DocumentGetByIdResponseDto,
+	number,
+	AsyncThunkConfig
+>(
 	`${sliceName}/resume`,
 	async (id, { extra }) => {
 		const { documentApi } = extra;
 
-		await documentApi.resume(id);
+		const document = await documentApi.resume(id);
 
-		return id;
+		return document;
 	},
 	{ serializeError },
 );

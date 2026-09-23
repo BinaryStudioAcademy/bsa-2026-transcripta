@@ -479,13 +479,6 @@ class DocumentService {
 		});
 	}
 
-	private throwInvalidStatusToResumeError(): never {
-		throw new HTTPError({
-			message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
-			status: HTTPCode.CONFLICT,
-		});
-	}
-
 	public async create({
 		fileBytes,
 		fileName,
@@ -866,39 +859,62 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
-	public async resume(documentId: number, userId: number): Promise<void> {
-		const pages = await DocumentModel.transaction(async (trx) => {
-			const document =
-				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+	public async resume(
+		documentId: number,
+		userId: number,
+	): Promise<DocumentGetByIdResponseDto> {
+		const { document, isPaused, pages } = await DocumentModel.transaction(
+			async (trx) => {
+				const document =
+					await this.documentRepository.findByIdAndOwnerIdForUpdateWithDetails(
+						documentId,
+						userId,
+						trx,
+					);
+
+				if (!document) {
+					this.throwDocumentNotFoundError();
+				}
+
+				const documentObject = document.toObject();
+
+				if (documentObject.status !== DocumentStatus.PAUSED) {
+					return { document: documentObject, isPaused: false, pages: [] };
+				}
+
+				await this.documentRepository.updateStatus(
 					documentId,
-					userId,
+					DocumentStatus.PROCESSING,
+					trx,
+				);
+				await this.pageRepository.updateFirstPendingPagesAsQueued(
+					documentId,
+					PAGES_TO_QUEUE,
 					trx,
 				);
 
-			if (!document) {
-				this.throwDocumentNotFoundError();
-			}
+				const pages = await this.pageRepository.findQueuedPages(
+					documentId,
+					trx,
+				);
 
-			if (document.toObject().status !== DocumentStatus.PAUSED) {
-				this.throwInvalidStatusToResumeError();
-			}
+				return {
+					document: {
+						...documentObject,
+						status: DocumentStatus.PROCESSING,
+					},
+					isPaused: true,
+					pages,
+				};
+			},
+		);
 
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.PROCESSING,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
-
-			return await this.pageRepository.findQueuedPages(documentId, trx);
-		});
+		if (!isPaused) {
+			return document;
+		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
-			return;
+			return document;
 		}
 
 		try {
@@ -913,6 +929,8 @@ class DocumentService {
 					});
 				}),
 			);
+
+			return document;
 		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,
