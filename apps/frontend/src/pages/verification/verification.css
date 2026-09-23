@@ -154,6 +154,7 @@
 	margin: 0;
 	font: 400 16px/1.65 var(--font-ui);
 	color: var(--text);
+	white-space: pre-wrap;
 }
 
 .verification-transcription__draft {
