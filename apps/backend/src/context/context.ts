@@ -32,11 +32,14 @@ export {
 	LEXICON_CONTEXT_ORDER,
 	LEXICON_MIN_RETAINED,
 	MIN_NEIGHBOUR_PAGES_RETAINED,
+	SEED_GLOSSARY_BUDGET_FRACTION,
 } from "./libs/constants/constants.js";
 export { ContextBlockKind } from "./libs/enums/enums.js";
 export {
 	assembleContextBlocks,
+	checkSeedGlossaryBudget,
 	getEffectiveContextBudget,
+	getSeedGlossaryTokenCeiling,
 	sortLexiconForContext,
 } from "./libs/helpers/helpers.js";
 export {
@@ -45,4 +48,5 @@ export {
 	type FitToBudgetParameters,
 	type FitToBudgetResult,
 	type LexiconContextSortable,
+	type SeedGlossaryBudgetCheckResult,
 } from "./libs/types/types.js";
