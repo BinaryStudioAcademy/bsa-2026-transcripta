@@ -4,7 +4,13 @@ export {
 	/** @public */ useAppSelector,
 } from "./use-app-selector/use-app-selector.hook.js";
 export { useTheme } from "./use-theme/use-theme.hook.js";
-export { useCallback, /** @public */ useEffect, useRef, useState } from "react";
+export {
+	useCallback,
+	/** @public */ useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 export { useController as useFormController } from "react-hook-form";
 export {
 	matchPath,

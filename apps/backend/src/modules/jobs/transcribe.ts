@@ -42,6 +42,7 @@ import {
 	MAX_TRANSCRIBE_ATTEMPTS,
 	ONE,
 	PAGE_MEDIA_TYPE,
+	PAGE_TEXT_KEY,
 	RATE_LIMIT_RETRY_DELAY_MS,
 	RETRYABLE_ERROR_NAMES,
 	TRANSCRIBABLE_STATUSES,
@@ -65,6 +66,16 @@ import {
 	type TranscribeFailureReasonValue,
 	type TranscribeRequestOptions,
 } from "./libs/types/types.js";
+
+const readPageText = (value: unknown): null | string => {
+	if (typeof value !== "object" || value === null) {
+		return null;
+	}
+
+	const pageText = (value as Record<string, unknown>)[PAGE_TEXT_KEY];
+
+	return typeof pageText === "string" ? pageText : null;
+};
 
 const parseModelJson = (text: string): ParseResult => {
 	try {
@@ -356,7 +367,7 @@ const transcribeWithRepair = async (
 				prompt: requestPrompt,
 				rawResponse,
 				structured: parsed.value,
-				text: responseText,
+				text: readPageText(parsed.value) ?? responseText,
 			};
 		}
 
