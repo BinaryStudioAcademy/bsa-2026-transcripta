@@ -17,4 +17,5 @@ export { LEXICON_CONTEXT_ORDER } from "./lexicon-context-order.constant.js";
 export { LEXICON_MIN_RETAINED } from "./lexicon-min-retained.constant.js";
 export { MIN_NEIGHBOUR_PAGES_RETAINED } from "./min-neighbour-pages-retained.constant.js";
 export { NOT_FOUND_INDEX } from "./not-found-index.constant.js";
+export { SEED_GLOSSARY_BUDGET_FRACTION } from "./seed-glossary-budget-fraction.constant.js";
 export { TOKEN_CACHE_MAX_SIZE } from "./token-cache-max-size.constant.js";
