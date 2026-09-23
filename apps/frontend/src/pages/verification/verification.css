@@ -108,18 +108,28 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	cursor: default;
 	transform: scale(1);
 	transform-origin: left top;
 	transition: transform 0.1s ease;
 }
 
 .verification-scan__content--zoomed {
+	touch-action: none;
+	cursor: grab;
+	user-select: none;
 	transform: scale(1.5);
+}
+
+.verification-scan__content--dragging {
+	cursor: grabbing;
 }
 
 .verification-scan__image {
 	display: block;
 	max-width: 100%;
+	pointer-events: none;
+	user-select: none;
 	transform-origin: left top;
 	transition: transform 0.1s ease;
 }

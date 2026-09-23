@@ -13,8 +13,8 @@ import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import {
 	buildContextWords,
-	buildPageLexiconMap,
 	extractLexiconIds,
+	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { DocumentModel } from "../documents/document.model.js";
@@ -100,7 +100,7 @@ class PageService {
 			trx,
 		);
 		const lexiconById = new Map(lexiconRows.map((row) => [row.id, row]));
-		const pageLexiconById = buildPageLexiconMap(contextUsed, lexiconById);
+		const pageLexiconById = mapPageLexicons(contextUsed, lexiconById);
 
 		return {
 			lexiconAdded: [],
