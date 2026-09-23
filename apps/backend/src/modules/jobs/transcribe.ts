@@ -17,13 +17,12 @@ import {
 } from "~/libs/modules/database/database.js";
 import { Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeJobData } from "~/libs/modules/queue/libs/types/types.js";
-import { buildContext, buildUserPrompt } from "~/modules/context/context.js";
-import { type BuiltContext } from "~/modules/context/libs/types/types.js";
 import {
 	buildContext,
 	buildUserPrompt,
 	validateSeedGlossaryBudget,
 } from "~/modules/context/context.js";
+import { type BuiltContext } from "~/modules/context/libs/types/types.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 import { refillPageWindow } from "~/modules/pages/libs/helpers/helpers.js";
@@ -1094,6 +1093,18 @@ const createTranscribeHandler =
 			}
 
 			const preset = await resolvePresetOrFail({
+				documentId,
+				documentRepository,
+				enqueuePage,
+				pageId,
+				pageRepository,
+				presetId: document.presetId,
+			});
+
+			if (!preset) {
+				return;
+			}
+
 			const modelId = (preset.settings.model ||
 				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 
@@ -1111,21 +1122,6 @@ const createTranscribeHandler =
 				return;
 			}
 
-			const context = await buildContext({
-				documentId,
-				documentRepository,
-				enqueuePage,
-				pageId,
-				pageRepository,
-				presetId: document.presetId,
-			});
-
-			if (!preset) {
-				return;
-			}
-
-			const modelId = (preset.settings.model ||
-				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 			const context = await buildContext({ documentId, pageNo, preset });
 
 			await runTranscribePipeline({
