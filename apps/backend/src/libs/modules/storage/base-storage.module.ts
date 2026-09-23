@@ -22,6 +22,7 @@ import {
 	ObjectTooLargeError,
 } from "~/libs/exceptions/exceptions.js";
 import { type Config } from "~/libs/modules/config/config.js";
+import { PAGES_STORAGE_KEY_PREFIX } from "~/modules/documents/libs/constants/pages-storage-key-prefix.constant.js";
 
 import {
 	DELETE_OBJECTS_BATCH_SIZE,
@@ -293,8 +294,8 @@ class BaseStorage implements Storage {
 		imageKey: string;
 		thumbnailKey: string;
 	}> {
-		const imageKey = `pages/${documentId.toString()}/${addLeadingZeros(page)}.webp`;
-		const thumbnailKey = `pages/${documentId.toString()}/${addLeadingZeros(
+		const imageKey = `${PAGES_STORAGE_KEY_PREFIX}${documentId.toString()}/${addLeadingZeros(page)}.webp`;
+		const thumbnailKey = `${PAGES_STORAGE_KEY_PREFIX}${documentId.toString()}/${addLeadingZeros(
 			page,
 		)}-thumb.webp`;
 
