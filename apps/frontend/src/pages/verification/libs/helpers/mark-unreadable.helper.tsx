@@ -7,7 +7,9 @@ import {
 	UNREADABLE_TIP,
 } from "../constants/verification.constants.js";
 
-const MARKER_PATTERN = /\[\?\]|\[\.\.\.\]/g;
+const MARKER_PATTERN = /[^\s|()]{1,64}\(\?\)|\[\?\]|\[\.\.\.\]/g;
+
+const UNCERTAIN_SUFFIX = "(?)";
 
 const markUnreadable = (text: string): React.ReactNode[] => {
 	const nodes: React.ReactNode[] = [];
@@ -21,17 +23,30 @@ const markUnreadable = (text: string): React.ReactNode[] => {
 			nodes.push(text.slice(lastIndex, start));
 		}
 
+		const isUncertain = marker.endsWith(UNCERTAIN_SUFFIX);
+		const isIllegible = marker === ILLEGIBLE_MARKER;
+
+		let tip: string = UNREADABLE_TIP.LOST;
+
+		if (isUncertain) {
+			tip = UNREADABLE_TIP.UNCERTAIN;
+		} else if (isIllegible) {
+			tip = UNREADABLE_TIP.ILLEGIBLE;
+		}
+
 		nodes.push(
 			<span
-				className="tx-tip verification-transcription__unreadable"
-				data-tip={
-					marker === ILLEGIBLE_MARKER
-						? UNREADABLE_TIP.ILLEGIBLE
-						: UNREADABLE_TIP.LOST
+				className={
+					isUncertain
+						? "tx-tip verification-transcription__uncertain"
+						: "tx-tip verification-transcription__unreadable"
 				}
+				data-tip={tip}
 				key={start}
 			>
-				{marker}
+				{isUncertain
+					? marker.slice(EMPTY_LENGTH, -UNCERTAIN_SUFFIX.length)
+					: marker}
 			</span>,
 		);
 

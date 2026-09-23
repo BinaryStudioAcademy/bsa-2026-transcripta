@@ -17,6 +17,7 @@ const ILLEGIBLE_MARKER = "[?]";
 const UNREADABLE_TIP = {
 	ILLEGIBLE: "the model could not read this",
 	LOST: "this part of the page is missing",
+	UNCERTAIN: "the model is not sure of this word, please check it",
 } as const;
 
 export {
