@@ -1,4 +1,5 @@
 const PresetsApiPath = {
+	BY_ID: "/:id",
 	ROOT: "/",
 } as const;
 
