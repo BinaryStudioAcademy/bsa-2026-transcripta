@@ -15,6 +15,7 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
@@ -105,7 +106,11 @@ const Verification: React.FC = () => {
 			return;
 		}
 
-		dispatch(pageActions.setCursorPageNo(document.cursorPageNo));
+		dispatch(
+			pageActions.setCursorPageNo(
+				Math.min(document.cursorPageNo, document.pageCount),
+			),
+		);
 	}, [document, dispatch]);
 
 	useEffect(() => {
@@ -274,6 +279,14 @@ const Verification: React.FC = () => {
 		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
 	}, [currentPage, dispatch]);
 
+	const handlePause = useCallback((): void => {
+		if (!document) {
+			return;
+		}
+
+		void dispatch(documentActions.pause(document.id));
+	}, [dispatch, document]);
+
 	const handleToggleEdit = useCallback((): void => {
 		if (!currentPage?.transcription || isVerifying) {
 			return;
@@ -349,10 +362,12 @@ const Verification: React.FC = () => {
 				editConflictDraft={editConflictDraft}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
+				isPauseDisabled={document.status !== DocumentStatus.PROCESSING}
 				isReprocessing={isReprocessing}
 				isVerifying={isVerifying}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
+				onPause={handlePause}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
