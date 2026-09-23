@@ -14,4 +14,5 @@ export {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
 	type DocumentUploadUrlRequestDto,
+	type ValueOf,
 } from "@transcripta/shared";
