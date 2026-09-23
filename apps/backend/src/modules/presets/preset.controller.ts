@@ -2,6 +2,8 @@ import {
 	APIPath,
 	HTTPCode,
 	HTTPMethod,
+	type PresetGetByIdParametersDto,
+	PresetGetByIdParametersValidationSchema,
 	PresetsApiPath,
 } from "@transcripta/shared";
 
@@ -17,6 +19,11 @@ import { type TokenPayload } from "~/libs/modules/token/token.js";
 import { type PresetService } from "./preset.service.js";
 
 type PresetFindAllOptions = APIHandlerOptions<{
+	user: TokenPayload;
+}>;
+
+type PresetFindByIdOptions = APIHandlerOptions<{
+	params: PresetGetByIdParametersDto;
 	user: TokenPayload;
 }>;
 
@@ -39,6 +46,21 @@ type PresetFindAllOptions = APIHandlerOptions<{
  *           type: array
  *           items:
  *             $ref: "#/components/schemas/PresetGetAllItemResponse"
+ *     PresetGetByIdResponse:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: number
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         instructions:
+ *           type: string
+ *         seedGlossary:
+ *           type: array
+ *         outputSchema:
+ *           type: object
  */
 class PresetController extends BaseController {
 	private presetService: PresetService;
@@ -53,6 +75,16 @@ class PresetController extends BaseController {
 			method: HTTPMethod.GET,
 			path: PresetsApiPath.ROOT,
 			preHandler: authGuard,
+		});
+
+		this.addRoute({
+			handler: (options) => this.findById(options as PresetFindByIdOptions),
+			method: HTTPMethod.GET,
+			path: PresetsApiPath.BY_ID,
+			preHandler: authGuard,
+			validation: {
+				params: PresetGetByIdParametersValidationSchema,
+			},
 		});
 	}
 
@@ -78,6 +110,42 @@ class PresetController extends BaseController {
 	): Promise<APIHandlerResponse> {
 		return {
 			payload: await this.presetService.findAllByUserId(options.user.userId),
+			status: HTTPCode.OK,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /presets/{id}:
+	 *    get:
+	 *      description: Returns full preset details available to the caller
+	 *      security:
+	 *        - bearerAuth: []
+	 *      parameters:
+	 *        - in: path
+	 *          name: id
+	 *          required: true
+	 *          schema:
+	 *            type: integer
+	 *            minimum: 1
+	 *      responses:
+	 *        200:
+	 *          description: Successful operation
+	 *          content:
+	 *            application/json:
+	 *              schema:
+	 *                $ref: "#/components/schemas/PresetGetByIdResponse"
+	 *        404:
+	 *          description: Preset not found
+	 */
+	private async findById(
+		options: PresetFindByIdOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.presetService.findById(
+				options.params.id,
+				options.user.userId,
+			),
 			status: HTTPCode.OK,
 		};
 	}
