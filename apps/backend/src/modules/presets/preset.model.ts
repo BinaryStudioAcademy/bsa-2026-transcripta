@@ -22,7 +22,11 @@ class PresetModel extends AbstractModel {
 
 	public settings!: {
 		blankStdevThreshold?: number;
+		lexiconTopK?: number;
+		maxContextTokens?: number;
+		minDistinctPages?: number;
 		model?: string;
+		neighbourPages?: number;
 	};
 
 	public version!: number;
