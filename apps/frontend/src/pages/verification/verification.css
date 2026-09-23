@@ -164,6 +164,65 @@
 	margin: 0;
 	font: 400 16px/1.65 var(--font-ui);
 	color: var(--text);
+	white-space: pre-wrap;
+}
+
+.verification-transcription__paragraph {
+	margin: 0;
+}
+
+.verification-transcription__paragraph
+	+ .verification-transcription__paragraph {
+	margin-top: var(--sp-3);
+}
+
+.verification-transcription__uncertain {
+	padding: 0 2px;
+	cursor: help;
+	background: var(--mark-bg);
+	border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+	border-radius: var(--r-xs);
+}
+
+.verification-transcription__unreadable {
+	padding: 0 2px;
+	font-weight: 600;
+	color: var(--accent);
+	cursor: help;
+	background: var(--mark-bg);
+	border: 1px dashed var(--mark-underline);
+	border-radius: var(--r-xs);
+}
+
+.verification-transcription__uncertain::after,
+.verification-transcription__unreadable::after {
+	width: max-content;
+	max-width: 220px;
+	white-space: normal;
+}
+
+.verification-transcription__table {
+	width: 100%;
+	margin: var(--sp-3) 0;
+	font-variant-numeric: tabular-nums;
+	white-space: normal;
+	border-collapse: collapse;
+}
+
+.verification-transcription__table th,
+.verification-transcription__table td {
+	padding: var(--sp-1) var(--sp-2);
+	font-size: var(--fs-sm);
+	text-align: left;
+	border-bottom: 1px solid var(--hairline);
+}
+
+.verification-transcription__table th {
+	font-weight: 600;
+	color: var(--text-2);
+	text-transform: uppercase;
+	letter-spacing: var(--ls-caps);
+	border-bottom-color: var(--hairline-strong);
 }
 
 .verification-transcription__draft {
@@ -192,21 +251,28 @@
 
 .verification-edit {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
 	gap: var(--sp-3);
 	max-width: 560px;
+	min-height: 0;
 }
 
 .verification-edit__textarea {
 	box-sizing: border-box;
+	flex: 0 1 auto;
 	width: 100%;
-	min-height: 150px;
+	min-height: 0;
+	max-height: 100%;
+	overflow-y: auto;
 	font: 400 16px/1.65 var(--font-ui);
-	resize: vertical;
+	resize: none;
+	field-sizing: content;
 }
 
 .verification-edit__actions {
 	display: flex;
+	flex: 0 0 auto;
 	flex-wrap: wrap;
 	gap: var(--sp-3);
 	align-items: center;
