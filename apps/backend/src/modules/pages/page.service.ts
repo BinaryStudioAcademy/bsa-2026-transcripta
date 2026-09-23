@@ -12,16 +12,19 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
+import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
 import {
 	buildContextWords,
 	extractLexiconIds,
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
+import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
 import { type TranscriptionModel } from "../transcription/transcription.model.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
+import { TranscriptionService } from "../transcription/transcription.service.js";
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
@@ -55,7 +58,11 @@ class PageService {
 
 	private pageTranscribeQueue: PageTranscribeQueue;
 
+	private rederiveStructuredQueue: RederiveStructuredQueue;
+
 	private transcriptionRepository: TranscriptionRepository;
+
+	private transcriptionService: TranscriptionService;
 
 	public constructor({
 		documentRepository,
@@ -63,12 +70,16 @@ class PageService {
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
+		rederiveStructuredQueue,
 		transcriptionRepository,
+		transcriptionService,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
 		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
+		this.rederiveStructuredQueue = rederiveStructuredQueue;
 		this.transcriptionRepository = transcriptionRepository;
+		this.transcriptionService = transcriptionService;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
 	}
@@ -79,12 +90,9 @@ class PageService {
 		documentId,
 		durationMs,
 		existingEvent,
-		isCorrection,
 		isVerifiedAction,
 		pageId,
 		status,
-		text,
-		transcription,
 		transcriptionId,
 		trx,
 		userId,
@@ -94,24 +102,13 @@ class PageService {
 		documentId: number;
 		durationMs: number;
 		existingEvent: PageEventModel | undefined;
-		isCorrection: boolean;
 		isVerifiedAction: boolean;
 		pageId: number;
 		status: PageModel["status"];
-		text: string;
-		transcription: TranscriptionModel;
 		transcriptionId: number;
 		trx: Transaction;
 		userId: number;
 	}): Promise<void> {
-		if (isCorrection) {
-			await this.transcriptionRepository.updateEditedText(
-				transcription.id,
-				text,
-				trx,
-			);
-		}
-
 		const verifiedAt = isVerifiedAction ? new Date().toISOString() : null;
 
 		await this.pageRepository.updateVerification(
@@ -244,6 +241,39 @@ class PageService {
 		);
 	}
 
+	private async handleCorrection({
+		document,
+		text,
+		transcription,
+		trx,
+	}: {
+		document: DocumentEntity;
+		text: string;
+		transcription: TranscriptionModel;
+		trx: Transaction;
+	}): Promise<boolean> {
+		const transcriptionText = transcription.editedText ?? transcription.text;
+		const documentObject = document.toObjectWithPreset();
+
+		if (
+			transcriptionText === text &&
+			documentObject.presetId === transcription.presetId &&
+			transcription.editedStructured !== null
+		) {
+			return false;
+		}
+
+		if (transcriptionText !== text) {
+			await this.transcriptionRepository.updateEditedText(
+				transcription.id,
+				text,
+				trx,
+			);
+		}
+
+		return true;
+	}
+
 	private async loadClaimedEntities({
 		pageId,
 		transcriptionId,
@@ -255,6 +285,7 @@ class PageService {
 		trx: Transaction;
 		userId: number;
 	}): Promise<{
+		document: DocumentEntity;
 		page: PageModel;
 		transcription: TranscriptionModel;
 	}> {
@@ -267,11 +298,12 @@ class PageService {
 			});
 		}
 
-		const document = await this.documentRepository.findByIdAndOwnerIdForUpdate(
-			page.documentId,
-			userId,
-			trx,
-		);
+		const document =
+			await this.documentRepository.findByIdAndOwnerIdWithPresetForUpdate(
+				page.documentId,
+				userId,
+				trx,
+			);
 		page = await this.pageRepository.findByIdForOwner(pageId, userId, trx);
 
 		if (!document || !page) {
@@ -291,7 +323,7 @@ class PageService {
 			});
 		}
 
-		return { page, transcription };
+		return { document, page, transcription };
 	}
 
 	private async loadVerificationState({
@@ -371,10 +403,13 @@ class PageService {
 		trx: Transaction;
 		userId: number;
 	}): Promise<{
+		documentId: number;
+		needRederiveStructured: boolean;
 		pagesToQueue: PageEntity[];
 		response: VerifyPageResponseDto;
+		transcriptionId: number;
 	}> {
-		const { page, transcription } = await this.loadClaimedEntities({
+		const { document, page, transcription } = await this.loadClaimedEntities({
 			pageId,
 			transcriptionId,
 			trx,
@@ -389,6 +424,8 @@ class PageService {
 
 		if (existingEvent && !isCorrection) {
 			return {
+				documentId: page.documentId,
+				needRederiveStructured: false,
 				pagesToQueue: [],
 				response: await this.buildVerifyResponse(
 					{
@@ -399,8 +436,13 @@ class PageService {
 					},
 					trx,
 				),
+				transcriptionId: transcription.id,
 			};
 		}
+
+		const needRederiveStructured = isCorrection
+			? await this.handleCorrection({ document, text, transcription, trx })
+			: false;
 
 		await this.applyVerificationUpdate({
 			action,
@@ -408,12 +450,9 @@ class PageService {
 			documentId: page.documentId,
 			durationMs,
 			existingEvent,
-			isCorrection,
 			isVerifiedAction,
 			pageId,
 			status,
-			text,
-			transcription,
 			transcriptionId,
 			trx,
 			userId,
@@ -438,6 +477,8 @@ class PageService {
 		);
 
 		return {
+			documentId: page.documentId,
+			needRederiveStructured,
 			pagesToQueue,
 			response: await this.buildVerifyResponse(
 				{
@@ -448,6 +489,7 @@ class PageService {
 				},
 				trx,
 			),
+			transcriptionId: transcription.id,
 		};
 	}
 
@@ -694,6 +736,15 @@ class PageService {
 						userId,
 					}),
 			);
+
+			if (result.needRederiveStructured) {
+				await this.rederiveStructuredQueue.add({
+					currentTranscriptionId: result.transcriptionId,
+					documentId: result.documentId,
+					pageId,
+					text: payload.text,
+				});
+			}
 
 			await this.enqueuePages(result.pagesToQueue);
 

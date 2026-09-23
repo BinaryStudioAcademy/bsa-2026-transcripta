@@ -1,4 +1,4 @@
-import { createSlice, type ActionReducerMapBuilder } from "@reduxjs/toolkit";
+import { type ActionReducerMapBuilder, createSlice } from "@reduxjs/toolkit";
 import { INDEX_NOT_FOUND } from "@transcripta/shared";
 
 import { DataStatus } from "~/libs/enums/enums.js";

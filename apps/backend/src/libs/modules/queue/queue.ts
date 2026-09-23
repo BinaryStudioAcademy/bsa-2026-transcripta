@@ -16,6 +16,7 @@ import { REDIS_CONNECT_TIMEOUT_MS } from "./libs/constants/constants.js";
 import { type PageTranscribeJobData } from "./libs/types/types.js";
 import { PageTranscribeQueue } from "./page-transcribe-queue.module.js";
 import { QueueRegistry } from "./queue-registry.module.js";
+import { rederiveStructuredQueue } from "./rederive-structured/rederive-structured.js";
 
 const redis = new Redis(config.ENV.REDIS.URL, {
 	connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
@@ -55,7 +56,7 @@ pageTranscribeQueue = new PageTranscribeQueue({
 const queueRegistry = new QueueRegistry({
 	connection: redis,
 	logger,
-	queues: [pageTranscribeQueue, documentCleanupQueue],
+	queues: [pageTranscribeQueue, documentCleanupQueue, rederiveStructuredQueue],
 });
 
 export { pageTranscribeQueue, queueRegistry };
@@ -63,3 +64,8 @@ export {
 	DocumentCleanupQueue,
 	documentCleanupQueue,
 } from "./document-cleanup/document-cleanup.js";
+export {
+	RederiveStructuredQueue,
+	rederiveStructuredQueue,
+} from "./rederive-structured/rederive-structured.js";
+export { type RederiveStructuredJobData } from "./rederive-structured/rederive-structured.js";
