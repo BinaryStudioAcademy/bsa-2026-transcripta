@@ -354,6 +354,8 @@ const DocumentNew: React.FC = () => {
 
 		const startedAt = Date.now();
 
+		void dispatch(documentActions.loadById(ingestingDocumentId));
+
 		const poll = (): void => {
 			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
 				setIngestingDocumentId(null);
@@ -362,10 +364,9 @@ const DocumentNew: React.FC = () => {
 				return;
 			}
 
-			void dispatch(documentActions.loadById(ingestingDocumentId));
+			void dispatch(documentActions.pollDocumentById(ingestingDocumentId));
 		};
 
-		poll();
 		const timer = setInterval(poll, INGEST_POLL_INTERVAL_MS);
 
 		return (): void => {
