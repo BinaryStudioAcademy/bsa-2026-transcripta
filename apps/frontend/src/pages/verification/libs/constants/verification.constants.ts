@@ -15,9 +15,9 @@ const MIN_TABLE_LINES = 2;
 const TABLE_CELL_SEPARATOR = "|";
 const ILLEGIBLE_MARKER = "[?]";
 const UNREADABLE_TIP = {
-	ILLEGIBLE: "the model could not read this",
-	LOST: "this part of the page is missing",
-	UNCERTAIN: "the model is not sure of this word, please check it",
+	ILLEGIBLE: "could not be read",
+	LOST: "missing on the page",
+	UNCERTAIN: "check this word",
 } as const;
 
 export {

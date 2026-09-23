@@ -184,6 +184,13 @@
 	border-radius: var(--r-xs);
 }
 
+.verification-transcription__uncertain::after,
+.verification-transcription__unreadable::after {
+	width: max-content;
+	max-width: 220px;
+	white-space: normal;
+}
+
 .verification-transcription__table {
 	width: 100%;
 	margin: var(--sp-3) 0;
