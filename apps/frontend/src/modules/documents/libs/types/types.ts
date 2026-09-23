@@ -1,3 +1,5 @@
+export { type DocumentExport } from "./document-export.type.js";
+export { type ExportFormatValue } from "./export-format-value.type.js";
 export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,

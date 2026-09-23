@@ -16,9 +16,11 @@ import {
 	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
+	type ExportFormatValue,
 } from "~/modules/documents/documents.js";
 
 import {
+	MOCK_EXPORT_DELAY_MS,
 	POLLING_FAILED_MESSAGE,
 	POLLING_FAILED_NOTIFICATION,
 	TERMINAL_DOCUMENT_STATUSES,
@@ -249,6 +251,20 @@ const updateBudget = createAsyncThunk<
 	{ serializeError },
 );
 
+const requestExport = createAsyncThunk<
+	{ name: string; readyMeta: string },
+	{ documentId: number; format: ExportFormatValue },
+	AsyncThunkConfig
+>(
+	`${sliceName}/request-export`,
+	async ({ format }) => {
+		await new Promise((resolve) => setTimeout(resolve, MOCK_EXPORT_DELAY_MS));
+
+		return { name: `export.${format}`, readyMeta: "just now" };
+	},
+	{ serializeError },
+);
+
 export {
 	create,
 	getUploadUrl,
@@ -258,6 +274,7 @@ export {
 	pause,
 	pollDocumentById,
 	remove,
+	requestExport,
 	resume,
 	startPolling,
 	stopPolling,
