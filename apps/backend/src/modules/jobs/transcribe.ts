@@ -716,7 +716,7 @@ const createTranscribeHandler =
 				return;
 			}
 
-			const modelId = (preset.settings.model ??
+			const modelId = (preset.settings.model ||
 				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 			const context = await buildContext({
 				documentId,
