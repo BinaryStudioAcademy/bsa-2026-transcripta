@@ -1,9 +1,4 @@
-import {
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "~/libs/hooks/hooks.js";
+import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
 
 import {
 	INITIAL_ZOOM,
@@ -20,11 +15,14 @@ import { type UseScanZoomReturn } from "../types/types.js";
 
 const useScanZoom = (): UseScanZoomReturn => {
 	const [zoom, setZoom] = useState(INITIAL_ZOOM);
-	const scanReference = useRef<HTMLDivElement>(null);
+	const [scanNode, setScanNode] = useState<HTMLDivElement | null>(null);
+	const scanReference = useCallback((node: HTMLDivElement | null): void => {
+		setScanNode(node);
+	}, []);
 	const isZoomed = zoom > INITIAL_ZOOM;
 
 	const resetToTopLeft = useCallback((): void => {
-		const scanElement = scanReference.current?.parentElement;
+		const scanElement = scanNode?.parentElement;
 
 		if (!scanElement) {
 			return;
@@ -32,7 +30,7 @@ const useScanZoom = (): UseScanZoomReturn => {
 
 		scanElement.scrollLeft = ZOOM_PAN_RESET;
 		scanElement.scrollTop = ZOOM_PAN_RESET;
-	}, []);
+	}, [scanNode]);
 
 	const toggleZoom = useCallback((): void => {
 		setZoom((previousZoom) => {
@@ -48,9 +46,7 @@ const useScanZoom = (): UseScanZoomReturn => {
 	}, [resetToTopLeft]);
 
 	useEffect(() => {
-		const scanElement = scanReference.current;
-
-		if (!scanElement) {
+		if (!scanNode) {
 			return;
 		}
 
@@ -74,14 +70,14 @@ const useScanZoom = (): UseScanZoomReturn => {
 			});
 		};
 
-		scanElement.addEventListener("wheel", handleWheel, {
+		scanNode.addEventListener("wheel", handleWheel, {
 			passive: false,
 		});
 
 		return () => {
-			scanElement.removeEventListener("wheel", handleWheel);
+			scanNode.removeEventListener("wheel", handleWheel);
 		};
-	}, [resetToTopLeft]);
+	}, [scanNode, resetToTopLeft]);
 
 	return {
 		isZoomed,

@@ -31,7 +31,7 @@ type VerificationWorkspaceProperties = {
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	pageCount?: number | undefined;
-	scanRef: React.RefObject<HTMLDivElement | null>;
+	scanRef: (node: HTMLDivElement | null) => void;
 	zoom: number;
 };
 
