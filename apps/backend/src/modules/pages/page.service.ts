@@ -11,15 +11,19 @@ import { type Transaction, UniqueViolationError } from "objection";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
+import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
 import {
 	buildContextWords,
 	extractLexiconIds,
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
+import { TranscriptionModel } from "~/modules/transcription/transcription.model.js";
 
+import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
+import { TranscriptionService } from "../transcription/transcription.service.js";
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
@@ -50,7 +54,11 @@ class PageService {
 
 	private pageTranscribeQueue: PageTranscribeQueue;
 
+	private rederiveStructuredQueue: RederiveStructuredQueue;
+
 	private transcriptionRepository: TranscriptionRepository;
+
+	private transcriptionService: TranscriptionService;
 
 	public constructor({
 		documentRepository,
@@ -58,14 +66,18 @@ class PageService {
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
+		rederiveStructuredQueue,
 		transcriptionRepository,
+		transcriptionService,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
 		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.transcriptionRepository = transcriptionRepository;
+		this.transcriptionService = transcriptionService;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
+		this.rederiveStructuredQueue = rederiveStructuredQueue;
 	}
 
 	private async buildVerifyResponse(
@@ -121,6 +133,39 @@ class PageService {
 			pageId,
 			status,
 		};
+	}
+
+	private async handleCorrection({
+		document,
+		text,
+		transcription,
+		trx,
+	}: {
+		document: DocumentEntity;
+		text: string;
+		transcription: TranscriptionModel;
+		trx: Transaction;
+	}): Promise<boolean> {
+		const transcriptionText = transcription.editedText ?? transcription.text;
+		const documentObject = document.toObjectWithPreset();
+
+		if (
+			transcriptionText === text &&
+			documentObject.presetId === transcription.presetId &&
+			transcription.editedStructured !== null
+		) {
+			return false;
+		}
+
+		if (transcriptionText !== text) {
+			await this.transcriptionRepository.updateEditedText(
+				transcription.id,
+				text,
+				trx,
+			);
+		}
+
+		return true;
 	}
 
 	public async getDebug(
@@ -376,7 +421,7 @@ class PageService {
 				}
 
 				const document =
-					await this.documentRepository.findByIdAndOwnerIdForUpdate(
+					await this.documentRepository.findByIdAndOwnerIdWithPresetForUpdate(
 						page.documentId,
 						userId,
 						trx,
@@ -431,12 +476,14 @@ class PageService {
 					};
 				}
 
+				let needRederiveStructured = false;
 				if (isCorrection) {
-					await this.transcriptionRepository.updateEditedText(
-						transcription.id,
-						payload.text,
+					needRederiveStructured = await this.handleCorrection({
+						document,
+						text: payload.text,
+						transcription,
 						trx,
-					);
+					});
 				}
 
 				const verifiedAt = isVerifiedAction ? new Date().toISOString() : null;
@@ -490,6 +537,8 @@ class PageService {
 				);
 
 				return {
+					documentId: page.documentId,
+					needRederiveStructured,
 					pagesToQueue,
 					response: await this.buildVerifyResponse(
 						{
@@ -500,8 +549,18 @@ class PageService {
 						},
 						trx,
 					),
+					transcriptionId: transcription.id,
 				};
 			});
+
+			if (result.needRederiveStructured) {
+				await this.rederiveStructuredQueue.add({
+					currentTranscriptionId: result.transcriptionId,
+					documentId: result.documentId,
+					pageId,
+					text: payload.text,
+				});
+			}
 
 			await Promise.all(
 				result.pagesToQueue.map((page) => {
