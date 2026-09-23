@@ -24,8 +24,8 @@ import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 import {
 	buildContextWords,
-	buildPageLexiconMap,
 	extractLexiconIds,
+	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { sha256 } from "../context/libs/helpers/hash.helper.js";
@@ -359,12 +359,12 @@ class DocumentService {
 		const {
 			settings: { blankStdevThreshold },
 		} = preset;
-		const existingPagesArray =
+		const existingPageNumbers =
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
-		const existingPagesSet = new Set<number>(existingPagesArray);
+		const seenPageNumbers = new Set<number>(existingPageNumbers);
 
 		for (let page = 1; page <= pageCount; page++) {
-			if (existingPagesSet.has(page)) {
+			if (seenPageNumbers.has(page)) {
 				continue;
 			}
 
@@ -678,7 +678,7 @@ class DocumentService {
 
 				const text =
 					page.transcriptionEditedText ?? page.transcriptionText ?? "";
-				const pageLexiconById = buildPageLexiconMap(
+				const pageLexiconById = mapPageLexicons(
 					page.transcriptionContextUsed,
 					lexiconById,
 				);
@@ -730,9 +730,9 @@ class DocumentService {
 				});
 			}
 
-			const documentObject = document.toObject();
+			const documentData = document.toObject();
 
-			if (documentObject.status !== DocumentStatus.DRAFT) {
+			if (documentData.status !== DocumentStatus.DRAFT) {
 				throw new HTTPError({
 					message: DocumentErrorMessage.NOT_DRAFT,
 					status: HTTPCode.CONFLICT,
