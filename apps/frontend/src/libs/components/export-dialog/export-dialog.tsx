@@ -1,5 +1,8 @@
 import { Button } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import {
+	EXPORT_FORMAT_OPTIONS,
+	INITIAL_COUNT,
+} from "~/libs/constants/constants.js";
 import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
 import { type ExportFormatValue } from "~/modules/documents/documents.js";
 import { ExportFormat } from "~/modules/documents/libs/enums/enums.js";
@@ -13,8 +16,6 @@ type Properties = {
 	pagesTotal: number;
 	pagesVerified: number;
 };
-
-const FORMAT_OPTIONS = [ExportFormat.JSON, ExportFormat.CSV, ExportFormat.TXT];
 
 const ExportDialog: React.FC<Properties> = ({
 	documentTitle,
@@ -70,7 +71,7 @@ const ExportDialog: React.FC<Properties> = ({
 
 				<fieldset className={styles["fieldset"]}>
 					<legend className={styles["label"]}>Format</legend>
-					{FORMAT_OPTIONS.map((value) => (
+					{EXPORT_FORMAT_OPTIONS.map((value) => (
 						<label className={styles["option"]} key={value}>
 							<input
 								checked={format === value}

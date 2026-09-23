@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { INDEX_NOT_FOUND } from "@transcripta/shared";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
@@ -22,8 +23,6 @@ import {
 	resume,
 	updateBudget,
 } from "./actions.js";
-
-const NOT_FOUND_INDEX = -1;
 
 type State = {
 	createdDocument: DocumentCreateResponseDto | null;
@@ -176,7 +175,7 @@ const { actions, name, reducer } = createSlice({
 				(export_) => export_.id === action.meta.requestId,
 			);
 
-			if (index === NOT_FOUND_INDEX) {
+			if (index === INDEX_NOT_FOUND) {
 				return;
 			}
 
@@ -199,6 +198,7 @@ const { actions, name, reducer } = createSlice({
 				(export_) => export_.id !== action.meta.requestId,
 			);
 		});
+
 		builder.addCase(ingest.pending, (state, action) => {
 			if (state.document?.id === action.meta.arg) {
 				state.document.status = DocumentStatus.INGESTING;
