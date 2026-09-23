@@ -242,22 +242,36 @@ const Documents: React.FC = () => {
 							.join(" ")}
 						role="table"
 					>
-						<div role="row">
-							<span role="columnheader">Title</span>
-							<span role="columnheader">Status</span>
+						<div className="tx-table__row" role="row">
+							<span className="tx-table__columnheader" role="columnheader">
+								Title
+							</span>
+							<span className="tx-table__columnheader" role="columnheader">
+								Status
+							</span>
 							<span
-								className={styles["documents-page__num-header"]}
+								className={[
+									"tx-table__columnheader",
+									styles["documents-page__num-header"],
+								]
+									.filter(Boolean)
+									.join(" ")}
 								role="columnheader"
 							>
 								Progress
 							</span>
 							<span
-								className={styles["documents-page__num-header"]}
+								className={[
+									"tx-table__columnheader",
+									styles["documents-page__num-header"],
+								]
+									.filter(Boolean)
+									.join(" ")}
 								role="columnheader"
 							>
 								Spent
 							</span>
-							<span role="columnheader" />
+							<span className="tx-table__columnheader" role="columnheader" />
 						</div>
 
 						{documents.map((document) => {
@@ -283,6 +297,7 @@ const Documents: React.FC = () => {
 
 							return (
 								<div
+									className="tx-table__row"
 									data-document-id={document.id}
 									key={document.id}
 									role="row"
@@ -294,7 +309,12 @@ const Documents: React.FC = () => {
 										to={rowRoute}
 									>
 										<span
-											className={styles["documents-page__title-cell"]}
+											className={[
+												"tx-table__cell",
+												styles["documents-page__title-cell"],
+											]
+												.filter(Boolean)
+												.join(" ")}
 											role="cell"
 										>
 											<span className={styles["documents-page__title-text"]}>
@@ -302,7 +322,12 @@ const Documents: React.FC = () => {
 											</span>
 										</span>
 										<span
-											className={styles["documents-page__status-cell"]}
+											className={[
+												"tx-table__cell",
+												styles["documents-page__status-cell"],
+											]
+												.filter(Boolean)
+												.join(" ")}
 											role="cell"
 										>
 											<StatusChip status={document.status} />
@@ -324,15 +349,15 @@ const Documents: React.FC = () => {
 												/>
 											)}
 										</span>
-										<span className="tx-num" role="cell">
+										<span className="tx-table__cell tx-num" role="cell">
 											{progressCursor} / {document.pageCount}
 										</span>
-										<span className="tx-num" role="cell">
+										<span className="tx-table__cell tx-num" role="cell">
 											{formatMoney(document.spentUsd)} /{" "}
 											{formatMoney(document.budgetUsd)}
 										</span>
 									</Link>
-									<span role="cell">
+									<span className="tx-table__cell" role="cell">
 										<OverflowMenu
 											items={[
 												{
