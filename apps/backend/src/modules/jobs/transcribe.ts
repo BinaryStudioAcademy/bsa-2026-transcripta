@@ -187,6 +187,58 @@ const recordFailure = async ({
 	await enqueuePages(pages, enqueuePage);
 };
 
+const failIfSeedGlossaryExceedsBudget = async ({
+	documentId,
+	documentRepository,
+	enqueuePage,
+	modelId,
+	pageId,
+	pageRepository,
+	preset,
+}: Pick<
+	RecordFailureOptions,
+	| "documentId"
+	| "documentRepository"
+	| "enqueuePage"
+	| "pageId"
+	| "pageRepository"
+> & {
+	modelId: ModelIdValue;
+	preset: PresetModel;
+}): Promise<boolean> => {
+	const check = await validateSeedGlossaryBudget({
+		...(preset.settings.maxContextTokens === undefined
+			? {}
+			: { maxContextTokens: preset.settings.maxContextTokens }),
+		model: modelId,
+		seedGlossary: preset.seedGlossary,
+	});
+
+	if (check.ok) {
+		return false;
+	}
+
+	await recordFailure({
+		documentId,
+		documentRepository,
+		enqueuePage,
+		event: {
+			details: {
+				ceiling: check.ceiling,
+				error: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
+				glossaryTokens: check.glossaryTokens,
+			},
+			durationMs: EMPTY_LENGTH,
+		},
+		lastError: check.message,
+		pageId,
+		pageRepository,
+		reason: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
+	});
+
+	return true;
+};
+
 const markDocumentStopped = async (documentId: number): Promise<void> => {
 	await DocumentModel.query()
 		.patch({ status: DocumentStatus.BUDGET_STOP })
@@ -724,32 +776,17 @@ const createTranscribeHandler =
 			const modelId = (preset.settings.model ||
 				config.ENV.BEDROCK.MODEL_ID) as ModelIdValue;
 
-			const seedGlossaryBudget = await validateSeedGlossaryBudget({
-				...(preset.settings.maxContextTokens === undefined
-					? {}
-					: { maxContextTokens: preset.settings.maxContextTokens }),
-				model: modelId,
-				seedGlossary: preset.seedGlossary,
-			});
-
-			if (!seedGlossaryBudget.ok) {
-				await recordFailure({
+			if (
+				await failIfSeedGlossaryExceedsBudget({
 					documentId,
 					documentRepository,
 					enqueuePage,
-					event: {
-						details: {
-							ceiling: seedGlossaryBudget.ceiling,
-							error: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
-							glossaryTokens: seedGlossaryBudget.glossaryTokens,
-						},
-						durationMs: EMPTY_LENGTH,
-					},
-					lastError: seedGlossaryBudget.message,
+					modelId,
 					pageId,
 					pageRepository,
-					reason: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
-				});
+					preset,
+				})
+			) {
 				return;
 			}
 

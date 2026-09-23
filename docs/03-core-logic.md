@@ -248,12 +248,18 @@ this check (#148, #151).
 
 ```ts
 import { HTTPCode, HTTPError } from "@transcripta/shared";
+import { DEFAULT_PRESET_SETTINGS } from "~/modules/context/builder/libs/constants/constants.js";
 import { validateSeedGlossaryBudget } from "~/modules/context/context.js";
 
 // POST /presets create / new version (#270)
+const { maxContextTokens, model } = {
+	...DEFAULT_PRESET_SETTINGS,
+	...settings,
+};
+
 const check = await validateSeedGlossaryBudget({
-	maxContextTokens: settings.maxContextTokens,
-	model: settings.model,
+	maxContextTokens,
+	model,
 	seedGlossary,
 });
 
@@ -265,9 +271,8 @@ if (!check.ok) {
 }
 ```
 
-The transcribe worker also calls `validateSeedGlossaryBudget` before
-`buildContext` and fails the page with a clear `last_error` if a bad preset
-slipped through.
+The transcribe worker also validates the seed glossary before `buildContext`
+and fails the page with a clear `last_error` if a bad preset slipped through.
 
 ### Trimming floors (`fitToBudget`) (#148)
 
