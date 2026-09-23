@@ -1,5 +1,5 @@
 export { createContextHash } from "./create-context-hash.helper.js";
-export { isStringCollection } from "./is-string-collection.helper.js";
+export { isValueOnlyGlossary } from "./is-value-only-glossary.helper.js";
 export { renderLexiconEntry } from "./render-lexicon-entry.helper.js";
 export { renderLexicon } from "./render-lexicon.helper.js";
 export { renderNeighbouringPagesEntry } from "./render-neighbouring-pages-entry.helper.js";
