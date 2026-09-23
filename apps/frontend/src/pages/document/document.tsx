@@ -284,7 +284,12 @@ const Document: React.FC = () => {
 										status={currentDocument.status}
 									/>
 
-									<ExportBlock />
+									<ExportBlock
+										documentId={currentDocument.id}
+										documentTitle={currentDocument.title}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
 
 									{currentDocument.groundTruth && (
 										<GroundTruthBlock
