@@ -94,7 +94,7 @@ class UserController extends BaseController {
 		const userId = options.user?.userId;
 
 		return {
-			payload: await this.userService.find(userId || null),
+			payload: await this.userService.find(userId ?? null),
 			status: HTTPCode.OK,
 		};
 	}
