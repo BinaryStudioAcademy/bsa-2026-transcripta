@@ -65,8 +65,6 @@ const Documents: React.FC = () => {
 
 	const handleRowActionClick = useCallback(
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			event.preventDefault();
-
 			const documentId = event.currentTarget
 				.closest("[role=row]")
 				?.getAttribute("data-document-id");
@@ -180,9 +178,6 @@ const Documents: React.FC = () => {
 
 	const handleRaiseLimitClick = useCallback(
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			event.preventDefault();
-			event.stopPropagation();
-
 			const documentId = event.currentTarget
 				.closest("[role=row]")
 				?.getAttribute("data-document-id");
@@ -302,12 +297,7 @@ const Documents: React.FC = () => {
 									key={document.id}
 									role="row"
 								>
-									<Link
-										className={styles["documents-page__row"] ?? ""}
-										onKeyDown={handleRowKeyDown}
-										state={rowState}
-										to={rowRoute}
-									>
+									<div className={styles["documents-page__row"]}>
 										<span
 											className={[
 												"tx-table__cell",
@@ -317,9 +307,16 @@ const Documents: React.FC = () => {
 												.join(" ")}
 											role="cell"
 										>
-											<span className={styles["documents-page__title-text"]}>
-												{document.title}
-											</span>
+											<Link
+												className={styles["documents-page__row-link"] ?? ""}
+												onKeyDown={handleRowKeyDown}
+												state={rowState}
+												to={rowRoute}
+											>
+												<span className={styles["documents-page__title-text"]}>
+													{document.title}
+												</span>
+											</Link>
 										</span>
 										<span
 											className={[
@@ -335,13 +332,19 @@ const Documents: React.FC = () => {
 											{document.status !== DocumentStatus.FAILED &&
 												document.pagesFailed > EMPTY_LENGTH && (
 													<Button
-														className={styles["documents-page__reread-link"]}
+														className={[
+															styles["documents-page__row-action"],
+															styles["documents-page__reread-link"],
+														]
+															.filter(Boolean)
+															.join(" ")}
 														label="Open to re-read failed pages"
 														onClick={handleRowActionClick}
 													/>
 												)}
 											{document.status === DocumentStatus.BUDGET_STOP && (
 												<Button
+													className={styles["documents-page__row-action"]}
 													isSecondary
 													isSmall
 													label="Raise the limit"
@@ -356,7 +359,7 @@ const Documents: React.FC = () => {
 											{formatMoney(document.spentUsd)} /{" "}
 											{formatMoney(document.budgetUsd)}
 										</span>
-									</Link>
+									</div>
 									<span className="tx-table__cell" role="cell">
 										<OverflowMenu
 											items={[
