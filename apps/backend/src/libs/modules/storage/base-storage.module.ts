@@ -4,6 +4,7 @@ import {
 	HeadObjectCommand,
 	ListObjectsV2Command,
 	NoSuchKey,
+	NotFound,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -13,7 +14,7 @@ import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { Readable } from "node:stream";
+import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 import {
@@ -204,8 +205,29 @@ class BaseStorage implements Storage {
 			const response = await this.client.send(command);
 			const nodeStream = response.Body as Readable;
 			const fileWriteStream = fsSync.createWriteStream(temporaryFilePath);
+			let limitStream = null;
 
-			await pipeline(nodeStream, fileWriteStream);
+			if (maxSize) {
+				let downloadedBytes = 0;
+				limitStream = new Transform({
+					transform(chunk: Buffer, _encoding, callback) {
+						downloadedBytes += chunk.length;
+
+						if (downloadedBytes > maxSize) {
+							callback(
+								new ObjectTooLargeError(StorageErrorMessage.OBJECT_TOO_LARGE),
+							);
+							return;
+						}
+
+						callback(null, chunk);
+					},
+				});
+			}
+
+			await (limitStream
+				? pipeline(nodeStream, limitStream, fileWriteStream)
+				: pipeline(nodeStream, fileWriteStream));
 
 			return {
 				clear,
@@ -214,7 +236,7 @@ class BaseStorage implements Storage {
 		} catch (error) {
 			await clear();
 
-			if (error instanceof NoSuchKey) {
+			if (error instanceof NotFound || error instanceof NoSuchKey) {
 				throw new ObjectNotUploadedError(
 					StorageErrorMessage.OBJECT_NOT_UPLOADED,
 				);
