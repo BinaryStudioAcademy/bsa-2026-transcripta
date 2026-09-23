@@ -3,7 +3,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
 
 import { ThemeToggle } from "~/libs/components/components.js";
-import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
+import {
+	INITIAL_COUNT as EMPTY_COUNT,
+	UPLOAD_WARNING_MESSAGE,
+} from "~/libs/constants/constants.js";
 import { AppRoute, BlockerState, DataStatus } from "~/libs/enums/enums.js";
 import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import { configureString } from "~/libs/helpers/helpers.js";
@@ -19,12 +22,16 @@ import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
 } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
 import { Dropzone } from "./components/dropzone/dropzone.js";
+import { IngestProgress } from "./components/ingest-progress/ingest-progress.js";
 import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
 import {
+	INGEST_POLL_INTERVAL_MS,
+	INGEST_TIMEOUT_MS,
 	MAX_RETRIES,
 	ZERO_UPLOAD_PROGRESS,
 	ZIP_FILE_REGEX,
@@ -51,6 +58,9 @@ const DocumentNew: React.FC = () => {
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isUploaded, setIsUploaded] = useState(false);
+	const [ingestingDocumentId, setIngestingDocumentId] = useState<null | number>(
+		null,
+	);
 
 	const fileInputReference = useRef<HTMLInputElement>(null);
 	const abortControllerReference = useRef<AbortController | null>(null);
@@ -285,27 +295,32 @@ const DocumentNew: React.FC = () => {
 		notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
 	}, [resetSelection]);
 
+	const goToDocument = useCallback(
+		(documentId: number): void => {
+			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
+			void navigate(
+				configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+			);
+		},
+		[navigate],
+	);
+
+	const handleOpenDocument = useCallback((): void => {
+		if (ingestingDocumentId) {
+			setIngestingDocumentId(null);
+			goToDocument(ingestingDocumentId);
+		}
+	}, [goToDocument, ingestingDocumentId]);
+
 	const handleProcessDocument = useCallback(() => {
 		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
 		if (!targetId) {
 			return;
 		}
 
+		setIngestingDocumentId(Number(targetId));
 		void dispatch(documentActions.ingest(Number(targetId)));
-
-		void (async (): Promise<void> => {
-			try {
-				await navigate(
-					configureString(AppRoute.DOCUMENT, {
-						id: String(targetId),
-					}),
-				);
-			} catch (error: unknown) {
-				// eslint-disable-next-line no-console
-				console.error(error);
-			}
-		})();
-	}, [resumeDocumentId, dispatch, navigate]);
+	}, [resumeDocumentId, dispatch]);
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -332,7 +347,62 @@ const DocumentNew: React.FC = () => {
 		resetSelection();
 	}, [resetSelection]);
 
+	useEffect(() => {
+		if (!ingestingDocumentId) {
+			return;
+		}
+
+		const startedAt = Date.now();
+
+		void dispatch(documentActions.loadById(ingestingDocumentId));
+
+		const poll = (): void => {
+			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
+				setIngestingDocumentId(null);
+				goToDocument(ingestingDocumentId);
+
+				return;
+			}
+
+			void dispatch(documentActions.pollDocumentById(ingestingDocumentId));
+		};
+
+		const timer = setInterval(poll, INGEST_POLL_INTERVAL_MS);
+
+		return (): void => {
+			clearInterval(timer);
+		};
+	}, [dispatch, goToDocument, ingestingDocumentId]);
+
+	useEffect(() => {
+		if (!ingestingDocumentId || resumedDocument?.id !== ingestingDocumentId) {
+			return;
+		}
+
+		const { progress, status } = resumedDocument;
+
+		if (status === DocumentStatus.FAILED) {
+			setIngestingDocumentId(null);
+			goToDocument(ingestingDocumentId);
+
+			return;
+		}
+
+		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
+			setIngestingDocumentId(null);
+			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
+			void navigate(
+				configureString(AppRoute.VERIFICATION, {
+					id: String(ingestingDocumentId),
+				}),
+			);
+		}
+	}, [goToDocument, ingestingDocumentId, navigate, resumedDocument]);
+
 	const getScreenState = (): ScreenStateType => {
+		if (ingestingDocumentId) {
+			return ScreenState.INGESTING;
+		}
 		if (isZipProcessing) {
 			return ScreenState.PROCESSING;
 		}
@@ -367,6 +437,18 @@ const DocumentNew: React.FC = () => {
 							fileInputReference={fileInputReference}
 							onFileSelect={acceptFile}
 							rejection={rejection}
+						/>
+					)}
+
+					{screenState === ScreenState.INGESTING && (
+						<IngestProgress
+							onOpenDocument={handleOpenDocument}
+							pagesReady={
+								(resumedDocument?.progress.pagesReadyToCheck ?? EMPTY_COUNT) +
+								(resumedDocument?.progress.pagesVerified ?? EMPTY_COUNT)
+							}
+							pagesTotal={resumedDocument?.progress.pagesTotal ?? EMPTY_COUNT}
+							title={displayTitle}
 						/>
 					)}
 

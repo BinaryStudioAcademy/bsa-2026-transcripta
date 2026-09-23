@@ -10,6 +10,7 @@ type RecordFailureOptions = Pick<
 		details: Record<string, unknown>;
 		durationMs: number;
 	};
+	lastError?: string;
 	pageId: number;
 	reason: TranscribeFailureReasonValue;
 };

@@ -70,7 +70,6 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				onChange={handleTextareaChange}
 				onKeyDown={handleKeyDown}
 				ref={textareaReference}
-				rows={5}
 				value={value}
 			/>
 

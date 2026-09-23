@@ -3,16 +3,18 @@ import {
 	FailedStateCard,
 	PreparingStateCard,
 } from "~/libs/components/components.js";
+import { useRef } from "~/libs/hooks/hooks.js";
 
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import { useScanZoom } from "../hooks/use-scan-zoom.js";
 import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
-import { VerificationEdit } from "./components.js";
+import { VerificationEdit, VerificationPageText } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
@@ -49,11 +51,22 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onToggleEdit,
 	pageCount,
 }) => {
+	const viewportReference = useRef<HTMLDivElement>(null);
+	const {
+		handlePointerCancel,
+		handlePointerDown,
+		handlePointerMove,
+		handlePointerUp,
+		isDragging: isPanDragging,
+	} = useDragToPan({
+		isEnabled: isZoomed,
+		viewportReference,
+	});
 	const {
 		handleDividerPointerDown,
 		handleDividerPointerMove,
 		handleDividerPointerUp,
-		isDragging,
+		isDragging: isDividerDragging,
 		splitPosition,
 	} = useResizableSplit();
 	const { scanRef, zoom } = useScanZoom();
@@ -89,9 +102,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						/>
 					) : (
 						<>
-							<p className="verification-transcription__text">
-								{currentPage.transcription.text}
-							</p>
+							<VerificationPageText text={currentPage.transcription.text} />
 
 							<div className="verification-actions">
 								<Button
@@ -147,7 +158,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 					width: `${String(splitPosition)}%`,
 				}}
 			>
-				<div className="verification-scan">
+				<div className="verification-scan" ref={viewportReference}>
 					{!currentPage?.imageUrl && (
 						<span className="verification-scan__placeholder-label">
 							scan placeholder
@@ -157,13 +168,18 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 					<div
 						className={`verification-scan__content ${
 							isZoomed ? "verification-scan__content--zoomed" : ""
-						}`}
+						} ${isPanDragging ? "verification-scan__content--dragging" : ""}`}
+						onPointerCancel={handlePointerCancel}
+						onPointerDown={handlePointerDown}
+						onPointerMove={handlePointerMove}
+						onPointerUp={handlePointerUp}
 						ref={scanRef}
 					>
 						{currentPage?.imageUrl ? (
 							<img
 								alt={`Page ${String(currentPage.pageNo)}`}
 								className="verification-scan__image"
+								draggable={false}
 								src={currentPage.imageUrl}
 								style={{
 									transform: `scale(${String(zoom)})`,
@@ -177,7 +193,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			</div>
 
 			<div
-				className={`tx-split-divider ${isDragging ? "is-dragging" : ""}`}
+				className={`tx-split-divider ${isDividerDragging ? "is-dragging" : ""}`}
 				onPointerDown={handleDividerPointerDown}
 				onPointerMove={handleDividerPointerMove}
 				onPointerUp={handleDividerPointerUp}
