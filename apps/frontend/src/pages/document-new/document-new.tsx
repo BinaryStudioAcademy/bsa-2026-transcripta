@@ -442,6 +442,11 @@ const DocumentNew: React.FC = () => {
 					{screenState === ScreenState.INGESTING && (
 						<IngestProgress
 							onOpenDocument={handleOpenDocument}
+							pagesReady={
+								(resumedDocument?.progress.pagesReadyToCheck ?? EMPTY_COUNT) +
+								(resumedDocument?.progress.pagesVerified ?? EMPTY_COUNT)
+							}
+							pagesTotal={resumedDocument?.progress.pagesTotal ?? EMPTY_COUNT}
 							title={displayTitle}
 						/>
 					)}
