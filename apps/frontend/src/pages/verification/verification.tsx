@@ -41,6 +41,7 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import "./verification.css";
+import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
 	type EditConflictDraft,
@@ -52,7 +53,7 @@ const Verification: React.FC = () => {
 	const { id } = useParams();
 
 	const [isEditing, setIsEditing] = useState(false);
-	const [isZoomed, setIsZoomed] = useState(false);
+	const { isZoomed, scanRef, toggleZoom, zoom } = useScanZoom();
 	const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 	const [editConflictDraft, setEditConflictDraft] =
 		useState<EditConflictDraft | null>(null);
@@ -299,10 +300,6 @@ const Verification: React.FC = () => {
 		setIsShortcutsOpen((value) => !value);
 	}, []);
 
-	const handleToggleZoom = useCallback((): void => {
-		setIsZoomed((value) => !value);
-	}, []);
-
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
 			if (isEditing) {
@@ -336,7 +333,7 @@ const Verification: React.FC = () => {
 		onPrevious: handlePrevious,
 		onSkip: handleSkip,
 		onToggleShortcuts: handleToggleShortcuts,
-		onToggleZoom: handleToggleZoom,
+		onToggleZoom: toggleZoom,
 		onUndo: handleUndo,
 	});
 
@@ -373,6 +370,8 @@ const Verification: React.FC = () => {
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
 				pageCount={document.pageCount}
+				scanRef={scanRef}
+				zoom={zoom}
 			/>
 			<VerificationFooter
 				currentPageNo={cursorPageNo}
