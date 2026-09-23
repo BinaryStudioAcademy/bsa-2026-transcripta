@@ -42,6 +42,14 @@ const jsConfig = {
 		...js.configs.recommended.rules,
 		"arrow-parens": ["error", "always"],
 		curly: ["error", "all"],
+		"max-lines-per-function": [
+			"error",
+			{
+				max: 150,
+				skipBlankLines: true,
+				skipComments: true,
+			},
+		],
 		"max-params": ["error", JS_MAX_PARAMS_ALLOWED],
 		"no-console": ["error"],
 		"no-multiple-empty-lines": [
