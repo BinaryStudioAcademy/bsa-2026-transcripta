@@ -9,6 +9,7 @@ import {
 	INITIAL_ZOOM,
 	MAX_ZOOM,
 	MIN_ZOOM,
+	TOGGLE_ZOOM_LEVEL,
 	WHEEL_DELTA_THRESHOLD,
 	ZOOM_IN_DIRECTION,
 	ZOOM_OUT_DIRECTION,
@@ -20,6 +21,7 @@ import { type UseScanZoomReturn } from "../types/types.js";
 const useScanZoom = (): UseScanZoomReturn => {
 	const [zoom, setZoom] = useState(INITIAL_ZOOM);
 	const scanReference = useRef<HTMLDivElement>(null);
+	const isZoomed = zoom > INITIAL_ZOOM;
 
 	const resetToTopLeft = useCallback((): void => {
 		const scanElement = scanReference.current?.parentElement;
@@ -31,6 +33,19 @@ const useScanZoom = (): UseScanZoomReturn => {
 		scanElement.scrollLeft = ZOOM_PAN_RESET;
 		scanElement.scrollTop = ZOOM_PAN_RESET;
 	}, []);
+
+	const toggleZoom = useCallback((): void => {
+		setZoom((previousZoom) => {
+			const nextZoom =
+				previousZoom > INITIAL_ZOOM ? INITIAL_ZOOM : TOGGLE_ZOOM_LEVEL;
+
+			if (nextZoom > INITIAL_ZOOM) {
+				resetToTopLeft();
+			}
+
+			return nextZoom;
+		});
+	}, [resetToTopLeft]);
 
 	useEffect(() => {
 		const scanElement = scanReference.current;
@@ -69,8 +84,10 @@ const useScanZoom = (): UseScanZoomReturn => {
 	}, [resetToTopLeft]);
 
 	return {
+		isZoomed,
 		resetToTopLeft,
 		scanRef: scanReference,
+		toggleZoom,
 		zoom,
 	};
 };
