@@ -12,7 +12,7 @@ import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
-import { VerificationEdit } from "./components.js";
+import { VerificationEdit, VerificationPageText } from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
@@ -89,9 +89,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						/>
 					) : (
 						<>
-							<p className="verification-transcription__text">
-								{currentPage.transcription.text}
-							</p>
+							<VerificationPageText text={currentPage.transcription.text} />
 
 							<div className="verification-actions">
 								<Button

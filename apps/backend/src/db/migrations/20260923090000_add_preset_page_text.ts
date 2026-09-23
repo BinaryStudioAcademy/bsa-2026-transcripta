@@ -12,7 +12,7 @@ const PAGE_TEXT_PROPERTY = {
 };
 
 const PAGE_TEXT_RULE =
-	"- Put the whole page as continuous readable text in the page_text field, keeping the original line order. The structured records describe the same page, they do not replace it.";
+	"- Put the whole page as continuous readable text in the page_text field, keeping the original line order. Where the page holds a table, write that part as a Markdown pipe table with a header row, and keep the surrounding prose as plain paragraphs. The structured records describe the same page, they do not replace it.";
 
 const addPageText = async (knex: Knex): Promise<void> => {
 	await knex.raw(`ALTER TABLE ${TABLE_NAME} DISABLE TRIGGER ${TRIGGER_NAME}`);
