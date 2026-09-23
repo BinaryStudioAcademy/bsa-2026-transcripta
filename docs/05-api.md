@@ -421,6 +421,20 @@ human confirmed is worse than leaving the mistake in place.
 Creates a **new row**, never updates an existing one. If `familyId` is given,
 `version` is incremented by one.
 
+Before insert, the seed glossary is checked against
+`floor(maxContextTokens * 0.7)` (#150). Instructions are not counted. On
+failure the API returns 422 with both numbers in `message`, for example:
+
+```jsonc
+{
+	"errorType": "COMMON",
+	"message": "The seed glossary comes to 4600 tokens, the ceiling is 4200",
+}
+```
+
+The same check applies when a new version lowers `maxContextTokens` enough to
+push an existing glossary over the ceiling.
+
 ---
 
 ## Progress in real time
@@ -488,16 +502,17 @@ field, plus a branch in `setErrorHandler` that forwards it. Until that exists,
 the frontend cannot tell a 409 "the text changed" from a 409 "out of money" —
 and those are two different behaviours of the verification screen.
 
-| Code                    | HTTP | When                                        |
-| ----------------------- | ---- | ------------------------------------------- |
-| `unauthorized`          | 401  | No token, or an expired one                 |
-| `forbidden`             | 403  | Someone else's document                     |
-| `not_found`             | 404  | No such thing                               |
-| `file_too_large`        | 413  | File over the limit                         |
-| `unsupported_type`      | 415  | Not a PDF and not an archive                |
-| `transcription_changed` | 409  | The page was re-read while the human looked |
-| `budget_exceeded`       | 409  | The document ran out of money               |
-| `rate_limited`          | 429  | Too many requests                           |
+| Code                           | HTTP | When                                             |
+| ------------------------------ | ---- | ------------------------------------------------ |
+| `unauthorized`                 | 401  | No token, or an expired one                      |
+| `forbidden`                    | 403  | Someone else's document                          |
+| `not_found`                    | 404  | No such thing                                    |
+| `file_too_large`               | 413  | File over the limit                              |
+| `unsupported_type`             | 415  | Not a PDF and not an archive                     |
+| `transcription_changed`        | 409  | The page was re-read while the human looked      |
+| `budget_exceeded`              | 409  | The document ran out of money                    |
+| `seed_glossary_exceeds_budget` | 422  | Preset seed glossary over the 70% ceiling (#150) |
+| `rate_limited`                 | 429  | Too many requests                                |
 
 ---
 
