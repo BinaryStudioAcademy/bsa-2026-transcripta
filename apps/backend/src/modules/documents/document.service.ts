@@ -14,6 +14,7 @@ import { ForeignKeyViolationError } from "objection";
 
 import {
 	ObjectNotUploadedError,
+	ObjectTooLargeError,
 	PDFTimeoutError,
 } from "~/libs/exceptions/exceptions.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
@@ -43,6 +44,7 @@ import {
 import {
 	DocumentErrorMessage,
 	DocumentStatus,
+	DocumentValidationRule,
 	PageStatus,
 } from "./libs/enums/enums.js";
 import {
@@ -50,6 +52,7 @@ import {
 	type DocumentGetByIdResponseDto,
 	type DocumentServiceDependencies,
 	type DocumentUploadUrlRequestDto,
+	type ValueOf,
 } from "./libs/types/types.js";
 
 class DocumentService {
@@ -77,6 +80,36 @@ class DocumentService {
 		return `uploads/${documentId.toString()}/original.pdf`;
 	}
 
+	private async checkFileSize(
+		documentId: number,
+		filePath: string,
+	): Promise<void> {
+		let fileSize: number;
+		try {
+			fileSize = await this.pdfPageProcessor.getFileSize(filePath);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setError(documentId, errorMessage);
+			throw new HTTPError({
+				message: errorMessage,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		if (fileSize > DocumentValidationRule.MAX_FILE_BYTES) {
+			await this.documentRepository.setError(
+				documentId,
+				DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+			);
+			throw new HTTPError({
+				message: DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+				status: HTTPCode.CONTENT_TOO_LARGE,
+			});
+		}
+	}
+
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
 		const lexiconIds = new Set<number>();
 
@@ -100,17 +133,28 @@ class DocumentService {
 		let filePath: string;
 
 		try {
-			const downloadResult = await this.storage.downloadToTempFolder(sourceKey);
+			const downloadResult = await this.storage.downloadToTempFolder(
+				sourceKey,
+				DocumentValidationRule.MAX_FILE_BYTES,
+			);
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
 			const isObjectNotUploaded = error instanceof ObjectNotUploadedError;
-			const finalErrorMessage = isObjectNotUploaded
-				? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
-				: DocumentErrorMessage.DOWNLOAD_FAILED;
-			const statusCode = isObjectNotUploaded
-				? HTTPCode.NOT_FOUND
-				: HTTPCode.INTERNAL_SERVER_ERROR;
+			const isObjectTooLarge = error instanceof ObjectTooLargeError;
+			let finalErrorMessage: string;
+			let statusCode: ValueOf<typeof HTTPCode>;
+
+			if (isObjectNotUploaded) {
+				finalErrorMessage = DocumentErrorMessage.DOCUMENT_NOT_UPLOADED;
+				statusCode = HTTPCode.NOT_FOUND;
+			} else if (isObjectTooLarge) {
+				finalErrorMessage = DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE;
+				statusCode = HTTPCode.CONTENT_TOO_LARGE;
+			} else {
+				finalErrorMessage = DocumentErrorMessage.DOWNLOAD_FAILED;
+				statusCode = HTTPCode.INTERNAL_SERVER_ERROR;
+			}
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
@@ -310,6 +354,7 @@ class DocumentService {
 		filePath: string,
 	): Promise<number> {
 		const { id: documentId, preset } = document.toObjectWithPreset();
+		await this.checkFileSize(documentId, filePath);
 		const pageCount = await this.getIngestPageCount(documentId, filePath);
 		const {
 			settings: { blankStdevThreshold },
