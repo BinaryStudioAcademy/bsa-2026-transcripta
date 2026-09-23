@@ -105,6 +105,14 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			QUEUE: {
+				PAGE_TRANSCRIBE_CONCURRENCY: {
+					default: 3,
+					doc: "Max page.transcribe jobs processed in parallel",
+					env: "PAGE_TRANSCRIBE_CONCURRENCY",
+					format: Number,
+				},
+			},
 			REDIS: {
 				URL: {
 					default: "redis://localhost:6379",
