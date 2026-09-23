@@ -1,14 +1,10 @@
-import {
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "~/libs/hooks/hooks.js";
+import { useCallback, useEffect, useState } from "~/libs/hooks/hooks.js";
 
 import {
 	INITIAL_ZOOM,
 	MAX_ZOOM,
 	MIN_ZOOM,
+	TOGGLE_ZOOM_LEVEL,
 	WHEEL_DELTA_THRESHOLD,
 	ZOOM_IN_DIRECTION,
 	ZOOM_OUT_DIRECTION,
@@ -19,10 +15,14 @@ import { type UseScanZoomReturn } from "../types/types.js";
 
 const useScanZoom = (): UseScanZoomReturn => {
 	const [zoom, setZoom] = useState(INITIAL_ZOOM);
-	const scanReference = useRef<HTMLDivElement>(null);
+	const [scanNode, setScanNode] = useState<HTMLDivElement | null>(null);
+	const scanReference = useCallback((node: HTMLDivElement | null): void => {
+		setScanNode(node);
+	}, []);
+	const isZoomed = zoom > INITIAL_ZOOM;
 
 	const resetToTopLeft = useCallback((): void => {
-		const scanElement = scanReference.current?.parentElement;
+		const scanElement = scanNode?.parentElement;
 
 		if (!scanElement) {
 			return;
@@ -30,12 +30,23 @@ const useScanZoom = (): UseScanZoomReturn => {
 
 		scanElement.scrollLeft = ZOOM_PAN_RESET;
 		scanElement.scrollTop = ZOOM_PAN_RESET;
-	}, []);
+	}, [scanNode]);
+
+	const toggleZoom = useCallback((): void => {
+		setZoom((previousZoom) => {
+			const nextZoom =
+				previousZoom > INITIAL_ZOOM ? INITIAL_ZOOM : TOGGLE_ZOOM_LEVEL;
+
+			if (nextZoom > INITIAL_ZOOM) {
+				resetToTopLeft();
+			}
+
+			return nextZoom;
+		});
+	}, [resetToTopLeft]);
 
 	useEffect(() => {
-		const scanElement = scanReference.current;
-
-		if (!scanElement) {
+		if (!scanNode) {
 			return;
 		}
 
@@ -51,7 +62,7 @@ const useScanZoom = (): UseScanZoomReturn => {
 				const nextZoom = previousZoom + zoomDirection * ZOOM_STEP;
 				const clampedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
 
-				if (clampedZoom > INITIAL_ZOOM) {
+				if (previousZoom === INITIAL_ZOOM && clampedZoom > INITIAL_ZOOM) {
 					resetToTopLeft();
 				}
 
@@ -59,18 +70,20 @@ const useScanZoom = (): UseScanZoomReturn => {
 			});
 		};
 
-		scanElement.addEventListener("wheel", handleWheel, {
+		scanNode.addEventListener("wheel", handleWheel, {
 			passive: false,
 		});
 
 		return () => {
-			scanElement.removeEventListener("wheel", handleWheel);
+			scanNode.removeEventListener("wheel", handleWheel);
 		};
-	}, [resetToTopLeft]);
+	}, [scanNode, resetToTopLeft]);
 
 	return {
+		isZoomed,
 		resetToTopLeft,
 		scanRef: scanReference,
+		toggleZoom,
 		zoom,
 	};
 };
