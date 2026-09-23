@@ -230,6 +230,45 @@ const fitted = await fitToBudget({
 // never pass system / preset instructions into fitToBudget
 ```
 
+### Seed glossary ceiling on preset save (#150)
+
+The seed glossary is never trimmed by `fitToBudget`. A glossary that fills the
+whole `maxContextTokens` leaves no room for lexicon or neighbours. Reject such
+presets **on save** (and when `maxContextTokens` is lowered), not at
+transcription time.
+
+Ceiling: `floor(maxContextTokens * SEED_GLOSSARY_BUDGET_FRACTION)` with
+`SEED_GLOSSARY_BUDGET_FRACTION = 0.7` (so 6000 → 4200). This is independent of
+the 90% `getEffectiveContextBudget` margin — that margin is for trim during
+assembly; the save check uses the stated budget so a preset at the limit still
+leaves headroom for context learning.
+
+Only the rendered seed glossary is counted. Preset instructions stay outside
+this check (#148, #151).
+
+```ts
+import { HTTPCode, HTTPError } from "@transcripta/shared";
+import { validateSeedGlossaryBudget } from "~/modules/context/context.js";
+
+// POST /presets create / new version (#270)
+const check = await validateSeedGlossaryBudget({
+	maxContextTokens: settings.maxContextTokens,
+	model: settings.model,
+	seedGlossary,
+});
+
+if (!check.ok) {
+	throw new HTTPError({
+		message: check.message,
+		status: HTTPCode.UNPROCESSED_ENTITY,
+	});
+}
+```
+
+The transcribe worker also calls `validateSeedGlossaryBudget` before
+`buildContext` and fails the page with a clear `last_error` if a bad preset
+slipped through.
+
 ### Trimming floors (`fitToBudget`) (#148)
 
 `fitToBudget` receives **unit strings** — lexicon `valueDisplay` values and one
