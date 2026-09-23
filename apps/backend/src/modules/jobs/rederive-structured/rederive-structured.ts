@@ -1,10 +1,10 @@
-import { Job } from "bullmq";
+import { type Job } from "bullmq";
 
-import { Logger } from "~/libs/modules/logger/logger.js";
-import { RederiveStructuredJobData } from "~/libs/modules/queue/queue.js";
-import { DocumentRepository } from "~/modules/documents/document.repository.js";
-import { TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
-import { TranscriptionService } from "~/modules/transcription/transcription.service.js";
+import { type Logger } from "~/libs/modules/logger/logger.js";
+import { type RederiveStructuredJobData } from "~/libs/modules/queue/queue.js";
+import { type DocumentRepository } from "~/modules/documents/document.repository.js";
+import { type TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
+import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
 
 import { ErrorMessage } from "./libs/enums/enums.js";
 
