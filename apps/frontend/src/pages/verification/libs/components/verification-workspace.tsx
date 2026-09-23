@@ -9,7 +9,6 @@ import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
-import { useScanZoom } from "../hooks/use-scan-zoom.js";
 import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
@@ -32,6 +31,8 @@ type VerificationWorkspaceProperties = {
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	pageCount?: number | undefined;
+	scanRef: (node: HTMLDivElement | null) => void;
+	zoom: number;
 };
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
@@ -50,6 +51,8 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onSkip,
 	onToggleEdit,
 	pageCount,
+	scanRef,
+	zoom,
 }) => {
 	const viewportReference = useRef<HTMLDivElement>(null);
 	const {
@@ -69,7 +72,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		isDragging: isDividerDragging,
 		splitPosition,
 	} = useResizableSplit();
-	const { scanRef, zoom } = useScanZoom();
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
@@ -174,6 +176,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						onPointerMove={handlePointerMove}
 						onPointerUp={handlePointerUp}
 						ref={scanRef}
+						style={{ transform: `scale(${String(zoom)})` }}
 					>
 						{currentPage?.imageUrl ? (
 							<img
@@ -181,9 +184,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 								className="verification-scan__image"
 								draggable={false}
 								src={currentPage.imageUrl}
-								style={{
-									transform: `scale(${String(zoom)})`,
-								}}
 							/>
 						) : (
 							<div className="verification-scan__text">No scan available</div>
