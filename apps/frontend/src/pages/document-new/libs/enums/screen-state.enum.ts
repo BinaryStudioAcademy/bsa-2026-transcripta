@@ -1,4 +1,5 @@
 const ScreenState = {
+	INGESTING: "ingesting",
 	PROCESSING: "processing",
 	REST: "rest",
 	SELECTED: "selected",
