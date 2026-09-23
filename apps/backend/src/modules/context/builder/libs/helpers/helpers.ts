@@ -6,3 +6,4 @@ export { renderNeighbouringPagesEntry } from "./render-neighbouring-pages-entry.
 export { renderNeighbouringPages } from "./render-neighbouring-pages.helper.js";
 export { renderSeedGlossaryEntry } from "./render-seed-glossary-entry.helper.js";
 export { renderSeedGlossary } from "./render-seed-glossary.helper.js";
+export { validateSeedGlossaryBudget } from "./validate-seed-glossary-budget.helper.js";
