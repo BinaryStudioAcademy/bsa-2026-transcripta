@@ -1,0 +1,3 @@
+const PAGE_TRANSCRIBE_JOB_ID_PREFIX = "page-";
+
+export { PAGE_TRANSCRIBE_JOB_ID_PREFIX };
