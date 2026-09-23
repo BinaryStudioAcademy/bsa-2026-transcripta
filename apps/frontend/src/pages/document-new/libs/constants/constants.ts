@@ -1,5 +1,7 @@
 export { DEFAULT_MAX_ARCHIVE_SIZE_MB } from "./default-max-archive-size-mb.constant.js";
 export { DEFAULT_MAX_PAGES } from "./default-max-pages.constant.js";
+export { INGEST_POLL_INTERVAL_MS } from "./ingest-poll-interval-ms.constant.js";
+export { INGEST_TIMEOUT_MS } from "./ingest-timeout-ms.constant.js";
 export { MAX_RETRIES } from "./max-retries.constant.js";
 export { ZERO_UPLOAD_PROGRESS } from "./zero-upload-progress.constant.js";
 export { ZIP_FILE_REGEX } from "./zip-file-regex.constant.js";
