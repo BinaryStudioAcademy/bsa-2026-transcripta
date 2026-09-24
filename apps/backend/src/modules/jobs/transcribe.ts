@@ -867,6 +867,7 @@ const resolvePresetOrFail = async ({
 	documentId,
 	documentRepository,
 	enqueuePage,
+	logger,
 	pageId,
 	pageRepository,
 	presetId,
@@ -875,6 +876,7 @@ const resolvePresetOrFail = async ({
 	| "documentId"
 	| "documentRepository"
 	| "enqueuePage"
+	| "logger"
 	| "pageId"
 	| "pageRepository"
 > & {
@@ -887,6 +889,7 @@ const resolvePresetOrFail = async ({
 			documentId,
 			documentRepository,
 			enqueuePage,
+			logger,
 			pageId,
 			pageRepository,
 			reason: TranscribeFailureReason.PRESET_NOT_FOUND,
@@ -981,6 +984,7 @@ const runTranscribePipeline = async ({
 			documentId,
 			documentRepository,
 			enqueuePage,
+			logger,
 			pageId: page.id,
 			pageRepository,
 			reason: TranscribeFailureReason.PAGE_IMAGE_SHA_MISSING,
@@ -1012,6 +1016,7 @@ const runTranscribePipeline = async ({
 			documentId,
 			documentRepository,
 			enqueuePage,
+			logger,
 			pageId: page.id,
 			pageRepository,
 			reason: TranscribeFailureReason.PAGE_IMAGE_MISSING,
@@ -1127,6 +1132,7 @@ const createTranscribeHandler =
 				documentId,
 				documentRepository,
 				enqueuePage,
+				logger,
 				pageId,
 				pageRepository,
 				presetId: document.presetId,
