@@ -1,4 +1,4 @@
-import { PresetGetAllItemResponseDto } from "@transcripta/shared";
+import { type PresetGetAllItemResponseDto } from "@transcripta/shared";
 
 import { DEFAULT_PRESET_ID } from "./default-preset-id.constant.js";
 
