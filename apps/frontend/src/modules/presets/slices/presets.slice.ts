@@ -1,19 +1,26 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { type PresetGetAllItemResponseDto } from "@transcripta/shared";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
 
-import { loadAll } from "./actions.js";
+import {
+	type PresetGetAllItemResponseDto,
+	type PresetGetByIdResponseDto,
+} from "../libs/types/types.js";
+import { loadAll, loadById } from "./actions.js";
 
 type State = {
 	dataStatus: DataStatusValue;
 	presets: PresetGetAllItemResponseDto[];
+	selectedPreset: null | PresetGetByIdResponseDto;
+	selectedPresetStatus: DataStatusValue;
 };
 
 const initialState: State = {
 	dataStatus: DataStatus.IDLE,
 	presets: [],
+	selectedPreset: null,
+	selectedPresetStatus: DataStatus.IDLE,
 };
 
 const { actions, name, reducer } = createSlice({
@@ -29,6 +36,19 @@ const { actions, name, reducer } = createSlice({
 
 		builder.addCase(loadAll.rejected, (state) => {
 			state.dataStatus = DataStatus.REJECTED;
+		});
+
+		builder.addCase(loadById.pending, (state) => {
+			state.selectedPresetStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(loadById.fulfilled, (state, action) => {
+			state.selectedPreset = action.payload;
+			state.selectedPresetStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(loadById.rejected, (state) => {
+			state.selectedPresetStatus = DataStatus.REJECTED;
 		});
 	},
 	initialState,
