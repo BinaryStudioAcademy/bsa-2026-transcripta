@@ -270,23 +270,25 @@ const PresetEditor: React.FC = () => {
 									Based on
 								</label>
 
-								<select
-									className="tx-input"
-									disabled={presets.length === EMPTY_LENGTH}
-									id="based-on"
-									onChange={handleBasePresetChange}
-									value={basePresetId ?? ""}
-								>
-									{presets.length === EMPTY_LENGTH && (
-										<option value="">Loading presets...</option>
-									)}
+								<div className="tx-selectwrap">
+									<select
+										className="tx-input"
+										disabled={presets.length === EMPTY_LENGTH}
+										id="based-on"
+										onChange={handleBasePresetChange}
+										value={basePresetId ?? ""}
+									>
+										{presets.length === EMPTY_LENGTH && (
+											<option value="">Loading presets...</option>
+										)}
 
-									{presets.map((preset) => (
-										<option key={preset.id} value={preset.id}>
-											{preset.name}
-										</option>
-									))}
-								</select>
+										{presets.map((preset) => (
+											<option key={preset.id} value={preset.id}>
+												{preset.name}
+											</option>
+										))}
+									</select>
+								</div>
 							</div>
 
 							<div className="preset-editor__field">
@@ -324,6 +326,7 @@ const PresetEditor: React.FC = () => {
 								<h2 className="preset-editor__section-title">
 									Seed glossary
 									<span className="preset-editor__section-subtitle">
+										{" "}
 										— known names and phrases to help the first pages
 									</span>
 								</h2>
@@ -372,7 +375,9 @@ const PresetEditor: React.FC = () => {
 															type="button"
 														>
 															<span>{kind}</span>
-															<span>{entry.kind === kind ? "✓" : ""}</span>
+															<span className="preset-editor__type-option-check">
+																{entry.kind === kind ? "✓" : ""}
+															</span>
 														</button>
 													))}
 												</div>
@@ -387,7 +392,7 @@ const PresetEditor: React.FC = () => {
 										</label>
 
 										<input
-											className="preset-editor__glossary-input"
+											className="tx-input preset-editor__glossary-input"
 											data-id={entry.id}
 											id={`glossary-value-${entry.id}`}
 											onChange={handleGlossaryValueChange}
