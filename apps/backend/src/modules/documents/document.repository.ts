@@ -7,7 +7,7 @@ import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentDetailsEntity } from "~/modules/documents/document-details.entity.js";
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
-import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { LexiconEntryModel } from "~/modules/lexicon/lexicon-entry.model.js";
 import {
 	CLOSED_PAGE_STATUSES,
 	VERIFIED_PAGE_STATUSES,

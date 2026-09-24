@@ -5,7 +5,7 @@ import {
 } from "~/context/context.js";
 import { Logger } from "~/libs/modules/logger/logger.js";
 import { type Preset } from "~/modules/context/libs/types/types.js";
-import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { LexiconEntryModel } from "~/modules/lexicon/lexicon-entry.model.js";
 import { PageRepository } from "~/modules/pages/page.repository.js";
 
 import {
