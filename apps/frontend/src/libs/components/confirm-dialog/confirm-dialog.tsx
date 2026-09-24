@@ -1,5 +1,5 @@
 import { Button } from "~/libs/components/components.js";
-import { useCallback, useEffect } from "~/libs/hooks/hooks.js";
+import { useEffect } from "~/libs/hooks/hooks.js";
 
 import styles from "./confirm-dialog.module.css";
 
@@ -32,34 +32,14 @@ const ConfirmDialog: React.FC<Properties> = ({
 		};
 	}, [onCancel]);
 
-	const handleScrimClick = useCallback(
-		(event: React.MouseEvent<HTMLDivElement>): void => {
-			if (event.target === event.currentTarget) {
-				onCancel();
-			}
-		},
-		[onCancel],
-	);
-
-	const handleScrimKeyDown = useCallback(
-		(event: React.KeyboardEvent<HTMLDivElement>): void => {
-			if (event.key === "Enter" || event.key === " ") {
-				event.preventDefault();
-				onCancel();
-			}
-		},
-		[onCancel],
-	);
-
 	return (
-		<div
-			aria-label="Close dialog"
-			className={styles["scrim"]}
-			onClick={handleScrimClick}
-			onKeyDown={handleScrimKeyDown}
-			role="button"
-			tabIndex={0}
-		>
+		<div className={styles["scrim"]}>
+			<button
+				aria-label="Close dialog"
+				className={styles["scrim-close"]}
+				onClick={onCancel}
+				type="button"
+			/>
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>{title}</h2>
 				<p className={styles["description"]}>{description}</p>

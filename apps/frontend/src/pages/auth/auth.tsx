@@ -5,6 +5,7 @@ import {
 	useLocation,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { logger } from "~/libs/modules/logger/logger.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
 import {
 	UserSignInRequestDto,
@@ -23,7 +24,9 @@ const Auth: React.FC = () => {
 			void dispatch(authActions.signIn(payload))
 				.unwrap()
 				.then(() => navigate(AppRoute.ROOT))
-				.catch(() => null);
+				.catch((error: unknown) => {
+					logger.error("Sign-in failed.", error);
+				});
 		},
 		[dispatch, navigate],
 	);

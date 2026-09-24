@@ -1,6 +1,11 @@
 /// <reference lib="webworker" />
 
-import JSZip from "jszip";
+import {
+	type Entry,
+	Uint8ArrayReader,
+	Uint8ArrayWriter,
+	ZipReader,
+} from "@zip.js/zip.js";
 import { PDFDocument, type PDFImage } from "pdf-lib";
 
 import {
@@ -9,7 +14,6 @@ import {
 	PNG_EXTENSION,
 	YIELD_DELAY_MS,
 } from "~/libs/constants/zip-to-pdf.constants.js";
-import { isImageFile } from "~/libs/helpers/is-image-file.helper.js";
 import {
 	validateZipContent,
 	type ZipValidationResult,
@@ -18,6 +22,7 @@ import {
 type InitMessage = {
 	arrayBuffer: ArrayBuffer;
 	maxPages: number;
+	maxUncompressedBytes: number;
 	type: "init";
 };
 
@@ -30,8 +35,6 @@ const sleep = (): Promise<void> => {
 const isPng = (fileName: string): boolean => {
 	return fileName.toLowerCase().endsWith(PNG_EXTENSION);
 };
-
-const loadZip = JSZip.loadAsync.bind(JSZip);
 
 const embedImage = async (
 	document: PDFDocument,
@@ -48,127 +51,135 @@ const embedImage = async (
 globalThis.addEventListener(
 	"message",
 	(event: MessageEvent<InitMessage>): void => {
-		if (event.origin !== globalThis.location.origin) {
-			return;
-		}
-
 		void (async (): Promise<void> => {
-			const { arrayBuffer, maxPages } = event.data;
-
-			let zip: JSZip;
+			const { arrayBuffer, maxPages, maxUncompressedBytes } = event.data;
+			const zipReader = new ZipReader(
+				new Uint8ArrayReader(new Uint8Array(arrayBuffer)),
+			);
 
 			try {
-				zip = await loadZip(arrayBuffer, { checkCRC32: true });
+				const entries = await zipReader.getEntries();
+				const entriesByName = new Map<string, Entry>();
+				let uncompressedBytes = 0;
+
+				for (const entry of entries) {
+					entriesByName.set(entry.filename, entry);
+					uncompressedBytes += entry.uncompressedSize;
+				}
+
+				if (uncompressedBytes > maxUncompressedBytes) {
+					self.postMessage({
+						message: "The archive exceeds the uncompressed size limit.",
+						rejectReason: "too_large",
+						type: "validation",
+					});
+
+					return;
+				}
+
+				const entryNames = entries.map((entry) => entry.filename);
+				const validation: ZipValidationResult = validateZipContent(
+					entryNames,
+					maxPages,
+				);
+
+				if (validation.status !== "valid") {
+					self.postMessage({
+						message: validation.message,
+						rejectReason: validation.status,
+						type: "validation",
+					});
+
+					return;
+				}
+
+				const pdfDocument = await PDFDocument.create();
+				let processedPages = 0;
+
+				for (const imageName of validation.sortedImages) {
+					const entry = entriesByName.get(imageName);
+
+					if (!entry?.getData) {
+						continue;
+					}
+
+					let imageBytes: Uint8Array;
+
+					try {
+						imageBytes = await entry.getData(new Uint8ArrayWriter());
+					} catch {
+						self.postMessage({
+							message: `The image "${imageName}" could not be read from the archive.`,
+							type: "error",
+						});
+
+						return;
+					}
+
+					let image: PDFImage;
+
+					try {
+						image = await embedImage(pdfDocument, imageBytes, imageName);
+					} catch {
+						self.postMessage({
+							message: `The image "${imageName}" could not be embedded into the PDF.`,
+							type: "error",
+						});
+
+						return;
+					}
+
+					processedPages++;
+
+					if (processedPages % PAGE_EMBED_BATCH === EMPTY_REMAINDER) {
+						await sleep();
+					}
+
+					const page = pdfDocument.addPage([image.width, image.height]);
+					page.drawImage(image, {
+						height: image.height,
+						width: image.width,
+						x: 0,
+						y: 0,
+					});
+
+					self.postMessage({
+						payload: {
+							processedPages,
+							totalPages: validation.sortedImages.length,
+						},
+						type: "progress",
+					});
+				}
+
+				let pdfBytes: Uint8Array;
+
+				try {
+					pdfBytes = await pdfDocument.save();
+				} catch {
+					self.postMessage({
+						message: "The PDF document could not be generated.",
+						type: "error",
+					});
+
+					return;
+				}
+
+				self.postMessage({
+					payload: {
+						pdfBytes,
+						totalPages: validation.sortedImages.length,
+					},
+					type: "done",
+				});
 			} catch {
 				self.postMessage({
 					message: "The file is not a valid ZIP archive.",
 					type: "error",
 				});
-
-				return;
+			} finally {
+				await zipReader.close();
 			}
-
-			const entries = Object.keys(zip.files);
-			const validation: ZipValidationResult = validateZipContent(
-				entries,
-				maxPages,
-			);
-
-			if (validation.status !== "valid") {
-				self.postMessage({
-					message: validation.message,
-					rejectReason: validation.status,
-					type: "validation",
-				});
-
-				return;
-			}
-
-			const pdfDocument = await PDFDocument.create();
-
-			const sortedImages = validation.sortedImages;
-			let processedPages = 0;
-
-			for (const imageName of sortedImages) {
-				if (!isImageFile(imageName)) {
-					continue;
-				}
-
-				const file = zip.file(imageName);
-
-				if (!file) {
-					continue;
-				}
-
-				let imageBytes: Uint8Array;
-
-				try {
-					imageBytes = await file.async("uint8array");
-				} catch {
-					self.postMessage({
-						message: `The image "${imageName}" could not be read from the archive.`,
-						type: "error",
-					});
-
-					return;
-				}
-
-				let image: PDFImage;
-
-				try {
-					image = await embedImage(pdfDocument, imageBytes, imageName);
-				} catch {
-					self.postMessage({
-						message: `The image "${imageName}" could not be embedded into the PDF.`,
-						type: "error",
-					});
-
-					return;
-				}
-
-				processedPages++;
-
-				if (processedPages % PAGE_EMBED_BATCH === EMPTY_REMAINDER) {
-					await sleep();
-				}
-
-				const page = pdfDocument.addPage([image.width, image.height]);
-				page.drawImage(image, {
-					height: image.height,
-					width: image.width,
-					x: 0,
-					y: 0,
-				});
-
-				self.postMessage({
-					payload: {
-						processedPages,
-						totalPages: sortedImages.length,
-					},
-					type: "progress",
-				});
-			}
-
-			let pdfBytes: Uint8Array;
-
-			try {
-				pdfBytes = await pdfDocument.save();
-			} catch {
-				self.postMessage({
-					message: "The PDF document could not be generated.",
-					type: "error",
-				});
-
-				return;
-			}
-
-			self.postMessage({
-				payload: {
-					pdfBytes,
-					totalPages: sortedImages.length,
-				},
-				type: "done",
-			});
 		})();
 	},
 );

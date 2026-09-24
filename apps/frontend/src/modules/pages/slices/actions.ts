@@ -61,16 +61,16 @@ const verifyPage = createAsyncThunk<
 );
 
 const reprocessPage = createAsyncThunk<
-	undefined,
+	null,
 	ReprocessPageParameters,
 	AsyncThunkConfig
 >(
 	`${sliceName}/reprocess`,
 	async ({ pageId }, { extra }) => {
 		const { pageApi } = extra;
-		const noResult = undefined;
+		await pageApi.reprocess(pageId);
 
-		return await pageApi.reprocess(pageId).then(() => noResult);
+		return null;
 	},
 	{ serializeError },
 );

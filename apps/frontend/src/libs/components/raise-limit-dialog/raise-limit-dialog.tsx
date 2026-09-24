@@ -71,34 +71,14 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 		[handleSubmit, spentUsd, onSubmit],
 	);
 
-	const handleScrimClick = useCallback(
-		(event: React.MouseEvent<HTMLDivElement>): void => {
-			if (event.target === event.currentTarget) {
-				onCancel();
-			}
-		},
-		[onCancel],
-	);
-
-	const handleScrimKeyDown = useCallback(
-		(event: React.KeyboardEvent<HTMLDivElement>): void => {
-			if (event.key === "Enter" || event.key === " ") {
-				event.preventDefault();
-				onCancel();
-			}
-		},
-		[onCancel],
-	);
-
 	return (
-		<div
-			aria-label="Close dialog"
-			className={styles["scrim"]}
-			onClick={handleScrimClick}
-			onKeyDown={handleScrimKeyDown}
-			role="button"
-			tabIndex={0}
-		>
+		<div className={styles["scrim"]}>
+			<button
+				aria-label="Close dialog"
+				className={styles["scrim-close"]}
+				onClick={onCancel}
+				type="button"
+			/>
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>Raise the limit</h2>
 				<p className={styles["description"]}>
