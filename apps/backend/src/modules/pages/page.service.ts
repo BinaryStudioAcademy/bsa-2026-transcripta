@@ -524,7 +524,10 @@ class PageService {
 
 				if (existingEvent && !isCorrection) {
 					return {
-						pagesToQueue: [],
+						pagesToQueue: await this.pageRepository.findQueuedPages(
+							page.documentId,
+							trx,
+						),
 						response: await this.buildVerifyResponse(
 							{
 								documentId: page.documentId,
