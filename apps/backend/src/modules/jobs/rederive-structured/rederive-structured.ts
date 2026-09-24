@@ -6,7 +6,7 @@ import { type DocumentRepository } from "~/modules/documents/document.repository
 import { type TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
 import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
 
-import { ErrorMessage } from "./libs/enums/enums.js";
+import { ErrorMessage, InfoMessage } from "./libs/enums/enums.js";
 
 const createRederiveStructuredHandler =
 	({
@@ -21,7 +21,8 @@ const createRederiveStructuredHandler =
 		transcriptionService: TranscriptionService;
 	}) =>
 	async (job: Job<RederiveStructuredJobData>): Promise<void> => {
-		const { currentTranscriptionId, documentId, pageId, text } = job.data;
+		const { currentTranscriptionId, documentId, jobCreatedAt, pageId, text } =
+			job.data;
 
 		const document = await documentRepository.findWithPresetById(documentId);
 
@@ -43,6 +44,15 @@ const createRederiveStructuredHandler =
 			return;
 		}
 
+		if (
+			transcription.rederiveStructuredJobCreatedAt &&
+			new Date(transcription.rederiveStructuredJobCreatedAt) >
+				new Date(jobCreatedAt)
+		) {
+			logger.info(InfoMessage.JOB_SKIPPED_BEFORE_MODEL(pageId));
+			return;
+		}
+
 		const documentObject = document.toObjectWithPreset();
 		const isBudgetAvailable =
 			Number(documentObject.spentUsd) < Number(documentObject.budgetUsd);
@@ -57,7 +67,7 @@ const createRederiveStructuredHandler =
 			const modelId = preset.settings.model || null;
 			const outputSchema = preset.outputSchema || null;
 
-			const result = await transcriptionService.rederiveStructured({
+			let result = await transcriptionService.rederiveStructured({
 				modelId,
 				outputSchema,
 				text,
@@ -77,10 +87,17 @@ const createRederiveStructuredHandler =
 			}
 
 			if (result.structured) {
-				await transcriptionRepository.updateEditedStructured(
-					transcription.id,
-					result.structured,
-				);
+				const isUpdated =
+					await transcriptionRepository.updateEditedStructuredIfActual({
+						editedStructured: result.structured,
+						id: transcription.id,
+						jobCreatedAt,
+					});
+
+				if (!isUpdated) {
+					logger.info(InfoMessage.JOB_SKIPPED_AFTER_MODEL(pageId));
+					return;
+				}
 			}
 		} catch (error) {
 			logger.error(ErrorMessage.REDERIVE_FAILED(pageId), { error });
