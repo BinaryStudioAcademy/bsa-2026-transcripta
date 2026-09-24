@@ -699,14 +699,29 @@ class PageService {
 			);
 			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
 
+			const text = transcription.editedText ?? transcription.text;
+			const lexiconRows = await this.documentRepository.findLexiconByIds(
+				extractLexiconIds(transcription.contextUsed),
+				trx,
+			);
+			const lexiconById = new Map(lexiconRows.map((row) => [row.id, row]));
+			const pageLexiconById = mapPageLexicons(
+				transcription.contextUsed,
+				lexiconById,
+			);
+
 			return {
 				pageId,
 				status: PageStatus.TRANSCRIBED,
 				transcription: {
-					contextWords: [],
+					contextWords: buildContextWords({
+						lexiconById: pageLexiconById,
+						text,
+					}),
 					id: transcription.id,
-					structured: transcription.structured,
-					text: transcription.text,
+					structured:
+						transcription.editedStructured ?? transcription.structured,
+					text,
 				},
 			};
 		});
