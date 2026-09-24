@@ -1,5 +1,6 @@
 import React, { type ChangeEvent } from "react";
 
+import { ThemeToggle } from "~/libs/components/components.js";
 import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
@@ -12,9 +13,10 @@ import {
 	useEffect,
 	useState,
 } from "~/libs/hooks/hooks.js";
-import { actions as presetsActions } from "~/modules/presets/presets.js";
 
 import "./preset-editor.css";
+
+import { actions as presetsActions } from "~/modules/presets/presets.js";
 
 import type {
 	GlossaryEntry,
@@ -256,9 +258,7 @@ const PresetEditor: React.FC = () => {
 			<header className="preset-editor__header">
 				<h1 className="preset-editor__title">New preset</h1>
 
-				<button className="tx-btn tx-btn--ghost tx-btn--sm" type="button">
-					Night
-				</button>
+				<ThemeToggle />
 			</header>
 
 			<main className="preset-editor__main">
