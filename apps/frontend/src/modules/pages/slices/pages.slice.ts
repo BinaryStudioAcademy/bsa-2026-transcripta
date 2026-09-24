@@ -223,7 +223,8 @@ const { actions, name, reducer } = createSlice({
 
 			if (
 				payload.action === PageVerificationAction.CORRECT &&
-				page.transcription !== null
+				page.transcription !== null &&
+				payload.text !== undefined
 			) {
 				page.transcription.text = payload.text;
 			}

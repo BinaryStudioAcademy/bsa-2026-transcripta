@@ -10,3 +10,4 @@ export { type VerifyPagePayload } from "./page-verify-payload.type.js";
 export { type PageWithText } from "./page-with-text.type.js";
 export { type PageWithTranscriptionRow } from "./page-with-transcription-row.type.js";
 export { type RefillPageWindowOptions } from "./refill-page-window-options.type.js";
+export { type ResolveTranscriptionForVerifyPayload } from "./resolve-transcription-for-verify-payload.type.js";
