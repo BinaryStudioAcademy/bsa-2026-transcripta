@@ -4,6 +4,7 @@ import {
 	type PageDebugResponseDto,
 	PageStatus,
 	PageVerificationAction,
+	type PageVerificationActionValue,
 	type UndoPageResponseDto,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
@@ -17,11 +18,11 @@ import {
 	extractLexiconIds,
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
-import { TranscriptionModel } from "~/modules/transcription/transcription.model.js";
 
 import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
+import { type TranscriptionModel } from "../transcription/transcription.model.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
 import { TranscriptionService } from "../transcription/transcription.service.js";
 import {
@@ -41,7 +42,10 @@ import {
 	type ResolveTranscriptionForVerifyPayload,
 	type VerifyPagePayload,
 } from "./libs/types/types.js";
+import { type PageEventModel } from "./page-event/page-event.model.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
+import { type PageEntity } from "./page.entity.js";
+import { type PageModel } from "./page.model.js";
 import { type PageRepository } from "./page.repository.js";
 
 class PageService {
@@ -74,11 +78,75 @@ class PageService {
 		this.pageRepository = pageRepository;
 		this.logger = logger;
 		this.pageTranscribeQueue = pageTranscribeQueue;
+		this.rederiveStructuredQueue = rederiveStructuredQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.transcriptionService = transcriptionService;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
-		this.rederiveStructuredQueue = rederiveStructuredQueue;
+	}
+
+	private async applyVerificationUpdate({
+		action,
+		attempt,
+		documentId,
+		durationMs,
+		existingEvent,
+		isVerifiedAction,
+		pageId,
+		status,
+		transcriptionId,
+		trx,
+		userId,
+	}: {
+		action: PageVerificationActionValue;
+		attempt: number;
+		documentId: number;
+		durationMs: number;
+		existingEvent: PageEventModel | undefined;
+		isVerifiedAction: boolean;
+		pageId: number;
+		status: PageModel["status"];
+		transcriptionId: number;
+		trx: Transaction;
+		userId: number;
+	}): Promise<void> {
+		const verifiedAt = isVerifiedAction ? new Date().toISOString() : null;
+
+		await this.pageRepository.updateVerification(
+			{
+				pageId,
+				status,
+				verifiedAt,
+				verifiedBy: isVerifiedAction ? userId : null,
+			},
+			trx,
+		);
+
+		if (!existingEvent) {
+			await this.pageEventRepository.createVerificationEvent(
+				{
+					actorId: userId,
+					attempt,
+					documentId,
+					durationMs,
+					event: action,
+					pageId,
+					transcriptionId,
+				},
+				trx,
+			);
+		}
+	}
+
+	private assertCorrectionTextProvided(payload: VerifyPagePayload): void {
+		const isCorrection = payload.action === PageVerificationAction.CORRECT;
+
+		if (isCorrection && !payload.text) {
+			throw new HTTPError({
+				message: PageErrorMessage.TEXT_REQUIRED_FOR_CORRECTION,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
 	}
 
 	private async buildVerifyResponse(
@@ -136,6 +204,44 @@ class PageService {
 		};
 	}
 
+	private async buildVerifyResponseForReplay({
+		pageId,
+		userId,
+	}: {
+		pageId: number;
+		userId: number;
+	}): Promise<VerifyPageResponseDto> {
+		const page = await this.pageRepository.findByIdForOwner(pageId, userId);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		return await this.buildVerifyResponse({
+			documentId: page.documentId,
+			pageId,
+			pageNo: page.pageNo,
+			status: page.status,
+		});
+	}
+
+	private async enqueuePages(pagesToQueue: PageEntity[]): Promise<void> {
+		await Promise.all(
+			pagesToQueue.map((page) => {
+				const { documentId, id, pageNo } = page.toObject();
+
+				return this.pageTranscribeQueue.add({
+					documentId,
+					pageId: id,
+					pageNo,
+				});
+			}),
+		);
+	}
+
 	private async handleCorrection({
 		document,
 		text,
@@ -167,6 +273,116 @@ class PageService {
 		}
 
 		return true;
+	}
+
+	private async loadClaimedEntities({
+		action,
+		pageId,
+		text,
+		transcriptionId,
+		trx,
+		userId,
+	}: {
+		action: PageVerificationActionValue;
+		pageId: number;
+		text: string | undefined;
+		transcriptionId: number | undefined;
+		trx: Transaction;
+		userId: number;
+	}): Promise<{
+		document: DocumentEntity;
+		page: PageModel;
+		transcription: TranscriptionModel;
+	}> {
+		let page = await this.pageRepository.findByIdForOwner(pageId, userId, trx);
+
+		if (!page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const document =
+			await this.documentRepository.findByIdAndOwnerIdWithPresetForUpdate(
+				page.documentId,
+				userId,
+				trx,
+			);
+		page = await this.pageRepository.findByIdForOwner(pageId, userId, trx);
+
+		if (!document || !page) {
+			throw new HTTPError({
+				message: PageErrorMessage.PAGE_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const transcription = await this.resolveTranscriptionForVerify({
+			action,
+			document,
+			page,
+			pageId,
+			text,
+			transcriptionId,
+			trx,
+		});
+
+		return { document, page, transcription };
+	}
+
+	private async loadVerificationState({
+		action,
+		pageId,
+		transcriptionId,
+		trx,
+	}: {
+		action: PageVerificationActionValue;
+		pageId: number;
+		transcriptionId: number;
+		trx: Transaction;
+	}): Promise<{
+		attempt: number;
+		existingEvent: PageEventModel | undefined;
+	}> {
+		const attempt = await this.pageEventRepository.findLatestAttempt(
+			pageId,
+			trx,
+		);
+		const existingEvent = await this.pageEventRepository.findVerificationEvent(
+			{
+				attempt,
+				event: action,
+				pageId,
+				transcriptionId,
+			},
+			trx,
+		);
+
+		return { attempt, existingEvent };
+	}
+
+	private async refillWindowIfAdvanced({
+		documentId,
+		pageStatus,
+		trx,
+	}: {
+		documentId: number;
+		pageStatus: PageModel["status"];
+		trx: Transaction;
+	}): Promise<PageEntity[]> {
+		const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(pageStatus);
+
+		if (!shouldAdvanceWindow) {
+			return [];
+		}
+
+		return await refillPageWindow({
+			documentId,
+			pageRepository: this.pageRepository,
+			quantity: NUMBER_OF_PAGES_TO_INCREMENT,
+			trx,
+		});
 	}
 
 	private async resolveTranscriptionForVerify({
@@ -227,6 +443,127 @@ class PageService {
 			},
 			trx,
 		);
+	}
+
+	private async verifyWithinTransaction({
+		action,
+		durationMs,
+		isCorrection,
+		isVerifiedAction,
+		pageId,
+		status,
+		text,
+		transcriptionId,
+		trx,
+		userId,
+	}: {
+		action: PageVerificationActionValue;
+		durationMs: number;
+		isCorrection: boolean;
+		isVerifiedAction: boolean;
+		pageId: number;
+		status: PageModel["status"];
+		text: string | undefined;
+		transcriptionId: number | undefined;
+		trx: Transaction;
+		userId: number;
+	}): Promise<{
+		documentId: number;
+		needRederiveStructured: boolean;
+		pagesToQueue: PageEntity[];
+		response: VerifyPageResponseDto;
+		transcriptionId: number;
+	}> {
+		const { document, page, transcription } = await this.loadClaimedEntities({
+			action,
+			pageId,
+			text,
+			transcriptionId,
+			trx,
+			userId,
+		});
+		const { attempt, existingEvent } = await this.loadVerificationState({
+			action,
+			pageId,
+			transcriptionId: transcription.id,
+			trx,
+		});
+
+		if (existingEvent && !isCorrection) {
+			return {
+				documentId: page.documentId,
+				needRederiveStructured: false,
+				pagesToQueue: [],
+				response: await this.buildVerifyResponse(
+					{
+						documentId: page.documentId,
+						pageId,
+						pageNo: page.pageNo,
+						status: page.status,
+					},
+					trx,
+				),
+				transcriptionId: transcription.id,
+			};
+		}
+
+		const needRederiveStructured =
+			isCorrection && text
+				? await this.handleCorrection({
+						document,
+						text,
+						transcription,
+						trx,
+					})
+				: false;
+
+		await this.applyVerificationUpdate({
+			action,
+			attempt,
+			documentId: page.documentId,
+			durationMs,
+			existingEvent,
+			isVerifiedAction,
+			pageId,
+			status,
+			transcriptionId: transcription.id,
+			trx,
+			userId,
+		});
+
+		const nextPageNo = page.pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
+
+		await this.documentRepository.updateCursorPageNo(
+			page.documentId,
+			nextPageNo,
+			trx,
+		);
+		const pagesToQueue = await this.refillWindowIfAdvanced({
+			documentId: page.documentId,
+			pageStatus: page.status,
+			trx,
+		});
+
+		await this.documentRepository.markDoneIfAllPagesClosed(
+			page.documentId,
+			trx,
+		);
+
+		return {
+			documentId: page.documentId,
+			needRederiveStructured,
+			pagesToQueue,
+			response: await this.buildVerifyResponse(
+				{
+					documentId: page.documentId,
+					pageId,
+					pageNo: page.pageNo,
+					status,
+				},
+				trx,
+			),
+			transcriptionId: transcription.id,
+		};
 	}
 
 	public async getDebug(
@@ -451,171 +788,27 @@ class PageService {
 	public async verify(
 		payload: VerifyPagePayload,
 	): Promise<VerifyPageResponseDto> {
+		this.assertCorrectionTextProvided(payload);
+
 		const { action, pageId, transcriptionId, userId } = payload;
-
-		const isCorrection = action === PageVerificationAction.CORRECT;
-
-		const isVerifiedAction = action !== PageVerificationAction.SKIP;
-
-		if (isCorrection && !payload.text) {
-			throw new HTTPError({
-				message: PageErrorMessage.TEXT_REQUIRED_FOR_CORRECTION,
-				status: HTTPCode.UNPROCESSED_ENTITY,
-			});
-		}
-
 		const status = PAGE_STATUS_BY_ACTION[action];
 
 		try {
-			const result = await DocumentModel.transaction(async (trx) => {
-				let page = await this.pageRepository.findByIdForOwner(
-					pageId,
-					userId,
-					trx,
-				);
-
-				if (!page) {
-					throw new HTTPError({
-						message: PageErrorMessage.PAGE_NOT_FOUND,
-						status: HTTPCode.NOT_FOUND,
-					});
-				}
-
-				const document =
-					await this.documentRepository.findByIdAndOwnerIdWithPresetForUpdate(
-						page.documentId,
-						userId,
-						trx,
-					);
-				page = await this.pageRepository.findByIdForOwner(pageId, userId, trx);
-
-				if (!document || !page) {
-					throw new HTTPError({
-						message: PageErrorMessage.PAGE_NOT_FOUND,
-						status: HTTPCode.NOT_FOUND,
-					});
-				}
-
-				const transcription = await this.resolveTranscriptionForVerify({
-					action,
-					document,
-					page,
-					pageId,
-					text: payload.text,
-					transcriptionId,
-					trx,
-				});
-
-				const attempt = await this.pageEventRepository.findLatestAttempt(
-					pageId,
-					trx,
-				);
-
-				const existingEvent =
-					await this.pageEventRepository.findVerificationEvent(
-						{
-							attempt,
-							event: action,
-							pageId,
-							transcriptionId: transcription.id,
-						},
-						trx,
-					);
-
-				if (existingEvent && !isCorrection) {
-					return {
-						pagesToQueue: await this.pageRepository.findQueuedPages(
-							page.documentId,
-							trx,
-						),
-						response: await this.buildVerifyResponse(
-							{
-								documentId: page.documentId,
-								pageId,
-								pageNo: page.pageNo,
-								status: page.status,
-							},
-							trx,
-						),
-					};
-				}
-
-				let needRederiveStructured = false;
-				if (isCorrection && payload.text) {
-					needRederiveStructured = await this.handleCorrection({
-						document,
-						text: payload.text,
-						transcription,
-						trx,
-					});
-				}
-
-				const verifiedAt = isVerifiedAction ? new Date().toISOString() : null;
-
-				await this.pageRepository.updateVerification(
-					{
+			const result = await DocumentModel.transaction(
+				async (trx) =>
+					await this.verifyWithinTransaction({
+						action,
+						durationMs: payload.durationMs,
+						isCorrection: action === PageVerificationAction.CORRECT,
+						isVerifiedAction: action !== PageVerificationAction.SKIP,
 						pageId,
 						status,
-						verifiedAt,
-						verifiedBy: isVerifiedAction ? userId : null,
-					},
-					trx,
-				);
-
-				if (!existingEvent) {
-					await this.pageEventRepository.createVerificationEvent(
-						{
-							actorId: userId,
-							attempt,
-							documentId: page.documentId,
-							durationMs: payload.durationMs,
-							event: action,
-							pageId,
-							transcriptionId: transcription.id,
-						},
+						text: payload.text,
+						transcriptionId,
 						trx,
-					);
-				}
-
-				const nextPageNo = page.pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
-
-				await this.documentRepository.updateCursorPageNo(
-					page.documentId,
-					nextPageNo,
-					trx,
-				);
-
-				const shouldAdvanceWindow = !CLOSED_PAGE_STATUSES.has(page.status);
-				const pagesToQueue = shouldAdvanceWindow
-					? await refillPageWindow({
-							documentId: page.documentId,
-							pageRepository: this.pageRepository,
-							quantity: NUMBER_OF_PAGES_TO_INCREMENT,
-							trx,
-						})
-					: [];
-
-				await this.documentRepository.markDoneIfAllPagesClosed(
-					page.documentId,
-					trx,
-				);
-
-				return {
-					documentId: page.documentId,
-					needRederiveStructured,
-					pagesToQueue,
-					response: await this.buildVerifyResponse(
-						{
-							documentId: page.documentId,
-							pageId,
-							pageNo: page.pageNo,
-							status,
-						},
-						trx,
-					),
-					transcriptionId: transcription.id,
-				};
-			});
+						userId,
+					}),
+			);
 
 			if (result.needRederiveStructured && payload.text) {
 				await this.rederiveStructuredQueue.add({
@@ -626,17 +819,7 @@ class PageService {
 				});
 			}
 
-			await Promise.all(
-				result.pagesToQueue.map((page) => {
-					const { documentId, id, pageNo } = page.toObject();
-
-					return this.pageTranscribeQueue.add({
-						documentId,
-						pageId: id,
-						pageNo,
-					});
-				}),
-			);
+			await this.enqueuePages(result.pagesToQueue);
 
 			return result.response;
 		} catch (error) {
@@ -644,22 +827,12 @@ class PageService {
 				error instanceof UniqueViolationError &&
 				error.constraint === PageErrorType.PAGE_EVENT_ONCE
 			) {
-				const page = await this.pageRepository.findByIdForOwner(pageId, userId);
-
-				if (!page) {
-					throw new HTTPError({
-						message: PageErrorMessage.PAGE_NOT_FOUND,
-						status: HTTPCode.NOT_FOUND,
-					});
-				}
-
-				return await this.buildVerifyResponse({
-					documentId: page.documentId,
+				return await this.buildVerifyResponseForReplay({
 					pageId,
-					pageNo: page.pageNo,
-					status: page.status,
+					userId,
 				});
 			}
+
 			throw error;
 		}
 	}
