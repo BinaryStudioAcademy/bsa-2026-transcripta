@@ -136,13 +136,39 @@ const finalizePageFailure = async (
 const enqueuePages = async (
 	pages: PageEntity[],
 	enqueuePage: Dependencies["enqueuePage"],
+	logger: Logger,
 ): Promise<void> => {
-	await Promise.all(
+	const results = await Promise.allSettled(
 		pages.map((page) => {
 			const { documentId, id, pageNo } = page.toObject();
 
 			return enqueuePage({ documentId, pageId: id, pageNo });
 		}),
+	);
+
+	const strandedPages = pages.filter(
+		(_, index) => results[index]?.status === "rejected",
+	);
+
+	if (strandedPages.length === EMPTY_LENGTH) {
+		return;
+	}
+
+	const strandedPageIds = strandedPages.map((page) => page.toObject().id);
+
+	await PageModel.query()
+		.patch({ status: PageStatus.PENDING })
+		.whereIn("id", strandedPageIds)
+		.andWhere({ status: PageStatus.QUEUED })
+		.execute();
+
+	logger.error(
+		`Released pages ${strandedPageIds.join(", ")} back to pending: the transcribe job could not be enqueued`,
+		{
+			errors: results
+				.filter((result) => result.status === "rejected")
+				.map((result) => String(result.reason)),
+		},
 	);
 };
 
@@ -152,6 +178,7 @@ const recordFailure = async ({
 	enqueuePage,
 	event,
 	lastError,
+	logger,
 	pageId,
 	pageRepository,
 	reason,
@@ -196,13 +223,14 @@ const recordFailure = async ({
 		);
 	});
 
-	await enqueuePages(pages, enqueuePage);
+	await enqueuePages(pages, enqueuePage, logger);
 };
 
 const failIfSeedGlossaryExceedsBudget = async ({
 	documentId,
 	documentRepository,
 	enqueuePage,
+	logger,
 	modelId,
 	pageId,
 	pageRepository,
@@ -212,6 +240,7 @@ const failIfSeedGlossaryExceedsBudget = async ({
 	| "documentId"
 	| "documentRepository"
 	| "enqueuePage"
+	| "logger"
 	| "pageId"
 	| "pageRepository"
 > & {
@@ -243,6 +272,7 @@ const failIfSeedGlossaryExceedsBudget = async ({
 			durationMs: EMPTY_LENGTH,
 		},
 		lastError: check.message,
+		logger,
 		pageId,
 		pageRepository,
 		reason: TranscribeFailureReason.SEED_GLOSSARY_EXCEEDS_BUDGET,
@@ -584,6 +614,7 @@ const releaseClaimedPage = async ({
 				},
 				durationMs: EMPTY_LENGTH,
 			},
+			logger,
 			pageId,
 			pageRepository,
 			reason: TranscribeFailureReason.UNEXPECTED_ERROR,
@@ -1113,6 +1144,7 @@ const createTranscribeHandler =
 					documentId,
 					documentRepository,
 					enqueuePage,
+					logger,
 					modelId,
 					pageId,
 					pageRepository,
@@ -1290,7 +1322,7 @@ const handleFailedTranscription = async ({
 		return { pagesToQueue, shouldRetry: retry };
 	});
 
-	await enqueuePages(result.pagesToQueue, enqueuePage);
+	await enqueuePages(result.pagesToQueue, enqueuePage, logger);
 
 	if (!result.shouldRetry) {
 		return;
@@ -1332,7 +1364,7 @@ const handleFailedTranscription = async ({
 			error,
 		});
 
-		await enqueuePages(pages, enqueuePage);
+		await enqueuePages(pages, enqueuePage, logger);
 	}
 };
 
