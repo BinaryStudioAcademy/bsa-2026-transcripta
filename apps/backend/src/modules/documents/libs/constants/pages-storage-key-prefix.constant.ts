@@ -1,0 +1,3 @@
+const PAGES_STORAGE_KEY_PREFIX = "pages/";
+
+export { PAGES_STORAGE_KEY_PREFIX };
