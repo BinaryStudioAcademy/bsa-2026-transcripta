@@ -38,6 +38,7 @@ import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
 	type ReprocessPagePayload,
+	type ResolveTranscriptionForVerifyPayload,
 	type VerifyPagePayload,
 } from "./libs/types/types.js";
 import { type PageEventRepository } from "./page-event/page-event.repository.js";
@@ -166,6 +167,66 @@ class PageService {
 		}
 
 		return true;
+	}
+
+	private async resolveTranscriptionForVerify({
+		action,
+		document,
+		page,
+		pageId,
+		text,
+		transcriptionId,
+		trx,
+	}: ResolveTranscriptionForVerifyPayload): Promise<TranscriptionModel> {
+		const existingTranscription =
+			await this.transcriptionRepository.findCurrentByPageId(pageId, trx);
+
+		if (existingTranscription) {
+			if (
+				transcriptionId === undefined ||
+				existingTranscription.id !== transcriptionId
+			) {
+				throw new HTTPError({
+					message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			return existingTranscription;
+		}
+
+		if (page.status !== PageStatus.FAILED) {
+			throw new HTTPError({
+				message: PageErrorMessage.MANUAL_TRANSCRIPTION_NOT_ALLOWED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		if (action !== PageVerificationAction.CORRECT || !text) {
+			throw new HTTPError({
+				message: PageErrorMessage.TEXT_REQUIRED_FOR_CORRECTION,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		if (transcriptionId !== undefined) {
+			throw new HTTPError({
+				message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const { presetId } = document.toObjectWithPreset();
+
+		return await this.transcriptionRepository.createManual(
+			{
+				documentId: page.documentId,
+				pageId,
+				presetId,
+				text,
+			},
+			trx,
+		);
 	}
 
 	public async getDebug(
@@ -435,15 +496,15 @@ class PageService {
 					});
 				}
 
-				const transcription =
-					await this.transcriptionRepository.findCurrentByPageId(pageId, trx);
-
-				if (!transcription || transcription.id !== transcriptionId) {
-					throw new HTTPError({
-						message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
-						status: HTTPCode.CONFLICT,
-					});
-				}
+				const transcription = await this.resolveTranscriptionForVerify({
+					action,
+					document,
+					page,
+					pageId,
+					text: payload.text,
+					transcriptionId,
+					trx,
+				});
 
 				const attempt = await this.pageEventRepository.findLatestAttempt(
 					pageId,
@@ -456,7 +517,7 @@ class PageService {
 							attempt,
 							event: action,
 							pageId,
-							transcriptionId,
+							transcriptionId: transcription.id,
 						},
 						trx,
 					);
@@ -477,7 +538,7 @@ class PageService {
 				}
 
 				let needRederiveStructured = false;
-				if (isCorrection) {
+				if (isCorrection && payload.text) {
 					needRederiveStructured = await this.handleCorrection({
 						document,
 						text: payload.text,
@@ -507,7 +568,7 @@ class PageService {
 							durationMs: payload.durationMs,
 							event: action,
 							pageId,
-							transcriptionId,
+							transcriptionId: transcription.id,
 						},
 						trx,
 					);
@@ -553,7 +614,7 @@ class PageService {
 				};
 			});
 
-			if (result.needRederiveStructured) {
+			if (result.needRederiveStructured && payload.text) {
 				await this.rederiveStructuredQueue.add({
 					currentTranscriptionId: result.transcriptionId,
 					documentId: result.documentId,
