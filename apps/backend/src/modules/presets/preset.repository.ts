@@ -28,14 +28,7 @@ class PresetRepository {
 	): Promise<null | PresetDetailsEntity> {
 		const preset = await this.presetModel
 			.query()
-			.select(
-				"id",
-				"name",
-				"description",
-				"instructions",
-				"seedGlossary",
-				"outputSchema",
-			)
+			.select("id", "name", "instructions", "seedGlossary", "outputSchema")
 			.where("id", id)
 			.where((builder) => {
 				builder.where("isPublic", true).orWhere("ownerId", userId);

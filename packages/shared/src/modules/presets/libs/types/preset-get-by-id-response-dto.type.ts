@@ -1,5 +1,4 @@
 type PresetGetByIdResponseDto = {
-	description: string;
 	id: number;
 	instructions: string;
 	name: string;

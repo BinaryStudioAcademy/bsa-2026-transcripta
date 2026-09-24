@@ -53,8 +53,6 @@ type PresetFindByIdOptions = APIHandlerOptions<{
  *           type: number
  *         name:
  *           type: string
- *         description:
- *           type: string
  *         instructions:
  *           type: string
  *         seedGlossary:

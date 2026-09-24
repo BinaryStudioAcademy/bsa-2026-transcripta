@@ -1,7 +1,6 @@
 import { type PresetGetByIdResponseDto } from "@transcripta/shared";
 
 type PresetDetailsProperties = {
-	description: string;
 	id: number;
 	instructions: string;
 	name: string;
@@ -10,8 +9,6 @@ type PresetDetailsProperties = {
 };
 
 class PresetDetailsEntity {
-	private description: string;
-
 	private id: number;
 
 	private instructions: string;
@@ -23,14 +20,12 @@ class PresetDetailsEntity {
 	private seedGlossary: Record<string, unknown>[] | string[];
 
 	private constructor({
-		description,
 		id,
 		instructions,
 		name,
 		outputSchema,
 		seedGlossary,
 	}: PresetDetailsProperties) {
-		this.description = description;
 		this.id = id;
 		this.instructions = instructions;
 		this.name = name;
@@ -46,7 +41,6 @@ class PresetDetailsEntity {
 
 	public toObject(): PresetGetByIdResponseDto {
 		return {
-			description: this.description,
 			id: this.id,
 			instructions: this.instructions,
 			name: this.name,
