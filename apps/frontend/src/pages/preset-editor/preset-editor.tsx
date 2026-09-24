@@ -24,65 +24,12 @@ import type {
 } from "./libs/types/preset-editor.types.js";
 
 import { GLOSSARY_TYPES } from "./libs/constants/preset-editor.constants.js";
-
-const createEntry = (): GlossaryEntry => ({
-	id: crypto.randomUUID(),
-	kind: "term",
-	value: "",
-});
-
-const isGlossaryType = (value: unknown): value is GlossaryType =>
-	typeof value === "string" && GLOSSARY_TYPES.includes(value as GlossaryType);
-
-const mapSeedGlossary = (
-	seedGlossary: Record<string, unknown>[] | string[],
-): GlossaryEntry[] =>
-	seedGlossary.map((entry) => {
-		if (typeof entry === "string") {
-			return {
-				id: crypto.randomUUID(),
-				kind: "term",
-				value: entry,
-			};
-		}
-
-		const kind = entry["kind"];
-		const value = entry["value"];
-
-		return {
-			id: crypto.randomUUID(),
-			kind: isGlossaryType(kind) ? kind : "term",
-			value: typeof value === "string" ? value : "",
-		};
-	});
-
-const getOutputFields = (outputSchema: Record<string, unknown>): string[] => {
-	const properties = outputSchema["properties"];
-
-	if (!properties || typeof properties !== "object") {
-		return [];
-	}
-
-	const records = (properties as Record<string, unknown>)["records"];
-
-	if (!records || typeof records !== "object") {
-		return [];
-	}
-
-	const items = (records as Record<string, unknown>)["items"];
-
-	if (!items || typeof items !== "object") {
-		return [];
-	}
-
-	const itemProperties = (items as Record<string, unknown>)["properties"];
-
-	if (!itemProperties || typeof itemProperties !== "object") {
-		return [];
-	}
-
-	return Object.keys(itemProperties);
-};
+import {
+	createEntry,
+	getOutputFields,
+	isGlossaryType,
+	mapSeedGlossary,
+} from "./libs/helpers/helpers.js";
 
 const handleCancel = (): void => {
 	// TODO: Navigate back when routing is connected.
