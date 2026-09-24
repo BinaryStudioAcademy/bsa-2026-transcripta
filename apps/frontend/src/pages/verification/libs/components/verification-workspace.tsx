@@ -110,7 +110,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 								<Button
 									isDisabled={isVerifying}
 									isPrimary={true}
-									label="Correct"
+									label="Confirm"
 									onClick={onConfirm}
 									type="button"
 								/>
