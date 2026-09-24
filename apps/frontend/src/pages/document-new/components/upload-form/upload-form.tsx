@@ -1,14 +1,14 @@
+import { type PresetGetAllItemResponseDto } from "@transcripta/shared";
 import React from "react";
 
 import { Button, Input } from "~/libs/components/components.js";
 import { Select } from "~/libs/components/select/select.js";
-import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
+import { useAppForm, useCallback, useWatch } from "~/libs/hooks/hooks.js";
 
 import { uploadFormValidationSchema } from "../../libs/validation-schemas/validation-schemas.js";
 import {
 	DEFAULT_PRESET_ID,
 	DEFAULT_PRESET_INDEX,
-	MOCK_PRESET_OPTIONS,
 	PDF_EXTENSION_REGEX,
 } from "./libs/constants/constants.js";
 import { type UploadFormValues } from "./libs/types/types.js";
@@ -22,7 +22,7 @@ type Properties = {
 	onChangeFile: () => void;
 	onProcessDocument: () => void;
 	onSubmit: (values: UploadFormValues) => void;
-	presetOptions?: typeof MOCK_PRESET_OPTIONS;
+	presetOptions: PresetGetAllItemResponseDto[];
 };
 
 const UploadForm: React.FC<Properties> = ({
@@ -33,7 +33,7 @@ const UploadForm: React.FC<Properties> = ({
 	onChangeFile,
 	onProcessDocument,
 	onSubmit,
-	presetOptions = MOCK_PRESET_OPTIONS,
+	presetOptions,
 }: Properties) => {
 	const { control, errors, handleSubmit } = useAppForm<UploadFormValues>({
 		defaultValues: {
@@ -42,6 +42,15 @@ const UploadForm: React.FC<Properties> = ({
 		},
 		validationSchema: uploadFormValidationSchema,
 	});
+
+	const selectedPresetId = useWatch({
+		control,
+		name: "presetId",
+	});
+
+	const selectedPreset = presetOptions.find(
+		(preset) => preset.id === Number(selectedPresetId),
+	);
 
 	const handleFormSubmit = useCallback(
 		(event_: React.BaseSyntheticEvent): void => {
@@ -62,6 +71,7 @@ const UploadForm: React.FC<Properties> = ({
 			<Select
 				control={control}
 				errors={errors}
+				helperText={selectedPreset?.description ?? ""}
 				label="Presets"
 				name="presetId"
 				options={presetOptions}

@@ -1,4 +1,4 @@
-import { HTTPCode } from "@transcripta/shared";
+import { EMPTY_LENGTH, HTTPCode } from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
 
@@ -23,9 +23,11 @@ import {
 	type DocumentCreateRequestDto,
 } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { actions as presetsActions } from "~/modules/presets/presets.js";
 
 import { Dropzone } from "./components/dropzone/dropzone.js";
 import { IngestProgress } from "./components/ingest-progress/ingest-progress.js";
+import { DEFAULT_PRESET_FALLBACK } from "./components/upload-form/libs/constants/constants.js";
 import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
@@ -52,6 +54,9 @@ import {
 import styles from "./styles.module.css";
 
 const DocumentNew: React.FC = () => {
+	const { presets } = useAppSelector(({ presets }) => ({
+		presets: presets.presets,
+	}));
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [selectedArchive, setSelectedArchive] = useState<File | null>(null);
 	const [rejection, setRejection] = useState<null | string>(null);
@@ -126,6 +131,10 @@ const DocumentNew: React.FC = () => {
 			void dispatch(documentActions.loadById(Number(resumeDocumentId)));
 		}
 	}, [resumeDocumentId, dispatch]);
+
+	useEffect(() => {
+		void dispatch(presetsActions.loadAll());
+	}, [dispatch]);
 
 	useEffect(() => {
 		if (blocker.state === BlockerState.BLOCKED) {
@@ -421,6 +430,9 @@ const DocumentNew: React.FC = () => {
 	const isFormDisabled = isSubmitting || isUploading || isUploaded;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
 
+	const presetOptions =
+		presets.length > EMPTY_LENGTH ? presets : [DEFAULT_PRESET_FALLBACK];
+
 	return (
 		<div className={styles["new-document-page"]}>
 			<header className={styles["page-header"]}>
@@ -477,6 +489,7 @@ const DocumentNew: React.FC = () => {
 									onChangeFile={handleChangeFile}
 									onProcessDocument={handleProcessDocument}
 									onSubmit={handleUpload}
+									presetOptions={presetOptions}
 								/>
 							</>
 						)}
