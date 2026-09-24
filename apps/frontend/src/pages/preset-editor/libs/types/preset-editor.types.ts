@@ -1,9 +1,3 @@
-type BasePreset = {
-	description: string;
-	id: string;
-	name: string;
-};
-
 type GlossaryEntry = {
 	id: string;
 	kind: GlossaryType;
@@ -27,7 +21,6 @@ type PresetEditorFormValues = {
 };
 
 export type {
-	BasePreset,
 	GlossaryEntry,
 	GlossaryType,
 	/** @public */ PresetEditorFormValues,
