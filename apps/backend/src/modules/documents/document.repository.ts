@@ -329,6 +329,7 @@ class DocumentRepository {
 			.query(trx)
 			.patch({ status: DocumentStatus.DONE })
 			.where({ id })
+			.whereNot("status", DocumentStatus.INGESTING)
 			.whereNotExists(openPages)
 			.execute();
 	}
