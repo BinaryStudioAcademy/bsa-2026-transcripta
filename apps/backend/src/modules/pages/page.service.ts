@@ -498,7 +498,10 @@ class PageService {
 				documentId: page.documentId,
 				needRederiveStructured: false,
 				pageNo: page.pageNo,
-				pagesToQueue: [],
+				pagesToQueue: await this.pageRepository.findQueuedPages(
+					page.documentId,
+					trx,
+				),
 				response: await this.buildVerifyResponse(
 					{
 						documentId: page.documentId,
