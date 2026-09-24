@@ -359,10 +359,11 @@ const DocumentNew: React.FC = () => {
 
 	const goToDocument = useCallback(
 		(documentId: number): void => {
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
-			);
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+				),
+			).catch(() => null);
 		},
 		[navigate],
 	);
@@ -481,12 +482,13 @@ const DocumentNew: React.FC = () => {
 
 		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
 			setIngestingDocumentId(null);
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.VERIFICATION, {
-					id: String(ingestingDocumentId),
-				}),
-			);
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.VERIFICATION, {
+						id: String(ingestingDocumentId),
+					}),
+				),
+			).catch(() => null);
 		}
 	}, [goToDocument, ingestingDocumentId, navigate, resumedDocument]);
 
