@@ -1,15 +1,17 @@
 import { EMPTY_LENGTH, PageStatus } from "@transcripta/shared";
-import { type Transaction } from "objection";
+import { raw, type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
-import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { LexiconEntryModel } from "~/modules/lexicon/lexicon-entry.model.js";
 import { PageEventModel } from "~/modules/pages/page-event/page-event.model.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 
+import { LexiconEntryEntity } from "./lexicon-entry.entity.js";
 import { LexiconPageEventName } from "./libs/enums/enums.js";
 import {
 	type AffectedPageRow,
 	type OwnedLexiconEntry,
+	type UpsertLexiconEntryPayload,
 } from "./libs/types/types.js";
 
 class LexiconRepository {
@@ -161,6 +163,43 @@ class LexiconRepository {
 				.whereRaw("details ->> 'lexiconId' = ?", [String(lexiconId)])
 				.execute();
 		});
+	}
+
+	public async upsertFromPage(
+		payload: UpsertLexiconEntryPayload[],
+		trx: Transaction,
+	): Promise<LexiconEntryEntity[]> {
+		const rows = payload.map((entry) => ({
+			distinctPages: 1,
+			documentId: entry.documentId,
+			firstPageNo: entry.pageNo,
+			kind: entry.kind,
+			lastPageNo: entry.pageNo,
+			pageCount: 1,
+			valueDisplay: entry.valueDisplay,
+			valueNormalized: entry.valueNormalized,
+		}));
+
+		const entries = await this.lexiconEntryModel
+			.query(trx)
+			.insert(rows)
+			.onConflict(["documentId", "kind", "valueNormalized"])
+			.merge({
+				distinctPages: raw(`
+						lexicon_entry.distinct_pages +
+							CASE
+								WHEN lexicon_entry.last_page_no <> EXCLUDED.last_page_no
+								THEN 1
+								ELSE 0
+							END
+					`),
+				lastPageNo: raw("EXCLUDED.last_page_no"),
+				pageCount: raw("lexicon_entry.page_count + 1"),
+				updatedAt: raw("now()"),
+			})
+			.returning("*");
+
+		return entries.map((entry) => LexiconEntryEntity.initialize(entry));
 	}
 }
 

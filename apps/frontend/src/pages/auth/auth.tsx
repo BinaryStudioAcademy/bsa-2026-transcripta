@@ -6,6 +6,7 @@ import {
 	useLocation,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { logger } from "~/libs/modules/logger/logger.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
 import {
@@ -26,8 +27,7 @@ const Auth: React.FC = () => {
 				.unwrap()
 				.then(() => navigate(AppRoute.ROOT))
 				.catch((error: unknown) => {
-					// eslint-disable-next-line no-console
-					console.error(error);
+					logger.error("Sign-in failed.", error);
 				});
 		},
 		[dispatch, navigate],
