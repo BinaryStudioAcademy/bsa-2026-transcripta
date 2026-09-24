@@ -61,6 +61,19 @@ const jsxA11yConfig = {
 /** @type {Config[]} */
 const overridesConfigs = [
 	{
+		files: ["**/*.tsx"],
+		rules: {
+			"max-lines-per-function": [
+				"error",
+				{
+					max: 350,
+					skipBlankLines: true,
+					skipComments: true,
+				},
+			],
+		},
+	},
+	{
 		files: ["vite.config.ts"],
 		rules: {
 			"import/no-default-export": ["off"],
