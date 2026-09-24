@@ -39,6 +39,7 @@ import {
 	type BuildVerifyResponsePayload,
 	type PageServiceDependencies,
 	type ReprocessPagePayload,
+	type ResolveTranscriptionForVerifyPayload,
 	type VerifyPagePayload,
 } from "./libs/types/types.js";
 import { type PageEventModel } from "./page-event/page-event.model.js";
@@ -275,13 +276,17 @@ class PageService {
 	}
 
 	private async loadClaimedEntities({
+		action,
 		pageId,
+		text,
 		transcriptionId,
 		trx,
 		userId,
 	}: {
+		action: PageVerificationActionValue;
 		pageId: number;
-		transcriptionId: number;
+		text: string | undefined;
+		transcriptionId: number | undefined;
 		trx: Transaction;
 		userId: number;
 	}): Promise<{
@@ -313,15 +318,15 @@ class PageService {
 			});
 		}
 
-		const transcription =
-			await this.transcriptionRepository.findCurrentByPageId(pageId, trx);
-
-		if (!transcription || transcription.id !== transcriptionId) {
-			throw new HTTPError({
-				message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
-				status: HTTPCode.CONFLICT,
-			});
-		}
+		const transcription = await this.resolveTranscriptionForVerify({
+			action,
+			document,
+			page,
+			pageId,
+			text,
+			transcriptionId,
+			trx,
+		});
 
 		return { document, page, transcription };
 	}
@@ -380,6 +385,66 @@ class PageService {
 		});
 	}
 
+	private async resolveTranscriptionForVerify({
+		action,
+		document,
+		page,
+		pageId,
+		text,
+		transcriptionId,
+		trx,
+	}: ResolveTranscriptionForVerifyPayload): Promise<TranscriptionModel> {
+		const existingTranscription =
+			await this.transcriptionRepository.findCurrentByPageId(pageId, trx);
+
+		if (existingTranscription) {
+			if (
+				transcriptionId === undefined ||
+				existingTranscription.id !== transcriptionId
+			) {
+				throw new HTTPError({
+					message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+					status: HTTPCode.CONFLICT,
+				});
+			}
+
+			return existingTranscription;
+		}
+
+		if (page.status !== PageStatus.FAILED) {
+			throw new HTTPError({
+				message: PageErrorMessage.MANUAL_TRANSCRIPTION_NOT_ALLOWED,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		if (action !== PageVerificationAction.CORRECT || !text) {
+			throw new HTTPError({
+				message: PageErrorMessage.TEXT_REQUIRED_FOR_CORRECTION,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		if (transcriptionId !== undefined) {
+			throw new HTTPError({
+				message: PageErrorMessage.TRANSCRIPTION_NOT_FOUND,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const { presetId } = document.toObjectWithPreset();
+
+		return await this.transcriptionRepository.createManual(
+			{
+				documentId: page.documentId,
+				pageId,
+				presetId,
+				text,
+			},
+			trx,
+		);
+	}
+
 	private async verifyWithinTransaction({
 		action,
 		durationMs,
@@ -398,8 +463,8 @@ class PageService {
 		isVerifiedAction: boolean;
 		pageId: number;
 		status: PageModel["status"];
-		text: string;
-		transcriptionId: number;
+		text: string | undefined;
+		transcriptionId: number | undefined;
 		trx: Transaction;
 		userId: number;
 	}): Promise<{
@@ -410,7 +475,9 @@ class PageService {
 		transcriptionId: number;
 	}> {
 		const { document, page, transcription } = await this.loadClaimedEntities({
+			action,
 			pageId,
+			text,
 			transcriptionId,
 			trx,
 			userId,
@@ -418,7 +485,7 @@ class PageService {
 		const { attempt, existingEvent } = await this.loadVerificationState({
 			action,
 			pageId,
-			transcriptionId,
+			transcriptionId: transcription.id,
 			trx,
 		});
 
@@ -440,9 +507,15 @@ class PageService {
 			};
 		}
 
-		const needRederiveStructured = isCorrection
-			? await this.handleCorrection({ document, text, transcription, trx })
-			: false;
+		const needRederiveStructured =
+			isCorrection && text
+				? await this.handleCorrection({
+						document,
+						text,
+						transcription,
+						trx,
+					})
+				: false;
 
 		await this.applyVerificationUpdate({
 			action,
@@ -453,7 +526,7 @@ class PageService {
 			isVerifiedAction,
 			pageId,
 			status,
-			transcriptionId,
+			transcriptionId: transcription.id,
 			trx,
 			userId,
 		});
@@ -737,7 +810,7 @@ class PageService {
 					}),
 			);
 
-			if (result.needRederiveStructured) {
+			if (result.needRederiveStructured && payload.text) {
 				await this.rederiveStructuredQueue.add({
 					currentTranscriptionId: result.transcriptionId,
 					documentId: result.documentId,

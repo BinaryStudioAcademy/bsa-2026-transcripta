@@ -1,15 +1,47 @@
+import { EMPTY_LENGTH } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
-import { type TranscriptionDebugRow } from "./libs/types/types.js";
+import {
+	type CreateManualTranscriptionPayload,
+	type TranscriptionDebugRow,
+} from "./libs/types/types.js";
 import { TranscriptionModel } from "./transcription.model.js";
+
+const MANUAL_TRANSCRIPTION_ZERO_COST_USD = "0";
 
 class TranscriptionRepository {
 	private transcriptionModel: typeof TranscriptionModel;
 
 	public constructor(transcriptionModel: typeof TranscriptionModel) {
 		this.transcriptionModel = transcriptionModel;
+	}
+
+	public async createManual(
+		payload: CreateManualTranscriptionPayload,
+		trx?: Transaction,
+	): Promise<TranscriptionModel> {
+		return await this.transcriptionModel.query(trx).insertAndFetch({
+			contextUsed: {},
+			costUsd: MANUAL_TRANSCRIPTION_ZERO_COST_USD,
+			documentId: payload.documentId,
+			editedStructured: null,
+			editedText: null,
+			fromCache: false,
+			inputTokens: EMPTY_LENGTH,
+			isCurrent: true,
+			latencyMs: EMPTY_LENGTH,
+			model: null,
+			outputTokens: EMPTY_LENGTH,
+			pageId: payload.pageId,
+			presetId: payload.presetId,
+			prompt: "",
+			provider: null,
+			rawResponse: "",
+			structured: null,
+			text: payload.text,
+		});
 	}
 
 	public async findCurrentByPageId(
