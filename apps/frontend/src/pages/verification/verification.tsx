@@ -80,11 +80,7 @@ const Verification: React.FC = () => {
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 
-	let isLastPage = false;
-
-	if (document) {
-		isLastPage = cursorPageNo >= document.pageCount;
-	}
+	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 
 	useEffect(() => {
 		const documentId = Number(id);

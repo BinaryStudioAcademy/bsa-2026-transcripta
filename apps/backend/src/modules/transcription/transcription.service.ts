@@ -8,7 +8,11 @@ import {
 import { type Config } from "~/libs/modules/config/config.js";
 import { type BaseSecrets } from "~/libs/modules/secrets/secrets.js";
 
-import { EMPTY_LENGTH, SYSTEM_PROMPT } from "./libs/constants/constants.js";
+import {
+	ANTHROPIC_DIRECT_PREFIX,
+	EMPTY_LENGTH,
+	SYSTEM_PROMPT,
+} from "./libs/constants/constants.js";
 import {
 	buildRederiveStructuredPrompt,
 	calculateTokenCost,
@@ -29,7 +33,6 @@ const MAX_TOKENS = 8192;
 const AMAZON_PREFIX = "amazon";
 const PROFILE_SEPARATOR = ".";
 const PROFILE_PREFIX_INDEX = 1;
-const DIRECT_PREFIX = "anthropic-direct:";
 const ANTHROPIC_KEY_PARAMETER = "/transcripta/anthropic-api-key";
 
 type AnthropicPayload = {
@@ -212,10 +215,10 @@ class TranscriptionService {
 	}: TranscriptionRequest): Promise<TranscriptionResponse> {
 		const resolvedModelId = modelId ?? this.defaultModelId;
 
-		if (resolvedModelId.startsWith(DIRECT_PREFIX)) {
+		if (resolvedModelId.startsWith(ANTHROPIC_DIRECT_PREFIX)) {
 			return await this.transcribeDirect(
 				{ image, mediaType, modelId, prompt },
-				resolvedModelId.slice(DIRECT_PREFIX.length),
+				resolvedModelId.slice(ANTHROPIC_DIRECT_PREFIX.length),
 			);
 		}
 
