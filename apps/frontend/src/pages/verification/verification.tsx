@@ -16,6 +16,7 @@ import {
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
@@ -99,15 +100,46 @@ const Verification: React.FC = () => {
 	}, [id, document, dispatch]);
 
 	useEffect(() => {
+		const documentId = Number(id);
+
+		if (!Number.isFinite(documentId) || !document) {
+			return;
+		}
+
+		if (currentPage?.transcription) {
+			return;
+		}
+
+		const timeoutId = setTimeout(() => {
+			void dispatch(
+				pageActions.loadPages({
+					documentId,
+					query: {
+						from: cursorPageNo,
+						limit: MAX_LOADED_PAGES,
+					},
+				}),
+			);
+		}, PollingIntervalsMS.DEFAULT);
+
+		return () => {
+			clearTimeout(timeoutId);
+		};
+	}, [id, dispatch, currentPage?.transcription, cursorPageNo, document]);
+
+	useEffect(() => {
 		if (!document) {
 			return;
 		}
 
-		dispatch(
-			pageActions.setCursorPageNo(
-				Math.min(document.cursorPageNo, document.pageCount),
+		const initialPageNo = Math.max(
+			MIN_NUMBER_OF_PAGES,
+			Math.min(
+				document.cursorPageNo || MIN_NUMBER_OF_PAGES,
+				document.pageCount || MIN_NUMBER_OF_PAGES,
 			),
 		);
+		dispatch(pageActions.setCursorPageNo(initialPageNo));
 	}, [document, dispatch]);
 
 	useEffect(() => {

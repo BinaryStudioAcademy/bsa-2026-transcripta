@@ -3,8 +3,13 @@ import {
 	FailedStateCard,
 	PreparingStateCard,
 } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { useRef } from "~/libs/hooks/hooks.js";
 
+import {
+	EVERYTHING_VERIFIED,
+	PREPARING_DOCUMENTS,
+} from "../constants/constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
@@ -142,10 +147,18 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
+		const isFreshDocument = !pageCount || pageCount === INITIAL_COUNT;
+		const hasNoPagesTranscribed = !currentPage;
+		const preparingMessage =
+			isFreshDocument || hasNoPagesTranscribed
+				? PREPARING_DOCUMENTS
+				: EVERYTHING_VERIFIED;
+
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
 					isPauseDisabled={isPauseDisabled}
+					message={preparingMessage}
 					onPause={onPause}
 				/>
 			</div>
