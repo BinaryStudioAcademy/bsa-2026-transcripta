@@ -80,11 +80,12 @@ const Sidebar: React.FC = () => {
 			dispatch(authActions.logout());
 			void storage.drop(StorageKey.TOKEN);
 
-			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-			void navigate(AppRoute.SIGN_IN, {
-				flushSync: true,
-				replace: true,
-			});
+			Promise.resolve(
+				navigate(AppRoute.SIGN_IN, {
+					flushSync: true,
+					replace: true,
+				}),
+			).catch(() => null);
 		},
 		[dispatch, navigate],
 	);

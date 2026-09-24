@@ -21,7 +21,6 @@ import {
 
 import {
 	MOCK_EXPORT_DELAY_MS,
-	POLLING_FAILED_MESSAGE,
 	POLLING_FAILED_NOTIFICATION,
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
@@ -212,10 +211,8 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 					}
 					isRequestInFlight = false;
 				})
-				.catch((error: unknown) => {
+				.catch(() => {
 					if (consecutiveErrors === INITIAL_COUNT) {
-						// eslint-disable-next-line no-console
-						console.error(POLLING_FAILED_MESSAGE, error);
 						notification.error(POLLING_FAILED_NOTIFICATION);
 					}
 
