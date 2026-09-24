@@ -40,7 +40,9 @@ import {
 	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
 	NON_DELETABLE_DOCUMENT_STATUSES,
+	PAGES_STORAGE_KEY_PREFIX,
 	PAGES_TO_QUEUE,
+	UPLOADS_STORAGE_KEY_PREFIX,
 } from "./libs/constants/constants.js";
 import {
 	DocumentErrorMessage,
@@ -78,7 +80,7 @@ class DocumentService {
 	}
 
 	private buildSourceKey(documentId: number): string {
-		return `uploads/${documentId.toString()}/original.pdf`;
+		return `${UPLOADS_STORAGE_KEY_PREFIX}${documentId.toString()}/original.pdf`;
 	}
 
 	private async checkFileSize(
@@ -578,11 +580,11 @@ class DocumentService {
 
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.UPLOADS,
-				prefix: `uploads/${id.toString()}/`,
+				prefix: `${UPLOADS_STORAGE_KEY_PREFIX}${id.toString()}/`,
 			});
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.PAGES,
-				prefix: `pages/${id.toString()}/`,
+				prefix: `${PAGES_STORAGE_KEY_PREFIX}${id.toString()}/`,
 			});
 
 			await this.documentRepository.deleteById(id, trx);

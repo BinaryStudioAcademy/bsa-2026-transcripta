@@ -27,11 +27,17 @@ const uploadFile = ({
 
 		const xhr = new XMLHttpRequest();
 
+		const handleAbort = (): void => {
+			xhr.abort();
+			reject(new Error(UploadErrorMessage.UPLOAD_CANCELLED));
+		};
+
+		const detachAbortListener = (): void => {
+			signal?.removeEventListener(XHREvent.ABORT, handleAbort);
+		};
+
 		if (signal) {
-			signal.addEventListener(XHREvent.ABORT, () => {
-				xhr.abort();
-				reject(new Error(UploadErrorMessage.UPLOAD_CANCELLED));
-			});
+			signal.addEventListener(XHREvent.ABORT, handleAbort, { once: true });
 		}
 
 		xhr.open(HTTPMethod.PUT, uploadUrl);
@@ -45,6 +51,8 @@ const uploadFile = ({
 		});
 
 		xhr.addEventListener(XHREvent.LOAD, () => {
+			detachAbortListener();
+
 			if (xhr.status === HTTPCode.OK || xhr.status === HTTPCode.NO_CONTENT) {
 				resolve();
 			} else {
@@ -54,6 +62,8 @@ const uploadFile = ({
 		});
 
 		xhr.addEventListener(XHREvent.ERROR, () => {
+			detachAbortListener();
+
 			if (signal?.aborted) {
 				reject(new Error(UploadErrorMessage.UPLOAD_CANCELLED));
 				return;
