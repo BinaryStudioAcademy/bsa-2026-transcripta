@@ -39,6 +39,7 @@ import {
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
 } from "./libs/constants/verification.constants.js";
+import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import "./verification.css";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
@@ -168,18 +169,46 @@ const Verification: React.FC = () => {
 			action: PageVerificationActionValue,
 			text?: string,
 		): Promise<boolean> => {
-			if (!currentPage?.transcription || !document || isVerifying) {
+			if (!currentPage || !document || isVerifying) {
 				return false;
 			}
 
+			const { transcription } = currentPage;
 			const pageNo = currentPage.pageNo;
+			const durationMs = Date.now() - pageStartedAtReference.current;
 
-			const payload: VerifyPageRequestDto = {
-				action,
-				durationMs: Date.now() - pageStartedAtReference.current,
-				text: text ?? currentPage.transcription.text,
-				transcriptionId: currentPage.transcription.id,
-			};
+			let payload: VerifyPageRequestDto;
+
+			if (transcription) {
+				payload = {
+					action,
+					durationMs,
+					text: text ?? transcription.text,
+					transcriptionId: transcription.id,
+				};
+			} else {
+				const isManualTranscription =
+					currentPage.status === PageStatus.FAILED &&
+					action === PageVerificationAction.CORRECT;
+
+				if (!isManualTranscription) {
+					return false;
+				}
+
+				if (text === undefined || text.trim() === "") {
+					notification.info("Type the page text before saving");
+
+					return false;
+				}
+
+				payload = {
+					action,
+					durationMs,
+					text,
+				};
+			}
+
+			const wasManualTranscription = !transcription;
 
 			dispatch(
 				pageActions.verifyOptimistic({
@@ -214,6 +243,10 @@ const Verification: React.FC = () => {
 					"The verification could not be completed. The latest page version has been loaded.",
 				);
 
+				reloadPage(pageNo);
+			}
+
+			if (!isRejected && wasManualTranscription) {
 				reloadPage(pageNo);
 			}
 
@@ -285,12 +318,16 @@ const Verification: React.FC = () => {
 	}, [dispatch, document]);
 
 	const handleToggleEdit = useCallback((): void => {
-		if (!currentPage?.transcription || isVerifying) {
+		const canEdit =
+			Boolean(currentPage?.transcription) ||
+			currentPage?.status === PageStatus.FAILED;
+
+		if (!canEdit || isVerifying || isReprocessing) {
 			return;
 		}
 
 		setIsEditing((value) => !value);
-	}, [currentPage, isVerifying]);
+	}, [currentPage, isReprocessing, isVerifying]);
 
 	const handleToggleShortcuts = useCallback((): void => {
 		setIsShortcutsOpen((value) => !value);
