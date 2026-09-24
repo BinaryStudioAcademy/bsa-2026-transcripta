@@ -201,8 +201,6 @@ class PageController extends BaseController {
 	 *             type: object
 	 *             required:
 	 *               - action
-	 *               - transcriptionId
-	 *               - text
 	 *               - durationMs
 	 *             properties:
 	 *               action:
@@ -213,8 +211,10 @@ class PageController extends BaseController {
 	 *                   - skip
 	 *               transcriptionId:
 	 *                 type: integer
+	 *                 description: Required when the page already has a transcription. Omit when typing a failed page from scratch.
 	 *               text:
 	 *                 type: string
+	 *                 description: Required for correct, including manual transcription of a failed page.
 	 *               durationMs:
 	 *                 type: integer
 	 *                 minimum: 0
