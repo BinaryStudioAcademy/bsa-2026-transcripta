@@ -6,6 +6,7 @@ import {
 	PageVerificationAction,
 	type PageVerificationActionValue,
 	type UndoPageResponseDto,
+	type VerifyPageLexiconItemDto,
 	type VerifyPageResponseDto,
 } from "@transcripta/shared";
 import { type Transaction, UniqueViolationError } from "objection";
@@ -19,12 +20,13 @@ import {
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
+import { DEFAULT_PRESET_SETTINGS } from "../context/builder/libs/constants/constants.js";
 import { DocumentEntity } from "../documents/document.entity.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { type DocumentRepository } from "../documents/document.repository.js";
+import { type LexiconUpdateService } from "../lexicon/lexicon-update.service.js";
 import { type TranscriptionModel } from "../transcription/transcription.model.js";
 import { type TranscriptionRepository } from "../transcription/transcription.repository.js";
-import { TranscriptionService } from "../transcription/transcription.service.js";
 import {
 	CLOSED_PAGE_STATUSES,
 	NUMBER_OF_PAGES_TO_INCREMENT,
@@ -50,6 +52,8 @@ import { type PageRepository } from "./page.repository.js";
 class PageService {
 	private documentRepository: DocumentRepository;
 
+	private lexiconUpdateService: LexiconUpdateService;
+
 	private logger: Logger;
 
 	private pageEventRepository: PageEventRepository;
@@ -62,24 +66,22 @@ class PageService {
 
 	private transcriptionRepository: TranscriptionRepository;
 
-	private transcriptionService: TranscriptionService;
-
 	public constructor({
 		documentRepository,
+		lexiconUpdateService,
 		logger,
 		pageEventRepository,
 		pageRepository,
 		pageTranscribeQueue,
 		rederiveStructuredQueue,
 		transcriptionRepository,
-		transcriptionService,
 	}: PageServiceDependencies) {
 		this.pageRepository = pageRepository;
 		this.logger = logger;
+		this.lexiconUpdateService = lexiconUpdateService;
 		this.pageTranscribeQueue = pageTranscribeQueue;
 		this.rederiveStructuredQueue = rederiveStructuredQueue;
 		this.transcriptionRepository = transcriptionRepository;
-		this.transcriptionService = transcriptionService;
 		this.pageEventRepository = pageEventRepository;
 		this.documentRepository = documentRepository;
 	}
@@ -152,7 +154,7 @@ class PageService {
 		payload: BuildVerifyResponsePayload,
 		trx?: Transaction,
 	): Promise<VerifyPageResponseDto> {
-		const { documentId, pageId, pageNo, status } = payload;
+		const { documentId, lexiconAdded, pageId, pageNo, status } = payload;
 
 		const nextPageNo = pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
 
@@ -164,7 +166,7 @@ class PageService {
 
 		if (!nextPage) {
 			return {
-				lexiconAdded: [],
+				lexiconAdded,
 				next: null,
 				pageId,
 				status,
@@ -183,7 +185,7 @@ class PageService {
 		const pageLexiconById = mapPageLexicons(contextUsed, lexiconById);
 
 		return {
-			lexiconAdded: [],
+			lexiconAdded,
 			next: {
 				pageId: nextPage.id,
 				pageNo: nextPage.pageNo,
@@ -221,6 +223,7 @@ class PageService {
 
 		return await this.buildVerifyResponse({
 			documentId: page.documentId,
+			lexiconAdded: [],
 			pageId,
 			pageNo: page.pageNo,
 			status: page.status,
@@ -405,6 +408,7 @@ class PageService {
 	}): Promise<{
 		documentId: number;
 		needRederiveStructured: boolean;
+		pageNo: number;
 		pagesToQueue: PageEntity[];
 		response: VerifyPageResponseDto;
 		transcriptionId: number;
@@ -426,10 +430,12 @@ class PageService {
 			return {
 				documentId: page.documentId,
 				needRederiveStructured: false,
+				pageNo: page.pageNo,
 				pagesToQueue: [],
 				response: await this.buildVerifyResponse(
 					{
 						documentId: page.documentId,
+						lexiconAdded: [],
 						pageId,
 						pageNo: page.pageNo,
 						status: page.status,
@@ -443,6 +449,28 @@ class PageService {
 		const needRederiveStructured = isCorrection
 			? await this.handleCorrection({ document, text, transcription, trx })
 			: false;
+
+		let lexiconAdded: VerifyPageLexiconItemDto[] = [];
+
+		const { preset } = document.toObjectWithPreset();
+
+		const minDistinctPages =
+			preset.settings?.minDistinctPages ??
+			DEFAULT_PRESET_SETTINGS.minDistinctPages;
+		const outputSchema = preset.outputSchema;
+
+		if (action === PageVerificationAction.CONFIRM && !existingEvent) {
+			lexiconAdded =
+				await this.lexiconUpdateService.updateLexiconFromVerifiedPage({
+					documentId: page.documentId,
+					minDistinctPages,
+					outputSchema,
+					pageNo: page.pageNo,
+					structured: transcription.structured,
+					text: transcription.text,
+					trx,
+				});
+		}
 
 		await this.applyVerificationUpdate({
 			action,
@@ -479,10 +507,12 @@ class PageService {
 		return {
 			documentId: page.documentId,
 			needRederiveStructured,
+			pageNo: page.pageNo,
 			pagesToQueue,
 			response: await this.buildVerifyResponse(
 				{
 					documentId: page.documentId,
+					lexiconAdded,
 					pageId,
 					pageNo: page.pageNo,
 					status,
@@ -742,6 +772,7 @@ class PageService {
 					currentTranscriptionId: result.transcriptionId,
 					documentId: result.documentId,
 					pageId,
+					pageNo: result.pageNo,
 					text: payload.text,
 				});
 			}
