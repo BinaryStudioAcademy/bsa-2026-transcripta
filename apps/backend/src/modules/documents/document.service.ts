@@ -29,6 +29,7 @@ import {
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { sha256 } from "../context/libs/helpers/hash.helper.js";
+import { refillPageWindow } from "../pages/libs/helpers/helpers.js";
 import { PageEntity } from "../pages/page.entity.js";
 import { type PageRepository } from "../pages/page.repository.js";
 import { DocumentEntity } from "./document.entity.js";
@@ -209,29 +210,12 @@ class DocumentService {
 		}
 	}
 
-	private async enqueueTranscriptionPages(
-		documentId: number,
-		pages: PageEntity[],
-	): Promise<void> {
-		await Promise.all(
-			pages.map((page) => {
-				const { id, pageNo } = page.toObject();
-
-				return this.pageTranscribeQueue.add({
-					documentId,
-					pageId: id,
-					pageNo,
-				});
-			}),
-		);
-	}
-
 	private async finalizeIngest(
 		documentId: number,
 		userId: number,
 		pageCount: number,
-	): Promise<PageEntity[]> {
-		return await DocumentModel.transaction(async (trx) => {
+	): Promise<void> {
+		await DocumentModel.transaction(async (trx) => {
 			const currentDocument =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
 					documentId,
@@ -244,18 +228,15 @@ class DocumentService {
 			}
 
 			await this.documentRepository.updatePageCount(documentId, pageCount, trx);
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.READY,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
 
-			return await this.pageRepository.findQueuedPages(documentId, trx);
+			const currentStatus = currentDocument.toObject().status;
+			if (currentStatus === DocumentStatus.INGESTING) {
+				await this.documentRepository.updateStatus(
+					documentId,
+					DocumentStatus.READY,
+					trx,
+				);
+			}
 		});
 	}
 
@@ -370,12 +351,52 @@ class DocumentService {
 				continue;
 			}
 
-			await this.processPage({
+			const createdPage = await this.processPage({
 				blankStdevThreshold: blankStdevThreshold ?? null,
 				documentId,
 				filePath,
 				page,
 			});
+
+			const pageData = createdPage.toObject();
+
+			if (pageData.status === PageStatus.BLANK) {
+				continue;
+			}
+
+			const documentRecord = await this.documentRepository.findById(documentId);
+			const currentStatus = documentRecord?.toObject().status;
+
+			const isStoppedOrPaused =
+				!currentStatus ||
+				currentStatus === DocumentStatus.BUDGET_STOP ||
+				currentStatus === DocumentStatus.PAUSED;
+
+			if (isStoppedOrPaused) {
+				continue;
+			}
+
+			const newlyQueuedPages = await DocumentModel.transaction(async (trx) => {
+				return await refillPageWindow({
+					documentId,
+					pageRepository: this.pageRepository,
+					quantity: PAGES_TO_QUEUE,
+					trx,
+				});
+			});
+
+			if (newlyQueuedPages.length > EMPTY_LENGTH) {
+				await Promise.all(
+					newlyQueuedPages.map((queuedPage: PageEntity) => {
+						const { id, pageNo } = queuedPage.toObject();
+						return this.pageTranscribeQueue.add({
+							documentId,
+							pageId: id,
+							pageNo,
+						});
+					}),
+				);
+			}
 		}
 
 		return pageCount;
@@ -391,7 +412,7 @@ class DocumentService {
 		documentId: number;
 		filePath: string;
 		page: number;
-	}): Promise<void> {
+	}): Promise<PageEntity> {
 		let pngPath: string;
 		try {
 			pngPath = await this.pdfPageProcessor.convertPageToPNG(filePath, page);
@@ -445,7 +466,7 @@ class DocumentService {
 			status: isBlank ? PageStatus.BLANK : PageStatus.PENDING,
 			thumbKey: thumbnailKey,
 		});
-		await this.pageRepository.create(pageEntity);
+		return await this.pageRepository.create(pageEntity);
 	}
 
 	private throwDocumentNotFoundError(): never {
@@ -789,9 +810,7 @@ class DocumentService {
 
 		try {
 			const pageCount = await this.preparePages(document, filePath);
-			const pages = await this.finalizeIngest(documentId, userId, pageCount);
-
-			await this.enqueueTranscriptionPages(documentId, pages);
+			await this.finalizeIngest(documentId, userId, pageCount);
 		} catch (error) {
 			await this.handleIngestError(documentId, error);
 		} finally {
