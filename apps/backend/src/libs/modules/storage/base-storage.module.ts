@@ -1,8 +1,10 @@
 import {
 	DeleteObjectsCommand,
 	GetObjectCommand,
+	HeadObjectCommand,
 	ListObjectsV2Command,
 	NoSuchKey,
+	NotFound,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -12,11 +14,15 @@ import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { Readable } from "node:stream";
+import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
-import { ObjectNotUploadedError } from "~/libs/exceptions/exceptions.js";
+import {
+	ObjectNotUploadedError,
+	ObjectTooLargeError,
+} from "~/libs/exceptions/exceptions.js";
 import { type Config } from "~/libs/modules/config/config.js";
+import { PAGES_STORAGE_KEY_PREFIX } from "~/modules/documents/libs/constants/pages-storage-key-prefix.constant.js";
 
 import {
 	DELETE_OBJECTS_BATCH_SIZE,
@@ -156,7 +162,10 @@ class BaseStorage implements Storage {
 		return Buffer.from(body);
 	}
 
-	public async downloadToTempFolder(sourceKey: string): Promise<{
+	public async downloadToTempFolder(
+		sourceKey: string,
+		maxSize?: number,
+	): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;
 	}> {
@@ -168,20 +177,58 @@ class BaseStorage implements Storage {
 		};
 
 		try {
+			const bucket = this.buckets[StorageBucket.UPLOADS];
+
+			if (maxSize) {
+				const headCommand = new HeadObjectCommand({
+					Bucket: bucket,
+					Key: sourceKey,
+				});
+				const headResponse = await this.client.send(headCommand);
+
+				if (
+					headResponse.ContentLength &&
+					headResponse.ContentLength > maxSize
+				) {
+					throw new ObjectTooLargeError(StorageErrorMessage.OBJECT_TOO_LARGE);
+				}
+			}
+
 			const temporaryFilePath = path.join(
 				temporaryDirectoryPath,
 				`${TMPFILE_NAME}.pdf`,
 			);
 			const command = new GetObjectCommand({
-				Bucket: this.buckets[StorageBucket.UPLOADS],
+				Bucket: bucket,
 				Key: sourceKey,
 			});
 
 			const response = await this.client.send(command);
 			const nodeStream = response.Body as Readable;
 			const fileWriteStream = fsSync.createWriteStream(temporaryFilePath);
+			let limitStream = null;
 
-			await pipeline(nodeStream, fileWriteStream);
+			if (maxSize) {
+				let downloadedBytes = 0;
+				limitStream = new Transform({
+					transform(chunk: Buffer, _encoding, callback) {
+						downloadedBytes += chunk.length;
+
+						if (downloadedBytes > maxSize) {
+							callback(
+								new ObjectTooLargeError(StorageErrorMessage.OBJECT_TOO_LARGE),
+							);
+							return;
+						}
+
+						callback(null, chunk);
+					},
+				});
+			}
+
+			await (limitStream
+				? pipeline(nodeStream, limitStream, fileWriteStream)
+				: pipeline(nodeStream, fileWriteStream));
 
 			return {
 				clear,
@@ -190,7 +237,7 @@ class BaseStorage implements Storage {
 		} catch (error) {
 			await clear();
 
-			if (error instanceof NoSuchKey) {
+			if (error instanceof NotFound || error instanceof NoSuchKey) {
 				throw new ObjectNotUploadedError(
 					StorageErrorMessage.OBJECT_NOT_UPLOADED,
 				);
@@ -247,8 +294,8 @@ class BaseStorage implements Storage {
 		imageKey: string;
 		thumbnailKey: string;
 	}> {
-		const imageKey = `pages/${documentId.toString()}/${addLeadingZeros(page)}.webp`;
-		const thumbnailKey = `pages/${documentId.toString()}/${addLeadingZeros(
+		const imageKey = `${PAGES_STORAGE_KEY_PREFIX}${documentId.toString()}/${addLeadingZeros(page)}.webp`;
+		const thumbnailKey = `${PAGES_STORAGE_KEY_PREFIX}${documentId.toString()}/${addLeadingZeros(
 			page,
 		)}-thumb.webp`;
 

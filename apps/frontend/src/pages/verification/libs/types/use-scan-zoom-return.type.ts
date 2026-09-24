@@ -1,5 +1,8 @@
 type UseScanZoomReturn = {
-	scanRef: React.RefObject<HTMLDivElement | null>;
+	isZoomed: boolean;
+	resetToTopLeft: () => void;
+	scanRef: (node: HTMLDivElement | null) => void;
+	toggleZoom: () => void;
 	zoom: number;
 };
 

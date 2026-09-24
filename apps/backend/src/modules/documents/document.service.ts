@@ -14,6 +14,7 @@ import { ForeignKeyViolationError } from "objection";
 
 import {
 	ObjectNotUploadedError,
+	ObjectTooLargeError,
 	PDFTimeoutError,
 } from "~/libs/exceptions/exceptions.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
@@ -23,8 +24,8 @@ import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 import {
 	buildContextWords,
-	buildPageLexiconMap,
 	extractLexiconIds,
+	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { sha256 } from "../context/libs/helpers/hash.helper.js";
@@ -38,11 +39,14 @@ import {
 	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
 	NON_DELETABLE_DOCUMENT_STATUSES,
+	PAGES_STORAGE_KEY_PREFIX,
 	PAGES_TO_QUEUE,
+	UPLOADS_STORAGE_KEY_PREFIX,
 } from "./libs/constants/constants.js";
 import {
 	DocumentErrorMessage,
 	DocumentStatus,
+	DocumentValidationRule,
 	PageStatus,
 } from "./libs/enums/enums.js";
 import {
@@ -50,6 +54,7 @@ import {
 	type DocumentGetByIdResponseDto,
 	type DocumentServiceDependencies,
 	type DocumentUploadUrlRequestDto,
+	type ValueOf,
 } from "./libs/types/types.js";
 
 class DocumentService {
@@ -74,7 +79,37 @@ class DocumentService {
 	}
 
 	private buildSourceKey(documentId: number): string {
-		return `uploads/${documentId.toString()}/original.pdf`;
+		return `${UPLOADS_STORAGE_KEY_PREFIX}${documentId.toString()}/original.pdf`;
+	}
+
+	private async checkFileSize(
+		documentId: number,
+		filePath: string,
+	): Promise<void> {
+		let fileSize: number;
+		try {
+			fileSize = await this.pdfPageProcessor.getFileSize(filePath);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setError(documentId, errorMessage);
+			throw new HTTPError({
+				message: errorMessage,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		if (fileSize > DocumentValidationRule.MAX_FILE_BYTES) {
+			await this.documentRepository.setError(
+				documentId,
+				DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+			);
+			throw new HTTPError({
+				message: DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+				status: HTTPCode.CONTENT_TOO_LARGE,
+			});
+		}
 	}
 
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
@@ -100,17 +135,28 @@ class DocumentService {
 		let filePath: string;
 
 		try {
-			const downloadResult = await this.storage.downloadToTempFolder(sourceKey);
+			const downloadResult = await this.storage.downloadToTempFolder(
+				sourceKey,
+				DocumentValidationRule.MAX_FILE_BYTES,
+			);
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
 			const isObjectNotUploaded = error instanceof ObjectNotUploadedError;
-			const finalErrorMessage = isObjectNotUploaded
-				? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
-				: DocumentErrorMessage.DOWNLOAD_FAILED;
-			const statusCode = isObjectNotUploaded
-				? HTTPCode.NOT_FOUND
-				: HTTPCode.INTERNAL_SERVER_ERROR;
+			const isObjectTooLarge = error instanceof ObjectTooLargeError;
+			let finalErrorMessage: string;
+			let statusCode: ValueOf<typeof HTTPCode>;
+
+			if (isObjectNotUploaded) {
+				finalErrorMessage = DocumentErrorMessage.DOCUMENT_NOT_UPLOADED;
+				statusCode = HTTPCode.NOT_FOUND;
+			} else if (isObjectTooLarge) {
+				finalErrorMessage = DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE;
+				statusCode = HTTPCode.CONTENT_TOO_LARGE;
+			} else {
+				finalErrorMessage = DocumentErrorMessage.DOWNLOAD_FAILED;
+				statusCode = HTTPCode.INTERNAL_SERVER_ERROR;
+			}
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
@@ -310,16 +356,17 @@ class DocumentService {
 		filePath: string,
 	): Promise<number> {
 		const { id: documentId, preset } = document.toObjectWithPreset();
+		await this.checkFileSize(documentId, filePath);
 		const pageCount = await this.getIngestPageCount(documentId, filePath);
 		const {
 			settings: { blankStdevThreshold },
 		} = preset;
-		const existingPagesArray =
+		const existingPageNumbers =
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
-		const existingPagesSet = new Set<number>(existingPagesArray);
+		const seenPageNumbers = new Set<number>(existingPageNumbers);
 
 		for (let page = 1; page <= pageCount; page++) {
-			if (existingPagesSet.has(page)) {
+			if (seenPageNumbers.has(page)) {
 				continue;
 			}
 
@@ -411,13 +458,6 @@ class DocumentService {
 	private throwInvalidStatusToPauseError(): never {
 		throw new HTTPError({
 			message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
-			status: HTTPCode.CONFLICT,
-		});
-	}
-
-	private throwInvalidStatusToResumeError(): never {
-		throw new HTTPError({
-			message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
 			status: HTTPCode.CONFLICT,
 		});
 	}
@@ -519,11 +559,11 @@ class DocumentService {
 
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.UPLOADS,
-				prefix: `uploads/${id.toString()}/`,
+				prefix: `${UPLOADS_STORAGE_KEY_PREFIX}${id.toString()}/`,
 			});
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.PAGES,
-				prefix: `pages/${id.toString()}/`,
+				prefix: `${PAGES_STORAGE_KEY_PREFIX}${id.toString()}/`,
 			});
 
 			await this.documentRepository.deleteById(id, trx);
@@ -631,9 +671,8 @@ class DocumentService {
 					this.getPresignedUrl(page.thumbKey),
 				]);
 
-				const text =
-					page.transcriptionEditedText ?? page.transcriptionText ?? "";
-				const pageLexiconById = buildPageLexiconMap(
+				const text = page.transcriptionText ?? "";
+				const pageLexiconById = mapPageLexicons(
 					page.transcriptionContextUsed,
 					lexiconById,
 				);
@@ -685,9 +724,9 @@ class DocumentService {
 				});
 			}
 
-			const documentObject = document.toObject();
+			const documentData = document.toObject();
 
-			if (documentObject.status !== DocumentStatus.DRAFT) {
+			if (documentData.status !== DocumentStatus.DRAFT) {
 				throw new HTTPError({
 					message: DocumentErrorMessage.NOT_DRAFT,
 					status: HTTPCode.CONFLICT,
@@ -804,39 +843,62 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
-	public async resume(documentId: number, userId: number): Promise<void> {
-		const pages = await DocumentModel.transaction(async (trx) => {
-			const document =
-				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+	public async resume(
+		documentId: number,
+		userId: number,
+	): Promise<DocumentGetByIdResponseDto> {
+		const { document, isPaused, pages } = await DocumentModel.transaction(
+			async (trx) => {
+				const document =
+					await this.documentRepository.findByIdAndOwnerIdForUpdateWithDetails(
+						documentId,
+						userId,
+						trx,
+					);
+
+				if (!document) {
+					this.throwDocumentNotFoundError();
+				}
+
+				const documentObject = document.toObject();
+
+				if (documentObject.status !== DocumentStatus.PAUSED) {
+					return { document: documentObject, isPaused: false, pages: [] };
+				}
+
+				await this.documentRepository.updateStatus(
 					documentId,
-					userId,
+					DocumentStatus.PROCESSING,
+					trx,
+				);
+				await this.pageRepository.updateFirstPendingPagesAsQueued(
+					documentId,
+					PAGES_TO_QUEUE,
 					trx,
 				);
 
-			if (!document) {
-				this.throwDocumentNotFoundError();
-			}
+				const pages = await this.pageRepository.findQueuedPages(
+					documentId,
+					trx,
+				);
 
-			if (document.toObject().status !== DocumentStatus.PAUSED) {
-				this.throwInvalidStatusToResumeError();
-			}
+				return {
+					document: {
+						...documentObject,
+						status: DocumentStatus.PROCESSING,
+					},
+					isPaused: true,
+					pages,
+				};
+			},
+		);
 
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.PROCESSING,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
-
-			return await this.pageRepository.findQueuedPages(documentId, trx);
-		});
+		if (!isPaused) {
+			return document;
+		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
-			return;
+			return document;
 		}
 
 		try {
@@ -851,6 +913,8 @@ class DocumentService {
 					});
 				}),
 			);
+
+			return document;
 		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,

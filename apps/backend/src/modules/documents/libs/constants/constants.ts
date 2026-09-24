@@ -5,4 +5,6 @@ export { EMPTY_COLLECTION_LENGTH } from "./empty-collection-length.constant.js";
 export { MAX_DOCUMENT_PAGES } from "./max-document-pages.constant.js";
 export { MIN_NUMBER_OF_FAILED_PAGES } from "./min-number-of-failed-pages.js";
 export { NON_DELETABLE_DOCUMENT_STATUSES } from "./non-deletable-document-statuses.constant.js";
+export { PAGES_STORAGE_KEY_PREFIX } from "./pages-storage-key-prefix.constant.js";
 export { PAGES_TO_QUEUE } from "./pages-to-queue.constant.js";
+export { UPLOADS_STORAGE_KEY_PREFIX } from "./uploads-storage-key-prefix.constant.js";

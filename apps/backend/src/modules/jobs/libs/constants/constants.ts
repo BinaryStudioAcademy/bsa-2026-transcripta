@@ -8,6 +8,7 @@ export { MAX_RETRYABLE_HTTP_CODE } from "./max-retryable-http-code.constant.js";
 export { MAX_TRANSCRIBE_ATTEMPTS } from "./max-transcribe-attempts.constant.js";
 export { ONE } from "./one.constant.js";
 export { PAGE_MEDIA_TYPE } from "./page-media-type.constant.js";
+export { PAGE_TEXT_KEY } from "./page-text-key.constant.js";
 export { RATE_LIMIT_RETRY_DELAY_MS } from "./rate-limit-retry-delay-ms.constant.js";
 export { RETRYABLE_ERROR_NAMES } from "./retryable-error-names.constant.js";
 export { TRANSCRIBABLE_STATUSES } from "./transcribable-statuses.constant.js";

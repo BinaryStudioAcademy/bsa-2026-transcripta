@@ -65,8 +65,6 @@ const Documents: React.FC = () => {
 
 	const handleRowActionClick = useCallback(
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			event.preventDefault();
-
 			const documentId = event.currentTarget
 				.closest("[role=row]")
 				?.getAttribute("data-document-id");
@@ -180,9 +178,6 @@ const Documents: React.FC = () => {
 
 	const handleRaiseLimitClick = useCallback(
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			event.preventDefault();
-			event.stopPropagation();
-
 			const documentId = event.currentTarget
 				.closest("[role=row]")
 				?.getAttribute("data-document-id");
@@ -242,22 +237,36 @@ const Documents: React.FC = () => {
 							.join(" ")}
 						role="table"
 					>
-						<div role="row">
-							<span role="columnheader">Title</span>
-							<span role="columnheader">Status</span>
+						<div className="tx-table__row" role="row">
+							<span className="tx-table__columnheader" role="columnheader">
+								Title
+							</span>
+							<span className="tx-table__columnheader" role="columnheader">
+								Status
+							</span>
 							<span
-								className={styles["documents-page__num-header"]}
+								className={[
+									"tx-table__columnheader",
+									styles["documents-page__num-header"],
+								]
+									.filter(Boolean)
+									.join(" ")}
 								role="columnheader"
 							>
 								Progress
 							</span>
 							<span
-								className={styles["documents-page__num-header"]}
+								className={[
+									"tx-table__columnheader",
+									styles["documents-page__num-header"],
+								]
+									.filter(Boolean)
+									.join(" ")}
 								role="columnheader"
 							>
 								Spent
 							</span>
-							<span role="columnheader" />
+							<span className="tx-table__columnheader" role="columnheader" />
 						</div>
 
 						{documents.map((document) => {
@@ -283,26 +292,39 @@ const Documents: React.FC = () => {
 
 							return (
 								<div
+									className="tx-table__row"
 									data-document-id={document.id}
 									key={document.id}
 									role="row"
 								>
-									<Link
-										className={styles["documents-page__row"] ?? ""}
-										onKeyDown={handleRowKeyDown}
-										state={rowState}
-										to={rowRoute}
-									>
+									<div className={styles["documents-page__row"]}>
 										<span
-											className={styles["documents-page__title-cell"]}
+											className={[
+												"tx-table__cell",
+												styles["documents-page__title-cell"],
+											]
+												.filter(Boolean)
+												.join(" ")}
 											role="cell"
 										>
-											<span className={styles["documents-page__title-text"]}>
-												{document.title}
-											</span>
+											<Link
+												className={styles["documents-page__row-link"] ?? ""}
+												onKeyDown={handleRowKeyDown}
+												state={rowState}
+												to={rowRoute}
+											>
+												<span className={styles["documents-page__title-text"]}>
+													{document.title}
+												</span>
+											</Link>
 										</span>
 										<span
-											className={styles["documents-page__status-cell"]}
+											className={[
+												"tx-table__cell",
+												styles["documents-page__status-cell"],
+											]
+												.filter(Boolean)
+												.join(" ")}
 											role="cell"
 										>
 											<StatusChip status={document.status} />
@@ -310,13 +332,19 @@ const Documents: React.FC = () => {
 											{document.status !== DocumentStatus.FAILED &&
 												document.pagesFailed > EMPTY_LENGTH && (
 													<Button
-														className={styles["documents-page__reread-link"]}
+														className={[
+															styles["documents-page__row-action"],
+															styles["documents-page__reread-link"],
+														]
+															.filter(Boolean)
+															.join(" ")}
 														label="Open to re-read failed pages"
 														onClick={handleRowActionClick}
 													/>
 												)}
 											{document.status === DocumentStatus.BUDGET_STOP && (
 												<Button
+													className={styles["documents-page__row-action"]}
 													isSecondary
 													isSmall
 													label="Raise the limit"
@@ -324,15 +352,15 @@ const Documents: React.FC = () => {
 												/>
 											)}
 										</span>
-										<span className="tx-num" role="cell">
+										<span className="tx-table__cell tx-num" role="cell">
 											{progressCursor} / {document.pageCount}
 										</span>
-										<span className="tx-num" role="cell">
+										<span className="tx-table__cell tx-num" role="cell">
 											{formatMoney(document.spentUsd)} /{" "}
 											{formatMoney(document.budgetUsd)}
 										</span>
-									</Link>
-									<span role="cell">
+									</div>
+									<span className="tx-table__cell" role="cell">
 										<OverflowMenu
 											items={[
 												{

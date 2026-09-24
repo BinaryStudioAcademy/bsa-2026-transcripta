@@ -13,6 +13,10 @@ import {
 	reducer as documentsReducer,
 } from "~/modules/documents/documents.js";
 import { pageApi, reducer as pagesReducer } from "~/modules/pages/pages.js";
+import {
+	presetApi,
+	reducer as presetsReducer,
+} from "~/modules/presets/presets.js";
 import { userApi, reducer as usersReducer } from "~/modules/users/users.js";
 
 import { errorHandlingMiddleware } from "../middlewares/middlewares.js";
@@ -21,6 +25,7 @@ type ExtraArguments = {
 	authApi: typeof authApi;
 	documentApi: typeof documentApi;
 	pageApi: typeof pageApi;
+	presetApi: typeof presetApi;
 	userApi: typeof userApi;
 };
 
@@ -28,6 +33,7 @@ type RootReducer = {
 	auth: ReturnType<typeof authReducer>;
 	documents: ReturnType<typeof documentsReducer>;
 	pages: ReturnType<typeof pagesReducer>;
+	presets: ReturnType<typeof presetsReducer>;
 	users: ReturnType<typeof usersReducer>;
 };
 
@@ -54,6 +60,7 @@ class Store {
 				auth: authReducer,
 				documents: documentsReducer,
 				pages: pagesReducer,
+				presets: presetsReducer,
 				users: usersReducer,
 			},
 		});
@@ -64,6 +71,7 @@ class Store {
 			authApi,
 			documentApi,
 			pageApi,
+			presetApi,
 			userApi,
 		};
 	}
