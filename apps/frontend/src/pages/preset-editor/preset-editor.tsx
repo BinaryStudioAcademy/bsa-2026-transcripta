@@ -1,26 +1,58 @@
-import { FIRST_INDEX } from "~/libs/constants/common.constants.js";
+import React, { type ChangeEvent } from "react";
+
+import {
+	EMPTY_LENGTH,
+	FIRST_INDEX,
+} from "~/libs/constants/common.constants.js";
+import { DataStatus } from "~/libs/enums/enums.js";
+import {
+	useAppDispatch,
+	useAppSelector,
+	useCallback,
+	useEffect,
+	useState,
+} from "~/libs/hooks/hooks.js";
+import { actions as presetsActions } from "~/modules/presets/presets.js";
 
 import "./preset-editor.css";
-
-import { useCallback, useState } from "~/libs/hooks/hooks.js";
 
 import type {
 	GlossaryEntry,
 	GlossaryType,
 } from "./libs/types/preset-editor.types.js";
 
-import {
-	BASE_PRESETS,
-	GLOSSARY_TYPES,
-	INITIAL_ENTRIES,
-	OUTPUT_FIELDS,
-} from "./libs/constants/preset-editor.constants.js";
+import { GLOSSARY_TYPES } from "./libs/constants/preset-editor.constants.js";
 
 const createEntry = (): GlossaryEntry => ({
 	id: crypto.randomUUID(),
 	kind: "term",
 	value: "",
 });
+
+const isGlossaryType = (value: unknown): value is GlossaryType =>
+	typeof value === "string" && GLOSSARY_TYPES.includes(value as GlossaryType);
+
+const mapSeedGlossary = (
+	seedGlossary: Record<string, unknown>[] | string[],
+): GlossaryEntry[] =>
+	seedGlossary.map((entry) => {
+		if (typeof entry === "string") {
+			return {
+				id: crypto.randomUUID(),
+				kind: "term",
+				value: entry,
+			};
+		}
+
+		const kind = entry["kind"];
+		const value = entry["value"];
+
+		return {
+			id: crypto.randomUUID(),
+			kind: isGlossaryType(kind) ? kind : "term",
+			value: typeof value === "string" ? value : "",
+		};
+	});
 
 const handleCancel = (): void => {
 	// TODO: Navigate back when routing is connected.
@@ -31,24 +63,59 @@ const handleSubmit = (): void => {
 };
 
 const PresetEditor: React.FC = () => {
-	const [basePresetId, setBasePresetId] = useState(
-		BASE_PRESETS[FIRST_INDEX]?.id,
+	const dispatch = useAppDispatch();
+
+	const { presets, selectedPreset, selectedPresetStatus } = useAppSelector(
+		({ presets }) => ({
+			presets: presets.presets,
+			selectedPreset: presets.selectedPreset,
+			selectedPresetStatus: presets.selectedPresetStatus,
+		}),
 	);
-	const [name, setName] = useState("Dykanka, 1880s");
-	const [description, setDescription] = useState(
-		"Transcription preset for historical parish registers.",
-	);
-	const [instructions, setInstructions] = useState(
-		"This is a page from a late 19th-century parish register. Cursive, faded ink. Preserve the original spelling — do not modernise it.",
-	);
-	const [entries, setEntries] = useState<GlossaryEntry[]>(
-		INITIAL_ENTRIES.map((entry) => ({
-			id: crypto.randomUUID(),
-			kind: entry.kind,
-			value: entry.value,
-		})),
-	);
+
+	const [basePresetId, setBasePresetId] = useState<null | number>(null);
+	const [name, setName] = useState("");
+	const [instructions, setInstructions] = useState("");
+	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
+
+	const isPresetLoading = selectedPresetStatus === DataStatus.PENDING;
+
+	const outputFields = selectedPreset
+		? Object.keys(selectedPreset.outputSchema)
+		: [];
+
+	useEffect(() => {
+		if (presets.length === EMPTY_LENGTH) {
+			void dispatch(presetsActions.loadAll());
+		}
+	}, [dispatch, presets.length]);
+
+	useEffect(() => {
+		if (basePresetId !== null || presets.length === EMPTY_LENGTH) {
+			return;
+		}
+
+		const firstPreset = presets[FIRST_INDEX];
+
+		if (!firstPreset) {
+			return;
+		}
+
+		setBasePresetId(firstPreset.id);
+		void dispatch(presetsActions.loadById(firstPreset.id));
+	}, [basePresetId, dispatch, presets]);
+
+	useEffect(() => {
+		if (!selectedPreset) {
+			return;
+		}
+
+		setName(selectedPreset.name);
+		setInstructions(selectedPreset.instructions);
+		setEntries(mapSeedGlossary(selectedPreset.seedGlossary));
+		setOpenTypeId(null);
+	}, [selectedPreset]);
 
 	const handleAddEntry = useCallback((): void => {
 		setEntries((currentEntries) => [...currentEntries, createEntry()]);
@@ -80,28 +147,24 @@ const PresetEditor: React.FC = () => {
 	}, []);
 
 	const handleBasePresetChange = useCallback(
-		(event: React.ChangeEvent<HTMLSelectElement>): void => {
-			setBasePresetId(event.target.value);
+		(event: ChangeEvent<HTMLSelectElement>): void => {
+			const presetId = Number(event.target.value);
+
+			setBasePresetId(presetId);
+			void dispatch(presetsActions.loadById(presetId));
 		},
-		[],
+		[dispatch],
 	);
 
 	const handleNameChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>): void => {
+		(event: ChangeEvent<HTMLInputElement>): void => {
 			setName(event.target.value);
 		},
 		[],
 	);
 
-	const handleDescriptionChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>): void => {
-			setDescription(event.target.value);
-		},
-		[],
-	);
-
 	const handleInstructionsChange = useCallback(
-		(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+		(event: ChangeEvent<HTMLTextAreaElement>): void => {
 			setInstructions(event.target.value);
 		},
 		[],
@@ -124,18 +187,18 @@ const PresetEditor: React.FC = () => {
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
 			const { id, kind } = event.currentTarget.dataset;
 
-			if (!id || !kind) {
+			if (!id || !kind || !isGlossaryType(kind)) {
 				return;
 			}
 
-			handleKindChange(id, kind as GlossaryType);
+			handleKindChange(id, kind);
 			setOpenTypeId(null);
 		},
 		[handleKindChange],
 	);
 
 	const handleGlossaryValueChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>): void => {
+		(event: ChangeEvent<HTMLInputElement>): void => {
 			const { id } = event.currentTarget.dataset;
 
 			if (!id) {
@@ -181,11 +244,16 @@ const PresetEditor: React.FC = () => {
 
 								<select
 									className="tx-input"
+									disabled={presets.length === EMPTY_LENGTH}
 									id="based-on"
 									onChange={handleBasePresetChange}
-									value={basePresetId}
+									value={basePresetId ?? ""}
 								>
-									{BASE_PRESETS.map((preset) => (
+									{presets.length === EMPTY_LENGTH && (
+										<option value="">Loading presets...</option>
+									)}
+
+									{presets.map((preset) => (
 										<option key={preset.id} value={preset.id}>
 											{preset.name}
 										</option>
@@ -200,22 +268,10 @@ const PresetEditor: React.FC = () => {
 
 								<input
 									className="tx-input"
+									disabled={isPresetLoading}
 									id="preset-name"
 									onChange={handleNameChange}
 									value={name}
-								/>
-							</div>
-
-							<div className="preset-editor__field">
-								<label className="tx-label" htmlFor="preset-description">
-									Description
-								</label>
-
-								<input
-									className="tx-input"
-									id="preset-description"
-									onChange={handleDescriptionChange}
-									value={description}
 								/>
 							</div>
 						</div>
@@ -227,6 +283,7 @@ const PresetEditor: React.FC = () => {
 
 							<textarea
 								className="tx-input preset-editor__instructions"
+								disabled={isPresetLoading}
 								id="instructions"
 								onChange={handleInstructionsChange}
 								rows={3}
@@ -245,6 +302,7 @@ const PresetEditor: React.FC = () => {
 
 								<button
 									className="tx-btn tx-btn--secondary tx-btn--sm"
+									disabled={isPresetLoading}
 									onClick={handleAddEntry}
 									type="button"
 								>
@@ -345,7 +403,7 @@ const PresetEditor: React.FC = () => {
 							</div>
 
 							<div className="preset-editor__output-fields">
-								{OUTPUT_FIELDS.map((field) => (
+								{outputFields.map((field) => (
 									<span className="preset-editor__output-item" key={field}>
 										<span className="preset-editor__output-chip">{field}</span>
 										<span className="preset-editor__output-separator">·</span>
@@ -363,6 +421,7 @@ const PresetEditor: React.FC = () => {
 							<div className="preset-editor__buttons">
 								<button
 									className="tx-btn tx-btn--ghost"
+									disabled={isPresetLoading}
 									onClick={handleCancel}
 									type="button"
 								>
@@ -371,6 +430,7 @@ const PresetEditor: React.FC = () => {
 
 								<button
 									className="tx-btn tx-btn--primary"
+									disabled={isPresetLoading}
 									onClick={handleSubmit}
 									type="button"
 								>
