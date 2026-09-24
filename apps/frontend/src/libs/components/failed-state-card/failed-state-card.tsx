@@ -4,6 +4,7 @@ type Properties = {
 	attempts: number;
 	isLoading: boolean;
 	onReRead: () => void;
+	onTypeByHand: () => void;
 	reason: string;
 };
 
@@ -11,6 +12,7 @@ const FailedStateCard: React.FC<Properties> = ({
 	attempts,
 	isLoading,
 	onReRead,
+	onTypeByHand,
 	reason,
 }: Properties) => {
 	return (
@@ -23,6 +25,13 @@ const FailedStateCard: React.FC<Properties> = ({
 					isSecondary
 					label="Re-read"
 					onClick={onReRead}
+					type="button"
+				/>
+				<Button
+					isDisabled={isLoading}
+					label="Type it by hand"
+					onClick={onTypeByHand}
+					type="button"
 				/>
 			</div>
 		</div>
