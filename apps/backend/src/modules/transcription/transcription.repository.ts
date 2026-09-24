@@ -2,6 +2,7 @@ import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 
+import { EMPTY_LENGTH } from "./libs/constants/constants.js";
 import { type TranscriptionDebugRow } from "./libs/types/types.js";
 import { TranscriptionModel } from "./transcription.model.js";
 
@@ -56,16 +57,32 @@ class TranscriptionRepository {
 			.first();
 	}
 
-	public async updateEditedStructured(
-		id: number,
-		editedStructured: null | Record<string, unknown>,
-		trx?: Transaction,
-	): Promise<void> {
-		await this.transcriptionModel
+	public async updateEditedStructuredIfActual({
+		editedStructured,
+		id,
+		jobCreatedAt,
+		trx,
+	}: {
+		editedStructured: null | Record<string, unknown>;
+		id: number;
+		jobCreatedAt: string;
+		trx?: Transaction;
+	}): Promise<boolean> {
+		const updatedRows = await this.transcriptionModel
 			.query(trx)
-			.patch({ editedStructured })
+			.patch({
+				editedStructured,
+				rederiveStructuredJobCreatedAt: jobCreatedAt,
+			})
 			.where({ id })
+			.andWhere((builder) => {
+				builder
+					.whereNull("rederiveStructuredJobCreatedAt")
+					.orWhere("rederiveStructuredJobCreatedAt", "<=", jobCreatedAt);
+			})
 			.execute();
+
+		return updatedRows > EMPTY_LENGTH;
 	}
 
 	public async updateEditedText(
