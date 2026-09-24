@@ -1,13 +1,14 @@
 import { EMPTY_LENGTH, HTTPCode } from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useBlocker } from "react-router-dom";
+import { type NavigateFunction, useBlocker } from "react-router-dom";
 
 import { ThemeToggle } from "~/libs/components/components.js";
 import {
 	INITIAL_COUNT as EMPTY_COUNT,
+	INGESTION_FAILED_MESSAGE,
 	UPLOAD_WARNING_MESSAGE,
 } from "~/libs/constants/constants.js";
-import { AppRoute, BlockerState, DataStatus } from "~/libs/enums/enums.js";
+import { AppRoute, BlockerState } from "~/libs/enums/enums.js";
 import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -21,6 +22,7 @@ import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
+	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { actions as presetsActions } from "~/modules/presets/presets.js";
@@ -178,6 +180,111 @@ const performUploadAttempts = async ({
 	}
 };
 
+type UseIngestPollingParameters = {
+	dispatch: ReturnType<typeof useAppDispatch>;
+	ingestingDocumentId: null | number;
+	navigate: NavigateFunction;
+	resumedDocument: DocumentGetByIdResponseDto | null;
+	setIngestingDocumentId: React.Dispatch<React.SetStateAction<null | number>>;
+	setRejection: React.Dispatch<React.SetStateAction<null | string>>;
+};
+
+const useIngestPolling = ({
+	dispatch,
+	ingestingDocumentId,
+	navigate,
+	resumedDocument,
+	setIngestingDocumentId,
+	setRejection,
+}: UseIngestPollingParameters): void => {
+	useEffect(() => {
+		if (!ingestingDocumentId) {
+			return;
+		}
+
+		const startedAt = Date.now();
+
+		void dispatch(documentActions.loadById(ingestingDocumentId));
+
+		const poll = (): void => {
+			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
+				setIngestingDocumentId(null);
+				const timeoutMessage =
+					resumedDocument?.errorMessage ?? INGESTION_FAILED_MESSAGE;
+
+				setRejection(timeoutMessage);
+
+				void (async (): Promise<void> => {
+					await navigate(
+						configureString(AppRoute.DOCUMENT, {
+							id: String(ingestingDocumentId),
+						}),
+						{ state: { errorMessage: timeoutMessage } },
+					);
+				})();
+				return;
+			}
+
+			void dispatch(documentActions.pollDocumentById(ingestingDocumentId));
+		};
+
+		const timer = setInterval(poll, INGEST_POLL_INTERVAL_MS);
+
+		return (): void => {
+			clearInterval(timer);
+		};
+	}, [
+		dispatch,
+		ingestingDocumentId,
+		navigate,
+		resumedDocument?.errorMessage,
+		setIngestingDocumentId,
+		setRejection,
+	]);
+
+	useEffect(() => {
+		if (!ingestingDocumentId || resumedDocument?.id !== ingestingDocumentId) {
+			return;
+		}
+
+		const { progress, status } = resumedDocument;
+
+		if (status === DocumentStatus.FAILED) {
+			setIngestingDocumentId(null);
+			const errorMessage =
+				resumedDocument.errorMessage ?? INGESTION_FAILED_MESSAGE;
+
+			setRejection(errorMessage);
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, {
+						id: String(ingestingDocumentId),
+					}),
+					{ state: { errorMessage } },
+				);
+			})();
+			return;
+		}
+
+		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
+			setIngestingDocumentId(null);
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.VERIFICATION, {
+						id: String(ingestingDocumentId),
+					}),
+				);
+			})();
+		}
+	}, [
+		ingestingDocumentId,
+		navigate,
+		resumedDocument,
+		setIngestingDocumentId,
+		setRejection,
+	]);
+};
+
 const DocumentNew: React.FC = () => {
 	const { presets } = useAppSelector(({ presets }) => ({
 		presets: presets.presets,
@@ -191,10 +298,20 @@ const DocumentNew: React.FC = () => {
 	const [ingestingDocumentId, setIngestingDocumentId] = useState<null | number>(
 		null,
 	);
+	const [isIngesting, setIsIngesting] = useState(false);
 
 	const fileInputReference = useRef<HTMLInputElement>(null);
 	const abortControllerReference = useRef<AbortController | null>(null);
 	const createdDocumentIdReference = useRef<null | number>(null);
+
+	const isMountedReference = useRef(true);
+
+	useEffect(() => {
+		isMountedReference.current = true;
+		return () => {
+			isMountedReference.current = false;
+		};
+	}, []);
 
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
@@ -277,10 +394,7 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [blocker, resetZipProcessor]);
 
-	const { dataStatus, resumedDocument } = useAppSelector(({ documents }) => ({
-		dataStatus: documents.dataStatus,
-		resumedDocument: documents.document,
-	}));
+	const resumedDocument = useAppSelector(({ documents }) => documents.document);
 
 	const handleUpload = useCallback(
 		(values: UploadFormValues) => {
@@ -339,6 +453,8 @@ const DocumentNew: React.FC = () => {
 		setSelectedArchive(null);
 		setRejection(null);
 		setUploadProgress(ZERO_UPLOAD_PROGRESS);
+		setIsUploaded(false);
+		createdDocumentIdReference.current = null;
 
 		if (fileInputReference.current) {
 			fileInputReference.current.value = "";
@@ -358,10 +474,11 @@ const DocumentNew: React.FC = () => {
 
 	const goToDocument = useCallback(
 		(documentId: number): void => {
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
-			);
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+				);
+			})();
 		},
 		[navigate],
 	);
@@ -373,14 +490,32 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback(() => {
-		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
-		if (!targetId) {
-			return;
-		}
+	const handleProcessDocument = useCallback((): void => {
+		void (async (): Promise<void> => {
+			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
+			if (!targetId) {
+				return;
+			}
 
-		setIngestingDocumentId(Number(targetId));
-		void dispatch(documentActions.ingest(Number(targetId)));
+			const documentId = Number(targetId);
+			setIsIngesting(true);
+			setIngestingDocumentId(documentId);
+			setRejection(null);
+
+			try {
+				await dispatch(documentActions.ingest(documentId)).unwrap();
+			} catch {
+				if (!isMountedReference.current) {
+					return;
+				}
+
+				setIngestingDocumentId(null);
+			} finally {
+				if (isMountedReference.current) {
+					setIsIngesting(false);
+				}
+			}
+		})();
 	}, [resumeDocumentId, dispatch]);
 
 	const acceptFile = useCallback(
@@ -406,59 +541,19 @@ const DocumentNew: React.FC = () => {
 
 	const handleChangeFile = useCallback((): void => {
 		resetSelection();
-	}, [resetSelection]);
+		void (async (): Promise<void> => {
+			await navigate(location.pathname, { replace: true, state: {} });
+		})();
+	}, [resetSelection, navigate, location.pathname]);
 
-	useEffect(() => {
-		if (!ingestingDocumentId) {
-			return;
-		}
-
-		const startedAt = Date.now();
-
-		void dispatch(documentActions.loadById(ingestingDocumentId));
-
-		const poll = (): void => {
-			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
-				setIngestingDocumentId(null);
-				goToDocument(ingestingDocumentId);
-
-				return;
-			}
-
-			void dispatch(documentActions.pollDocumentById(ingestingDocumentId));
-		};
-
-		const timer = setInterval(poll, INGEST_POLL_INTERVAL_MS);
-
-		return (): void => {
-			clearInterval(timer);
-		};
-	}, [dispatch, goToDocument, ingestingDocumentId]);
-
-	useEffect(() => {
-		if (!ingestingDocumentId || resumedDocument?.id !== ingestingDocumentId) {
-			return;
-		}
-
-		const { progress, status } = resumedDocument;
-
-		if (status === DocumentStatus.FAILED) {
-			setIngestingDocumentId(null);
-			goToDocument(ingestingDocumentId);
-
-			return;
-		}
-
-		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
-			setIngestingDocumentId(null);
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.VERIFICATION, {
-					id: String(ingestingDocumentId),
-				}),
-			);
-		}
-	}, [goToDocument, ingestingDocumentId, navigate, resumedDocument]);
+	useIngestPolling({
+		dispatch,
+		ingestingDocumentId,
+		navigate,
+		resumedDocument,
+		setIngestingDocumentId,
+		setRejection,
+	});
 
 	const getScreenState = (): ScreenStateType => {
 		if (ingestingDocumentId) {
@@ -478,8 +573,7 @@ const DocumentNew: React.FC = () => {
 	};
 
 	const screenState = getScreenState();
-	const isSubmitting = dataStatus === DataStatus.PENDING;
-	const isFormDisabled = isSubmitting || isUploading || isUploaded;
+	const isSubmitting = isUploading || isIngesting;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
 
 	const presetOptions =
@@ -533,10 +627,14 @@ const DocumentNew: React.FC = () => {
 									fileSize={selectedFile.size}
 									percent={uploadProgress}
 								/>
+								{rejection && (
+									<div className={styles["rejection-error"]}>{rejection}</div>
+								)}
 								<UploadForm
 									fileName={displayTitle}
-									isSubmitting={isFormDisabled}
+									isSubmitting={isSubmitting}
 									isUploaded={isUploaded}
+									isUploading={isUploading}
 									onCancelUpload={handleCancelUpload}
 									onChangeFile={handleChangeFile}
 									onProcessDocument={handleProcessDocument}

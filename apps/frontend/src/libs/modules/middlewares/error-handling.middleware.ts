@@ -29,6 +29,10 @@ errorHandlingMiddleware.startListening({
 			return;
 		}
 
+		if (action.type === documentActions.ingest.rejected.type) {
+			return;
+		}
+
 		const error = action.error as SerializedAppError;
 
 		if (

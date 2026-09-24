@@ -18,6 +18,7 @@ type Properties = {
 	fileName: string;
 	isSubmitting: boolean;
 	isUploaded: boolean;
+	isUploading: boolean;
 	onCancelUpload: () => void;
 	onChangeFile: () => void;
 	onProcessDocument: () => void;
@@ -29,6 +30,7 @@ const UploadForm: React.FC<Properties> = ({
 	fileName,
 	isSubmitting = false,
 	isUploaded = false,
+	isUploading = false,
 	onCancelUpload,
 	onChangeFile,
 	onProcessDocument,
@@ -59,6 +61,49 @@ const UploadForm: React.FC<Properties> = ({
 		[handleSubmit, onSubmit],
 	);
 
+	let actionsContent = null;
+
+	if (isUploaded) {
+		actionsContent = (
+			<>
+				<Button
+					isDisabled={isSubmitting}
+					isPrimary
+					label={isSubmitting ? "Processing..." : "Start Processing"}
+					onClick={onProcessDocument}
+					type="button"
+				/>
+				<Button
+					isDisabled={isSubmitting}
+					label="Change file"
+					onClick={onChangeFile}
+					type="button"
+				/>
+			</>
+		);
+	} else if (isUploading) {
+		actionsContent = (
+			<Button label="Cancel Upload" onClick={onCancelUpload} type="button" />
+		);
+	} else {
+		actionsContent = (
+			<>
+				<Button
+					isDisabled={isSubmitting}
+					isPrimary
+					label="Upload"
+					type="submit"
+				/>
+				<Button
+					isDisabled={isSubmitting}
+					label="Change file"
+					onClick={onChangeFile}
+					type="button"
+				/>
+			</>
+		);
+	}
+
 	return (
 		<form className={styles["upload-form"]} onSubmit={handleFormSubmit}>
 			<Input
@@ -76,28 +121,7 @@ const UploadForm: React.FC<Properties> = ({
 				name="presetId"
 				options={presetOptions}
 			/>
-			<div className={styles["upload-form__actions"]}>
-				{isUploaded && (
-					<Button
-						isPrimary
-						label="Start Processing"
-						onClick={onProcessDocument}
-						type="button"
-					/>
-				)}
-				{isSubmitting ? (
-					<Button
-						label="Cancel Upload"
-						onClick={onCancelUpload}
-						type="button"
-					/>
-				) : (
-					<>
-						<Button isPrimary label="Upload" type="submit" />
-						<Button label="Change file" onClick={onChangeFile} type="button" />
-					</>
-				)}
-			</div>
+			<div className={styles["upload-form__actions"]}>{actionsContent}</div>
 		</form>
 	);
 };

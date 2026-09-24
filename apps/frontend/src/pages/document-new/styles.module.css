@@ -36,3 +36,12 @@
 	max-width: 600px;
 	margin: 0 auto;
 }
+
+.rejection-error {
+	padding: var(--sp-3) var(--sp-4);
+	font: 500 var(--fs-sm) / var(--lh-ui) var(--font-ui);
+	color: var(--danger-text);
+	background: var(--danger-tint);
+	border: 1px solid var(--danger);
+	border-radius: var(--r-md);
+}
