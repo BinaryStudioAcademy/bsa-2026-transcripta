@@ -339,9 +339,7 @@ class DocumentService {
 		const { id: documentId, preset } = document.toObjectWithPreset();
 		await this.checkFileSize(documentId, filePath);
 		const pageCount = await this.getIngestPageCount(documentId, filePath);
-		const {
-			settings: { blankStdevThreshold },
-		} = preset;
+		const { blankStdevThreshold } = preset.settings ?? {};
 		const existingPageNumbers =
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
 		const seenPageNumbers = new Set<number>(existingPageNumbers);
