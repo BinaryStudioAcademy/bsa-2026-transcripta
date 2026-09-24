@@ -85,6 +85,18 @@ const overridesConfigs = [
 			"unicorn/prevent-abbreviations": ["off"],
 		},
 	},
+	{
+		files: ["src/libs/modules/logger/logger.ts"],
+		rules: {
+			"no-console": ["off"],
+		},
+	},
+	{
+		files: ["src/libs/workers/zip-to-pdf.worker.ts"],
+		rules: {
+			"sonarjs/post-message": ["off"],
+		},
+	},
 ];
 
 /** @type {Config[]} */

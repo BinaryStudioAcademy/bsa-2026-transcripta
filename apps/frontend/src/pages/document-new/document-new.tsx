@@ -197,6 +197,12 @@ const useIngestPolling = ({
 	setIngestingDocumentId,
 	setRejection,
 }: UseIngestPollingParameters): void => {
+	const resumedDocumentReference = useRef(resumedDocument);
+
+	useEffect(() => {
+		resumedDocumentReference.current = resumedDocument;
+	}, [resumedDocument]);
+
 	useEffect(() => {
 		if (!ingestingDocumentId) {
 			return;
@@ -210,7 +216,8 @@ const useIngestPolling = ({
 			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
 				setIngestingDocumentId(null);
 				const timeoutMessage =
-					resumedDocument?.errorMessage ?? INGESTION_FAILED_MESSAGE;
+					resumedDocumentReference.current?.errorMessage ??
+					INGESTION_FAILED_MESSAGE;
 
 				setRejection(timeoutMessage);
 
@@ -237,7 +244,6 @@ const useIngestPolling = ({
 		dispatch,
 		ingestingDocumentId,
 		navigate,
-		resumedDocument?.errorMessage,
 		setIngestingDocumentId,
 		setRejection,
 	]);
@@ -295,10 +301,10 @@ const DocumentNew: React.FC = () => {
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isUploaded, setIsUploaded] = useState(false);
+	const [isStartingProcessing, setIsStartingProcessing] = useState(false);
 	const [ingestingDocumentId, setIngestingDocumentId] = useState<null | number>(
 		null,
 	);
-	const [isIngesting, setIsIngesting] = useState(false);
 
 	const fileInputReference = useRef<HTMLInputElement>(null);
 	const abortControllerReference = useRef<AbortController | null>(null);
@@ -490,33 +496,43 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback((): void => {
-		void (async (): Promise<void> => {
+	const handleProcessDocument = useCallback(
+		(values: UploadFormValues): void => {
 			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
-			if (!targetId) {
+
+			if (!targetId || isStartingProcessing) {
 				return;
 			}
 
 			const documentId = Number(targetId);
-			setIsIngesting(true);
-			setIngestingDocumentId(documentId);
-			setRejection(null);
 
-			try {
-				await dispatch(documentActions.ingest(documentId)).unwrap();
-			} catch {
-				if (!isMountedReference.current) {
+			const startProcessing = async (): Promise<void> => {
+				setIsStartingProcessing(true);
+
+				try {
+					await dispatch(
+						documentActions.getUploadUrl({
+							id: documentId,
+							payload: {
+								presetId: values.presetId,
+								title: values.title,
+							},
+						}),
+					).unwrap();
+				} catch {
 					return;
+				} finally {
+					setIsStartingProcessing(false);
 				}
 
-				setIngestingDocumentId(null);
-			} finally {
-				if (isMountedReference.current) {
-					setIsIngesting(false);
-				}
-			}
-		})();
-	}, [resumeDocumentId, dispatch]);
+				setIngestingDocumentId(documentId);
+				void dispatch(documentActions.ingest(documentId));
+			};
+
+			void startProcessing();
+		},
+		[dispatch, isStartingProcessing, resumeDocumentId],
+	);
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -573,7 +589,8 @@ const DocumentNew: React.FC = () => {
 	};
 
 	const screenState = getScreenState();
-	const isSubmitting = isUploading || isIngesting;
+	const isSubmitting = isUploading;
+	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
 
 	const presetOptions =
@@ -632,7 +649,8 @@ const DocumentNew: React.FC = () => {
 								)}
 								<UploadForm
 									fileName={displayTitle}
-									isSubmitting={isSubmitting}
+									isStartingProcessing={isStartingProcessing}
+									isSubmitting={isFormDisabled}
 									isUploaded={isUploaded}
 									isUploading={isUploading}
 									onCancelUpload={handleCancelUpload}

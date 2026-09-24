@@ -61,18 +61,16 @@ const verifyPage = createAsyncThunk<
 );
 
 const reprocessPage = createAsyncThunk<
-	undefined,
+	null,
 	ReprocessPageParameters,
 	AsyncThunkConfig
 >(
 	`${sliceName}/reprocess`,
 	async ({ pageId }, { extra }) => {
 		const { pageApi } = extra;
-
 		await pageApi.reprocess(pageId);
 
-		// eslint-disable-next-line unicorn/no-useless-undefined -- createAsyncThunk<undefined, ...> requires an explicit undefined return to satisfy AsyncThunkPayloadCreatorReturnValue
-		return undefined;
+		return null;
 	},
 	{ serializeError },
 );

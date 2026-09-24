@@ -16,18 +16,20 @@ import styles from "./styles.module.css";
 
 type Properties = {
 	fileName: string;
+	isStartingProcessing: boolean;
 	isSubmitting: boolean;
 	isUploaded: boolean;
 	isUploading: boolean;
 	onCancelUpload: () => void;
 	onChangeFile: () => void;
-	onProcessDocument: () => void;
+	onProcessDocument: (values: UploadFormValues) => void;
 	onSubmit: (values: UploadFormValues) => void;
 	presetOptions: PresetGetAllItemResponseDto[];
 };
 
 const UploadForm: React.FC<Properties> = ({
 	fileName,
+	isStartingProcessing = false,
 	isSubmitting = false,
 	isUploaded = false,
 	isUploading = false,
@@ -61,48 +63,12 @@ const UploadForm: React.FC<Properties> = ({
 		[handleSubmit, onSubmit],
 	);
 
-	let actionsContent = null;
-
-	if (isUploaded) {
-		actionsContent = (
-			<>
-				<Button
-					isDisabled={isSubmitting}
-					isPrimary
-					label={isSubmitting ? "Processing..." : "Start Processing"}
-					onClick={onProcessDocument}
-					type="button"
-				/>
-				<Button
-					isDisabled={isSubmitting}
-					label="Change file"
-					onClick={onChangeFile}
-					type="button"
-				/>
-			</>
-		);
-	} else if (isUploading) {
-		actionsContent = (
-			<Button label="Cancel Upload" onClick={onCancelUpload} type="button" />
-		);
-	} else {
-		actionsContent = (
-			<>
-				<Button
-					isDisabled={isSubmitting}
-					isPrimary
-					label="Upload"
-					type="submit"
-				/>
-				<Button
-					isDisabled={isSubmitting}
-					label="Change file"
-					onClick={onChangeFile}
-					type="button"
-				/>
-			</>
-		);
-	}
+	const handleProcessClick = useCallback(
+		(event_: React.MouseEvent<HTMLButtonElement>): void => {
+			void handleSubmit(onProcessDocument)(event_);
+		},
+		[handleSubmit, onProcessDocument],
+	);
 
 	return (
 		<form className={styles["upload-form"]} onSubmit={handleFormSubmit}>
@@ -121,7 +87,42 @@ const UploadForm: React.FC<Properties> = ({
 				name="presetId"
 				options={presetOptions}
 			/>
-			<div className={styles["upload-form__actions"]}>{actionsContent}</div>
+			<div className={styles["upload-form__actions"]}>
+				{isUploaded && (
+					<>
+						<Button
+							isDisabled={isStartingProcessing}
+							isPrimary
+							label={
+								isStartingProcessing ? "Processing..." : "Start Processing"
+							}
+							onClick={handleProcessClick}
+							type="button"
+						/>
+						<Button
+							isDisabled={isStartingProcessing}
+							label="Change file"
+							onClick={onChangeFile}
+							type="button"
+						/>
+					</>
+				)}
+
+				{(isUploading || isSubmitting) && (
+					<Button
+						label="Cancel Upload"
+						onClick={onCancelUpload}
+						type="button"
+					/>
+				)}
+
+				{!isUploaded && !isUploading && !isSubmitting && (
+					<>
+						<Button isPrimary label="Upload" type="submit" />
+						<Button label="Change file" onClick={onChangeFile} type="button" />
+					</>
+				)}
+			</div>
 		</form>
 	);
 };
