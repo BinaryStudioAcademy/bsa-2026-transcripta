@@ -25,5 +25,6 @@ export {
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
+	selectVerificationCursorPageNo,
 	selectVerificationDataStatus,
 } from "./slices/selectors.js";
