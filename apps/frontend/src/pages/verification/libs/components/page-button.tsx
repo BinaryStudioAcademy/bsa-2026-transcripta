@@ -28,6 +28,7 @@ const PageButton: React.FC<PageButtonProperties> = ({
 	};
 
 	const status = getPageStripStatus(page.status, isCurrent);
+	const thumbnailUrl = page.thumbUrl ?? page.imageUrl;
 
 	const handleClick = useCallback((): void => {
 		onPageSelect(page.pageNo);
@@ -44,7 +45,18 @@ const PageButton: React.FC<PageButtonProperties> = ({
 				{statusSymbolMap[status]}
 			</span>
 
-			{!isCurrent && <span aria-hidden="true" className="tx-page-thumb" />}
+			{!isCurrent && (
+				<span aria-hidden="true" className="tx-page-thumb">
+					{thumbnailUrl && (
+						<img
+							alt=""
+							className="tx-page-thumb-image"
+							loading="lazy"
+							src={thumbnailUrl}
+						/>
+					)}
+				</span>
+			)}
 		</Button>
 	);
 };

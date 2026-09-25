@@ -92,6 +92,13 @@
 	display: block;
 }
 
+.tx-page-thumb-image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
 .tx-page-thumb i {
 	display: block;
 	height: 3px;
