@@ -3,6 +3,10 @@ import { DocumentGetPagesItemResponseDto } from "@transcripta/shared";
 import { Button } from "~/libs/components/components.js";
 import { useCallback } from "~/libs/hooks/hooks.js";
 
+import {
+	CURSOR_SYMBOL,
+	PAGE_STATUS_SYMBOL,
+} from "../constants/verification.constants.js";
 import { getPageStripStatus } from "../helpers/get-page-strip-status.helper.js";
 
 type PageButtonProperties = {
@@ -11,19 +15,6 @@ type PageButtonProperties = {
 	onPageSelect: (pageNo: number) => void;
 	page: DocumentGetPagesItemResponseDto;
 };
-
-const statusSymbolMap: Record<string, string> = {
-	blank: "✓",
-	confirmed: "✓",
-	corrected: "✎",
-	error: "!",
-	queued: "·",
-	ready: "▓",
-	running: "░",
-	skipped: "↷",
-};
-
-const CURSOR_SYMBOL = "●";
 
 const PageButton: React.FC<PageButtonProperties> = ({
 	isCurrent,
@@ -55,7 +46,7 @@ const PageButton: React.FC<PageButtonProperties> = ({
 				</span>
 			)}
 			<span aria-hidden="true" className="tx-status-icon">
-				{statusSymbolMap[status]}
+				{PAGE_STATUS_SYMBOL[status]}
 			</span>
 
 			{!isCurrent && <span aria-hidden="true" className="tx-page-thumb" />}

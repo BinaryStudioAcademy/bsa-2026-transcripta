@@ -1,5 +1,4 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { type PageStatusValue } from "@transcripta/shared";
 
 import {
 	DIVIDER_HALF,
@@ -9,14 +8,7 @@ import {
 import { type RootState } from "~/libs/types/types.js";
 import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
 
-import { PageStatus } from "../libs/enums/enums.js";
-
-const COMPLETED_PAGE_STATUSES = new Set<PageStatusValue>([
-	PageStatus.BLANK,
-	PageStatus.CONFIRMED,
-	PageStatus.CORRECTED,
-	PageStatus.SKIPPED,
-]);
+import { COMPLETED_PAGE_STATUSES } from "../libs/constants/constants.js";
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 
