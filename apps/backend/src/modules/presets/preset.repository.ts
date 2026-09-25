@@ -22,7 +22,9 @@ class PresetRepository {
 			])
 			.execute();
 
-		return presets.map((preset) => PresetEntity.initialize(preset));
+		return presets
+			.toSorted((firstPreset, secondPreset) => firstPreset.id - secondPreset.id)
+			.map((preset) => PresetEntity.initialize(preset));
 	}
 }
 
