@@ -1,3 +1,4 @@
+import { DocumentValidationRule } from "@transcripta/shared";
 import React from "react";
 
 import { Button, Input } from "~/libs/components/components.js";
@@ -56,6 +57,7 @@ const UploadForm: React.FC<Properties> = ({
 				control={control}
 				errors={errors}
 				label="Title"
+				maxLength={DocumentValidationRule.MAX_TITLE_LENGTH}
 				name="title"
 				type="text"
 			/>
