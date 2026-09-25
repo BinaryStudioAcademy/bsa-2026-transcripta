@@ -17,13 +17,13 @@ const VerificationShortcutsDialog: React.FC<
 						<kbd className="tx-kbd">Enter</kbd>
 						<kbd className="tx-kbd">→</kbd>
 					</span>
-					<span>Correct, next</span>
+					<span>Confirm, next</span>
 
 					<kbd className="tx-kbd">←</kbd>
 					<span>Previous</span>
 
 					<kbd className="tx-kbd">E</kbd>
-					<span>Edit</span>
+					<span>Correct</span>
 
 					<kbd className="tx-kbd">S</kbd>
 					<span>Skip</span>

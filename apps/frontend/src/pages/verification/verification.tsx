@@ -25,6 +25,7 @@ import {
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
+	selectVerificationCursorPageNo,
 	selectVerificationDataStatus,
 	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
@@ -73,6 +74,9 @@ const Verification: React.FC = () => {
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
 	const pagesForStrip = useAppSelector(selectPagesForStrip);
 	const cursorPageNo = useAppSelector(selectCursorPageNo);
+	const verificationCursorPageNo = useAppSelector(
+		selectVerificationCursorPageNo,
+	);
 	const verificationDataStatus = useAppSelector(selectVerificationDataStatus);
 	const reprocessingPageId = useAppSelector(selectReprocessingPageId);
 
@@ -440,6 +444,7 @@ const Verification: React.FC = () => {
 			/>
 			<VerificationFooter
 				currentPageNo={cursorPageNo}
+				cursorPageNo={verificationCursorPageNo}
 				isLoading={isPagesLoading}
 				onNext={handleNext}
 				onPageSelect={handlePageSelect}
