@@ -45,13 +45,20 @@ class PresetRepository {
 		const presets = await this.presetModel
 			.query()
 			.select("id", "name", "description", "familyId", "version")
+			.distinctOn("familyId")
+			.select("id", "name", "description")
 			.where((builder) => {
 				builder.where("isPublic", true).orWhere("ownerId", userId);
 			})
-			.orderBy("id", "asc")
+			.orderBy([
+				{ column: "familyId", order: "asc" },
+				{ column: "version", order: "desc" },
+			])
 			.execute();
 
-		return presets.map((preset) => PresetEntity.initialize(preset));
+		return presets
+			.toSorted((firstPreset, secondPreset) => firstPreset.id - secondPreset.id)
+			.map((preset) => PresetEntity.initialize(preset));
 	}
 
 	public async findFamilyMaxVersion(familyId: number): Promise<number> {
