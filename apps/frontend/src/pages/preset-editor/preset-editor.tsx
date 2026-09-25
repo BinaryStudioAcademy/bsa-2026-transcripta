@@ -1,16 +1,14 @@
 import React, { type ChangeEvent } from "react";
 
 import { ThemeToggle } from "~/libs/components/components.js";
-import {
-	EMPTY_LENGTH,
-	FIRST_INDEX,
-} from "~/libs/constants/common.constants.js";
+import { EMPTY_LENGTH } from "~/libs/constants/common.constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
 	useEffect,
+	useParams,
 	useState,
 } from "~/libs/hooks/hooks.js";
 
@@ -41,6 +39,7 @@ const handleSubmit = (): void => {
 
 const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const { id } = useParams<{ id?: string }>();
 
 	const { presets, selectedPreset, selectedPresetStatus } = useAppSelector(
 		({ presets }) => ({
@@ -50,7 +49,9 @@ const PresetEditor: React.FC = () => {
 		}),
 	);
 
-	const [basePresetId, setBasePresetId] = useState<null | number>(null);
+	const [basePresetId, setBasePresetId] = useState<null | number>(
+		id ? Number(id) : null,
+	);
 	const [name, setName] = useState("");
 	const [instructions, setInstructions] = useState("");
 	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
@@ -58,9 +59,10 @@ const PresetEditor: React.FC = () => {
 
 	const isPresetLoading = selectedPresetStatus === DataStatus.PENDING;
 
-	const outputFields = selectedPreset
-		? getOutputFields(selectedPreset.outputSchema)
-		: [];
+	const outputFields =
+		selectedPreset && basePresetId
+			? getOutputFields(selectedPreset.outputSchema)
+			: [];
 
 	useEffect(() => {
 		if (presets.length === EMPTY_LENGTH) {
@@ -69,22 +71,19 @@ const PresetEditor: React.FC = () => {
 	}, [dispatch, presets.length]);
 
 	useEffect(() => {
-		if (basePresetId !== null || presets.length === EMPTY_LENGTH) {
+		if (basePresetId === null) {
+			setName("");
+			setInstructions("");
+			setEntries([]);
+			setOpenTypeId(null);
 			return;
 		}
 
-		const firstPreset = presets[FIRST_INDEX];
-
-		if (!firstPreset) {
-			return;
-		}
-
-		setBasePresetId(firstPreset.id);
-		void dispatch(presetsActions.loadById(firstPreset.id));
-	}, [basePresetId, dispatch, presets]);
+		void dispatch(presetsActions.loadById(basePresetId));
+	}, [dispatch, basePresetId]);
 
 	useEffect(() => {
-		if (!selectedPreset) {
+		if (!selectedPreset || !basePresetId) {
 			return;
 		}
 
@@ -92,7 +91,7 @@ const PresetEditor: React.FC = () => {
 		setInstructions(selectedPreset.instructions);
 		setEntries(mapSeedGlossary(selectedPreset.seedGlossary));
 		setOpenTypeId(null);
-	}, [selectedPreset]);
+	}, [selectedPreset, basePresetId]);
 
 	const handleAddEntry = useCallback((): void => {
 		setEntries((currentEntries) => [...currentEntries, createEntry()]);
@@ -127,10 +126,9 @@ const PresetEditor: React.FC = () => {
 		(event: ChangeEvent<HTMLSelectElement>): void => {
 			const presetId = Number(event.target.value);
 
-			setBasePresetId(presetId);
-			void dispatch(presetsActions.loadById(presetId));
+			setBasePresetId(presetId === EMPTY_LENGTH ? null : presetId);
 		},
-		[dispatch],
+		[],
 	);
 
 	const handleNameChange = useCallback(
@@ -203,7 +201,9 @@ const PresetEditor: React.FC = () => {
 	return (
 		<div className="preset-editor">
 			<header className="preset-editor__header">
-				<h1 className="preset-editor__title">New preset</h1>
+				<h1 className="preset-editor__title">
+					{basePresetId ? "Edit preset" : "New preset"}
+				</h1>
 
 				<ThemeToggle />
 			</header>
@@ -220,7 +220,6 @@ const PresetEditor: React.FC = () => {
 								<div className="tx-selectwrap">
 									<select
 										className="tx-input"
-										disabled={presets.length === EMPTY_LENGTH}
 										id="based-on"
 										onChange={handleBasePresetChange}
 										value={basePresetId ?? ""}
@@ -228,6 +227,8 @@ const PresetEditor: React.FC = () => {
 										{presets.length === EMPTY_LENGTH && (
 											<option value="">Loading presets...</option>
 										)}
+
+										<option value="">None</option>
 
 										{presets.map((preset) => (
 											<option key={preset.id} value={preset.id}>
@@ -360,37 +361,41 @@ const PresetEditor: React.FC = () => {
 							</div>
 						</div>
 
-						<div className="preset-editor__output-section">
-							<div className="preset-editor__output-heading">
-								<svg
-									aria-hidden="true"
-									fill="none"
-									height="13"
-									stroke="currentColor"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									viewBox="0 0 24 24"
-									width="13"
-								>
-									<rect height="11" rx="2" width="18" x="3" y="11" />
-									<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-								</svg>
+						{basePresetId && (
+							<div className="preset-editor__output-section">
+								<div className="preset-editor__output-heading">
+									<svg
+										aria-hidden="true"
+										fill="none"
+										height="13"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										viewBox="0 0 24 24"
+										width="13"
+									>
+										<rect height="11" rx="2" width="18" x="3" y="11" />
+										<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+									</svg>
 
-								<span className="tx-label">
-									Output fields (from the template, not editable)
-								</span>
-							</div>
-
-							<div className="preset-editor__output-fields">
-								{outputFields.map((field) => (
-									<span className="preset-editor__output-item" key={field}>
-										<span className="preset-editor__output-chip">{field}</span>
-										<span className="preset-editor__output-separator">·</span>
+									<span className="tx-label">
+										Output fields (from the template, not editable)
 									</span>
-								))}
+								</div>
+
+								<div className="preset-editor__output-fields">
+									{outputFields.map((field) => (
+										<span className="preset-editor__output-item" key={field}>
+											<span className="preset-editor__output-chip">
+												{field}
+											</span>
+											<span className="preset-editor__output-separator">·</span>
+										</span>
+									))}
+								</div>
 							</div>
-						</div>
+						)}
 
 						<div className="preset-editor__actions">
 							<p className="preset-editor__notice">
@@ -414,7 +419,7 @@ const PresetEditor: React.FC = () => {
 									onClick={handleSubmit}
 									type="button"
 								>
-									Save preset
+									{basePresetId ? "Save changes" : "Save preset"}
 								</button>
 							</div>
 						</div>
