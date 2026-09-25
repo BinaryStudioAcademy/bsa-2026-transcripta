@@ -1,4 +1,4 @@
-import { DocumentValidationRule } from "@transcripta/shared";
+import { DocumentValidationRule, EMPTY_LENGTH } from "@transcripta/shared";
 import React from "react";
 
 import { Button, Input } from "~/libs/components/components.js";
@@ -14,6 +14,19 @@ import {
 } from "./libs/constants/constants.js";
 import { type UploadFormValues } from "./libs/types/types.js";
 import styles from "./styles.module.css";
+
+const TITLE_FALLBACK_SLICE_LENGTH = 47;
+const TITLE_FALLBACK_ELLIPSIS = "...";
+
+const getDefaultTitle = (fileName: string): string => {
+	const rawTitle = fileName.replace(PDF_EXTENSION_REGEX, "");
+
+	if (rawTitle.length > DocumentValidationRule.MAX_TITLE_LENGTH) {
+		return `${rawTitle.slice(EMPTY_LENGTH, TITLE_FALLBACK_SLICE_LENGTH)}${TITLE_FALLBACK_ELLIPSIS}`;
+	}
+
+	return rawTitle;
+};
 
 type Properties = {
 	fileName: string;
@@ -39,7 +52,7 @@ const UploadForm: React.FC<Properties> = ({
 	const { control, errors, handleSubmit } = useAppForm<UploadFormValues>({
 		defaultValues: {
 			presetId: presetOptions[DEFAULT_PRESET_INDEX]?.id ?? DEFAULT_PRESET_ID,
-			title: fileName.replace(PDF_EXTENSION_REGEX, ""),
+			title: getDefaultTitle(fileName),
 		},
 		validationSchema: uploadFormValidationSchema,
 	});

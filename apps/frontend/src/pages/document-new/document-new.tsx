@@ -1,4 +1,8 @@
-import { HTTPCode } from "@transcripta/shared";
+import {
+	DocumentValidationMessage,
+	DocumentValidationRule,
+	HTTPCode,
+} from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
 
@@ -63,6 +67,13 @@ const DocumentNew: React.FC = () => {
 
 	const handleZipComplete = useCallback((pdfFile: File): void => {
 		setSelectedArchive(null);
+
+		if (pdfFile.name.length > DocumentValidationRule.MAX_FILE_NAME_LENGTH) {
+			setRejection(DocumentValidationMessage.FILE_NAME_MAX_LENGTH);
+
+			return;
+		}
+
 		setSelectedFile(pdfFile);
 	}, []);
 
@@ -141,6 +152,14 @@ const DocumentNew: React.FC = () => {
 	const handleUpload = useCallback(
 		(values: UploadFormValues) => {
 			if (!selectedFile) {
+				return;
+			}
+
+			if (
+				selectedFile.name.length > DocumentValidationRule.MAX_FILE_NAME_LENGTH
+			) {
+				setRejection(DocumentValidationMessage.FILE_NAME_MAX_LENGTH);
+
 				return;
 			}
 
@@ -309,10 +328,19 @@ const DocumentNew: React.FC = () => {
 
 	const acceptFile = useCallback(
 		(file: File): void => {
+			if (file.name.length > DocumentValidationRule.MAX_FILE_NAME_LENGTH) {
+				setSelectedFile(null);
+				setSelectedArchive(null);
+				setRejection(DocumentValidationMessage.FILE_NAME_MAX_LENGTH);
+
+				return;
+			}
+
 			if (ZIP_FILE_REGEX.test(file.name)) {
 				setSelectedArchive(file);
 				setRejection(null);
 				processZip(file);
+
 				return;
 			}
 
