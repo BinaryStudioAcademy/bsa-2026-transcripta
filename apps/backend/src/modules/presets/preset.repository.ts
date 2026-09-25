@@ -1,3 +1,4 @@
+import { EMPTY_LENGTH } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
 import { PresetEntity } from "./preset.entity.js";
@@ -51,6 +52,21 @@ class PresetRepository {
 			.execute();
 
 		return presets.map((preset) => PresetEntity.initialize(preset));
+	}
+
+	public async findFamilyMaxVersion(familyId: number): Promise<number> {
+		const row = await this.presetModel
+			.query()
+			.where({ familyId })
+			.select(
+				this.presetModel.knex().raw("coalesce(max(version), 0) as max_version"),
+			)
+			.first();
+
+		const maxVersion = (row as unknown as undefined | { maxVersion?: number })
+			?.maxVersion;
+
+		return Number(maxVersion ?? EMPTY_LENGTH);
 	}
 }
 

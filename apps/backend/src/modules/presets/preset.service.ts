@@ -11,7 +11,10 @@ import { UniqueViolationError } from "objection";
 import { DEFAULT_PRESET_SETTINGS } from "~/modules/context/builder/libs/constants/constants.js";
 import { validateSeedGlossaryBudget } from "~/modules/context/context.js";
 
-import { VERSION_INCREMENT } from "./libs/constants/constants.js";
+import {
+	MAX_PRESET_CREATE_ATTEMPTS,
+	VERSION_INCREMENT,
+} from "./libs/constants/constants.js";
 import { PresetErrorMessage } from "./libs/enums/enums.js";
 import { PresetEntity } from "./preset.entity.js";
 import { type PresetRepository } from "./preset.repository.js";
@@ -36,18 +39,6 @@ class PresetService {
 		seedGlossary = [],
 		settings = {},
 	}: PresetCreateServicePayload): Promise<PresetCreateResponseDto> {
-		const base = await this.presetRepository.findAccessibleBase(
-			familyId,
-			ownerId,
-		);
-
-		if (!base) {
-			throw new HTTPError({
-				message: PresetValidationMessage.PRESET_NOT_FOUND,
-				status: HTTPCode.NOT_FOUND,
-			});
-		}
-
 		const { maxContextTokens, model } = {
 			...DEFAULT_PRESET_SETTINGS,
 			...settings,
@@ -66,36 +57,55 @@ class PresetService {
 			});
 		}
 
-		const entity = PresetEntity.initializeNew({
-			description,
-			familyId: base.getFamilyId(),
-			instructions,
-			isPublic: false,
-			name,
-			outputSchema: structuredClone(base.getOutputSchema()),
-			ownerId,
-			seedGlossary,
-			settings,
-			version: base.getVersion() + VERSION_INCREMENT,
-		});
+		for (let attempt = 0; attempt < MAX_PRESET_CREATE_ATTEMPTS; attempt++) {
+			const base = await this.presetRepository.findAccessibleBase(
+				familyId,
+				ownerId,
+			);
 
-		try {
-			const created = await this.presetRepository.create(entity);
-
-			return created.toCreateResponseObject();
-		} catch (error) {
-			if (
-				error instanceof UniqueViolationError &&
-				error.constraint === "preset_version_unique"
-			) {
+			if (!base) {
 				throw new HTTPError({
-					message: PresetErrorMessage.VERSION_ALREADY_EXISTS,
-					status: HTTPCode.CONFLICT,
+					message: PresetValidationMessage.PRESET_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
 				});
 			}
 
-			throw error;
+			const maxVersion =
+				await this.presetRepository.findFamilyMaxVersion(familyId);
+
+			const entity = PresetEntity.initializeNew({
+				description,
+				familyId: base.getFamilyId(),
+				instructions,
+				isPublic: false,
+				name,
+				outputSchema: structuredClone(base.getOutputSchema()),
+				ownerId,
+				seedGlossary,
+				settings,
+				version: maxVersion + VERSION_INCREMENT,
+			});
+
+			try {
+				const created = await this.presetRepository.create(entity);
+
+				return created.toCreateResponseObject();
+			} catch (error) {
+				if (
+					error instanceof UniqueViolationError &&
+					error.constraint === "preset_version_unique"
+				) {
+					continue;
+				}
+
+				throw error;
+			}
 		}
+
+		throw new HTTPError({
+			message: PresetErrorMessage.VERSION_ALREADY_EXISTS,
+			status: HTTPCode.CONFLICT,
+		});
 	}
 
 	public async findAllByUserId(
