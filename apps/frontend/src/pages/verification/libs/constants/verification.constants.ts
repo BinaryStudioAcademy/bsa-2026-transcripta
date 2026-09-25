@@ -16,6 +16,16 @@ const ZOOM_PAN_RESET = 0;
 const MIN_TABLE_LINES = 2;
 const TABLE_CELL_SEPARATOR = "|";
 const ILLEGIBLE_MARKER = "[?]";
+const PAGE_STRIP_LEGEND = [
+	{ label: "cursor", symbol: "●" },
+	{ label: "ready", symbol: "▓" },
+	{ label: "running", symbol: "░" },
+	{ label: "queued", symbol: "·" },
+	{ label: "confirmed", symbol: "✓" },
+	{ label: "corrected", symbol: "✎" },
+	{ label: "skipped", symbol: "↷" },
+	{ label: "failed", symbol: "!" },
+] as const;
 const UNREADABLE_TIP = {
 	ILLEGIBLE: "could not be read",
 	LOST: "missing on the page",
@@ -34,6 +44,7 @@ export {
 	MIN_TABLE_LINES,
 	MIN_ZOOM,
 	PAGE_STEP,
+	PAGE_STRIP_LEGEND,
 	TABLE_CELL_SEPARATOR,
 	TOGGLE_ZOOM_LEVEL,
 	UNREADABLE_TIP,

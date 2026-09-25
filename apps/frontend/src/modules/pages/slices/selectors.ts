@@ -1,4 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
+import { type PageStatusValue } from "@transcripta/shared";
 
 import {
 	DIVIDER_HALF,
@@ -7,6 +8,15 @@ import {
 } from "~/libs/constants/common.constants.js";
 import { type RootState } from "~/libs/types/types.js";
 import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
+
+import { PageStatus } from "../libs/enums/enums.js";
+
+const COMPLETED_PAGE_STATUSES = new Set<PageStatusValue>([
+	PageStatus.BLANK,
+	PageStatus.CONFIRMED,
+	PageStatus.CORRECTED,
+	PageStatus.SKIPPED,
+]);
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 
@@ -65,6 +75,26 @@ const selectPagesForStrip = createSelector(
 	},
 );
 
+const selectVerificationCursorPageNo = createSelector(
+	[
+		(state: RootState) => state.pages.byId,
+		(state: RootState) => state.pages.idsByPageNo,
+	],
+	(byId, idsByPageNo): null | number => {
+		const pageNumbers = Object.keys(idsByPageNo)
+			.map(Number)
+			.sort((a, b) => a - b);
+
+		const cursorPageNo = pageNumbers.find((pageNo) => {
+			const page = byId[idsByPageNo[pageNo] as number];
+
+			return page !== undefined && !COMPLETED_PAGE_STATUSES.has(page.status);
+		});
+
+		return cursorPageNo ?? null;
+	},
+);
+
 export {
 	selectCurrentPage,
 	selectCursorPageNo,
@@ -72,5 +102,6 @@ export {
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
+	selectVerificationCursorPageNo,
 	selectVerificationDataStatus,
 };
