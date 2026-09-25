@@ -5,7 +5,7 @@ import {
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
 } from "@transcripta/shared";
-import { useState } from "react";
+import React, { useState } from "react";
 
 import {
 	Button,
@@ -27,6 +27,7 @@ import {
 	useCallback,
 	useEffect,
 	useNavigate,
+	useOverflowTooltip,
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
@@ -41,6 +42,58 @@ import styles from "./styles.module.css";
 const DEFAULT_MAX_FILE_SIZE_MB =
 	DocumentValidationRule.MAX_FILE_BYTES /
 	(BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE);
+
+type TitleCellProperties = {
+	title: string;
+};
+
+const DocumentTitleCell: React.FC<TitleCellProperties> = ({
+	title,
+}: TitleCellProperties) => {
+	const { checkTruncation, elementRef, isTruncated } =
+		useOverflowTooltip<HTMLSpanElement>(title);
+
+	return (
+		<span
+			className={[
+				styles["documents-page__title-wrapper"],
+				isTruncated && "tx-tip",
+			]
+				.filter(Boolean)
+				.join(" ")}
+			data-tip={isTruncated ? title : undefined}
+			onMouseEnter={checkTruncation}
+		>
+			<span className={styles["documents-page__title-text"]} ref={elementRef}>
+				{title}
+			</span>
+		</span>
+	);
+};
+
+const DocumentFooterTitle: React.FC<TitleCellProperties> = ({
+	title,
+}: TitleCellProperties) => {
+	const { checkTruncation, elementRef, isTruncated } =
+		useOverflowTooltip<HTMLSpanElement>(title);
+
+	return (
+		<span
+			className={[
+				styles["documents-page__footer-title-wrapper"],
+				isTruncated && "tx-tip",
+			]
+				.filter(Boolean)
+				.join(" ")}
+			data-tip={isTruncated ? title : undefined}
+			onMouseEnter={checkTruncation}
+		>
+			<span className={styles["documents-page__footer-title"]} ref={elementRef}>
+				{title}
+			</span>
+		</span>
+	);
+};
 
 const Documents: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -116,22 +169,6 @@ const Documents: React.FC = () => {
 	);
 	const hasBudgetStoppedDocuments =
 		budgetStoppedDocuments.length > EMPTY_LENGTH;
-	const failedPagesMessage = documentsWithFailedPages
-		.map(
-			(document) =>
-				`${document.title} has ${String(document.pagesFailed)} failed ${
-					document.pagesFailed === ONE_QUANTITY ? "page" : "pages"
-				}`,
-		)
-		.join(", ");
-
-	const footerMessage = [
-		hasBudgetStoppedDocuments &&
-			`${budgetStoppedDocuments.map((document) => document.title).join(", ")} stopped at its budget — raise the limit to continue.`,
-		hasFailedPages && `${failedPagesMessage} — open it to re-read them.`,
-	]
-		.filter(Boolean)
-		.join(" ");
 
 	const handleCancelDelete = useCallback((): void => {
 		setPendingDeleteId(null);
@@ -297,9 +334,7 @@ const Documents: React.FC = () => {
 											className={styles["documents-page__title-cell"]}
 											role="cell"
 										>
-											<span className={styles["documents-page__title-text"]}>
-												{document.title}
-											</span>
+											<DocumentTitleCell title={document.title} />
 										</span>
 										<span
 											className={styles["documents-page__status-cell"]}
@@ -354,7 +389,34 @@ const Documents: React.FC = () => {
 						{(hasFailedPages || hasBudgetStoppedDocuments) && (
 							<div className={styles["documents-page__footer-messages"]}>
 								<p className={styles["documents-page__footer-message"]}>
-									{footerMessage}
+									{hasBudgetStoppedDocuments && (
+										<>
+											{budgetStoppedDocuments.map((document, index) => (
+												<React.Fragment key={document.id}>
+													{index > EMPTY_LENGTH && ", "}
+													<DocumentFooterTitle title={document.title} />
+												</React.Fragment>
+											))}
+											{" stopped at its budget — raise the limit to continue."}
+										</>
+									)}
+									{hasBudgetStoppedDocuments && hasFailedPages && " "}
+									{hasFailedPages && (
+										<>
+											{documentsWithFailedPages.map((document, index) => (
+												<React.Fragment key={document.id}>
+													{index > EMPTY_LENGTH && ", "}
+													<DocumentFooterTitle title={document.title} />
+													{` has ${String(document.pagesFailed)} failed ${
+														document.pagesFailed === ONE_QUANTITY
+															? "page"
+															: "pages"
+													}`}
+												</React.Fragment>
+											))}
+											{" — open it to re-read them."}
+										</>
+									)}
 								</p>
 							</div>
 						)}
