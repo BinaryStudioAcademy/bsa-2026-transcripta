@@ -78,8 +78,7 @@ const VerificationBlock: React.FC<Properties> = ({
 				<span className="tx-num">{cursorPageNo}</span>. So far:{" "}
 				<span className="tx-num">{pagesVerified}</span> verified,{" "}
 				<span className="tx-num">{pagesSkipped}</span> skipped.{" "}
-				<span className="tx-num">{pagesReadyToCheck}</span>
-				{readyToCheckLabel}
+				<span className="tx-num">{pagesReadyToCheck}</span> {readyToCheckLabel}
 			</div>
 			<div className={styles["resume-row"]}>
 				<Link className={styles["resume-link"] ?? ""} to={resumeRoute}>
