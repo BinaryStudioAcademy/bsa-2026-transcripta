@@ -23,6 +23,7 @@ const PageButton: React.FC<PageButtonProperties> = ({
 	page,
 }) => {
 	const status = getPageStripStatus(page.status);
+	const thumbnailUrl = page.thumbUrl ?? page.imageUrl;
 
 	const className = [
 		"tx-page",
@@ -49,7 +50,18 @@ const PageButton: React.FC<PageButtonProperties> = ({
 				{PAGE_STATUS_SYMBOL[status]}
 			</span>
 
-			{!isCurrent && <span aria-hidden="true" className="tx-page-thumb" />}
+			{!isCurrent && (
+				<span aria-hidden="true" className="tx-page-thumb">
+					{thumbnailUrl && (
+						<img
+							alt=""
+							className="tx-page-thumb-image"
+							loading="lazy"
+							src={thumbnailUrl}
+						/>
+					)}
+				</span>
+			)}
 		</Button>
 	);
 };
