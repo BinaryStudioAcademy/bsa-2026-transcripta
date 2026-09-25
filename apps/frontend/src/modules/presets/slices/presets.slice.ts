@@ -39,6 +39,7 @@ const { actions, name, reducer } = createSlice({
 		});
 
 		builder.addCase(loadById.pending, (state) => {
+			state.selectedPreset = null;
 			state.selectedPresetStatus = DataStatus.PENDING;
 		});
 
@@ -48,6 +49,7 @@ const { actions, name, reducer } = createSlice({
 		});
 
 		builder.addCase(loadById.rejected, (state) => {
+			state.selectedPreset = null;
 			state.selectedPresetStatus = DataStatus.REJECTED;
 		});
 	},
