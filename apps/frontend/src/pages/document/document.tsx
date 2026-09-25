@@ -246,6 +246,18 @@ const Document: React.FC = () => {
 								</section>
 							) : (
 								<>
+									<TranscriptionBlock
+										budgetLimitUsd={currentDocument.budget.limitUsd}
+										budgetSpentUsd={currentDocument.budget.spentUsd}
+										cursorPageNo={currentDocument.cursorPageNo}
+										onRaiseLimitClick={handleOpenRaiseLimit}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										status={currentDocument.status}
+									/>
+
 									<PagesBlock
 										cursorPageNo={currentDocument.cursorPageNo}
 										pagesBlank={currentDocument.progress.pagesBlank}
@@ -270,18 +282,6 @@ const Document: React.FC = () => {
 										pagesSkipped={currentDocument.progress.pagesSkipped}
 										pagesTranscribed={pagesTranscribed}
 										pagesVerified={currentDocument.progress.pagesVerified}
-									/>
-
-									<TranscriptionBlock
-										budgetLimitUsd={currentDocument.budget.limitUsd}
-										budgetSpentUsd={currentDocument.budget.spentUsd}
-										cursorPageNo={currentDocument.cursorPageNo}
-										onRaiseLimitClick={handleOpenRaiseLimit}
-										pagesBlank={currentDocument.progress.pagesBlank}
-										pagesFailed={currentDocument.progress.pagesFailed}
-										pagesTotal={currentDocument.progress.pagesTotal}
-										pagesTranscribed={pagesTranscribed}
-										status={currentDocument.status}
 									/>
 
 									<LexiconBlock documentId={currentDocument.id} />
