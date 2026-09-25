@@ -30,9 +30,26 @@
 	color: var(--text);
 }
 
+.verification-header__title-wrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	min-width: 0;
+	max-width: 260px;
+}
+
 .verification-header__title {
+	min-width: 0;
+	overflow: hidden;
 	font: 600 15px/1.15 var(--font-display);
+	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+	.verification-header__title-wrapper {
+		max-width: 160px;
+	}
 }
 
 .verification-header__page {
