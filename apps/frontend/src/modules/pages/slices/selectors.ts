@@ -9,6 +9,8 @@ import {
 import { type RootState } from "~/libs/types/types.js";
 import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
 
+import { COMPLETED_PAGE_STATUSES } from "../libs/constants/constants.js";
+
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 
 const selectReprocessingPageId = (state: RootState) =>
@@ -67,6 +69,26 @@ const selectPagesForStrip = createSelector(
 	},
 );
 
+const selectVerificationCursorPageNo = createSelector(
+	[
+		(state: RootState) => state.pages.byId,
+		(state: RootState) => state.pages.idsByPageNo,
+	],
+	(byId, idsByPageNo): null | number => {
+		const pageNumbers = Object.keys(idsByPageNo)
+			.map(Number)
+			.sort((a, b) => a - b);
+
+		const cursorPageNo = pageNumbers.find((pageNo) => {
+			const page = byId[idsByPageNo[pageNo] as number];
+
+			return page !== undefined && !COMPLETED_PAGE_STATUSES.has(page.status);
+		});
+
+		return cursorPageNo ?? null;
+	},
+);
+
 export {
 	selectCurrentPage,
 	selectCursorPageNo,
@@ -75,4 +97,5 @@ export {
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
+	selectVerificationCursorPageNo,
 };
