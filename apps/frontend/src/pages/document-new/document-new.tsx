@@ -1,6 +1,6 @@
 import { EMPTY_LENGTH, HTTPCode } from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { type NavigateFunction, useBlocker } from "react-router-dom";
+import { useBlocker } from "react-router-dom";
 
 import { ThemeToggle } from "~/libs/components/components.js";
 import {
@@ -22,7 +22,6 @@ import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
-	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { actions as presetsActions } from "~/modules/presets/presets.js";
@@ -52,13 +51,10 @@ import {
 import {
 	type LocationState,
 	type ScreenStateType,
+	type UploadTarget,
+	type UseIngestPollingParameters,
 } from "./libs/types/types.js";
 import styles from "./styles.module.css";
-
-type UploadTarget = {
-	docId: number;
-	uploadUrl: string;
-};
 
 const resolveUploadTarget = async ({
 	controller,
@@ -178,15 +174,6 @@ const performUploadAttempts = async ({
 			}
 		}
 	}
-};
-
-type UseIngestPollingParameters = {
-	dispatch: ReturnType<typeof useAppDispatch>;
-	ingestingDocumentId: null | number;
-	navigate: NavigateFunction;
-	resumedDocument: DocumentGetByIdResponseDto | null;
-	setIngestingDocumentId: React.Dispatch<React.SetStateAction<null | number>>;
-	setRejection: React.Dispatch<React.SetStateAction<null | string>>;
 };
 
 const useIngestPolling = ({
