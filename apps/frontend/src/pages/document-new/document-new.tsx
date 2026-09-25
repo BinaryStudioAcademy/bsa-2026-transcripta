@@ -188,6 +188,7 @@ const DocumentNew: React.FC = () => {
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isUploaded, setIsUploaded] = useState(false);
+	const [isStartingProcessing, setIsStartingProcessing] = useState(false);
 	const [ingestingDocumentId, setIngestingDocumentId] = useState<null | number>(
 		null,
 	);
@@ -358,10 +359,11 @@ const DocumentNew: React.FC = () => {
 
 	const goToDocument = useCallback(
 		(documentId: number): void => {
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
-			);
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+				),
+			).catch(() => null);
 		},
 		[navigate],
 	);
@@ -373,15 +375,44 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback(() => {
-		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
-		if (!targetId) {
-			return;
-		}
+	const handleProcessDocument = useCallback(
+		(values: UploadFormValues): void => {
+			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
 
-		setIngestingDocumentId(Number(targetId));
-		void dispatch(documentActions.ingest(Number(targetId)));
-	}, [resumeDocumentId, dispatch]);
+			if (!targetId || isStartingProcessing) {
+				return;
+			}
+
+			const documentId = Number(targetId);
+
+			const startProcessing = async (): Promise<void> => {
+				setIsStartingProcessing(true);
+
+				try {
+					await dispatch(
+						documentActions.getUploadUrl({
+							id: documentId,
+							payload: {
+								presetId: values.presetId,
+								title: values.title,
+							},
+						}),
+					).unwrap();
+				} catch {
+					// The error notification is shown by errorHandlingMiddleware.
+					return;
+				} finally {
+					setIsStartingProcessing(false);
+				}
+
+				setIngestingDocumentId(documentId);
+				void dispatch(documentActions.ingest(documentId));
+			};
+
+			void startProcessing();
+		},
+		[dispatch, isStartingProcessing, resumeDocumentId],
+	);
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -451,12 +482,13 @@ const DocumentNew: React.FC = () => {
 
 		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
 			setIngestingDocumentId(null);
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.VERIFICATION, {
-					id: String(ingestingDocumentId),
-				}),
-			);
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.VERIFICATION, {
+						id: String(ingestingDocumentId),
+					}),
+				),
+			).catch(() => null);
 		}
 	}, [goToDocument, ingestingDocumentId, navigate, resumedDocument]);
 
@@ -535,6 +567,7 @@ const DocumentNew: React.FC = () => {
 								/>
 								<UploadForm
 									fileName={displayTitle}
+									isStartingProcessing={isStartingProcessing}
 									isSubmitting={isFormDisabled}
 									isUploaded={isUploaded}
 									onCancelUpload={handleCancelUpload}

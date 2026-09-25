@@ -136,8 +136,7 @@ const Document: React.FC = () => {
 			.unwrap()
 			.then(() => {
 				setIsConfirmOpen(false);
-				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-				void navigate(AppRoute.DOCUMENTS);
+				Promise.resolve(navigate(AppRoute.DOCUMENTS)).catch(() => null);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);
