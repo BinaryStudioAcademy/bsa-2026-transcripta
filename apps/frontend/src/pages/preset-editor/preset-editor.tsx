@@ -1,7 +1,10 @@
 import React, { type ChangeEvent } from "react";
 
 import { ThemeToggle } from "~/libs/components/components.js";
-import { EMPTY_LENGTH } from "~/libs/constants/common.constants.js";
+import {
+	EMPTY_LENGTH,
+	FIRST_INDEX,
+} from "~/libs/constants/common.constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -49,8 +52,12 @@ const PresetEditor: React.FC = () => {
 		}),
 	);
 
+	const initialPresetId = id ? Number(id) : null;
+
 	const [basePresetId, setBasePresetId] = useState<null | number>(
-		id ? Number(id) : null,
+		initialPresetId && Number.isFinite(initialPresetId)
+			? initialPresetId
+			: null,
 	);
 	const [name, setName] = useState("");
 	const [instructions, setInstructions] = useState("");
@@ -65,6 +72,18 @@ const PresetEditor: React.FC = () => {
 			: [];
 
 	useEffect(() => {
+		if (basePresetId === null && presets.length !== EMPTY_LENGTH) {
+			const firstPreset = presets[FIRST_INDEX];
+
+			if (!firstPreset) {
+				return;
+			}
+
+			setBasePresetId(firstPreset.id);
+		}
+	}, [basePresetId, presets]);
+
+	useEffect(() => {
 		if (presets.length === EMPTY_LENGTH) {
 			void dispatch(presetsActions.loadAll());
 		}
@@ -72,10 +91,6 @@ const PresetEditor: React.FC = () => {
 
 	useEffect(() => {
 		if (basePresetId === null) {
-			setName("");
-			setInstructions("");
-			setEntries([]);
-			setOpenTypeId(null);
 			return;
 		}
 
@@ -201,9 +216,7 @@ const PresetEditor: React.FC = () => {
 	return (
 		<div className="preset-editor">
 			<header className="preset-editor__header">
-				<h1 className="preset-editor__title">
-					{basePresetId ? "Edit preset" : "New preset"}
-				</h1>
+				<h1 className="preset-editor__title">New preset</h1>
 
 				<ThemeToggle />
 			</header>
@@ -220,6 +233,7 @@ const PresetEditor: React.FC = () => {
 								<div className="tx-selectwrap">
 									<select
 										className="tx-input"
+										disabled={presets.length === EMPTY_LENGTH}
 										id="based-on"
 										onChange={handleBasePresetChange}
 										value={basePresetId ?? ""}
@@ -227,8 +241,6 @@ const PresetEditor: React.FC = () => {
 										{presets.length === EMPTY_LENGTH && (
 											<option value="">Loading presets...</option>
 										)}
-
-										<option value="">None</option>
 
 										{presets.map((preset) => (
 											<option key={preset.id} value={preset.id}>
@@ -361,41 +373,37 @@ const PresetEditor: React.FC = () => {
 							</div>
 						</div>
 
-						{basePresetId && (
-							<div className="preset-editor__output-section">
-								<div className="preset-editor__output-heading">
-									<svg
-										aria-hidden="true"
-										fill="none"
-										height="13"
-										stroke="currentColor"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										viewBox="0 0 24 24"
-										width="13"
-									>
-										<rect height="11" rx="2" width="18" x="3" y="11" />
-										<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-									</svg>
+						<div className="preset-editor__output-section">
+							<div className="preset-editor__output-heading">
+								<svg
+									aria-hidden="true"
+									fill="none"
+									height="13"
+									stroke="currentColor"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2"
+									viewBox="0 0 24 24"
+									width="13"
+								>
+									<rect height="11" rx="2" width="18" x="3" y="11" />
+									<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+								</svg>
 
-									<span className="tx-label">
-										Output fields (from the template, not editable)
-									</span>
-								</div>
-
-								<div className="preset-editor__output-fields">
-									{outputFields.map((field) => (
-										<span className="preset-editor__output-item" key={field}>
-											<span className="preset-editor__output-chip">
-												{field}
-											</span>
-											<span className="preset-editor__output-separator">·</span>
-										</span>
-									))}
-								</div>
+								<span className="tx-label">
+									Output fields (from the template, not editable)
+								</span>
 							</div>
-						)}
+
+							<div className="preset-editor__output-fields">
+								{outputFields.map((field) => (
+									<span className="preset-editor__output-item" key={field}>
+										<span className="preset-editor__output-chip">{field}</span>
+										<span className="preset-editor__output-separator">·</span>
+									</span>
+								))}
+							</div>
+						</div>
 
 						<div className="preset-editor__actions">
 							<p className="preset-editor__notice">
@@ -419,7 +427,7 @@ const PresetEditor: React.FC = () => {
 									onClick={handleSubmit}
 									type="button"
 								>
-									{basePresetId ? "Save changes" : "Save preset"}
+									Save preset
 								</button>
 							</div>
 						</div>
