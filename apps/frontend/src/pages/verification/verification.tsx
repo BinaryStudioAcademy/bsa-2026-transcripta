@@ -1,4 +1,5 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import {
 	DataStatus,
 	HTTPCode,
@@ -29,6 +30,7 @@ import {
 	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
+import "./verification.css";
 import {
 	VerificationFooter,
 	VerificationHeader,
@@ -42,7 +44,6 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
-import "./verification.css";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
@@ -111,7 +112,7 @@ const Verification: React.FC = () => {
 			return;
 		}
 
-		const timeoutId = setTimeout(() => {
+		const timeoutId = setInterval(() => {
 			void dispatch(
 				pageActions.loadPages({
 					documentId,
@@ -124,7 +125,7 @@ const Verification: React.FC = () => {
 		}, PollingIntervalsMS.DEFAULT);
 
 		return () => {
-			clearTimeout(timeoutId);
+			clearInterval(timeoutId);
 		};
 	}, [id, dispatch, currentPage?.transcription, cursorPageNo, document]);
 
@@ -422,6 +423,7 @@ const Verification: React.FC = () => {
 			<VerificationWorkspace
 				currentPage={currentPage}
 				editConflictDraft={editConflictDraft}
+				hasVerifiedPages={document.progress.pagesVerified > INITIAL_COUNT}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isPauseDisabled={document.status !== DocumentStatus.PROCESSING}

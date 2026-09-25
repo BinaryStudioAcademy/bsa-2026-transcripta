@@ -3,7 +3,6 @@ import {
 	FailedStateCard,
 	PreparingStateCard,
 } from "~/libs/components/components.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { useRef } from "~/libs/hooks/hooks.js";
 
 import {
@@ -23,6 +22,7 @@ import { VerificationEdit, VerificationPageText } from "./components.js";
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
 	editConflictDraft: EditConflictDraft | null;
+	hasVerifiedPages: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPauseDisabled: boolean;
@@ -43,6 +43,7 @@ type VerificationWorkspaceProperties = {
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
 	editConflictDraft,
+	hasVerifiedPages,
 	isCompleted,
 	isEditing,
 	isPauseDisabled,
@@ -165,12 +166,9 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
-		const isFreshDocument = !pageCount || pageCount === INITIAL_COUNT;
-		const hasNoPagesTranscribed = !currentPage;
-		const preparingMessage =
-			isFreshDocument || hasNoPagesTranscribed
-				? PREPARING_DOCUMENTS
-				: EVERYTHING_VERIFIED;
+		const preparingMessage = hasVerifiedPages
+			? EVERYTHING_VERIFIED
+			: PREPARING_DOCUMENTS;
 
 		return (
 			<div className="verification-preparing-state">
