@@ -33,6 +33,7 @@ import {
 	DocumentTitleBlock,
 	ExportBlock,
 	GroundTruthBlock,
+	LexiconBlock,
 	PagesBlock,
 	TranscriptionBlock,
 	VerificationBlock,
@@ -282,6 +283,8 @@ const Document: React.FC = () => {
 										pagesTranscribed={pagesTranscribed}
 										status={currentDocument.status}
 									/>
+
+									<LexiconBlock documentId={currentDocument.id} />
 
 									<ExportBlock
 										documentId={currentDocument.id}
