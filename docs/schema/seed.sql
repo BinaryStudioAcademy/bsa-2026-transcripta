@@ -44,13 +44,13 @@ INSERT INTO preset (
   'Parish records of births, marriages and deaths. Cursive, faded ink.',
 
   -- instructions: goes into the USER MESSAGE, not the system one
+  -- Marking rules ([?], [...], word(?)) live in SYSTEM_PROMPT (#475).
   'This is a page from a late 19th-century Orthodox parish register.
 The text is written in cursive and the ink has faded in places.
 
 Rules:
 - Preserve the original spelling, including archaic letters. Do not modernise.
 - Expand abbreviations in square brackets: "archpr." -> "archpr.[iest]".
-- Mark the illegible as [?] and the completely lost as [...].
 - Keep dates exactly as written, do not convert the calendar.
 - Return an empty cell as null, not as an empty string.',
 
