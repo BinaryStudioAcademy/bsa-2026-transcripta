@@ -231,13 +231,13 @@ const Verification: React.FC = () => {
 	}, [handleVerify]);
 
 	const handleUndo = useCallback((): void => {
-		if (lastVerifiedPageId === null || isEditing) {
+		if (isVerificationQueueBusy && !isEditing) {
+			notification.info("Wait until the queued actions are saved, then undo");
+
 			return;
 		}
 
-		if (isVerificationQueueBusy) {
-			notification.info("Wait until the queued actions are saved, then undo");
-
+		if (lastVerifiedPageId === null || isEditing) {
 			return;
 		}
 
