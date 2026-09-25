@@ -1,11 +1,11 @@
 import { Link } from "~/libs/components/components.js";
+import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import { useEffect, useNavigate } from "~/libs/hooks/hooks.js";
 
 import { DocumentSection } from "../document-section/document-section.js";
 import styles from "./styles.module.css";
-import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 
 type Properties = {
 	cursorPageNo: number;
@@ -59,6 +59,11 @@ const VerificationBlock: React.FC<Properties> = ({
 		};
 	}, [navigate, resumeRoute]);
 
+	const readyToCheckLabel =
+		pagesReadyToCheck == ONE_QUANTITY
+			? "page ready to check"
+			: "pages ready to check";
+
 	return (
 		<DocumentSection
 			count={
@@ -73,8 +78,8 @@ const VerificationBlock: React.FC<Properties> = ({
 				<span className="tx-num">{cursorPageNo}</span>. So far:{" "}
 				<span className="tx-num">{pagesVerified}</span> verified,{" "}
 				<span className="tx-num">{pagesSkipped}</span> skipped.{" "}
-				<span className="tx-num">{pagesReadyToCheck}</span>{" "}
-				{pagesReadyToCheck === ONE_QUANTITY ? "page" : "pages"} ready to check.
+				<span className="tx-num">{pagesReadyToCheck}</span>
+				{readyToCheckLabel}
 			</div>
 			<div className={styles["resume-row"]}>
 				<Link className={styles["resume-link"] ?? ""} to={resumeRoute}>
