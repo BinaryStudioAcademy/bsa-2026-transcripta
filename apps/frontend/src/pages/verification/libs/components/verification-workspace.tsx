@@ -80,12 +80,30 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
+			if (isEditing) {
+				return (
+					<>
+						<span className="verification-transcription__page">
+							page {currentPage.pageNo} of {pageCount} · typing by hand
+						</span>
+
+						<VerificationEdit
+							isDisabled={isVerifying}
+							onCancel={onToggleEdit}
+							onSave={onSaveEdit}
+							text=""
+						/>
+					</>
+				);
+			}
+
 			return (
 				<div className="verification-failed-state">
 					<FailedStateCard
 						attempts={currentPage.attempts}
 						isLoading={isReprocessing}
 						onReRead={onReRead}
+						onTypeByHand={onToggleEdit}
 						reason={getFailedReason(currentPage.lastError)}
 					/>
 				</div>
