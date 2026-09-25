@@ -18,6 +18,7 @@ import {
 type RollbackState = {
 	cursorPageNo: number;
 	status: DocumentGetPagesItemResponseDto["status"];
+	text: null | string;
 };
 
 type State = {
@@ -94,6 +95,7 @@ const { actions, name, reducer } = createSlice({
 			state.rollback[pageId] = {
 				cursorPageNo: page.pageNo,
 				status: page.status,
+				text: page.transcription?.text ?? null,
 			};
 
 			if (
@@ -140,7 +142,14 @@ const { actions, name, reducer } = createSlice({
 			const previous = state.rollback[pageId];
 
 			if (previous && state.byId[pageId]) {
-				state.byId[pageId].status = previous.status;
+				const page = state.byId[pageId];
+
+				page.status = previous.status;
+
+				if (page.transcription && previous.text !== null) {
+					page.transcription.text = previous.text;
+				}
+
 				state.cursorPageNo = previous.cursorPageNo;
 				state.rollback[pageId] = undefined;
 			}
@@ -291,6 +300,7 @@ const { actions, name, reducer } = createSlice({
 			state.rollback[pageId] = {
 				cursorPageNo: state.cursorPageNo,
 				status: page.status,
+				text: page.transcription?.text ?? null,
 			};
 
 			page.status = PageStatus.TRANSCRIBED;
