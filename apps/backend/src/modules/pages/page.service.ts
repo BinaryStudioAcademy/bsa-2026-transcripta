@@ -570,13 +570,18 @@ class PageService {
 			trx,
 		);
 
-		const pagesToQueue = CLOSED_PAGE_STATUSES.has(page.status)
-			? await this.pageRepository.findQueuedPages(page.documentId, trx)
-			: await this.refillWindowIfAdvanced({
-					documentId: page.documentId,
-					pageStatus: page.status,
-					trx,
-				});
+		if (!CLOSED_PAGE_STATUSES.has(page.status)) {
+			await this.refillWindowIfAdvanced({
+				documentId: page.documentId,
+				pageStatus: page.status,
+				trx,
+			});
+		}
+
+		const pagesToQueue = await this.pageRepository.findQueuedPages(
+			page.documentId,
+			trx,
+		);
 
 		await this.documentRepository.markDoneIfAllPagesClosed(
 			page.documentId,
