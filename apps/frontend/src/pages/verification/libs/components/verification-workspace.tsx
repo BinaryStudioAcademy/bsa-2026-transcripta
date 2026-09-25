@@ -123,14 +123,14 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 							<div className="verification-actions">
 								<Button
 									isPrimary={true}
-									label="Correct"
+									label="Confirm"
 									onClick={onConfirm}
 									type="button"
 								/>
 
 								<Button
 									isSecondary={true}
-									label="Edit"
+									label="Correct"
 									onClick={onToggleEdit}
 									type="button"
 								/>
