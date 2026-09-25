@@ -4,7 +4,9 @@ import { Button } from "~/libs/components/components.js";
 import {
 	BUDGET_FIELD_NAME,
 	CURRENCY_DECIMAL_PLACES,
+	DECIMAL_POSITION,
 	GET_BUDGET_LIMIT_ERROR_MESSAGE,
+	NO_MORE_THAN_TWO_DECIMALS_BUDGET,
 	SUGGESTED_LIMIT_INCREMENT,
 } from "~/libs/constants/constants.js";
 import { formatMoney } from "~/libs/helpers/helpers.js";
@@ -56,7 +58,15 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 	const handleFormSubmit = useCallback(
 		(event_: React.BaseSyntheticEvent): void => {
 			void handleSubmit((data) => {
-				const enteredLimit = Number(data.limitUsd);
+				const rawLimit = data.limitUsd.trim();
+				const decimalPart = rawLimit.split(".")[DECIMAL_POSITION];
+
+				if (decimalPart && decimalPart.length > CURRENCY_DECIMAL_PLACES) {
+					setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
+					return;
+				}
+
+				const enteredLimit = Number(rawLimit);
 				const currentSpent = Number(spentUsd);
 				const formattedSpent = formatMoney(spentUsd);
 
