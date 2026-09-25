@@ -1,5 +1,7 @@
 import React from "react";
 
+import { useOverflowTooltip } from "~/libs/hooks/hooks.js";
+
 import {
 	BYTES_IN_KILOBYTE,
 	FILE_SIZE_FRACTION_DIGITS,
@@ -18,6 +20,9 @@ const UploadProgress: React.FC<Properties> = ({
 	fileSize,
 	percent,
 }: Properties) => {
+	const { checkTruncation, elementRef, isTruncated } =
+		useOverflowTooltip<HTMLSpanElement>(fileName);
+
 	return (
 		<div>
 			<div
@@ -33,14 +38,33 @@ const UploadProgress: React.FC<Properties> = ({
 				/>
 			</div>
 			<div className={styles["upload-progress-cap"]}>
-				<span>
-					{fileName} ·{" "}
-					{(fileSize / BYTES_IN_KILOBYTE / KILOBYTES_IN_MEGABYTE).toFixed(
-						FILE_SIZE_FRACTION_DIGITS,
-					)}{" "}
-					MB
+				<span className={styles["upload-progress-info"]}>
+					<span
+						className={[
+							styles["upload-progress-file-wrapper"],
+							isTruncated && "tx-tip",
+						]
+							.filter(Boolean)
+							.join(" ")}
+						data-tip={isTruncated ? fileName : undefined}
+						onMouseEnter={checkTruncation}
+					>
+						<span
+							className={styles["upload-progress-file-name"]}
+							ref={elementRef}
+						>
+							{fileName}
+						</span>
+					</span>
+					<span className={styles["upload-progress-size"]}>
+						{" · "}
+						{(fileSize / BYTES_IN_KILOBYTE / KILOBYTES_IN_MEGABYTE).toFixed(
+							FILE_SIZE_FRACTION_DIGITS,
+						)}{" "}
+						MB
+					</span>
 				</span>
-				<span>{percent}%</span>
+				<span className={styles["upload-progress-percent"]}>{percent}%</span>
 			</div>
 		</div>
 	);

@@ -13,9 +13,41 @@
 .upload-progress-cap {
 	display: flex;
 	gap: var(--sp-3);
+	align-items: center;
 	justify-content: space-between;
+	min-width: 0;
 	margin-top: 6px;
 	font: 400 var(--fs-xs) / 1.4 var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-2);
+}
+
+.upload-progress-info {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.upload-progress-file-wrapper {
+	position: relative;
+	display: inline-flex;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.upload-progress-file-name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.upload-progress-size {
+	flex: none;
+	white-space: nowrap;
+}
+
+.upload-progress-percent {
+	flex: none;
 }
