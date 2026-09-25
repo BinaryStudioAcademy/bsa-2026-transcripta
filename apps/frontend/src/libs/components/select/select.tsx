@@ -6,7 +6,7 @@ import {
 	type FieldValues,
 } from "react-hook-form";
 
-import { useFormController } from "~/libs/hooks/hooks.js";
+import { useCallback, useFormController } from "~/libs/hooks/hooks.js";
 import { type SelectOption } from "~/libs/types/types.js";
 
 import styles from "./styles.module.css";
@@ -42,11 +42,18 @@ const Select = <T extends FieldValues>({
 		.filter(Boolean)
 		.join(" ");
 
+	const handleChange = useCallback(
+		(event_: React.ChangeEvent<HTMLSelectElement>): void => {
+			field.onChange(Number(event_.target.value));
+		},
+		[field],
+	);
+
 	return (
 		<label className={styles["label"]}>
 			<span className={styles["label-text"]}>{label}</span>
 			<span className={styles["tx-selectwrap"]}>
-				<select {...field} className={selectClassName}>
+				<select {...field} className={selectClassName} onChange={handleChange}>
 					{options.map((option) => (
 						<option key={option.id} value={option.id}>
 							{option.name}
