@@ -8,11 +8,13 @@ import {
 	ThemeToggle,
 } from "~/libs/components/components.js";
 import {
+	BUDGET_GREATER_MESSAGE,
+	BUDGET_LOWERED_MESSAGE,
 	BUDGET_STOP_NOTIFICATION_MESSAGE,
 	BUDGET_UPLOAD_FAILED_MESSAGE,
+	EMPTY_STRING,
 	INITIAL_COUNT,
 	MINIMUM_VALID_DOCUMENT_ID,
-	NOTIFICATION_DELAY_MS,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
@@ -50,6 +52,9 @@ const Document: React.FC = () => {
 	);
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
+	const [serverValidationError, setServerValidationError] = useState<
+		null | string
+	>(null);
 
 	const { id } = useParams();
 
@@ -70,13 +75,10 @@ const Document: React.FC = () => {
 		};
 	}, [documentId, isValidId, dispatch]);
 
-	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
-	const isNotifyingReference = useRef<boolean>(false);
-	const previousStatusReference = useRef<null | string>(null);
+	const lastNotifiedBudgetStopIdReference = useRef<null | number>(null);
 
 	useEffect(() => {
 		if (!currentDocument) {
-			previousStatusReference.current = null;
 			return;
 		}
 
@@ -87,31 +89,18 @@ const Document: React.FC = () => {
 		}
 
 		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
-		const previousStatus = previousStatusReference.current;
 
-		previousStatusReference.current = currentDocument.status;
-
-		const hasAlreadyBeenNotified = notifiedDocumentsReference.current.has(
-			currentDocument.id,
-		);
-
-		const shouldNotify =
-			isBudgetStop &&
-			(!hasAlreadyBeenNotified ||
-				previousStatus !== DocumentStatus.BUDGET_STOP);
-
-		if (shouldNotify && !isNotifyingReference.current) {
-			isNotifyingReference.current = true;
-
-			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
-
-			notifiedDocumentsReference.current.add(currentDocument.id);
-
-			setTimeout(() => {
-				isNotifyingReference.current = false;
-			}, NOTIFICATION_DELAY_MS);
+		if (isBudgetStop) {
+			if (lastNotifiedBudgetStopIdReference.current !== currentDocument.id) {
+				notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+				lastNotifiedBudgetStopIdReference.current = currentDocument.id;
+			}
+		} else {
+			if (lastNotifiedBudgetStopIdReference.current === currentDocument.id) {
+				lastNotifiedBudgetStopIdReference.current = null;
+			}
 		}
-	}, [currentDocument, currentDocument?.id, currentDocument?.status, id]);
+	}, [currentDocument, id]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -144,10 +133,12 @@ const Document: React.FC = () => {
 	}, [currentDocument, dispatch, navigate]);
 
 	const handleOpenRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
 		setIsRaiseLimitOpen(true);
 	}, []);
 
 	const handleCancelRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
 		setIsRaiseLimitOpen(false);
 	}, []);
 
@@ -156,6 +147,8 @@ const Document: React.FC = () => {
 			if (!currentDocument) {
 				return;
 			}
+
+			setServerValidationError(null);
 
 			void dispatch(
 				documentActions.updateBudget({
@@ -168,7 +161,23 @@ const Document: React.FC = () => {
 					setIsRaiseLimitOpen(false);
 					void dispatch(documentActions.startPolling(currentDocument.id));
 				})
-				.catch(() => {
+				.catch((error: unknown) => {
+					const typedError = error as {
+						details?: { message: string }[];
+						message?: string;
+					};
+					const firstDetail = typedError.details?.[INITIAL_COUNT];
+					const errorMessage =
+						firstDetail?.message ?? typedError.message ?? EMPTY_STRING;
+					const isBudgetValidationError =
+						errorMessage.includes(BUDGET_GREATER_MESSAGE) ||
+						errorMessage.includes(BUDGET_LOWERED_MESSAGE);
+
+					if (isBudgetValidationError) {
+						setServerValidationError(errorMessage);
+						return;
+					}
+
 					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
 				});
 		},
@@ -319,6 +328,7 @@ const Document: React.FC = () => {
 					currentLimitUsd={currentDocument.budget.limitUsd}
 					onCancel={handleCancelRaiseLimit}
 					onSubmit={handleUpdateBudget}
+					serverError={serverValidationError}
 					spentUsd={currentDocument.budget.spentUsd}
 				/>
 			)}

@@ -24,7 +24,8 @@ errorHandlingMiddleware.startListening({
 
 		if (
 			action.type === documentActions.pollDocumentById.rejected.type ||
-			action.type === documentActions.loadById.rejected.type
+			action.type === documentActions.loadById.rejected.type ||
+			action.type === documentActions.updateBudget.rejected.type
 		) {
 			return;
 		}

@@ -21,12 +21,9 @@ import {
 	type Properties,
 } from "./types/types.js";
 
-const RaiseLimitDialog: React.FC<Properties> = ({
-	currentLimitUsd,
-	onCancel,
-	onSubmit,
-	spentUsd,
-}: Properties) => {
+const RaiseLimitDialog: React.FC<
+	Properties & { serverError?: null | string }
+> = ({ currentLimitUsd, onCancel, onSubmit, serverError, spentUsd }) => {
 	const suggestedLimit = (
 		Number(currentLimitUsd) + SUGGESTED_LIMIT_INCREMENT
 	).toFixed(CURRENCY_DECIMAL_PLACES);
@@ -70,6 +67,8 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 		},
 		[handleSubmit, spentUsd, onSubmit],
 	);
+
+	const displayError = validationError || serverError;
 
 	return (
 		<div className={styles["scrim"]}>
@@ -116,8 +115,8 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 						/>
 					</div>
 
-					{validationError && (
-						<p className={styles["error-message"]}>{validationError}</p>
+					{displayError && (
+						<p className={styles["error-message"]}>{displayError}</p>
 					)}
 
 					<div className={styles["actions"]}>
