@@ -1,12 +1,16 @@
 import { Button, Loader } from "~/libs/components/components.js";
 import { LoaderSize } from "~/libs/enums/loader-size.enum.js";
 
-import { MIN_NUMBER_OF_PAGES } from "../constants/verification.constants.js";
+import {
+	MIN_NUMBER_OF_PAGES,
+	PAGE_STRIP_LEGEND,
+} from "../constants/verification.constants.js";
 import { type DocumentGetPagesItemResponseDto } from "../types/types.js";
 import { PageButton } from "./components.js";
 
 type VerificationFooterProperties = {
 	currentPageNo: number;
+	cursorPageNo: null | number;
 	isLoading: boolean;
 	onNext: () => void;
 	onPageSelect: (pageNo: number) => void;
@@ -17,6 +21,7 @@ type VerificationFooterProperties = {
 
 const VerificationFooter: React.FC<VerificationFooterProperties> = ({
 	currentPageNo,
+	cursorPageNo,
 	isLoading,
 	onNext,
 	onPageSelect,
@@ -42,10 +47,12 @@ const VerificationFooter: React.FC<VerificationFooterProperties> = ({
 					}
 
 					const isCurrent = page.pageNo === currentPageNo;
+					const isCursor = page.pageNo === cursorPageNo;
 
 					return (
 						<PageButton
 							isCurrent={isCurrent}
+							isCursor={isCursor}
 							key={page.id}
 							onPageSelect={onPageSelect}
 							page={page}
@@ -65,7 +72,13 @@ const VerificationFooter: React.FC<VerificationFooterProperties> = ({
 				/>
 			</div>
 
-			<span className="tx-pstrip-legend">▓ ready ░ running · queued</span>
+			<span className="tx-pstrip-legend">
+				{PAGE_STRIP_LEGEND.map(({ label, symbol }) => (
+					<span className="tx-pstrip-legend-item" key={label}>
+						{symbol} {label}
+					</span>
+				))}
+			</span>
 		</footer>
 	);
 };

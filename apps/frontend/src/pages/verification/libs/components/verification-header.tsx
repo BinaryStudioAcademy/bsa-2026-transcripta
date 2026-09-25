@@ -51,10 +51,10 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			<div className="verification-header__shortcuts">
 				<span className="tx-kbdrow">
 					<span>
-						<kbd className="tx-kbd">Enter</kbd>Correct
+						<kbd className="tx-kbd">Enter</kbd>Confirm
 					</span>
 					<span>
-						<kbd className="tx-kbd">E</kbd>Edit
+						<kbd className="tx-kbd">E</kbd>Correct
 					</span>
 					<span>
 						<kbd className="tx-kbd">S</kbd>Skip
