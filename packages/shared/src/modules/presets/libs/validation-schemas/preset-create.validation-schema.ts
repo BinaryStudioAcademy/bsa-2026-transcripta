@@ -10,9 +10,42 @@ type PresetCreateRequestValidationDto = {
 	familyId: z.ZodNumber;
 	instructions: z.ZodString;
 	name: z.ZodString;
-	seedGlossary: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodUnknown>>>;
-	settings: z.ZodDefault<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+	seedGlossary: z.ZodDefault<
+		z.ZodOptional<
+			z.ZodUnion<
+				[
+					z.ZodArray<z.ZodString>,
+					z.ZodArray<z.ZodObject<typeof seedGlossaryEntrySchema.shape>>,
+				]
+			>
+		>
+	>;
+	settings: z.ZodDefault<
+		z.ZodOptional<z.ZodObject<typeof presetSettingsSchema.shape>>
+	>;
 };
+
+const seedGlossaryEntrySchema = z.object({
+	kind: z
+		.string()
+		.trim()
+		.min(PresetValidationRule.GLOSSARY_ENTRY_MIN_LENGTH)
+		.optional(),
+	note: z.string().optional(),
+	value: z.string().trim().min(PresetValidationRule.GLOSSARY_ENTRY_MIN_LENGTH),
+});
+
+const presetSettingsSchema = z
+	.object({
+		blankStdevThreshold: z.number(),
+		lexiconTopK: z.number().int().nonnegative(),
+		maxContextTokens: z.number().int().positive(),
+		minDistinctPages: z.number().int().nonnegative(),
+		model: z.string().trim().min(PresetValidationRule.MODEL_MIN_LENGTH),
+		neighbourPages: z.number().int().nonnegative(),
+	})
+	.passthrough()
+	.partial();
 
 const PresetCreateValidationSchema = z.object<PresetCreateRequestValidationDto>(
 	{
@@ -43,8 +76,21 @@ const PresetCreateValidationSchema = z.object<PresetCreateRequestValidationDto>(
 			.max(PresetValidationRule.NAME_MAX_LENGTH, {
 				message: PresetValidationMessage.NAME_MAX_LENGTH,
 			}),
-		seedGlossary: z.array(z.unknown()).optional().default([]),
-		settings: z.record(z.string(), z.unknown()).optional().default({}),
+		seedGlossary: z
+			.union([
+				z.array(
+					z.string().trim().min(PresetValidationRule.GLOSSARY_ENTRY_MIN_LENGTH),
+					{
+						invalid_type_error: PresetValidationMessage.SEED_GLOSSARY_INVALID,
+					},
+				),
+				z.array(seedGlossaryEntrySchema, {
+					invalid_type_error: PresetValidationMessage.SEED_GLOSSARY_INVALID,
+				}),
+			])
+			.optional()
+			.default([]),
+		settings: presetSettingsSchema.optional().default({}),
 	},
 );
 
