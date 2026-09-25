@@ -2,6 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 
 import {
 	DIVIDER_HALF,
+	EMPTY_LENGTH,
 	INDEX_NOT_FOUND,
 	START_INDEX_FALLBACK,
 } from "~/libs/constants/common.constants.js";
@@ -13,14 +14,15 @@ const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 const selectReprocessingPageId = (state: RootState) =>
 	state.pages.reprocessingPageId;
 
-const selectVerificationDataStatus = (state: RootState) =>
-	state.pages.verificationDataStatus;
-
 const selectCurrentPage = (state: RootState) => {
 	const pageId = state.pages.idsByPageNo[state.pages.cursorPageNo];
 
 	return pageId ? state.pages.byId[pageId] : undefined;
 };
+
+const selectIsVerificationQueueBusy = (state: RootState): boolean =>
+	state.pages.verifyingPageId !== null ||
+	state.pages.verificationQueue.length > EMPTY_LENGTH;
 
 const selectCursorPageNo = (state: RootState) => state.pages.cursorPageNo;
 
@@ -68,9 +70,9 @@ const selectPagesForStrip = createSelector(
 export {
 	selectCurrentPage,
 	selectCursorPageNo,
+	selectIsVerificationQueueBusy,
 	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
-	selectVerificationDataStatus,
 };

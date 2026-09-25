@@ -3,10 +3,17 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { type DocumentGetPagesItemResponseDto } from "~/modules/documents/documents.js";
-import { type VerifyPageRequestDto } from "~/modules/pages/pages.js";
 
 import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
-import { loadPages, reprocessPage, undoPage, verifyPage } from "./actions.js";
+import { type VerificationQueueItem } from "../libs/types/types.js";
+import {
+	discardVerificationQueue,
+	loadPages,
+	processVerificationQueue,
+	reprocessPage,
+	undoPage,
+	verifyPage,
+} from "./actions.js";
 
 type RollbackState = {
 	cursorPageNo: number;
@@ -18,10 +25,13 @@ type State = {
 	cursorPageNo: number;
 	dataStatus: ValueOf<typeof DataStatus>;
 	idsByPageNo: Record<number, number>;
+	isVerificationQueueRunning: boolean;
 	lastVerifiedPageId: null | number;
 	reprocessingPageId: null | number;
 	rollback: Record<number, RollbackState | undefined>;
 	verificationDataStatus: ValueOf<typeof DataStatus>;
+	verificationQueue: VerificationQueueItem[];
+	verifyingPageId: null | number;
 };
 
 const initialState: State = {
@@ -29,10 +39,13 @@ const initialState: State = {
 	cursorPageNo: 0,
 	dataStatus: DataStatus.IDLE,
 	idsByPageNo: {},
+	isVerificationQueueRunning: false,
 	lastVerifiedPageId: null,
 	reprocessingPageId: null,
 	rollback: {},
 	verificationDataStatus: DataStatus.IDLE,
+	verificationQueue: [],
+	verifyingPageId: null,
 };
 
 const verificationStatusMap = {
@@ -43,14 +56,62 @@ const verificationStatusMap = {
 
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
-		builder.addCase(verifyPage.pending, (state) => {
+		builder.addCase(processVerificationQueue.pending, (state) => {
+			state.isVerificationQueueRunning = true;
+		});
+
+		builder.addCase(processVerificationQueue.fulfilled, (state) => {
+			state.isVerificationQueueRunning = false;
+		});
+
+		builder.addCase(processVerificationQueue.rejected, (state) => {
+			state.isVerificationQueueRunning = false;
+		});
+
+		builder.addCase(discardVerificationQueue, (state, action) => {
+			state.verificationQueue = state.verificationQueue.filter(
+				(item) => item.documentId !== action.payload.documentId,
+			);
+		});
+
+		// The optimistic step: the action leaves the queue here, synchronously
+		// with the request, so only one page per document is ever outstanding
+		// and `rollback` holds a single entry.
+		builder.addCase(verifyPage.pending, (state, action) => {
+			const { pageId, payload } = action.meta.arg;
+			const page = state.byId[pageId];
+
+			state.verificationQueue = state.verificationQueue.filter(
+				(item) => item.pageId !== pageId,
+			);
 			state.verificationDataStatus = DataStatus.PENDING;
+			state.verifyingPageId = pageId;
+
+			if (!page) {
+				return;
+			}
+
+			state.rollback[pageId] = {
+				cursorPageNo: page.pageNo,
+				status: page.status,
+			};
+
+			if (
+				payload.action === PageVerificationAction.CORRECT &&
+				page.transcription !== null &&
+				payload.text !== undefined
+			) {
+				page.transcription.text = payload.text;
+			}
+
+			page.status = verificationStatusMap[payload.action];
 		});
 
 		builder.addCase(verifyPage.fulfilled, (state, { payload }) => {
 			state.rollback[payload.pageId] = undefined;
 			state.lastVerifiedPageId = payload.pageId;
 			state.verificationDataStatus = DataStatus.FULFILLED;
+			state.verifyingPageId = null;
 
 			if (!payload.next) {
 				return;
@@ -58,11 +119,11 @@ const { actions, name, reducer } = createSlice({
 
 			const nextPage = state.byId[payload.next.pageId];
 
+			// The cursor is not touched here: it already moved on the keypress,
+			// and during a burst it is several pages ahead of this response.
 			if (!nextPage) {
 				return;
 			}
-
-			state.cursorPageNo = nextPage.pageNo;
 
 			nextPage.status = payload.next.status;
 
@@ -85,6 +146,7 @@ const { actions, name, reducer } = createSlice({
 			}
 
 			state.verificationDataStatus = DataStatus.REJECTED;
+			state.verifyingPageId = null;
 		});
 
 		builder.addCase(undoPage.pending, (state) => {
@@ -151,6 +213,12 @@ const { actions, name, reducer } = createSlice({
 
 		builder.addCase(loadPages.fulfilled, (state, action) => {
 			for (const page of action.payload.items) {
+				// A page with a request in flight keeps its optimistic state
+				// until that request settles.
+				if (state.rollback[page.id]) {
+					continue;
+				}
+
 				state.byId[page.id] = page;
 				state.idsByPageNo[page.pageNo] = page.id;
 			}
@@ -164,6 +232,32 @@ const { actions, name, reducer } = createSlice({
 	initialState,
 	name: "pages",
 	reducers: {
+		// The keypress: the cursor moves now, the page status changes only when
+		// the action leaves the queue (see `verifyPage.pending`).
+		enqueueVerification: (
+			state,
+			action: PayloadAction<{
+				item: VerificationQueueItem;
+				pageCount: number;
+			}>,
+		) => {
+			const { item, pageCount } = action.payload;
+
+			const isAlreadyQueued =
+				state.verifyingPageId === item.pageId ||
+				state.verificationQueue.some((queued) => queued.pageId === item.pageId);
+
+			if (isAlreadyQueued) {
+				return;
+			}
+
+			state.verificationQueue.push(item);
+
+			if (state.cursorPageNo < pageCount) {
+				state.cursorPageNo += 1;
+			}
+		},
+
 		reset: (state) => {
 			state.byId = {};
 			state.idsByPageNo = {};
@@ -173,6 +267,8 @@ const { actions, name, reducer } = createSlice({
 			state.reprocessingPageId = null;
 			state.rollback = {};
 			state.verificationDataStatus = DataStatus.IDLE;
+			state.verificationQueue = [];
+			state.verifyingPageId = null;
 		},
 
 		setCursorPageNo: (state, action: PayloadAction<number>) => {
@@ -199,41 +295,6 @@ const { actions, name, reducer } = createSlice({
 
 			page.status = PageStatus.TRANSCRIBED;
 			state.cursorPageNo = page.pageNo;
-		},
-
-		verifyOptimistic: (
-			state,
-			action: PayloadAction<{
-				pageCount: number;
-				pageId: number;
-				payload: VerifyPageRequestDto;
-			}>,
-		) => {
-			const { pageCount, pageId, payload } = action.payload;
-			const page = state.byId[pageId];
-
-			if (!page) {
-				return;
-			}
-
-			state.rollback[pageId] = {
-				cursorPageNo: state.cursorPageNo,
-				status: page.status,
-			};
-
-			if (
-				payload.action === PageVerificationAction.CORRECT &&
-				page.transcription !== null &&
-				payload.text !== undefined
-			) {
-				page.transcription.text = payload.text;
-			}
-
-			page.status = verificationStatusMap[payload.action];
-
-			if (state.cursorPageNo < pageCount) {
-				state.cursorPageNo += 1;
-			}
 		},
 	},
 });
