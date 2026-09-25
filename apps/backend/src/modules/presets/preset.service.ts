@@ -12,6 +12,7 @@ import { DEFAULT_PRESET_SETTINGS } from "~/modules/context/builder/libs/constant
 import { validateSeedGlossaryBudget } from "~/modules/context/context.js";
 
 import {
+	INITIAL_VERSION,
 	MAX_PRESET_CREATE_ATTEMPTS,
 	VERSION_INCREMENT,
 } from "./libs/constants/constants.js";
@@ -70,20 +71,23 @@ class PresetService {
 				});
 			}
 
-			const maxVersion =
-				await this.presetRepository.findFamilyMaxVersion(familyId);
+			const isOwnBase = base.getOwnerId() === ownerId;
 
 			const entity = PresetEntity.initializeNew({
 				description,
-				familyId: base.getFamilyId(),
+				familyId: isOwnBase ? base.getFamilyId() : null,
 				instructions,
 				isPublic: false,
 				name,
 				outputSchema: structuredClone(base.getOutputSchema()),
 				ownerId,
 				seedGlossary,
-				settings,
-				version: maxVersion + VERSION_INCREMENT,
+				settings: { ...base.getSettings(), ...settings },
+				version: isOwnBase
+					? (await this.presetRepository.findFamilyMaxVersion(
+							base.getFamilyId(),
+						)) + VERSION_INCREMENT
+					: INITIAL_VERSION,
 			});
 
 			try {

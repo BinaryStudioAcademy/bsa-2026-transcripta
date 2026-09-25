@@ -12,7 +12,7 @@ class PresetEntity implements Entity {
 
 	private description: string;
 
-	private familyId: number;
+	private familyId: null | number;
 
 	private id: null | number;
 
@@ -48,7 +48,7 @@ class PresetEntity implements Entity {
 	}: {
 		createdAt: string;
 		description: string;
-		familyId: number;
+		familyId: null | number;
 		id: null | number;
 		instructions: string;
 		isPublic: boolean;
@@ -89,7 +89,7 @@ class PresetEntity implements Entity {
 	}: {
 		createdAt: string;
 		description: string;
-		familyId: number;
+		familyId: null | number;
 		id: number;
 		instructions: string;
 		isPublic: boolean;
@@ -129,7 +129,7 @@ class PresetEntity implements Entity {
 		version,
 	}: {
 		description: string;
-		familyId: number;
+		familyId: null | number;
 		instructions: string;
 		isPublic: boolean;
 		name: string;
@@ -156,11 +156,19 @@ class PresetEntity implements Entity {
 	}
 
 	public getFamilyId(): number {
-		return this.familyId;
+		return this.familyId as number;
 	}
 
 	public getOutputSchema(): Record<string, unknown> {
 		return this.outputSchema;
+	}
+
+	public getOwnerId(): null | number {
+		return this.ownerId;
+	}
+
+	public getSettings(): Record<string, unknown> {
+		return this.settings;
 	}
 
 	public getVersion(): number {
@@ -171,7 +179,7 @@ class PresetEntity implements Entity {
 		return {
 			createdAt: this.createdAt,
 			description: this.description,
-			familyId: this.familyId,
+			familyId: this.familyId as number,
 			id: this.id as number,
 			instructions: this.instructions,
 			isPublic: this.isPublic,
@@ -186,7 +194,7 @@ class PresetEntity implements Entity {
 
 	public toNewObject(): {
 		description: string;
-		familyId: number;
+		familyId?: number;
 		instructions: string;
 		isPublic: boolean;
 		name: string;
@@ -198,7 +206,7 @@ class PresetEntity implements Entity {
 	} {
 		return {
 			description: this.description,
-			familyId: this.familyId,
+			...(this.familyId === null ? {} : { familyId: this.familyId }),
 			instructions: this.instructions,
 			isPublic: this.isPublic,
 			name: this.name,
@@ -213,7 +221,7 @@ class PresetEntity implements Entity {
 	public toObject(): PresetGetAllItemResponseDto {
 		return {
 			description: this.description,
-			familyId: this.familyId,
+			familyId: this.familyId as number,
 			id: this.id as number,
 			name: this.name,
 			version: this.version,
