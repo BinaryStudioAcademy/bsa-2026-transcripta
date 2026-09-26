@@ -159,7 +159,6 @@
 
 .verification-transcription__text,
 .verification-transcription__draft {
-	max-width: 560px;
 	margin: 0;
 	font: 400 16px/1.65 var(--font-ui);
 	color: var(--text);
@@ -200,8 +199,13 @@
 	white-space: normal;
 }
 
+.verification-transcription__table-scroll {
+	overflow-x: auto;
+}
+
 .verification-transcription__table {
 	width: 100%;
+	min-width: min-content;
 	margin: var(--sp-3) 0;
 	font-variant-numeric: tabular-nums;
 	white-space: normal;
