@@ -33,6 +33,19 @@ export {
 } from "./libs/types/types.js";
 export { AuthApiPath } from "./modules/auth/auth.js";
 export {
+	type DocumentExportCreateRequestDto,
+	type DocumentExportCreateResponseDto,
+	type DocumentExportFormatValue,
+	type DocumentExportGetByIdResponseDto,
+	type DocumentExportItemResponseDto,
+	type DocumentExportStatusValue,
+	DocumentExportCreateRequestValidationSchema,
+	DocumentExportFormat,
+	DocumentExportGetByIdParametersValidationSchema,
+	DocumentExportsApiPath,
+	DocumentExportStatus,
+} from "./modules/document-exports/document-exports.js";
+export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
