@@ -2,6 +2,9 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentExportCreateResponseDto,
+	type DocumentExportFormatValue,
+	DocumentExportStatus,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesResponseDto,
@@ -18,6 +21,7 @@ import {
 	PDFTimeoutError,
 } from "~/libs/exceptions/exceptions.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+import { type DocumentExportQueue } from "~/libs/modules/queue/document-export/document-export-queue.module.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
@@ -29,6 +33,8 @@ import {
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { sha256 } from "../context/libs/helpers/hash.helper.js";
+import { DocumentExportEntity } from "../document-exports/document-export.entity.js";
+import { type DocumentExportRepository } from "../document-exports/document-export.repository.js";
 import { refillPageWindow } from "../pages/libs/helpers/helpers.js";
 import { PageEntity } from "../pages/page.entity.js";
 import { type PageRepository } from "../pages/page.repository.js";
@@ -37,6 +43,7 @@ import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
 import {
 	DOCUMENT_OWNER_ID_FOREIGN,
+	DOCUMENT_STATUSES_TO_EXPORT,
 	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
 	NON_DELETABLE_DOCUMENT_STATUSES,
@@ -59,6 +66,8 @@ import {
 } from "./libs/types/types.js";
 
 class DocumentService {
+	private documentExportQueue: DocumentExportQueue;
+	private documentExportRepository: DocumentExportRepository;
 	private documentRepository: DocumentRepository;
 	private pageRepository: PageRepository;
 	private pageTranscribeQueue: PageTranscribeQueue;
@@ -66,12 +75,16 @@ class DocumentService {
 	private storage: BaseStorage;
 
 	public constructor({
+		documentExportQueue,
+		documentExportRepository,
 		documentRepository,
 		pageRepository,
 		pageTranscribeQueue,
 		pdfPageProcessor,
 		storage,
 	}: DocumentServiceDependencies) {
+		this.documentExportQueue = documentExportQueue;
+		this.documentExportRepository = documentExportRepository;
 		this.documentRepository = documentRepository;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
@@ -553,6 +566,56 @@ class DocumentService {
 		}
 	}
 
+	public async createExport({
+		documentId,
+		format,
+		userId,
+	}: {
+		documentId: number;
+		format: DocumentExportFormatValue;
+		userId: number;
+	}): Promise<DocumentExportCreateResponseDto> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			documentId,
+			userId,
+		);
+
+		if (document === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const documentStatus = document.toObject().status;
+
+		if (!DOCUMENT_STATUSES_TO_EXPORT.has(documentStatus)) {
+			throw new HTTPError({
+				message: DocumentErrorMessage.INVALID_STATUS_TO_EXPORT,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const createdExport = await this.documentExportRepository.create(
+			DocumentExportEntity.initializeNew({
+				documentId,
+				format,
+				requestedBy: userId,
+				status: DocumentExportStatus.QUEUED,
+			}),
+		);
+
+		const exportData = createdExport.toObject();
+
+		await this.documentExportQueue.add({
+			documentId,
+			exportId: exportData.id,
+			format,
+		});
+
+		return { id: exportData.id };
+	}
+
 	public async delete(id: number, ownerId: number): Promise<void> {
 		await DocumentModel.transaction(async (trx) => {
 			const document =
@@ -614,7 +677,37 @@ class DocumentService {
 				status: HTTPCode.NOT_FOUND,
 			});
 		}
-		return document.toObject();
+
+		const documentData = document.toObject();
+
+		const exportsWithUrls = await Promise.all(
+			documentData.exports.map(async (exportData) => {
+				let downloadUrl: null | string = null;
+
+				if (
+					exportData.status === DocumentExportStatus.READY &&
+					exportData.objectKey
+				) {
+					downloadUrl = await this.storage.getExportDownloadSignedUrl(
+						exportData.objectKey,
+					);
+				}
+
+				return {
+					createdAt: exportData.createdAt,
+					downloadUrl,
+					format: exportData.format,
+					id: exportData.id,
+					sizeBytes: exportData.sizeBytes,
+					status: exportData.status,
+				};
+			}),
+		);
+
+		return {
+			...documentData,
+			exports: exportsWithUrls,
+		};
 	}
 
 	public async findLexicon(
