@@ -46,7 +46,6 @@ const DocumentExportFormatValues = Object.values(DocumentExportFormat);
 
 const DocumentExportStatus = {
 	FAILED: "failed",
-	PROCESSING: "processing",
 	QUEUED: "queued",
 	READY: "ready",
 } as const;

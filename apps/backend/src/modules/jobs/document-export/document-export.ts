@@ -35,7 +35,7 @@ const createDocumentExportHandler = ({
 
 			if (!document) {
 				logger.error(ErrorMessage.DOCUMENT_NOT_FOUND(documentId));
-				return;
+				throw new Error(ErrorMessage.DOCUMENT_NOT_FOUND(documentId));
 			}
 
 			const pages = await pageRepository.findAllByDocumentId(documentId);

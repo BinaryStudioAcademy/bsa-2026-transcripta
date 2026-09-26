@@ -53,7 +53,14 @@ class DocumentExportService {
 		}
 
 		return {
-			...exportData,
+			createdAt: exportData.createdAt,
+			documentId: exportData.documentId,
+			errorMessage: exportData.errorMessage,
+			finishedAt: exportData.finishedAt,
+			format: exportData.format,
+			id: exportData.id,
+			sizeBytes: exportData.sizeBytes,
+			status: exportData.status,
 			downloadUrl,
 		};
 	}

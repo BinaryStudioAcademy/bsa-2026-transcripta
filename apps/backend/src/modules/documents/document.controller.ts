@@ -53,6 +53,14 @@ import {
  *           format: number
  *           minimum: 1
  *           maximum: 524288000
+ *     DocumentCreateExportRequest:
+ *       type: object
+ *       required:
+ *         - format
+ *       properties:
+ *         format:
+ *           type: string
+ *           enum: [json, csv, txt]
  *     DocumentCreateResponse:
  *       type: object
  *       properties:
@@ -344,18 +352,14 @@ class DocumentController extends BaseController {
 	 *       content:
 	 *         application/json:
 	 *           schema:
-	 *             type: object
-	 *             required:
-	 *               - format
-	 *             properties:
-	 *               format:
-	 *                 type: string
-	 *                 enum: [json, csv, txt]
+	 *             $ref: "#/components/schemas/DocumentCreateExportRequest"
 	 *     responses:
 	 *       201:
 	 *         description: Export queued successfully
 	 *       404:
 	 *         description: Document not found or user is not owner
+	 *       409:
+	 *         description: Document is not ingested yet
 	 */
 	private async createExport(
 		options: DocumentCreateExportOptions,
@@ -366,7 +370,7 @@ class DocumentController extends BaseController {
 				format: options.body.format,
 				userId: options.user.userId,
 			}),
-			status: HTTPCode.OK,
+			status: HTTPCode.CREATED,
 		};
 	}
 

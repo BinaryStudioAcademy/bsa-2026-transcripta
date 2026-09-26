@@ -7,6 +7,7 @@ const DOCUMENT_STATUSES_TO_EXPORT = new Set<DocumentStatusValue>([
 	DocumentStatus.FAILED,
 	DocumentStatus.PAUSED,
 	DocumentStatus.PROCESSING,
+	DocumentStatus.READY,
 ]);
 
 export { DOCUMENT_STATUSES_TO_EXPORT };

@@ -6,7 +6,7 @@ const DocumentErrorMessage = {
 	EXCEEDED_MAX_PAGES: "The document has too many pages (over 500).",
 	INGEST_FAILED: "Failed to ingest the document",
 	INVALID_STATUS_TO_EXPORT:
-		"Document processing must begin before it can be exported",
+		"The document must be ingested before it can be exported",
 	NO_PRESET: "The document has no preset",
 	NO_SOURCE_KEY: "The document has no source key",
 	NOT_A_BUDGET_INCREASE: "The spending limit can only be raised, not lowered",
