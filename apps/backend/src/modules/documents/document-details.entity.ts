@@ -1,11 +1,9 @@
-import {
-	type DocumentExportFormatValue,
-	type DocumentExportStatusValue,
-	DocumentStatus,
-	type ValueOf,
-} from "@transcripta/shared";
+import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
-import { type DocumentGetByIdResponseDto } from "./libs/types/types.js";
+import {
+	type DocumentExportRawItem,
+	type DocumentGetByIdResponseDto,
+} from "./libs/types/types.js";
 
 type DocumentDetailsProperties = {
 	budgetUsd: string;
@@ -31,15 +29,6 @@ type DocumentDetailsProperties = {
 	title: string;
 	usedPct: number;
 	verifiedPct: number;
-};
-
-type DocumentExportRawItem = {
-	createdAt: string;
-	format: DocumentExportFormatValue;
-	id: number;
-	objectKey: null | string;
-	sizeBytes: null | number;
-	status: DocumentExportStatusValue;
 };
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;

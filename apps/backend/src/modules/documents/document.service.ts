@@ -1003,12 +1003,41 @@ class DocumentService {
 			},
 		);
 
+		const exportsWithUrls = await Promise.all(
+			document.exports.map(async (exportData) => {
+				let downloadUrl: null | string = null;
+
+				if (
+					exportData.status === DocumentExportStatus.READY &&
+					exportData.objectKey
+				) {
+					downloadUrl = await this.storage.getExportDownloadSignedUrl(
+						exportData.objectKey,
+					);
+				}
+
+				return {
+					createdAt: exportData.createdAt,
+					downloadUrl,
+					format: exportData.format,
+					id: exportData.id,
+					sizeBytes: exportData.sizeBytes,
+					status: exportData.status,
+				};
+			}),
+		);
+
+		const documentToReturn = {
+			...document,
+			exports: exportsWithUrls,
+		};
+
 		if (!isPaused) {
-			return document;
+			return documentToReturn;
 		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
-			return document;
+			return documentToReturn;
 		}
 
 		try {
@@ -1024,7 +1053,7 @@ class DocumentService {
 				}),
 			);
 
-			return document;
+			return documentToReturn;
 		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,

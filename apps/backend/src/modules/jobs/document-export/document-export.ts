@@ -53,7 +53,7 @@ const createDocumentExportHandler = ({
 				};
 			});
 
-			const serializer = Serializers[format] as (pages: PageItem[]) => string;
+			const serializer = Serializers[format];
 			const fileContent = serializer(pageItems);
 			const fileToUpload = Buffer.from(fileContent, UTF8);
 
@@ -61,7 +61,7 @@ const createDocumentExportHandler = ({
 
 			await storage.uploadExport({
 				body: fileToUpload,
-				contentType: ContentType[format] as string,
+				contentType: ContentType[format],
 				key: uploadKey,
 			});
 
