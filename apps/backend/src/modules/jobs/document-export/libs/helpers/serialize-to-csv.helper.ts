@@ -1,10 +1,11 @@
+import { DOUBLE_QUOTES, TWO_DOUBLE_QUOTES } from "../constants/constants.js";
 import { CsvHeader } from "../enums/enums.js";
 import { type PageItem } from "../types/types.js";
 
 const escapeCsvField = (value: number | string): string => {
 	const csvField = String(value);
 	if (/[",\n\r]/.test(csvField)) {
-		return `"${csvField.replaceAll('"', '""')}"`;
+		return `"${csvField.replaceAll(DOUBLE_QUOTES, TWO_DOUBLE_QUOTES)}"`;
 	}
 	return csvField;
 };
