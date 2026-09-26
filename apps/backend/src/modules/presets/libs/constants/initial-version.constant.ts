@@ -1,0 +1,3 @@
+const INITIAL_VERSION = 1;
+
+export { INITIAL_VERSION };

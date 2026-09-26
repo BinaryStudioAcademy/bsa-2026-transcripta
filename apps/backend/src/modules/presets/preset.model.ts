@@ -31,6 +31,10 @@ class PresetModel extends AbstractModel {
 
 	public version!: number;
 
+	public static override get jsonAttributes(): string[] {
+		return ["seedGlossary"];
+	}
+
 	public static override get tableName(): string {
 		return DatabaseTableName.PRESET;
 	}
