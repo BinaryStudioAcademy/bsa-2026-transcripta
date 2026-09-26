@@ -1,4 +1,5 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
+import { MINIMUM_VALID_DOCUMENT_ID } from "~/libs/constants/constants.js";
 import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -64,6 +65,13 @@ const Verification: React.FC = () => {
 		({ documents }) => documents.documentDataStatus,
 	);
 
+	const pauseResumeDataStatus = useAppSelector(
+		({ documents }) =>
+			documents.pauseResumeDataStatuses[
+				document?.id ?? MINIMUM_VALID_DOCUMENT_ID
+			],
+	);
+
 	const currentPage = useAppSelector(selectCurrentPage);
 	const lastVerifiedPageId = useAppSelector(selectLastVerifiedPageId);
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
@@ -79,6 +87,13 @@ const Verification: React.FC = () => {
 		currentPage !== undefined && reprocessingPageId === currentPage.id;
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
+
+	const isPaused = document?.status === DocumentStatus.PAUSED;
+	const isProcessingToggleAvailable =
+		document?.status === DocumentStatus.PROCESSING || isPaused;
+	const isProcessingToggleDisabled =
+		pauseResumeDataStatus === DataStatus.PENDING ||
+		!isProcessingToggleAvailable;
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 
@@ -279,13 +294,19 @@ const Verification: React.FC = () => {
 		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
 	}, [currentPage, dispatch]);
 
-	const handlePause = useCallback((): void => {
+	const handleToggleProcessing = useCallback((): void => {
 		if (!document) {
 			return;
 		}
 
+		if (isPaused) {
+			void dispatch(documentActions.resume(document.id));
+
+			return;
+		}
+
 		void dispatch(documentActions.pause(document.id));
-	}, [dispatch, document]);
+	}, [dispatch, document, isPaused]);
 
 	const handleToggleEdit = useCallback((): void => {
 		const canEdit =
@@ -362,15 +383,16 @@ const Verification: React.FC = () => {
 				editConflictDraft={editConflictDraft}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
-				isPauseDisabled={document.status !== DocumentStatus.PROCESSING}
+				isPaused={isPaused}
 				isReprocessing={isReprocessing}
+				isToggleDisabled={isProcessingToggleDisabled}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
-				onPause={handlePause}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
+				onToggleProcessing={handleToggleProcessing}
 				pageCount={document.pageCount}
 				scanRef={scanRef}
 				zoom={zoom}

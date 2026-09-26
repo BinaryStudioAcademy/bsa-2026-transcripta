@@ -1,5 +1,5 @@
 import { Button, StatusChip } from "~/libs/components/components.js";
-import { DataStatus } from "~/libs/enums/enums.js";
+import { DataStatus, ToggleProcessingLabel } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -8,8 +8,6 @@ import {
 import { type ValueOf } from "~/libs/types/types.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
-
-import { ToggleProcessingLabel } from "../../enums/enums.js";
 
 type Properties = {
 	documentId: number;
