@@ -78,7 +78,7 @@ const createRederiveStructuredHandler =
 			const modelId = preset.settings?.model ?? null;
 			const outputSchema = preset.outputSchema ?? null;
 
-			let result = await transcriptionService.rederiveStructured({
+			const result = await transcriptionService.rederiveStructured({
 				modelId,
 				outputSchema,
 				text,
