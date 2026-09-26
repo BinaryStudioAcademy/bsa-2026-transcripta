@@ -269,8 +269,8 @@ uses **pause**; one who wants it gone uses **delete**, which removes the rows
 and the stored files. The worker's check covers both — a paused document exits
 here, and a deleted one has no rows left to write to.
 
-Step 4 is the cache. The key is a hash of `(image + preset + model + context)`.
-If nothing changed, a re-run is free.
+Step 4 is the cache. The key is a hash of `(image + preset + model + context + system prompt)`.
+If nothing changed, a re-run is free; editing the system prompt invalidates it.
 
 **Step 8 is where the money is actually recorded, and it must be atomic.**
 Several `page.transcribe` jobs run in parallel. Read `spent_usd` into the
