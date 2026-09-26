@@ -3,6 +3,7 @@ type RederiveStructuredJobData = {
 	documentId: number;
 	jobCreatedAt: string;
 	pageId: number;
+	pageNo: number;
 	text: string;
 };
 

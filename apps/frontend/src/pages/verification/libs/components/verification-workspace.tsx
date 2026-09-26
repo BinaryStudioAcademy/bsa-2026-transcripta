@@ -22,7 +22,6 @@ type VerificationWorkspaceProperties = {
 	isEditing: boolean;
 	isPauseDisabled: boolean;
 	isReprocessing: boolean;
-	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onPause: () => void;
@@ -42,7 +41,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	isEditing,
 	isPauseDisabled,
 	isReprocessing,
-	isVerifying,
 	isZoomed,
 	onConfirm,
 	onPause,
@@ -75,12 +73,29 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.FAILED) {
+			if (isEditing) {
+				return (
+					<>
+						<span className="verification-transcription__page">
+							page {currentPage.pageNo} of {pageCount} · typing by hand
+						</span>
+
+						<VerificationEdit
+							onCancel={onToggleEdit}
+							onSave={onSaveEdit}
+							text=""
+						/>
+					</>
+				);
+			}
+
 			return (
 				<div className="verification-failed-state">
 					<FailedStateCard
 						attempts={currentPage.attempts}
 						isLoading={isReprocessing}
 						onReRead={onReRead}
+						onTypeByHand={onToggleEdit}
 						reason={getFailedReason(currentPage.lastError)}
 					/>
 				</div>
@@ -97,7 +112,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					{isEditing ? (
 						<VerificationEdit
-							isDisabled={isVerifying}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
@@ -108,27 +122,20 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 							<div className="verification-actions">
 								<Button
-									isDisabled={isVerifying}
 									isPrimary={true}
-									label="Correct"
+									label="Confirm"
 									onClick={onConfirm}
 									type="button"
 								/>
 
 								<Button
-									isDisabled={isVerifying}
 									isSecondary={true}
-									label="Edit"
+									label="Correct"
 									onClick={onToggleEdit}
 									type="button"
 								/>
 
-								<Button
-									isDisabled={isVerifying}
-									label="Skip"
-									onClick={onSkip}
-									type="button"
-								/>
+								<Button label="Skip" onClick={onSkip} type="button" />
 							</div>
 						</>
 					)}

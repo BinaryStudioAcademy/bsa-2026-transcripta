@@ -1,4 +1,5 @@
 import { Link } from "~/libs/components/components.js";
+import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import { useEffect, useNavigate } from "~/libs/hooks/hooks.js";
@@ -48,8 +49,7 @@ const VerificationBlock: React.FC<Properties> = ({
 				return;
 			}
 
-			// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-			void navigate(resumeRoute);
+			Promise.resolve(navigate(resumeRoute)).catch(() => null);
 		};
 
 		document.addEventListener("keydown", handleKeyDown);
@@ -58,6 +58,11 @@ const VerificationBlock: React.FC<Properties> = ({
 			document.removeEventListener("keydown", handleKeyDown);
 		};
 	}, [navigate, resumeRoute]);
+
+	const readyToCheckLabel =
+		pagesReadyToCheck == ONE_QUANTITY
+			? "page ready to check"
+			: "pages ready to check";
 
 	return (
 		<DocumentSection
@@ -73,8 +78,7 @@ const VerificationBlock: React.FC<Properties> = ({
 				<span className="tx-num">{cursorPageNo}</span>. So far:{" "}
 				<span className="tx-num">{pagesVerified}</span> verified,{" "}
 				<span className="tx-num">{pagesSkipped}</span> skipped.{" "}
-				<span className="tx-num">{pagesReadyToCheck}</span> transcribed pages
-				are ready ahead of the cursor.
+				<span className="tx-num">{pagesReadyToCheck}</span> {readyToCheckLabel}
 			</div>
 			<div className={styles["resume-row"]}>
 				<Link className={styles["resume-link"] ?? ""} to={resumeRoute}>

@@ -5,7 +5,7 @@ import {
 } from "~/context/context.js";
 import { Logger } from "~/libs/modules/logger/logger.js";
 import { type Preset } from "~/modules/context/libs/types/types.js";
-import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { LexiconEntryModel } from "~/modules/lexicon/lexicon-entry.model.js";
 import { PageRepository } from "~/modules/pages/page.repository.js";
 
 import {
@@ -30,6 +30,14 @@ import {
 	type PageWithText,
 } from "./libs/types/types.js";
 
+type BuiltPresetSettings = {
+	lexiconTopK: number;
+	maxContextTokens: number;
+	minDistinctPages: number;
+	model: string;
+	neighbourPages: number;
+};
+
 class ContextBuilder implements IContextBuilder {
 	private logger: Logger;
 
@@ -40,36 +48,79 @@ class ContextBuilder implements IContextBuilder {
 		this.pageRepository = pageRepository;
 	}
 
-	public async buildContext({
-		documentId,
-		pageNo,
+	private async assembleResult({
+		blocks,
+		lexicon,
+		lexiconEntryCount,
+		model,
+		neighbouringPages,
+		neighbourPageCount,
+	}: {
+		blocks: string[];
+		lexicon: LexiconEntry[];
+		lexiconEntryCount: number;
+		model: BuiltPresetSettings["model"];
+		neighbouringPages: PageWithText[];
+		neighbourPageCount: number;
+	}): Promise<BuiltContext> {
+		const contextHash = createContextHash(blocks);
+		const estimateTokensResult = await estimateTokens(blocks, model);
+
+		return {
+			blocks,
+			contextHash,
+			tokenEstimate: estimateTokensResult.tokens,
+			usedLexiconIds: lexicon
+				.slice(ArrayIndex.FIRST, lexiconEntryCount)
+				.map((entry) => entry.id),
+			usedPageIds: neighbouringPages
+				.slice(ArrayIndex.FIRST, neighbourPageCount)
+				.map((page) => page.id),
+		};
+	}
+
+	private composeContextToTrim({
+		lexicon,
+		neighbouringPages,
 		preset,
 	}: {
-		documentId: number;
-		pageNo: number;
+		lexicon: LexiconEntry[];
+		neighbouringPages: PageWithText[];
 		preset: Preset;
-	}): Promise<BuiltContext> {
+	}): ContextToFit {
 		const contextToTrim: ContextToFit = {};
-
-		const {
-			lexiconTopK,
-			maxContextTokens,
-			minDistinctPages,
-			model,
-			neighbourPages,
-		} = {
-			...DEFAULT_PRESET_SETTINGS,
-			...preset.settings,
-		};
 
 		if (preset.seedGlossary.length > EMPTY_LENGTH) {
 			contextToTrim.seedGlossary = renderSeedGlossary(preset.seedGlossary);
 		}
 
+		if (lexicon.length > EMPTY_LENGTH) {
+			contextToTrim.lexiconEntries = lexicon.map((entry) =>
+				renderLexiconEntry(entry),
+			);
+		}
+
+		if (neighbouringPages.length > EMPTY_LENGTH) {
+			contextToTrim.neighbourPages = neighbouringPages.map((page) =>
+				renderNeighbouringPagesEntry(page),
+			);
+		}
+
+		return contextToTrim;
+	}
+
+	private async loadLexicon({
+		documentId,
+		lexiconTopK,
+		minDistinctPages,
+	}: {
+		documentId: number;
+		lexiconTopK: BuiltPresetSettings["lexiconTopK"];
+		minDistinctPages: BuiltPresetSettings["minDistinctPages"];
+	}): Promise<LexiconEntry[]> {
 		// TODO: Replace with actual lexicon repository method (sorted lexiconTopK)
-		let lexicon: LexiconEntry[] = [];
 		try {
-			lexicon = await LexiconEntryModel.query()
+			return await LexiconEntryModel.query()
 				.select("id", "valueDisplay", "pageCount")
 				.where("documentId", documentId)
 				.whereNull("invalidatedAt")
@@ -86,43 +137,47 @@ class ContextBuilder implements IContextBuilder {
 			this.logger.error(
 				`${ErrorMessage.LEXICON_SELECT_FAILED}: ${errorMessage}`,
 			);
-		}
 
-		if (lexicon.length > EMPTY_LENGTH) {
-			contextToTrim.lexiconEntries = lexicon.map((entry) =>
-				renderLexiconEntry(entry),
-			);
+			return [];
 		}
+	}
 
-		let neighbouringPages: PageWithText[] = [];
+	private async loadNeighbouringPages({
+		documentId,
+		neighbourPages,
+		pageNo,
+	}: {
+		documentId: number;
+		neighbourPages: BuiltPresetSettings["neighbourPages"];
+		pageNo: number;
+	}): Promise<PageWithText[]> {
 		try {
-			neighbouringPages =
-				await this.pageRepository.getPreviousVerifiedPagesText(
-					documentId,
-					pageNo,
-					neighbourPages,
-				);
+			return await this.pageRepository.getPreviousVerifiedPagesText(
+				documentId,
+				pageNo,
+				neighbourPages,
+			);
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			this.logger.error(`${ErrorMessage.PAGES_SELECT_FAILED}: ${errorMessage}`);
+
+			return [];
 		}
+	}
 
-		if (neighbouringPages.length > EMPTY_LENGTH) {
-			contextToTrim.neighbourPages = neighbouringPages.map((page) =>
-				renderNeighbouringPagesEntry(page),
-			);
-		}
-
-		const budget = getEffectiveContextBudget(maxContextTokens);
-		const { blocks, lexiconEntryCount, neighbourPageCount } = await fitToBudget(
-			{
-				budget,
-				model,
-				...contextToTrim,
-			},
-		);
-
+	private renderFittedBlocks(
+		blocks: string[],
+		{
+			contextToTrim,
+			lexiconEntryCount,
+			neighbourPageCount,
+		}: {
+			contextToTrim: ContextToFit;
+			lexiconEntryCount: number;
+			neighbourPageCount: number;
+		},
+	): string[] {
 		if (lexiconEntryCount > EMPTY_LENGTH) {
 			const lexiconIndex = contextToTrim.seedGlossary
 				? ArrayIndex.SECOND
@@ -136,20 +191,63 @@ class ContextBuilder implements IContextBuilder {
 			);
 		}
 
-		const contextHash = createContextHash(blocks);
-		const estimateTokensResult = await estimateTokens(blocks, model);
+		return blocks;
+	}
 
+	private resolveSettings(preset: Preset): BuiltPresetSettings {
 		return {
-			blocks,
-			contextHash,
-			tokenEstimate: estimateTokensResult.tokens,
-			usedLexiconIds: lexicon
-				.slice(ArrayIndex.FIRST, lexiconEntryCount)
-				.map((l) => l.id),
-			usedPageIds: neighbouringPages
-				.slice(ArrayIndex.FIRST, neighbourPageCount)
-				.map((p) => p.id),
+			...DEFAULT_PRESET_SETTINGS,
+			...preset.settings,
 		};
+	}
+
+	public async buildContext({
+		documentId,
+		pageNo,
+		preset,
+	}: {
+		documentId: number;
+		pageNo: number;
+		preset: Preset;
+	}): Promise<BuiltContext> {
+		const settings = this.resolveSettings(preset);
+		const lexicon = await this.loadLexicon({
+			documentId,
+			lexiconTopK: settings.lexiconTopK,
+			minDistinctPages: settings.minDistinctPages,
+		});
+		const neighbouringPages = await this.loadNeighbouringPages({
+			documentId,
+			neighbourPages: settings.neighbourPages,
+			pageNo,
+		});
+		const contextToTrim = this.composeContextToTrim({
+			lexicon,
+			neighbouringPages,
+			preset,
+		});
+		const budget = getEffectiveContextBudget(settings.maxContextTokens);
+		const { blocks, lexiconEntryCount, neighbourPageCount } = await fitToBudget(
+			{
+				budget,
+				model: settings.model,
+				...contextToTrim,
+			},
+		);
+		const renderedBlocks = this.renderFittedBlocks(blocks, {
+			contextToTrim,
+			lexiconEntryCount,
+			neighbourPageCount,
+		});
+
+		return await this.assembleResult({
+			blocks: renderedBlocks,
+			lexicon,
+			lexiconEntryCount,
+			model: settings.model,
+			neighbouringPages,
+			neighbourPageCount,
+		});
 	}
 }
 

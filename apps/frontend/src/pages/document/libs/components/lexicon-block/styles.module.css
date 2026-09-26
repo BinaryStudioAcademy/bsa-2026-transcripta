@@ -1,0 +1,100 @@
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--scrim);
+}
+
+.scrim-close {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	cursor: default;
+	background: transparent;
+	border: 0;
+}
+
+.dialog {
+	position: relative;
+	z-index: 1;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 481.6px;
+	padding: var(--sp-5);
+	background: var(--surface);
+	border: 1px solid var(--hairline);
+	border-radius: var(--r-lg);
+	box-shadow: var(--shadow-modal);
+}
+
+.title {
+	margin: 0 0 var(--sp-2);
+	font: 600 var(--fs-xl) / var(--lh-tight) var(--font-display);
+	color: var(--text);
+}
+
+.description {
+	margin: 0 0 var(--sp-3);
+	font: 400 var(--fs-sm) / 1.55 var(--font-ui);
+	color: var(--text-2);
+}
+
+.actions {
+	display: flex;
+	gap: var(--sp-2);
+	justify-content: flex-end;
+	margin-top: var(--sp-4);
+}
+
+.note {
+	margin: var(--sp-3) 0 0;
+	font-size: var(--fs-xs);
+	line-height: var(--lh-body-wide);
+	color: var(--text-3);
+}
+
+.empty {
+	margin: var(--sp-3) 0 0;
+	font-size: var(--fs-xs);
+	color: var(--text-3);
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
+	padding: 0;
+	margin: var(--sp-3) 0 0;
+	list-style: none;
+}
+
+.row {
+	display: flex;
+	gap: var(--sp-2);
+	align-items: baseline;
+	font-size: var(--fs-xs);
+}
+
+.word {
+	font-family: var(--font-mono);
+	color: var(--text);
+}
+
+.kind {
+	color: var(--text-3);
+	text-transform: lowercase;
+}
+
+.pages {
+	margin-left: auto;
+	color: var(--text-3);
+}
+
+.action {
+	flex-shrink: 0;
+}

@@ -1,3 +1,4 @@
+import { SIGN_UP_FAILED } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -5,6 +6,8 @@ import {
 	useLocation,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
+import { logger } from "~/libs/modules/logger/logger.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
 import {
 	UserSignInRequestDto,
@@ -24,8 +27,7 @@ const Auth: React.FC = () => {
 				.unwrap()
 				.then(() => navigate(AppRoute.ROOT))
 				.catch((error: unknown) => {
-					// eslint-disable-next-line no-console
-					console.error(error);
+					logger.error("Sign-in failed.", error);
 				});
 		},
 		[dispatch, navigate],
@@ -37,8 +39,10 @@ const Auth: React.FC = () => {
 				try {
 					await dispatch(authActions.signUp(payload)).unwrap();
 					await navigate(AppRoute.ROOT);
-				} catch {
-					// Toast for API errors is a separate ticket: [FE] Error handling #7
+				} catch (error: unknown) {
+					notification.error(
+						error instanceof Error ? error.message : SIGN_UP_FAILED,
+					);
 				}
 			})();
 		},

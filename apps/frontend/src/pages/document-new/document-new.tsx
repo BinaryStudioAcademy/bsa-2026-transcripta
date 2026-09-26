@@ -53,6 +53,131 @@ import {
 } from "./libs/types/types.js";
 import styles from "./styles.module.css";
 
+type UploadTarget = {
+	docId: number;
+	uploadUrl: string;
+};
+
+const resolveUploadTarget = async ({
+	controller,
+	createdDocumentId,
+	dispatch,
+	file,
+	persistDocumentId,
+	resumeDocumentId,
+	values,
+}: {
+	controller: AbortController;
+	createdDocumentId: null | number;
+	dispatch: ReturnType<typeof useAppDispatch>;
+	file: File;
+	persistDocumentId: (documentId: number) => void;
+	resumeDocumentId: number | undefined;
+	values: UploadFormValues;
+}): Promise<UploadTarget> => {
+	const activeId = createdDocumentId ?? resumeDocumentId;
+
+	if (activeId) {
+		const response = await dispatch(
+			documentActions.getUploadUrl({
+				id: Number(activeId),
+				payload: {
+					fileBytes: file.size,
+					fileName: file.name,
+					presetId: values.presetId,
+					title: values.title,
+				},
+				signal: controller.signal,
+			}),
+		).unwrap();
+		return { docId: Number(activeId), uploadUrl: response.uploadUrl };
+	}
+
+	const payload: DocumentCreateRequestDto = {
+		fileBytes: file.size,
+		fileName: file.name,
+		presetId: values.presetId,
+		title: values.title,
+	};
+
+	const response = await dispatch(documentActions.create(payload)).unwrap();
+	persistDocumentId(response.id);
+	return { docId: response.id, uploadUrl: response.uploadUrl };
+};
+
+const performUploadAttempts = async ({
+	controller,
+	createdDocumentId,
+	dispatch,
+	file,
+	onProgress,
+	persistDocumentId,
+	resumeDocumentId,
+	values,
+}: {
+	controller: AbortController;
+	createdDocumentId: null | number;
+	dispatch: ReturnType<typeof useAppDispatch>;
+	file: File;
+	onProgress: (progress: number) => void;
+	persistDocumentId: (documentId: number) => void;
+	resumeDocumentId: number | undefined;
+	values: UploadFormValues;
+}): Promise<void> => {
+	let { docId, uploadUrl } = await resolveUploadTarget({
+		controller,
+		createdDocumentId,
+		dispatch,
+		file,
+		persistDocumentId,
+		resumeDocumentId,
+		values,
+	});
+
+	if (!uploadUrl) {
+		return;
+	}
+
+	let isSuccess = false;
+	let retryCount = 0;
+
+	while (!isSuccess) {
+		try {
+			await uploadFile({
+				file,
+				onProgress,
+				signal: controller.signal,
+				uploadUrl,
+			});
+
+			isSuccess = true;
+		} catch (error: unknown) {
+			if (controller.signal.aborted) {
+				throw new Error(DocumentNotificationMessage.UPLOAD_CANCELLED);
+			}
+
+			const isForbiddenError =
+				error instanceof UploadError && error.status === HTTPCode.FORBIDDEN;
+
+			if (isForbiddenError && docId && retryCount < MAX_RETRIES) {
+				retryCount++;
+				notification.info(DocumentNotificationMessage.EXPIRED_LINK);
+
+				const refreshed = await dispatch(
+					documentActions.getUploadUrl({
+						id: docId,
+						signal: controller.signal,
+					}),
+				).unwrap();
+
+				uploadUrl = refreshed.uploadUrl;
+			} else {
+				throw error;
+			}
+		}
+	}
+};
+
 const DocumentNew: React.FC = () => {
 	const { presets } = useAppSelector(({ presets }) => ({
 		presets: presets.presets,
@@ -63,6 +188,7 @@ const DocumentNew: React.FC = () => {
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isUploaded, setIsUploaded] = useState(false);
+	const [isStartingProcessing, setIsStartingProcessing] = useState(false);
 	const [ingestingDocumentId, setIngestingDocumentId] = useState<null | number>(
 		null,
 	);
@@ -167,91 +293,18 @@ const DocumentNew: React.FC = () => {
 			abortControllerReference.current = controller;
 			setIsUploading(true);
 
-			const fetchTargetUrl = async (): Promise<{
-				docId: number;
-				uploadUrl: string;
-			}> => {
-				const activeId = createdDocumentIdReference.current ?? resumeDocumentId;
-
-				if (activeId) {
-					const response = await dispatch(
-						documentActions.getUploadUrl({
-							id: Number(activeId),
-							payload: {
-								fileBytes: selectedFile.size,
-								fileName: selectedFile.name,
-								presetId: values.presetId,
-								title: values.title,
-							},
-							signal: controller.signal,
-						}),
-					).unwrap();
-					return { docId: Number(activeId), uploadUrl: response.uploadUrl };
-				}
-
-				const payload: DocumentCreateRequestDto = {
-					fileBytes: selectedFile.size,
-					fileName: selectedFile.name,
-					presetId: values.presetId,
-					title: values.title,
-				};
-
-				const response = await dispatch(
-					documentActions.create(payload),
-				).unwrap();
-				createdDocumentIdReference.current = response.id;
-				return { docId: response.id, uploadUrl: response.uploadUrl };
-			};
-
-			const attemptUpload = async (): Promise<void> => {
-				let { docId, uploadUrl } = await fetchTargetUrl();
-
-				if (!uploadUrl) {
-					return;
-				}
-
-				let isSuccess = false;
-				let retryCount = 0;
-
-				while (!isSuccess) {
-					try {
-						await uploadFile({
-							file: selectedFile,
-							onProgress: setUploadProgress,
-							signal: controller.signal,
-							uploadUrl,
-						});
-
-						isSuccess = true;
-					} catch (error: unknown) {
-						if (controller.signal.aborted) {
-							throw new Error(DocumentNotificationMessage.UPLOAD_CANCELLED);
-						}
-
-						const isForbiddenError =
-							error instanceof UploadError &&
-							error.status === HTTPCode.FORBIDDEN;
-
-						if (isForbiddenError && docId && retryCount < MAX_RETRIES) {
-							retryCount++;
-							notification.info(DocumentNotificationMessage.EXPIRED_LINK);
-
-							const refreshed = await dispatch(
-								documentActions.getUploadUrl({
-									id: docId,
-									signal: controller.signal,
-								}),
-							).unwrap();
-
-							uploadUrl = refreshed.uploadUrl;
-						} else {
-							throw error;
-						}
-					}
-				}
-			};
-
-			void attemptUpload()
+			void performUploadAttempts({
+				controller,
+				createdDocumentId: createdDocumentIdReference.current,
+				dispatch,
+				file: selectedFile,
+				onProgress: setUploadProgress,
+				persistDocumentId: (documentId) => {
+					createdDocumentIdReference.current = documentId;
+				},
+				resumeDocumentId,
+				values,
+			})
 				.then(() => {
 					if (controller.signal.aborted) {
 						return;
@@ -306,10 +359,11 @@ const DocumentNew: React.FC = () => {
 
 	const goToDocument = useCallback(
 		(documentId: number): void => {
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
-			);
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+				),
+			).catch(() => null);
 		},
 		[navigate],
 	);
@@ -321,15 +375,44 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback(() => {
-		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
-		if (!targetId) {
-			return;
-		}
+	const handleProcessDocument = useCallback(
+		(values: UploadFormValues): void => {
+			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
 
-		setIngestingDocumentId(Number(targetId));
-		void dispatch(documentActions.ingest(Number(targetId)));
-	}, [resumeDocumentId, dispatch]);
+			if (!targetId || isStartingProcessing) {
+				return;
+			}
+
+			const documentId = Number(targetId);
+
+			const startProcessing = async (): Promise<void> => {
+				setIsStartingProcessing(true);
+
+				try {
+					await dispatch(
+						documentActions.getUploadUrl({
+							id: documentId,
+							payload: {
+								presetId: values.presetId,
+								title: values.title,
+							},
+						}),
+					).unwrap();
+				} catch {
+					// The error notification is shown by errorHandlingMiddleware.
+					return;
+				} finally {
+					setIsStartingProcessing(false);
+				}
+
+				setIngestingDocumentId(documentId);
+				void dispatch(documentActions.ingest(documentId));
+			};
+
+			void startProcessing();
+		},
+		[dispatch, isStartingProcessing, resumeDocumentId],
+	);
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -399,12 +482,13 @@ const DocumentNew: React.FC = () => {
 
 		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
 			setIngestingDocumentId(null);
-			// eslint-disable-next-line sonarjs/void-use -- navigate returns a promise we do not await
-			void navigate(
-				configureString(AppRoute.VERIFICATION, {
-					id: String(ingestingDocumentId),
-				}),
-			);
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.VERIFICATION, {
+						id: String(ingestingDocumentId),
+					}),
+				),
+			).catch(() => null);
 		}
 	}, [goToDocument, ingestingDocumentId, navigate, resumedDocument]);
 
@@ -483,6 +567,7 @@ const DocumentNew: React.FC = () => {
 								/>
 								<UploadForm
 									fileName={displayTitle}
+									isStartingProcessing={isStartingProcessing}
 									isSubmitting={isFormDisabled}
 									isUploaded={isUploaded}
 									onCancelUpload={handleCancelUpload}
