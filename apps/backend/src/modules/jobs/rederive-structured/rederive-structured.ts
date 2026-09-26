@@ -102,23 +102,19 @@ const createRederiveStructuredHandler =
 				DEFAULT_PRESET_SETTINGS.minDistinctPages;
 
 			if (result.structured) {
-				const isUpdated =
-					await transcriptionRepository.updateEditedStructuredIfActual({
-						editedStructured: result.structured,
-						id: transcription.id,
-						jobCreatedAt,
-					});
-
-				if (!isUpdated) {
-					logger.info(InfoMessage.JOB_SKIPPED_AFTER_MODEL(pageId));
-					return;
-				}
 				await TranscriptionModel.transaction(async (trx) => {
-					await transcriptionRepository.updateEditedStructured(
-						transcription.id,
-						result.structured,
-						trx,
-					);
+					const isUpdated =
+						await transcriptionRepository.updateEditedStructuredIfActual({
+							editedStructured: result.structured,
+							id: transcription.id,
+							jobCreatedAt,
+							trx,
+						});
+
+					if (!isUpdated) {
+						logger.info(InfoMessage.JOB_SKIPPED_AFTER_MODEL(pageId));
+						return;
+					}
 
 					await lexiconUpdateService.updateLexiconFromVerifiedPage({
 						documentId,
