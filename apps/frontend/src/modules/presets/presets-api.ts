@@ -5,6 +5,8 @@ import { type Storage } from "~/libs/modules/storage/storage.js";
 
 import { PresetsApiPath } from "./libs/enums/enums.js";
 import {
+	type PresetCreateRequestDto,
+	type PresetCreateResponseDto,
 	type PresetGetAllResponseDto,
 	type PresetGetByIdResponseDto,
 } from "./libs/types/types.js";
@@ -18,6 +20,22 @@ type Constructor = {
 class PresetApi extends BaseHTTPApi {
 	public constructor({ baseUrl, http, storage }: Constructor) {
 		super({ baseUrl, http, path: APIPath.PRESETS, storage });
+	}
+
+	public async create(
+		payload: PresetCreateRequestDto,
+	): Promise<PresetCreateResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(PresetsApiPath.ROOT, {}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify(payload),
+			},
+		);
+
+		return await response.json<PresetCreateResponseDto>();
 	}
 
 	public async getAll(): Promise<PresetGetAllResponseDto> {

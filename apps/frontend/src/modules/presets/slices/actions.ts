@@ -4,6 +4,8 @@ import { serializeError } from "~/libs/helpers/helpers.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 
 import {
+	type PresetCreateRequestDto,
+	type PresetCreateResponseDto,
 	type PresetGetAllResponseDto,
 	type PresetGetByIdResponseDto,
 } from "../libs/types/types.js";
@@ -37,4 +39,18 @@ const loadById = createAsyncThunk<
 	{ serializeError },
 );
 
-export { loadAll, loadById };
+const create = createAsyncThunk<
+	PresetCreateResponseDto,
+	PresetCreateRequestDto,
+	AsyncThunkConfig
+>(
+	`${sliceName}/create`,
+	(payload, { extra }) => {
+		const { presetApi } = extra;
+
+		return presetApi.create(payload);
+	},
+	{ serializeError },
+);
+
+export { create, loadAll, loadById };
