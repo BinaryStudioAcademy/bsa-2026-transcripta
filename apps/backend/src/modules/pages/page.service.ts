@@ -498,7 +498,10 @@ class PageService {
 				documentId: page.documentId,
 				needRederiveStructured: false,
 				pageNo: page.pageNo,
-				pagesToQueue: [],
+				pagesToQueue: await this.pageRepository.findQueuedPages(
+					page.documentId,
+					trx,
+				),
 				response: await this.buildVerifyResponse(
 					{
 						documentId: page.documentId,
@@ -566,11 +569,19 @@ class PageService {
 			nextPageNo,
 			trx,
 		);
-		const pagesToQueue = await this.refillWindowIfAdvanced({
-			documentId: page.documentId,
-			pageStatus: page.status,
+
+		if (!CLOSED_PAGE_STATUSES.has(page.status)) {
+			await this.refillWindowIfAdvanced({
+				documentId: page.documentId,
+				pageStatus: page.status,
+				trx,
+			});
+		}
+
+		const pagesToQueue = await this.pageRepository.findQueuedPages(
+			page.documentId,
 			trx,
-		});
+		);
 
 		await this.documentRepository.markDoneIfAllPagesClosed(
 			page.documentId,
