@@ -59,6 +59,7 @@ const Verification: React.FC = () => {
 		useState<EditConflictDraft | null>(null);
 
 	const pageStartedAtReference = useRef(Date.now());
+	const cursorInitializedForReference = useRef<null | number>(null);
 
 	const document = useAppSelector(({ documents }) => documents.document);
 
@@ -91,14 +92,10 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		cursorInitializedForReference.current = null;
 		dispatch(pageActions.reset());
-
-		if (document && document.id === documentId) {
-			return;
-		}
-
 		void dispatch(documentActions.loadById(documentId));
-	}, [id, document, dispatch]);
+	}, [id, dispatch]);
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -129,9 +126,15 @@ const Verification: React.FC = () => {
 	}, [id, dispatch, currentPage?.transcription, cursorPageNo, document]);
 
 	useEffect(() => {
-		if (!document) {
+		if (
+			!document ||
+			document.id !== Number(id) ||
+			cursorInitializedForReference.current === document.id
+		) {
 			return;
 		}
+
+		cursorInitializedForReference.current = document.id;
 
 		const initialPageNo = Math.max(
 			MIN_NUMBER_OF_PAGES,
@@ -141,7 +144,7 @@ const Verification: React.FC = () => {
 			),
 		);
 		dispatch(pageActions.setCursorPageNo(initialPageNo));
-	}, [document, dispatch]);
+	}, [document, dispatch, id]);
 
 	useEffect(() => {
 		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES || isPagesLoading) {
