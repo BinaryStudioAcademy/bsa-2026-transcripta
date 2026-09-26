@@ -3,6 +3,7 @@ const DocumentsApiPath = {
 	BY_ID_BUDGET: "/:id/budget",
 	BY_ID_LEXICON: "/:id/lexicon",
 	BY_ID_PAGES: "/:id/pages",
+	EXPORT: "/:id/export",
 	INGEST: "/:id/ingest",
 	PAUSE: "/:id/pause",
 	RESUME: "/:id/resume",
