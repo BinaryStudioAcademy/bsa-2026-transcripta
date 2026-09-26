@@ -20,15 +20,16 @@ type VerificationWorkspaceProperties = {
 	editConflictDraft: EditConflictDraft | null;
 	isCompleted: boolean;
 	isEditing: boolean;
-	isPauseDisabled: boolean;
+	isPaused: boolean;
 	isReprocessing: boolean;
+	isToggleDisabled: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
-	onPause: () => void;
 	onReRead: () => void;
 	onSaveEdit: (text: string) => void;
 	onSkip: () => void;
 	onToggleEdit: () => void;
+	onToggleProcessing: () => void;
 	pageCount?: number | undefined;
 	scanRef: (node: HTMLDivElement | null) => void;
 	zoom: number;
@@ -39,15 +40,16 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	editConflictDraft,
 	isCompleted,
 	isEditing,
-	isPauseDisabled,
+	isPaused,
 	isReprocessing,
+	isToggleDisabled,
 	isZoomed,
 	onConfirm,
-	onPause,
 	onReRead,
 	onSaveEdit,
 	onSkip,
 	onToggleEdit,
+	onToggleProcessing,
 	pageCount,
 	scanRef,
 	zoom,
@@ -152,8 +154,9 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
-					isPauseDisabled={isPauseDisabled}
-					onPause={onPause}
+					isPaused={isPaused}
+					isToggleDisabled={isToggleDisabled}
+					onToggleProcessing={onToggleProcessing}
 				/>
 			</div>
 		);
