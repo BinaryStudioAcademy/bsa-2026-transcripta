@@ -248,14 +248,7 @@ const useIngestPolling = ({
 				resumedDocument.errorMessage ?? INGESTION_FAILED_MESSAGE;
 
 			setRejection(errorMessage);
-			void (async (): Promise<void> => {
-				await navigate(
-					configureString(AppRoute.DOCUMENT, {
-						id: String(ingestingDocumentId),
-					}),
-					{ state: { errorMessage } },
-				);
-			})();
+
 			return;
 		}
 
@@ -513,7 +506,14 @@ const DocumentNew: React.FC = () => {
 				}
 
 				setIngestingDocumentId(documentId);
-				void dispatch(documentActions.ingest(documentId));
+				void dispatch(documentActions.ingest(documentId))
+					.unwrap()
+					.catch((error: unknown) => {
+						const { message } = error as { message?: string };
+
+						setIngestingDocumentId(null);
+						setRejection(message ?? INGESTION_FAILED_MESSAGE);
+					});
 			};
 
 			void startProcessing();
