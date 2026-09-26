@@ -14,6 +14,7 @@ type Storage = {
 		clear: () => Promise<void>;
 		filePath: string;
 	}>;
+	getExportDownloadSignedUrl(key: string): Promise<string>;
 	getReadSignedUrl(key: string): Promise<string>;
 	getUploadSignedUrl(
 		options: UploadSignedUrlRequest,
@@ -32,6 +33,15 @@ type Storage = {
 		imageKey: string;
 		thumbnailKey: string;
 	}>;
+	uploadExport({
+		body,
+		contentType,
+		key,
+	}: {
+		body: Buffer;
+		contentType: string;
+		key: string;
+	}): Promise<void>;
 };
 
 export { type Storage };
