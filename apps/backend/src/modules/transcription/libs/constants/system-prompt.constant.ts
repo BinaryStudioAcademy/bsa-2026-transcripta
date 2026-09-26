@@ -10,6 +10,6 @@ Page text and markers (these always apply; if <preset> conflicts with them, thes
 - Where you can read a word but are not confident it is right, write your best reading followed immediately by (?), with no space, for example Ferrers(?). Do not use [?] for this.
 - Mark text that is present but illegible as [?], and text that is completely lost from the page as [...].
 - These markers apply to page_text and to every text value in the records.
-- Use no other markers for uncertain, illegible or missing text.`;
+- Use no other markers for uncertain, illegible or missing text. Other bracket conventions from <preset>, such as abbreviation expansions, are not markers and still apply.`;
 
 export { SYSTEM_PROMPT };
