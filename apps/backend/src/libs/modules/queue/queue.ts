@@ -10,6 +10,7 @@ import { transcriptionService } from "~/modules/transcription/transcription.js";
 
 import { storage } from "../storage/storage.js";
 import { documentCleanupQueue } from "./document-cleanup/document-cleanup.js";
+import { documentExportQueue } from "./document-export/document-export.js";
 import { REDIS_CONNECT_TIMEOUT_MS } from "./libs/constants/constants.js";
 import { createPageTranscribeQueue } from "./page-transcribe-queue-factory.js";
 import { QueueRegistry } from "./queue-registry.module.js";
@@ -35,7 +36,12 @@ const pageTranscribeQueue = createPageTranscribeQueue({
 const queueRegistry = new QueueRegistry({
 	connection: redis,
 	logger,
-	queues: [pageTranscribeQueue, documentCleanupQueue, rederiveStructuredQueue],
+	queues: [
+		pageTranscribeQueue,
+		documentCleanupQueue,
+		rederiveStructuredQueue,
+		documentExportQueue,
+	],
 });
 
 export { pageTranscribeQueue, queueRegistry };
@@ -43,6 +49,7 @@ export {
 	DocumentCleanupQueue,
 	documentCleanupQueue,
 } from "./document-cleanup/document-cleanup.js";
+export { type DocumentExportJobData } from "./document-export/document-export.js";
 export {
 	RederiveStructuredQueue,
 	rederiveStructuredQueue,

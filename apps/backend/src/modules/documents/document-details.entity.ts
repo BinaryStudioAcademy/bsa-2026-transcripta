@@ -1,12 +1,16 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
-import { type DocumentGetByIdResponseDto } from "./libs/types/types.js";
+import {
+	type DocumentExportRawItem,
+	type DocumentGetByIdResponseDto,
+} from "./libs/types/types.js";
 
 type DocumentDetailsProperties = {
 	budgetUsd: string;
 	closedPct: number;
 	cursorPageNo: number;
 	errorMessage: null | string;
+	exports: DocumentExportRawItem[];
 	id: number;
 	pageCount: number;
 	pagesBlank: number;
@@ -29,6 +33,10 @@ type DocumentDetailsProperties = {
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
 
+type DocumentWithRawExportsDTO = Omit<DocumentGetByIdResponseDto, "exports"> & {
+	exports: DocumentExportRawItem[];
+};
+
 class DocumentDetailsEntity {
 	private budgetUsd: string;
 
@@ -37,6 +45,8 @@ class DocumentDetailsEntity {
 	private cursorPageNo: number;
 
 	private errorMessage: null | string;
+
+	private exports: DocumentExportRawItem[];
 
 	private id: number;
 
@@ -79,6 +89,7 @@ class DocumentDetailsEntity {
 		closedPct,
 		cursorPageNo,
 		errorMessage,
+		exports,
 		id,
 		pageCount,
 		pagesBlank,
@@ -101,12 +112,13 @@ class DocumentDetailsEntity {
 		this.budgetUsd = budgetUsd;
 		this.closedPct = closedPct;
 		this.cursorPageNo = cursorPageNo;
+		this.errorMessage = errorMessage;
+		this.exports = exports;
 		this.id = id;
 		this.pageCount = pageCount;
 		this.pagesBlank = pagesBlank;
 		this.pagesFailed = pagesFailed;
 		this.pagesInWork = pagesInWork;
-		this.errorMessage = errorMessage;
 		this.pagesPending = pagesPending;
 		this.pagesReadyToCheck = pagesReadyToCheck;
 		this.pagesSkipped = pagesSkipped;
@@ -128,7 +140,7 @@ class DocumentDetailsEntity {
 		return new DocumentDetailsEntity(properties);
 	}
 
-	public toObject(): DocumentGetByIdResponseDto {
+	public toObject(): DocumentWithRawExportsDTO {
 		return {
 			budget: {
 				limitUsd: this.budgetUsd,
@@ -137,6 +149,7 @@ class DocumentDetailsEntity {
 			},
 			cursorPageNo: this.cursorPageNo,
 			errorMessage: this.errorMessage,
+			exports: this.exports,
 			groundTruth: null,
 			id: this.id,
 			pageCount: this.pageCount,

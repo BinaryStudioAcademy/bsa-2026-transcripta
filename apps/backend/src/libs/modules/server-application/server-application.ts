@@ -6,6 +6,7 @@ import {
 	queueRegistry,
 } from "~/libs/modules/queue/queue.js";
 import { authController } from "~/modules/auth/auth.js";
+import { documentExportController } from "~/modules/document-exports/document-exports.js";
 import { documentController } from "~/modules/documents/documents.js";
 import { lexiconController } from "~/modules/lexicon/lexicon.js";
 import { pageController } from "~/modules/pages/pages.js";
@@ -26,6 +27,7 @@ const apiV1 = new BaseServerApplicationApi(
 	...presetController.routes,
 	...transcriptionController.routes,
 	...userController.routes,
+	...documentExportController.routes,
 );
 const serverApplication = new BaseServerApplication({
 	apis: [apiV1],

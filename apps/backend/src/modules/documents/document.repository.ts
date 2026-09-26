@@ -132,6 +132,26 @@ class DocumentRepository {
 				"dp.pagesSkipped",
 				"dp.verifiedPct",
 				"dp.closedPct",
+				knex.raw(
+					`coalesce(
+					(
+						select json_agg(
+							json_build_object(
+								'id', de.id,
+								'format', de.format,
+								'status', de.status,
+								'objectKey', de.object_key,
+								'sizeBytes', de.size_bytes,
+								'createdAt', de.created_at
+							) order by de.created_at desc
+						)
+						from ?? de
+						where de.document_id = d.id
+					),
+					'[]'::json
+				) as ??`,
+					[DatabaseTableName.DOCUMENT_EXPORT, "exports"],
+				),
 			])
 			.from(`${DatabaseTableName.DOCUMENT} as d`)
 			.innerJoin(
@@ -201,6 +221,26 @@ class DocumentRepository {
 				"dp.pagesSkipped",
 				"dp.verifiedPct",
 				"dp.closedPct",
+				knex.raw(
+					`coalesce(
+					(
+						select json_agg(
+							json_build_object(
+								'id', de.id,
+								'format', de.format,
+								'status', de.status,
+								'objectKey', de.object_key,
+								'sizeBytes', de.size_bytes,
+								'createdAt', de.created_at
+							) order by de.created_at desc
+						)
+						from ?? de
+						where de.document_id = d.id
+					),
+					'[]'::json
+				) as ??`,
+					[DatabaseTableName.DOCUMENT_EXPORT, "exports"],
+				),
 			])
 			.from(`${DatabaseTableName.DOCUMENT} as d`)
 			.innerJoin(

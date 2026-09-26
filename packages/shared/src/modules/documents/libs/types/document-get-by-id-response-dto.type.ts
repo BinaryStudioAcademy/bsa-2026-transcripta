@@ -1,4 +1,5 @@
 import { type ValueOf } from "../../../../libs/types/value-of.type.js";
+import { type DocumentExportItemResponseDto } from "../../../document-exports/document-exports.js";
 import { DocumentStatus } from "../enums/document-status.enum.js";
 import { type DocumentGetByIdBudgetResponseDto } from "./document-get-by-id-budget-response-dto.type.js";
 import { type DocumentGetByIdGroundTruthResponseDto } from "./document-get-by-id-ground-truth-response-dto.type.js";
@@ -9,6 +10,7 @@ type DocumentGetByIdResponseDto = {
 	budget: DocumentGetByIdBudgetResponseDto;
 	cursorPageNo: number;
 	errorMessage: null | string;
+	exports: DocumentExportItemResponseDto[];
 	groundTruth: DocumentGetByIdGroundTruthResponseDto | null;
 	id: number;
 	pageCount: number;

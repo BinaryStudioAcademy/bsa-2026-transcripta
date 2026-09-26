@@ -247,6 +247,17 @@ class BaseStorage implements Storage {
 		}
 	}
 
+	public async getExportDownloadSignedUrl(key: string): Promise<string> {
+		const command = new GetObjectCommand({
+			Bucket: this.buckets[StorageBucket.UPLOADS],
+			Key: key,
+		});
+
+		return await getSignedUrl(this.client, command, {
+			expiresIn: SignedUrlConfig.SECONDS_IN_HOUR,
+		});
+	}
+
 	public async getReadSignedUrl(key: string): Promise<string> {
 		const command = new GetObjectCommand({
 			Bucket: this.buckets[StorageBucket.PAGES],
@@ -321,6 +332,25 @@ class BaseStorage implements Storage {
 			imageKey,
 			thumbnailKey,
 		};
+	}
+
+	public async uploadExport({
+		body,
+		contentType,
+		key,
+	}: {
+		body: Buffer;
+		contentType: string;
+		key: string;
+	}): Promise<void> {
+		const command = new PutObjectCommand({
+			Body: body,
+			Bucket: this.buckets[StorageBucket.UPLOADS],
+			ContentType: contentType,
+			Key: key,
+		});
+
+		await this.client.send(command);
 	}
 }
 
