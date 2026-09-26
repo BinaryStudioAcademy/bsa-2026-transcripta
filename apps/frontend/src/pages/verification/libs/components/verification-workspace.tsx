@@ -22,7 +22,6 @@ type VerificationWorkspaceProperties = {
 	isEditing: boolean;
 	isPauseDisabled: boolean;
 	isReprocessing: boolean;
-	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onPause: () => void;
@@ -42,7 +41,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	isEditing,
 	isPauseDisabled,
 	isReprocessing,
-	isVerifying,
 	isZoomed,
 	onConfirm,
 	onPause,
@@ -83,7 +81,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						</span>
 
 						<VerificationEdit
-							isDisabled={isVerifying}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text=""
@@ -115,7 +112,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					{isEditing ? (
 						<VerificationEdit
-							isDisabled={isVerifying}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
@@ -126,7 +122,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 							<div className="verification-actions">
 								<Button
-									isDisabled={isVerifying}
 									isPrimary={true}
 									label="Confirm"
 									onClick={onConfirm}
@@ -134,19 +129,13 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 								/>
 
 								<Button
-									isDisabled={isVerifying}
 									isSecondary={true}
 									label="Correct"
 									onClick={onToggleEdit}
 									type="button"
 								/>
 
-								<Button
-									isDisabled={isVerifying}
-									label="Skip"
-									onClick={onSkip}
-									type="button"
-								/>
+								<Button label="Skip" onClick={onSkip} type="button" />
 							</div>
 						</>
 					)}
