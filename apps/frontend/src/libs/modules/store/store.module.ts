@@ -12,6 +12,10 @@ import {
 	documentApi,
 	reducer as documentsReducer,
 } from "~/modules/documents/documents.js";
+import {
+	lexiconApi,
+	reducer as lexiconReducer,
+} from "~/modules/lexicon/lexicon.js";
 import { pageApi, reducer as pagesReducer } from "~/modules/pages/pages.js";
 import {
 	presetApi,
@@ -24,6 +28,7 @@ import { errorHandlingMiddleware } from "../middlewares/middlewares.js";
 type ExtraArguments = {
 	authApi: typeof authApi;
 	documentApi: typeof documentApi;
+	lexiconApi: typeof lexiconApi;
 	pageApi: typeof pageApi;
 	presetApi: typeof presetApi;
 	userApi: typeof userApi;
@@ -32,6 +37,7 @@ type ExtraArguments = {
 type RootReducer = {
 	auth: ReturnType<typeof authReducer>;
 	documents: ReturnType<typeof documentsReducer>;
+	lexicon: ReturnType<typeof lexiconReducer>;
 	pages: ReturnType<typeof pagesReducer>;
 	presets: ReturnType<typeof presetsReducer>;
 	users: ReturnType<typeof usersReducer>;
@@ -59,6 +65,7 @@ class Store {
 			reducer: {
 				auth: authReducer,
 				documents: documentsReducer,
+				lexicon: lexiconReducer,
 				pages: pagesReducer,
 				presets: presetsReducer,
 				users: usersReducer,
@@ -70,6 +77,7 @@ class Store {
 		return {
 			authApi,
 			documentApi,
+			lexiconApi,
 			pageApi,
 			presetApi,
 			userApi,

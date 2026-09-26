@@ -21,10 +21,10 @@ export { /** @public */ actions, reducer } from "./slices/pages.js";
 export {
 	selectCurrentPage,
 	selectCursorPageNo,
+	selectIsVerificationQueueBusy,
 	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
 	selectVerificationCursorPageNo,
-	selectVerificationDataStatus,
 } from "./slices/selectors.js";

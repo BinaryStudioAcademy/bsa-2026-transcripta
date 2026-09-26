@@ -1,9 +1,18 @@
-import { loadPages, reprocessPage, undoPage, verifyPage } from "./actions.js";
+import {
+	discardVerificationQueue,
+	loadPages,
+	processVerificationQueue,
+	reprocessPage,
+	undoPage,
+	verifyPage,
+} from "./actions.js";
 import { actions } from "./pages.slice.js";
 
 const allActions = {
 	...actions,
+	discardVerificationQueue,
 	loadPages,
+	processVerificationQueue,
 	reprocessPage,
 	undoPage,
 	verifyPage,
