@@ -7,6 +7,7 @@ export {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
