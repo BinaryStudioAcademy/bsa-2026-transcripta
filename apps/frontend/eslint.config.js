@@ -61,6 +61,19 @@ const jsxA11yConfig = {
 /** @type {Config[]} */
 const overridesConfigs = [
 	{
+		files: ["**/*.tsx"],
+		rules: {
+			"max-lines-per-function": [
+				"error",
+				{
+					max: 350,
+					skipBlankLines: true,
+					skipComments: true,
+				},
+			],
+		},
+	},
+	{
 		files: ["vite.config.ts"],
 		rules: {
 			"import/no-default-export": ["off"],
@@ -70,6 +83,18 @@ const overridesConfigs = [
 		files: ["src/vite-env.d.ts"],
 		rules: {
 			"unicorn/prevent-abbreviations": ["off"],
+		},
+	},
+	{
+		files: ["src/libs/modules/logger/logger.ts"],
+		rules: {
+			"no-console": ["off"],
+		},
+	},
+	{
+		files: ["src/libs/workers/zip-to-pdf.worker.ts"],
+		rules: {
+			"sonarjs/post-message": ["off"],
 		},
 	},
 ];

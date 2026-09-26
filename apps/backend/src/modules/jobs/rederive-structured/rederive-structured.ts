@@ -2,7 +2,10 @@ import { type Job } from "bullmq";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type RederiveStructuredJobData } from "~/libs/modules/queue/queue.js";
+import { DEFAULT_PRESET_SETTINGS } from "~/modules/context/builder/libs/constants/default-preset-settings.constant.js";
 import { type DocumentRepository } from "~/modules/documents/document.repository.js";
+import { type LexiconUpdateService } from "~/modules/lexicon/lexicon-update.service.js";
+import { TranscriptionModel } from "~/modules/transcription/transcription.model.js";
 import { type TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
 import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
 
@@ -11,17 +14,20 @@ import { ErrorMessage } from "./libs/enums/enums.js";
 const createRederiveStructuredHandler =
 	({
 		documentRepository,
+		lexiconUpdateService,
 		logger,
 		transcriptionRepository,
 		transcriptionService,
 	}: {
 		documentRepository: DocumentRepository;
+		lexiconUpdateService: LexiconUpdateService;
 		logger: Logger;
 		transcriptionRepository: TranscriptionRepository;
 		transcriptionService: TranscriptionService;
 	}) =>
 	async (job: Job<RederiveStructuredJobData>): Promise<void> => {
-		const { currentTranscriptionId, documentId, pageId, text } = job.data;
+		const { currentTranscriptionId, documentId, pageId, pageNo, text } =
+			job.data;
 
 		const document = await documentRepository.findWithPresetById(documentId);
 
@@ -54,8 +60,8 @@ const createRederiveStructuredHandler =
 
 		try {
 			const preset = documentObject.preset;
-			const modelId = preset.settings.model || null;
-			const outputSchema = preset.outputSchema || null;
+			const modelId = preset.settings?.model ?? null;
+			const outputSchema = preset.outputSchema ?? null;
 
 			const result = await transcriptionService.rederiveStructured({
 				modelId,
@@ -76,11 +82,28 @@ const createRederiveStructuredHandler =
 				);
 			}
 
+			const minDistinctPages =
+				preset.settings?.minDistinctPages ??
+				DEFAULT_PRESET_SETTINGS.minDistinctPages;
+
 			if (result.structured) {
-				await transcriptionRepository.updateEditedStructured(
-					transcription.id,
-					result.structured,
-				);
+				await TranscriptionModel.transaction(async (trx) => {
+					await transcriptionRepository.updateEditedStructured(
+						transcription.id,
+						result.structured,
+						trx,
+					);
+
+					await lexiconUpdateService.updateLexiconFromVerifiedPage({
+						documentId,
+						minDistinctPages,
+						outputSchema,
+						pageNo,
+						structured: result.structured,
+						text,
+						trx,
+					});
+				});
 			}
 		} catch (error) {
 			logger.error(ErrorMessage.REDERIVE_FAILED(pageId), { error });

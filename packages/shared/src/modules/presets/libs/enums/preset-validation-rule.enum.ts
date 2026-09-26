@@ -1,5 +1,11 @@
 const PresetValidationRule = {
 	ID_MINIMUM: 1,
+	DESCRIPTION_MAX_LENGTH: 2000,
+	GLOSSARY_ENTRY_MIN_LENGTH: 1,
+	INSTRUCTIONS_MIN_LENGTH: 1,
+	MODEL_MIN_LENGTH: 1,
+	NAME_MAX_LENGTH: 255,
+	NAME_MIN_LENGTH: 1,
 } as const;
 
 export { PresetValidationRule };

@@ -33,6 +33,7 @@ import {
 	DocumentTitleBlock,
 	ExportBlock,
 	GroundTruthBlock,
+	LexiconBlock,
 	PagesBlock,
 	TranscriptionBlock,
 	VerificationBlock,
@@ -136,8 +137,7 @@ const Document: React.FC = () => {
 			.unwrap()
 			.then(() => {
 				setIsConfirmOpen(false);
-				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-				void navigate(AppRoute.DOCUMENTS);
+				Promise.resolve(navigate(AppRoute.DOCUMENTS)).catch(() => null);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);
@@ -246,6 +246,18 @@ const Document: React.FC = () => {
 								</section>
 							) : (
 								<>
+									<TranscriptionBlock
+										budgetLimitUsd={currentDocument.budget.limitUsd}
+										budgetSpentUsd={currentDocument.budget.spentUsd}
+										cursorPageNo={currentDocument.cursorPageNo}
+										onRaiseLimitClick={handleOpenRaiseLimit}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										status={currentDocument.status}
+									/>
+
 									<PagesBlock
 										cursorPageNo={currentDocument.cursorPageNo}
 										pagesBlank={currentDocument.progress.pagesBlank}
@@ -272,17 +284,7 @@ const Document: React.FC = () => {
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
 
-									<TranscriptionBlock
-										budgetLimitUsd={currentDocument.budget.limitUsd}
-										budgetSpentUsd={currentDocument.budget.spentUsd}
-										cursorPageNo={currentDocument.cursorPageNo}
-										onRaiseLimitClick={handleOpenRaiseLimit}
-										pagesBlank={currentDocument.progress.pagesBlank}
-										pagesFailed={currentDocument.progress.pagesFailed}
-										pagesTotal={currentDocument.progress.pagesTotal}
-										pagesTranscribed={pagesTranscribed}
-										status={currentDocument.status}
-									/>
+									<LexiconBlock documentId={currentDocument.id} />
 
 									<ExportBlock
 										documentId={currentDocument.id}

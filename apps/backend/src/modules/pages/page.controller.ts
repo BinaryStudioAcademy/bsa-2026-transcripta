@@ -8,27 +8,19 @@ import {
 import { APIPath } from "~/libs/enums/enums.js";
 import { authGuard } from "~/libs/modules/auth/auth.js";
 import {
-	type APIHandlerOptions,
 	type APIHandlerResponse,
 	BaseController,
 } from "~/libs/modules/controller/controller.js";
 import { HTTPCode, HTTPMethod } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
-import { type TokenPayload } from "~/libs/modules/token/token.js";
 
 import {
 	type GetPageDebugHandlerOptions,
 	type ReprocessPageHandlerOptions,
+	type UndoPageHandlerOptions,
 	type VerifyPageHandlerOptions,
 } from "./libs/types/types.js";
 import { type PageService } from "./page.service.js";
-
-type UndoPageHandlerOptions = APIHandlerOptions<{
-	params: {
-		id: number;
-	};
-	user: TokenPayload;
-}>;
 
 class PageController extends BaseController {
 	private pageService: PageService;
@@ -209,8 +201,6 @@ class PageController extends BaseController {
 	 *             type: object
 	 *             required:
 	 *               - action
-	 *               - transcriptionId
-	 *               - text
 	 *               - durationMs
 	 *             properties:
 	 *               action:
@@ -221,8 +211,10 @@ class PageController extends BaseController {
 	 *                   - skip
 	 *               transcriptionId:
 	 *                 type: integer
+	 *                 description: Required when the page already has a transcription. Omit when typing a failed page from scratch.
 	 *               text:
 	 *                 type: string
+	 *                 description: Required for correct, including manual transcription of a failed page.
 	 *               durationMs:
 	 *                 type: integer
 	 *                 minimum: 0

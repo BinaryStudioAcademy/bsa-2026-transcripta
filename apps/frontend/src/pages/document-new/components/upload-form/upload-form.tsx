@@ -16,17 +16,19 @@ import styles from "./styles.module.css";
 
 type Properties = {
 	fileName: string;
+	isStartingProcessing: boolean;
 	isSubmitting: boolean;
 	isUploaded: boolean;
 	onCancelUpload: () => void;
 	onChangeFile: () => void;
-	onProcessDocument: () => void;
+	onProcessDocument: (values: UploadFormValues) => void;
 	onSubmit: (values: UploadFormValues) => void;
 	presetOptions: PresetGetAllItemResponseDto[];
 };
 
 const UploadForm: React.FC<Properties> = ({
 	fileName,
+	isStartingProcessing = false,
 	isSubmitting = false,
 	isUploaded = false,
 	onCancelUpload,
@@ -58,6 +60,12 @@ const UploadForm: React.FC<Properties> = ({
 		},
 		[handleSubmit, onSubmit],
 	);
+	const handleProcessClick = useCallback(
+		(event_: React.MouseEvent<HTMLButtonElement>): void => {
+			void handleSubmit(onProcessDocument)(event_);
+		},
+		[handleSubmit, onProcessDocument],
+	);
 
 	return (
 		<form className={styles["upload-form"]} onSubmit={handleFormSubmit}>
@@ -79,9 +87,10 @@ const UploadForm: React.FC<Properties> = ({
 			<div className={styles["upload-form__actions"]}>
 				{isUploaded && (
 					<Button
+						isDisabled={isStartingProcessing}
 						isPrimary
 						label="Start Processing"
-						onClick={onProcessDocument}
+						onClick={handleProcessClick}
 						type="button"
 					/>
 				)}

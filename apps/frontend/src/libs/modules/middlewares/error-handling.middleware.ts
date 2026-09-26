@@ -18,6 +18,10 @@ errorHandlingMiddleware.startListening({
 			return;
 		}
 
+		if (action.type === authActions.signUp.rejected.type) {
+			return;
+		}
+
 		if (
 			action.type === documentActions.pollDocumentById.rejected.type ||
 			action.type === documentActions.loadById.rejected.type

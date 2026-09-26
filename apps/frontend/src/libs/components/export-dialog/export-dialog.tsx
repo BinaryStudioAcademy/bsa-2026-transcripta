@@ -41,15 +41,6 @@ const ExportDialog: React.FC<Properties> = ({
 		};
 	}, [onCancel]);
 
-	const handleScrimClick = useCallback(
-		(event: React.MouseEvent<HTMLDivElement>): void => {
-			if (event.target === event.currentTarget) {
-				onCancel();
-			}
-		},
-		[onCancel],
-	);
-
 	const handleFormatChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>): void => {
 			setFormat(event.target.value as ExportFormatValue);
@@ -62,8 +53,13 @@ const ExportDialog: React.FC<Properties> = ({
 	}, [format, onConfirm]);
 
 	return (
-		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape (handled above) is the keyboard equivalent for dismissing the scrim
-		<div className={styles["scrim"]} onClick={handleScrimClick}>
+		<div className={styles["scrim"]}>
+			<button
+				aria-label="Close dialog"
+				className={styles["scrim-close"]}
+				onClick={onCancel}
+				type="button"
+			/>
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>
 					Export &ldquo;{documentTitle}&rdquo;

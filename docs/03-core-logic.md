@@ -465,17 +465,63 @@ function extractEntities(text, structured, preset): Entity[] {
 	//    the model already put the surname in its own field — free NER.
 	for (const field of preset.entityFields) {
 		const v = get(structured, field.path);
-		if (v) out.push({ kind: field.kind, value: v });
+
+		if (v) {
+			out.push({
+				kind: field.kind,
+				value: v,
+			});
+		}
 	}
 
-	// 2. Capitalised words not at the start of a sentence — a heuristic.
+	// 2. Capitalised words from the source text — a fallback heuristic.
 	//    `other`, not a kind of its own: the heuristic cannot tell a surname
 	//    from a place, and `lexicon_kind` has no value for "probably a name".
-	for (const m of text.matchAll(/(?<![.!?]\s)\b[A-Z][a-z']{2,}/g)) {
-		out.push({ kind: "other", value: m[0] });
+	//
+	//    The fallback supports Unicode letters, uppercase words, short names,
+	//    apostrophes and hyphenated names. Initials and common abbreviations
+	//    followed by a period are ignored.
+	for (const match of text.matchAll(CAPITALISED_REGEX)) {
+		const value = match[0];
+
+		if (
+			isAbbreviationOrInitial(text, value, match.index) ||
+			isSentenceStart(text, match.index)
+		) {
+			continue;
+		}
+
+		out.push({
+			kind: "other",
+			value,
+		});
 	}
 
 	return dedupe(out);
+}
+```
+
+```ts
+function isSentenceStart(text: string, index: number): boolean {
+	const previousIndex = findPreviousNonWhitespaceIndex(text, index - 1);
+
+	// The first capitalised word in the text is a sentence start.
+	if (previousIndex < 0) {
+		return true;
+	}
+
+	// Only periods are treated as sentence boundaries here.
+	// Question marks and exclamation marks are not enough to discard
+	// a candidate because they may be followed by a real entity.
+	if (text[previousIndex] !== ".") {
+		return false;
+	}
+
+	const previousToken = getTokenBeforeIndex(text, previousIndex);
+
+	// A period after an initial or a known abbreviation is not
+	// considered the end of a sentence.
+	return !isInitial(previousToken) && !IGNORED_ABBREVIATIONS.has(previousToken);
 }
 ```
 
