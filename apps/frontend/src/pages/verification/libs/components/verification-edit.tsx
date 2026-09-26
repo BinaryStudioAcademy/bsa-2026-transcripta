@@ -7,14 +7,14 @@ import {
 } from "~/libs/hooks/hooks.js";
 
 type EditModeProperties = {
-	isDisabled: boolean;
+	isDisabled?: boolean;
 	onCancel: () => void;
 	onSave: (text: string) => void;
 	text: string;
 };
 
 const VerificationEdit: React.FC<EditModeProperties> = ({
-	isDisabled,
+	isDisabled = false,
 	onCancel,
 	onSave,
 	text,
