@@ -3,6 +3,7 @@ import { type Knex } from "knex";
 const TABLE_NAME = "preset";
 const TRIGGER_NAME = "preset_immutable";
 const PAGE_TEXT_KEY = "page_text";
+const OWNER_ID_COLUMN = "owner_id";
 
 const MARKER_RULE =
 	"\n- Mark the illegible as [?] and the completely lost as [...].";
@@ -11,9 +12,18 @@ const MARKER_RULE =
 // marker rule in front of it to restore the original text exactly.
 const LINE_AFTER_MARKER_RULE =
 	"\n- Keep dates exactly as written, do not convert the calendar.";
+
 const PAGE_TEXT_RULE =
 	"\n- Put the whole page as continuous readable text in the page_text field, keeping the original line order. Where the page holds a table, write that part as a Markdown pipe table with a header row, and keep the surrounding prose as plain paragraphs. Where you can read a word but are not confident it is right, write your best reading followed by (?), for example Ferrers(?). The structured records describe the same page, they do not replace it.";
 
+/**
+ * Marking and page-text rules moved to SYSTEM_PROMPT (TSA-475): the parser
+ * that renders them is app code, so presets must not own that syntax.
+ * Only built-in presets (owner_id is null) are touched in both directions —
+ * they are the only rows that ever carried these rules; user presets are left
+ * alone. Presets are immutable by design, so the trigger is lifted for this
+ * one repair of seeded text.
+ */
 const withTriggerDisabled = async (
 	knex: Knex,
 	callback: () => Promise<void>,
@@ -30,6 +40,7 @@ const withTriggerDisabled = async (
 async function down(knex: Knex): Promise<void> {
 	await withTriggerDisabled(knex, async () => {
 		await knex(TABLE_NAME)
+			.whereNull(OWNER_ID_COLUMN)
 			.whereRaw("position(? in instructions) > 0", [LINE_AFTER_MARKER_RULE])
 			.whereRaw("position(? in instructions) = 0", [MARKER_RULE])
 			.update({
@@ -40,6 +51,7 @@ async function down(knex: Knex): Promise<void> {
 			});
 
 		await knex(TABLE_NAME)
+			.whereNull(OWNER_ID_COLUMN)
 			.whereRaw("output_schema -> 'properties' ->> ? is not null", [
 				PAGE_TEXT_KEY,
 			])
@@ -53,12 +65,14 @@ async function down(knex: Knex): Promise<void> {
 async function up(knex: Knex): Promise<void> {
 	await withTriggerDisabled(knex, async () => {
 		await knex(TABLE_NAME)
+			.whereNull(OWNER_ID_COLUMN)
 			.whereRaw("position(? in instructions) > 0", [MARKER_RULE])
 			.update({
 				instructions: knex.raw("replace(instructions, ?, '')", [MARKER_RULE]),
 			});
 
 		await knex(TABLE_NAME)
+			.whereNull(OWNER_ID_COLUMN)
 			.whereRaw("position(? in instructions) > 0", [PAGE_TEXT_RULE])
 			.update({
 				instructions: knex.raw("replace(instructions, ?, '')", [
