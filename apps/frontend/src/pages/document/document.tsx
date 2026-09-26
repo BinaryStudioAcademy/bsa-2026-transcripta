@@ -10,6 +10,7 @@ import {
 import {
 	BUDGET_STOP_NOTIFICATION_MESSAGE,
 	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INGESTION_FAILED_MESSAGE,
 	INITIAL_COUNT,
 	MINIMUM_VALID_DOCUMENT_ID,
 	NOTIFICATION_DELAY_MS,
@@ -20,6 +21,7 @@ import {
 	useAppSelector,
 	useCallback,
 	useEffect,
+	useLocation,
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
@@ -43,6 +45,8 @@ import styles from "./styles.module.css";
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+	const location = useLocation();
+	const locationState = location.state as null | { errorMessage?: string };
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
@@ -74,6 +78,7 @@ const Document: React.FC = () => {
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const isNotifyingReference = useRef<boolean>(false);
 	const previousStatusReference = useRef<null | string>(null);
+	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
 
 	useEffect(() => {
 		if (!currentDocument) {
@@ -87,21 +92,21 @@ const Document: React.FC = () => {
 			return;
 		}
 
+		const isFailedStatus = currentDocument.status === DocumentStatus.FAILED;
 		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
 		const previousStatus = previousStatusReference.current;
 
 		previousStatusReference.current = currentDocument.status;
 
-		const hasAlreadyBeenNotified = notifiedDocumentsReference.current.has(
+		const hasBudgetBeenNotified = notifiedDocumentsReference.current.has(
 			currentDocument.id,
 		);
 
-		const shouldNotify =
+		const shouldNotifyBudget =
 			isBudgetStop &&
-			(!hasAlreadyBeenNotified ||
-				previousStatus !== DocumentStatus.BUDGET_STOP);
+			(!hasBudgetBeenNotified || previousStatus !== DocumentStatus.BUDGET_STOP);
 
-		if (shouldNotify && !isNotifyingReference.current) {
+		if (shouldNotifyBudget && !isNotifyingReference.current) {
 			isNotifyingReference.current = true;
 
 			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
@@ -112,7 +117,29 @@ const Document: React.FC = () => {
 				isNotifyingReference.current = false;
 			}, NOTIFICATION_DELAY_MS);
 		}
-	}, [currentDocument, currentDocument?.id, currentDocument?.status, id]);
+
+		const hasFailedBeenNotified = failedNotifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		if (isFailedStatus && !hasFailedBeenNotified) {
+			failedNotifiedDocumentsReference.current.add(currentDocument.id);
+
+			const errorMessage =
+				currentDocument.errorMessage ||
+				locationState?.errorMessage ||
+				INGESTION_FAILED_MESSAGE;
+
+			notification.error(errorMessage);
+		}
+	}, [
+		currentDocument,
+		currentDocument?.id,
+		currentDocument?.status,
+		currentDocument?.errorMessage,
+		id,
+		locationState?.errorMessage,
+	]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -137,7 +164,7 @@ const Document: React.FC = () => {
 			.unwrap()
 			.then(() => {
 				setIsConfirmOpen(false);
-				Promise.resolve(navigate(AppRoute.DOCUMENTS)).catch(() => null);
+				return navigate(AppRoute.DOCUMENTS);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);
@@ -197,6 +224,11 @@ const Document: React.FC = () => {
 			currentDocument.progress.pagesSkipped
 		: INITIAL_COUNT;
 
+	const errorMessageToDisplay =
+		currentDocument?.errorMessage ||
+		locationState?.errorMessage ||
+		INGESTION_FAILED_MESSAGE;
+
 	if (!isValidId || hasError) {
 		return <NotFound />;
 	}
@@ -240,7 +272,7 @@ const Document: React.FC = () => {
 								<section>
 									<h2>Ingest failed</h2>
 									<DocumentFailedBlock
-										errorMessage={currentDocument.errorMessage}
+										errorMessage={errorMessageToDisplay}
 										onRetry={handleRetry}
 									/>
 								</section>

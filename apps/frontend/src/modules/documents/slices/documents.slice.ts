@@ -1,6 +1,7 @@
 import { type ActionReducerMapBuilder, createSlice } from "@reduxjs/toolkit";
 import { INDEX_NOT_FOUND } from "@transcripta/shared";
 
+import { INGESTION_FAILED_MESSAGE } from "~/libs/constants/constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
 import {
@@ -31,6 +32,8 @@ type State = {
 	documentDataStatus: DataStatusValue;
 	documentExports: Record<number, DocumentExport[]>;
 	documents: DocumentGetAllItemResponseDto[];
+	ingestDataStatus: DataStatusValue;
+	ingestError: null | string;
 	pauseResumeDataStatuses: Record<number, DataStatusValue>;
 	requestedDocumentId: null | number;
 };
@@ -42,6 +45,8 @@ const initialState: State = {
 	documentDataStatus: DataStatus.IDLE,
 	documentExports: {},
 	documents: [],
+	ingestDataStatus: DataStatus.IDLE,
+	ingestError: null,
 	pauseResumeDataStatuses: {},
 	requestedDocumentId: null,
 };
@@ -218,18 +223,24 @@ const registerProcessingReducers = (builder: ExtraReducersBuilder): void => {
 	});
 
 	builder.addCase(ingest.pending, (state, action) => {
+		state.ingestDataStatus = DataStatus.PENDING;
+		state.ingestError = null;
 		if (state.document?.id === action.meta.arg) {
 			state.document.status = DocumentStatus.INGESTING;
 		}
 	});
 
 	builder.addCase(ingest.fulfilled, (state, action) => {
+		state.ingestDataStatus = DataStatus.FULFILLED;
+		state.ingestError = null;
 		if (state.document?.id === action.meta.arg) {
 			state.document.status = DocumentStatus.READY;
 		}
 	});
 
 	builder.addCase(ingest.rejected, (state, action) => {
+		state.ingestDataStatus = DataStatus.REJECTED;
+		state.ingestError = action.error.message ?? INGESTION_FAILED_MESSAGE;
 		if (state.document?.id === action.meta.arg) {
 			state.document.status = DocumentStatus.FAILED;
 		}
