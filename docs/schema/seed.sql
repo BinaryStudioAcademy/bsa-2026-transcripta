@@ -58,8 +58,12 @@ Rules:
   -- automatically. This saves a separate LLM call for entity extraction.
   '{
     "type": "object",
-    "required": ["records"],
+    "required": ["records", "page_text"],
     "properties": {
+      "page_text": {
+        "type": "string",
+        "description": "The whole page as continuous readable text, exactly as written on the scan."
+      },
       "records": {
         "type": "array",
         "items": {
