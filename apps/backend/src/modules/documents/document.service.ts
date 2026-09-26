@@ -58,6 +58,7 @@ import {
 	PageStatus,
 } from "./libs/enums/enums.js";
 import {
+	type DocumentExportRawItem,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
 	type DocumentServiceDependencies,
@@ -251,6 +252,32 @@ class DocumentService {
 				);
 			}
 		});
+	}
+
+	private async getExportsWithUrls(exports: DocumentExportRawItem[]) {
+		return await Promise.all(
+			exports.map(async (exportData) => {
+				let downloadUrl: null | string = null;
+
+				if (
+					exportData.status === DocumentExportStatus.READY &&
+					exportData.objectKey
+				) {
+					downloadUrl = await this.storage.getExportDownloadSignedUrl(
+						exportData.objectKey,
+					);
+				}
+
+				return {
+					createdAt: exportData.createdAt,
+					downloadUrl,
+					format: exportData.format,
+					id: exportData.id,
+					sizeBytes: exportData.sizeBytes,
+					status: exportData.status,
+				};
+			}),
+		);
 	}
 
 	private async getIngestPageCount(
@@ -680,29 +707,7 @@ class DocumentService {
 
 		const documentData = document.toObject();
 
-		const exportsWithUrls = await Promise.all(
-			documentData.exports.map(async (exportData) => {
-				let downloadUrl: null | string = null;
-
-				if (
-					exportData.status === DocumentExportStatus.READY &&
-					exportData.objectKey
-				) {
-					downloadUrl = await this.storage.getExportDownloadSignedUrl(
-						exportData.objectKey,
-					);
-				}
-
-				return {
-					createdAt: exportData.createdAt,
-					downloadUrl,
-					format: exportData.format,
-					id: exportData.id,
-					sizeBytes: exportData.sizeBytes,
-					status: exportData.status,
-				};
-			}),
-		);
+		const exportsWithUrls = await this.getExportsWithUrls(documentData.exports);
 
 		return {
 			...documentData,
@@ -908,7 +913,6 @@ class DocumentService {
 			await clear();
 		}
 	}
-
 	public async pause(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findByIdAndOwnerId(
 			documentId,
@@ -953,6 +957,7 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
+
 	public async resume(
 		documentId: number,
 		userId: number,
@@ -1003,29 +1008,7 @@ class DocumentService {
 			},
 		);
 
-		const exportsWithUrls = await Promise.all(
-			document.exports.map(async (exportData) => {
-				let downloadUrl: null | string = null;
-
-				if (
-					exportData.status === DocumentExportStatus.READY &&
-					exportData.objectKey
-				) {
-					downloadUrl = await this.storage.getExportDownloadSignedUrl(
-						exportData.objectKey,
-					);
-				}
-
-				return {
-					createdAt: exportData.createdAt,
-					downloadUrl,
-					format: exportData.format,
-					id: exportData.id,
-					sizeBytes: exportData.sizeBytes,
-					status: exportData.status,
-				};
-			}),
-		);
+		const exportsWithUrls = await this.getExportsWithUrls(document.exports);
 
 		const documentToReturn = {
 			...document,
