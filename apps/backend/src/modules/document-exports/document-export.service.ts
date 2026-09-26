@@ -55,13 +55,13 @@ class DocumentExportService {
 		return {
 			createdAt: exportData.createdAt,
 			documentId: exportData.documentId,
+			downloadUrl,
 			errorMessage: exportData.errorMessage,
 			finishedAt: exportData.finishedAt,
 			format: exportData.format,
 			id: exportData.id,
 			sizeBytes: exportData.sizeBytes,
 			status: exportData.status,
-			downloadUrl,
 		};
 	}
 }
