@@ -277,7 +277,7 @@ CREATE TABLE transcription (
   cost_usd      numeric(12,6) NOT NULL DEFAULT 0,
   latency_ms    integer     NOT NULL DEFAULT 0,
   from_cache    boolean     NOT NULL DEFAULT false,
-
+  rederive_structured_job_created_at timestamptz DEFAULT NULL,
   is_current    boolean     NOT NULL DEFAULT true,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now()
