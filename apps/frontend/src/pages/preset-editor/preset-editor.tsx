@@ -1,6 +1,6 @@
 import React, { type ChangeEvent } from "react";
 
-import { ThemeToggle } from "~/libs/components/components.js";
+import { Button, ThemeToggle } from "~/libs/components/components.js";
 import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
@@ -356,23 +356,18 @@ const PresetEditor: React.FC = () => {
 							</p>
 
 							<div className="preset-editor__buttons">
-								<button
-									className="tx-btn tx-btn--ghost"
-									disabled={isFormDisabled}
+								<Button
+									isDisabled={isFormDisabled}
+									label="Cancel"
 									onClick={handleCancel}
-									type="button"
-								>
-									Cancel
-								</button>
+								/>
 
-								<button
-									className="tx-btn tx-btn--primary"
-									disabled={isFormDisabled}
+								<Button
+									isDisabled={isFormDisabled}
+									isPrimary
+									label={isSaving ? "Saving..." : "Save preset"}
 									onClick={handleSubmit}
-									type="button"
-								>
-									{isSaving ? "Saving..." : "Save preset"}
-								</button>
+								/>
 							</div>
 						</div>
 					</section>

@@ -1,5 +1,7 @@
 import React from "react";
 
+import { Button } from "~/libs/components/components.js";
+
 import type { GlossaryEntry } from "../../libs/types/preset-editor.types.js";
 
 import { GLOSSARY_TYPES } from "../../libs/constants/preset-editor.constants.js";
@@ -36,32 +38,31 @@ const PresetGlossary: React.FC<Properties> = ({
 					</span>
 				</h2>
 
-				<button
-					className="tx-btn tx-btn--secondary tx-btn--sm"
-					disabled={isDisabled}
+				<Button
+					isDisabled={isDisabled}
+					isSecondary
+					isSmall
+					label="+ add word"
 					onClick={onAddEntry}
-					type="button"
-				>
-					+ add word
-				</button>
+				/>
 			</div>
 
 			<div className="preset-editor__glossary-list">
 				{entries.map((entry) => (
 					<div className="preset-editor__glossary-row" key={entry.id}>
 						<div className="preset-editor__type-selector">
-							<button
+							<Button
 								aria-expanded={openTypeId === entry.id}
 								aria-haspopup="listbox"
 								className="preset-editor__type-button"
 								data-id={entry.id}
-								disabled={isDisabled}
+								isDisabled={isDisabled}
+								isSmall
 								onClick={onTypeButtonClick}
-								type="button"
 							>
 								<span>{entry.kind}</span>
 								<span className="preset-editor__type-chevron">▾</span>
-							</button>
+							</Button>
 
 							{openTypeId === entry.id && (
 								<div
@@ -70,21 +71,21 @@ const PresetGlossary: React.FC<Properties> = ({
 									role="listbox"
 								>
 									{GLOSSARY_TYPES.map((kind) => (
-										<button
+										<Button
 											aria-selected={entry.kind === kind}
 											className="preset-editor__type-option"
 											data-id={entry.id}
 											data-kind={kind}
+											isSmall
 											key={kind}
 											onClick={onKindOptionClick}
 											role="option"
-											type="button"
 										>
 											<span>{kind}</span>
 											<span className="preset-editor__type-option-check">
 												{entry.kind === kind ? "✓" : ""}
 											</span>
-										</button>
+										</Button>
 									))}
 								</div>
 							)}
@@ -106,16 +107,16 @@ const PresetGlossary: React.FC<Properties> = ({
 							value={entry.value}
 						/>
 
-						<button
+						<Button
 							aria-label={`Remove ${entry.value || "glossary entry"}`}
 							className="preset-editor__remove-button"
 							data-id={entry.id}
-							disabled={isDisabled}
+							isDisabled={isDisabled}
+							isSmall
 							onClick={onRemoveButtonClick}
-							type="button"
 						>
 							×
-						</button>
+						</Button>
 					</div>
 				))}
 			</div>
