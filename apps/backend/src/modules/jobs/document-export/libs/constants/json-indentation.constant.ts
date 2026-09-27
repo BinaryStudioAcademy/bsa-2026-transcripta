@@ -1,0 +1,3 @@
+const JSON_INDENTATION = 2;
+
+export { JSON_INDENTATION };
