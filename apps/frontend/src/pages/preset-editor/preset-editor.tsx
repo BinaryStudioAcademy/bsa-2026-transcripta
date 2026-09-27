@@ -36,21 +36,17 @@ const handleCancel = (): void => {
 	// TODO: Navigate back when routing is connected.
 };
 
-const handleSubmit = (): void => {
-	// TODO: Add validation and POST /api/v1/presets
-};
-
 const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const { id } = useParams<{ id?: string }>();
 
-	const { presets, selectedPreset, selectedPresetStatus } = useAppSelector(
-		({ presets }) => ({
+	const { createStatus, presets, selectedPreset, selectedPresetStatus } =
+		useAppSelector(({ presets }) => ({
+			createStatus: presets.createStatus,
 			presets: presets.presets,
 			selectedPreset: presets.selectedPreset,
 			selectedPresetStatus: presets.selectedPresetStatus,
-		}),
-	);
+		}));
 
 	const initialPresetId = id ? Number(id) : null;
 
@@ -65,6 +61,8 @@ const PresetEditor: React.FC = () => {
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
 
 	const isPresetLoading = selectedPresetStatus === DataStatus.PENDING;
+	const isSaving = createStatus === DataStatus.PENDING;
+	const isFormDisabled = isPresetLoading || isSaving;
 
 	const outputFields =
 		selectedPreset && basePresetId
@@ -108,6 +106,34 @@ const PresetEditor: React.FC = () => {
 		setOpenTypeId(null);
 	}, [selectedPreset, basePresetId]);
 
+	const handleSubmit = useCallback((): void => {
+		if (!selectedPreset) {
+			return;
+		}
+
+		setOpenTypeId(null);
+
+		const trimmedName = name.trim();
+		const trimmedInstructions = instructions.trim();
+
+		if (!trimmedName || !trimmedInstructions) {
+			return;
+		}
+
+		void dispatch(
+			presetsActions.create({
+				familyId: selectedPreset.familyId,
+				instructions: trimmedInstructions,
+				name: trimmedName,
+				seedGlossary: entries
+					.filter(({ value }) => value.trim())
+					.map(({ kind, value }) => ({
+						kind,
+						value: value.trim(),
+					})),
+			}),
+		);
+	}, [dispatch, entries, instructions, name, selectedPreset]);
 	const handleAddEntry = useCallback((): void => {
 		setEntries((currentEntries) => [...currentEntries, createEntry()]);
 	}, []);
@@ -217,7 +243,6 @@ const PresetEditor: React.FC = () => {
 		<div className="preset-editor">
 			<header className="preset-editor__header">
 				<h1 className="preset-editor__title">New preset</h1>
-
 				<ThemeToggle />
 			</header>
 
@@ -233,7 +258,7 @@ const PresetEditor: React.FC = () => {
 								<div className="tx-selectwrap">
 									<select
 										className="tx-input"
-										disabled={presets.length === EMPTY_LENGTH}
+										disabled={presets.length === EMPTY_LENGTH || isFormDisabled}
 										id="based-on"
 										onChange={handleBasePresetChange}
 										value={basePresetId ?? ""}
@@ -244,7 +269,7 @@ const PresetEditor: React.FC = () => {
 
 										{presets.map((preset) => (
 											<option key={preset.id} value={preset.id}>
-												{preset.name}
+												{`${preset.name} v${String(preset.version)}`}
 											</option>
 										))}
 									</select>
@@ -258,7 +283,7 @@ const PresetEditor: React.FC = () => {
 
 								<input
 									className="tx-input"
-									disabled={isPresetLoading}
+									disabled={isFormDisabled}
 									id="preset-name"
 									onChange={handleNameChange}
 									value={name}
@@ -273,7 +298,7 @@ const PresetEditor: React.FC = () => {
 
 							<textarea
 								className="tx-input preset-editor__instructions"
-								disabled={isPresetLoading}
+								disabled={isFormDisabled}
 								id="instructions"
 								onChange={handleInstructionsChange}
 								rows={3}
@@ -293,7 +318,7 @@ const PresetEditor: React.FC = () => {
 
 								<button
 									className="tx-btn tx-btn--secondary tx-btn--sm"
-									disabled={isPresetLoading}
+									disabled={isFormDisabled}
 									onClick={handleAddEntry}
 									type="button"
 								>
@@ -310,6 +335,7 @@ const PresetEditor: React.FC = () => {
 												aria-haspopup="listbox"
 												className="preset-editor__type-button"
 												data-id={entry.id}
+												disabled={isFormDisabled}
 												onClick={handleTypeButtonClick}
 												type="button"
 											>
@@ -354,6 +380,7 @@ const PresetEditor: React.FC = () => {
 										<input
 											className="tx-input preset-editor__glossary-input"
 											data-id={entry.id}
+											disabled={isFormDisabled}
 											id={`glossary-value-${entry.id}`}
 											onChange={handleGlossaryValueChange}
 											value={entry.value}
@@ -363,6 +390,7 @@ const PresetEditor: React.FC = () => {
 											aria-label={`Remove ${entry.value || "glossary entry"}`}
 											className="preset-editor__remove-button"
 											data-id={entry.id}
+											disabled={isFormDisabled}
 											onClick={handleRemoveButtonClick}
 											type="button"
 										>
@@ -414,7 +442,7 @@ const PresetEditor: React.FC = () => {
 							<div className="preset-editor__buttons">
 								<button
 									className="tx-btn tx-btn--ghost"
-									disabled={isPresetLoading}
+									disabled={isFormDisabled}
 									onClick={handleCancel}
 									type="button"
 								>
@@ -423,11 +451,11 @@ const PresetEditor: React.FC = () => {
 
 								<button
 									className="tx-btn tx-btn--primary"
-									disabled={isPresetLoading}
+									disabled={isFormDisabled}
 									onClick={handleSubmit}
 									type="button"
 								>
-									Save preset
+									{isSaving ? "Saving..." : "Save preset"}
 								</button>
 							</div>
 						</div>

@@ -7,9 +7,10 @@ import {
 	type PresetGetAllItemResponseDto,
 	type PresetGetByIdResponseDto,
 } from "../libs/types/types.js";
-import { loadAll, loadById } from "./actions.js";
+import { create, loadAll, loadById } from "./actions.js";
 
 type State = {
+	createStatus: DataStatusValue;
 	dataStatus: DataStatusValue;
 	presets: PresetGetAllItemResponseDto[];
 	selectedPreset: null | PresetGetByIdResponseDto;
@@ -17,6 +18,7 @@ type State = {
 };
 
 const initialState: State = {
+	createStatus: DataStatus.IDLE,
 	dataStatus: DataStatus.IDLE,
 	presets: [],
 	selectedPreset: null,
@@ -51,6 +53,18 @@ const { actions, name, reducer } = createSlice({
 		builder.addCase(loadById.rejected, (state) => {
 			state.selectedPreset = null;
 			state.selectedPresetStatus = DataStatus.REJECTED;
+		});
+
+		builder.addCase(create.pending, (state) => {
+			state.createStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(create.fulfilled, (state) => {
+			state.createStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(create.rejected, (state) => {
+			state.createStatus = DataStatus.REJECTED;
 		});
 	},
 	initialState,
