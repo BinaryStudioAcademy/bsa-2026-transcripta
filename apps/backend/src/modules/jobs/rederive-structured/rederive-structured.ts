@@ -9,7 +9,7 @@ import { TranscriptionModel } from "~/modules/transcription/transcription.model.
 import { type TranscriptionRepository } from "~/modules/transcription/transcription.repository.js";
 import { type TranscriptionService } from "~/modules/transcription/transcription.service.js";
 
-import { ErrorMessage } from "./libs/enums/enums.js";
+import { ErrorMessage, InfoMessage } from "./libs/enums/enums.js";
 
 const createRederiveStructuredHandler =
 	({
@@ -26,8 +26,14 @@ const createRederiveStructuredHandler =
 		transcriptionService: TranscriptionService;
 	}) =>
 	async (job: Job<RederiveStructuredJobData>): Promise<void> => {
-		const { currentTranscriptionId, documentId, pageId, pageNo, text } =
-			job.data;
+		const {
+			currentTranscriptionId,
+			documentId,
+			jobCreatedAt,
+			pageId,
+			pageNo,
+			text,
+		} = job.data;
 
 		const document = await documentRepository.findWithPresetById(documentId);
 
@@ -46,6 +52,15 @@ const createRederiveStructuredHandler =
 
 		if (transcription.id !== currentTranscriptionId) {
 			logger.error(ErrorMessage.TRANSCRIPTION_OUTDATED(transcription.id));
+			return;
+		}
+
+		if (
+			transcription.rederiveStructuredJobCreatedAt &&
+			new Date(transcription.rederiveStructuredJobCreatedAt) >
+				new Date(jobCreatedAt)
+		) {
+			logger.info(InfoMessage.JOB_SKIPPED_BEFORE_MODEL(pageId));
 			return;
 		}
 
@@ -88,11 +103,18 @@ const createRederiveStructuredHandler =
 
 			if (result.structured) {
 				await TranscriptionModel.transaction(async (trx) => {
-					await transcriptionRepository.updateEditedStructured(
-						transcription.id,
-						result.structured,
-						trx,
-					);
+					const isUpdated =
+						await transcriptionRepository.updateEditedStructuredIfActual({
+							editedStructured: result.structured,
+							id: transcription.id,
+							jobCreatedAt,
+							trx,
+						});
+
+					if (!isUpdated) {
+						logger.info(InfoMessage.JOB_SKIPPED_AFTER_MODEL(pageId));
+						return;
+					}
 
 					await lexiconUpdateService.updateLexiconFromVerifiedPage({
 						documentId,
