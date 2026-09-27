@@ -14,7 +14,11 @@ import {
 	useEffect,
 	useNavigate,
 } from "~/libs/hooks/hooks.js";
-import { actions as presetsActions } from "~/modules/presets/presets.js";
+import {
+	actions as presetsActions,
+	selectPresets,
+	selectPresetsStatus,
+} from "~/modules/presets/presets.js";
 
 import styles from "./presets.module.css";
 
@@ -22,11 +26,8 @@ const Presets: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
-	const { presets, presetsStatus } = useAppSelector(({ presets }) => ({
-		presets: presets.presets,
-		presetsStatus: presets.presetsStatus,
-	}));
-
+	const presets = useAppSelector(selectPresets);
+	const presetsStatus = useAppSelector(selectPresetsStatus);
 	const isLoading = presetsStatus === DataStatus.PENDING;
 
 	useEffect(() => {

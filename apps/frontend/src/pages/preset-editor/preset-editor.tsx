@@ -22,7 +22,14 @@ import {
 import "./preset-editor.css";
 
 import { notification } from "~/libs/modules/notification/notification.js";
-import { actions as presetsActions } from "~/modules/presets/presets.js";
+import {
+	actions as presetsActions,
+	selectCreateStatus,
+	selectPresets,
+	selectPresetsStatus,
+	selectSelectedPreset,
+	selectSelectedPresetStatus,
+} from "~/modules/presets/presets.js";
 
 import type {
 	GlossaryEntry,
@@ -46,19 +53,11 @@ const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const { id } = useParams<{ id?: string }>();
 
-	const {
-		createStatus,
-		presets,
-		presetsStatus,
-		selectedPreset,
-		selectedPresetStatus,
-	} = useAppSelector(({ presets }) => ({
-		createStatus: presets.createStatus,
-		presets: presets.presets,
-		presetsStatus: presets.presetsStatus,
-		selectedPreset: presets.selectedPreset,
-		selectedPresetStatus: presets.selectedPresetStatus,
-	}));
+	const createStatus = useAppSelector(selectCreateStatus);
+	const presets = useAppSelector(selectPresets);
+	const presetsStatus = useAppSelector(selectPresetsStatus);
+	const selectedPreset = useAppSelector(selectSelectedPreset);
+	const selectedPresetStatus = useAppSelector(selectSelectedPresetStatus);
 
 	const initialPresetId = id ? Number(id) : null;
 
