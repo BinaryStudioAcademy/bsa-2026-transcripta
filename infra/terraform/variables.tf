@@ -53,7 +53,7 @@ variable "bucket_force_destroy" {
 variable "app_origins" {
   description = "Browser origins allowed to PUT directly into the uploads bucket (CORS)."
   type        = list(string)
-  default     = ["http://localhost:3000", "http://98.90.162.1"]
+  default     = ["http://localhost:3000", "http://98.90.162.1", "https://transcripta.world", "https://www.transcripta.world"]
 }
 
 variable "github_repo" {
