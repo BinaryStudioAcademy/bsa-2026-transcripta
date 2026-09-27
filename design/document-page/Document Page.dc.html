@@ -69,6 +69,17 @@
 </div>
 <div class="tx-progress-track" style="margin-top:12px"><div class="tx-progress-fill" style="width:{{ pctStr }}"></div></div>
 <div class="tx-progress-cap"><span>{{ spentStr }}</span><span>{{ etaStr }}</span></div>
+<sc-if value="{{ restMode }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--hairline)">
+  <p style="margin:0 0 10px;font:400 var(--fs-sm)/1.5 var(--font-ui);color:var(--text-2)">{{ restNote }}</p>
+  <div style="display:grid;grid-template-columns:repeat(20,1fr);gap:4px;width:100%;margin:8px 0">
+    <sc-for list="{{ restCells }}" as="cell" hint-placeholder-count="20">
+      <i style="height:14px;border-radius:2px;background:{{ cell.bg }}"></i>
+    </sc-for>
+  </div>
+  <span class="tx-num" style="display:block;margin-top:10px;color:var(--text-3)">{{ restCount }}</span>
+</div>
+</sc-if>
 <sc-if value="{{ stopped }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline)">
 <p style="margin:0;font:400 var(--fs-sm)/1.5 var(--font-ui);color:var(--warn-text)">Stopped before page <span class="tx-num">213</span> — the budget limit was reached.</p>
@@ -162,7 +173,7 @@
 </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;docStatus&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;processing&quot;,&quot;options&quot;:[&quot;processing&quot;,&quot;done&quot;,&quot;budget_stop&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;priorExport&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;groundTruth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;has-results&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;has-results&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Document&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;darkTheme&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;docStatus&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;processing&quot;,&quot;options&quot;:[&quot;processing&quot;,&quot;done&quot;,&quot;budget_stop&quot;,&quot;transcribing_rest&quot;,&quot;transcribed_all&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;priorExport&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;groundTruth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;has-results&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;has-results&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Document&quot;}}">
 class Component extends DCLogic {
   state = {
     dark: null, dialog: null, fmt: 'CSV', menuOpen: true,
@@ -182,7 +193,9 @@ class Component extends DCLogic {
     const M = {
       processing: { transcribed: 212, chip: 'Processing', chipClass: '', spent: '$0.98', limit: '$10.00', eta: 'about 12 minutes left' },
       done: { transcribed: 300, chip: 'Done', chipClass: 'tx-chip--ok', spent: '$6.42', limit: '$10.00', eta: 'finished' },
-      budget_stop: { transcribed: 212, chip: 'Budget limit', chipClass: 'tx-chip--warn', spent: '$10.00', limit: '$10.00', eta: 'stopped' }
+      budget_stop: { transcribed: 212, chip: 'Budget limit', chipClass: 'tx-chip--warn', spent: '$10.00', limit: '$10.00', eta: 'stopped' },
+      transcribing_rest: { transcribed: 291, chip: 'Processing', chipClass: '', spent: '$3.90', limit: '$10.00', eta: 'about 4 minutes left' },
+      transcribed_all: { transcribed: 300, chip: 'Ready to export', chipClass: 'tx-chip--ok', spent: '$4.02', limit: '$10.00', eta: 'finished' }
     };
     const m = { ...M[status] };
     if (raised) {
@@ -191,6 +204,23 @@ class Component extends DCLogic {
       m.eta = 'about 12 minutes left';
     }
     const stopped = status === 'budget_stop' && !raised;
+    const restMode = status === 'transcribing_rest' || status === 'transcribed_all';
+    const restDone = status === 'transcribed_all';
+    const CELLS = 20;
+    const filled = Math.round(m.transcribed / total * CELLS);
+    const restCells = Array.from({length: CELLS}, (_, i) => ({
+      bg: i < filled ? 'var(--accent)' : 'var(--surface-2)'
+    }));
+    const restFailed = restDone ? 12 : 0;
+    const restNote = restDone
+      ? (restFailed
+          ? 'Every page has been read except ' + restFailed + ' the model could not manage. Pages you have not checked yourself are not marked as verified.'
+          : 'Every page has been transcribed. Pages you have not checked yourself are not marked as verified.')
+      : 'Reading the rest of the document. You can keep verifying while this runs.';
+    const restCount = restDone
+      ? (total - restFailed) + ' of ' + total + ' pages transcribed - ' + reviewed + ' verified'
+        + (restFailed ? ' - ' + restFailed + ' failed' : '')
+      : m.transcribed + ' / ' + total + ' pages read';
     const pct = m.transcribed / total * 100;
     const draftCount = m.transcribed - reviewed;
     const showPrior = this.props.priorExport ?? true;
@@ -215,6 +245,10 @@ class Component extends DCLogic {
       hasGroundTruth: (this.props.groundTruth ?? 'none') === 'has-results',
       reviewedStr: reviewed + ' of ' + m.transcribed + ' reviewed',
       readyAhead: String(m.transcribed - reviewed),
+      restMode: restMode,
+      restCells: restCells,
+      restNote: restNote,
+      restCount: restCount,
       draftCount: String(draftCount),
       exports, noExports: exports.length === 0,
       exportOpen: this.state.dialog === 'export',
