@@ -102,6 +102,7 @@ const Verification: React.FC = () => {
 		}
 
 		cursorInitializedForReference.current = null;
+		isCompletionHandledReference.current = false;
 		dispatch(pageActions.reset());
 		void dispatch(documentActions.loadById(documentId));
 	}, [id, dispatch]);
