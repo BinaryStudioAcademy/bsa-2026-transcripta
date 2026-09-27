@@ -1,11 +1,17 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
-import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
+import {
+	AppRoute,
+	DataStatus,
+	PageVerificationAction,
+} from "~/libs/enums/enums.js";
+import { configureString } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
 	useEffect,
+	useNavigate,
 	useParams,
 	useRef,
 	useState,
@@ -14,6 +20,7 @@ import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
+import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
@@ -50,6 +57,7 @@ import {
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { id } = useParams();
 
 	const [isEditing, setIsEditing] = useState(false);
@@ -59,6 +67,7 @@ const Verification: React.FC = () => {
 		useState<EditConflictDraft | null>(null);
 
 	const pageStartedAtReference = useRef(Date.now());
+	const isCompletionHandledReference = useRef(false);
 	const cursorInitializedForReference = useRef<null | number>(null);
 
 	const document = useAppSelector(({ documents }) => documents.document);
@@ -93,6 +102,7 @@ const Verification: React.FC = () => {
 		}
 
 		cursorInitializedForReference.current = null;
+		isCompletionHandledReference.current = false;
 		dispatch(pageActions.reset());
 		void dispatch(documentActions.loadById(documentId));
 	}, [id, dispatch]);
@@ -180,6 +190,30 @@ const Verification: React.FC = () => {
 		setIsEditing(false);
 	}, [cursorPageNo]);
 
+	// The backend answers `next: null` when the verified page was the last one
+	// and the document is done, so verification has nothing left to offer.
+	const goToCompletedDocument = useCallback(
+		(documentId: number): void => {
+			if (isCompletionHandledReference.current) {
+				return;
+			}
+
+			isCompletionHandledReference.current = true;
+
+			// The toast container lives outside the router, so the message
+			// survives the navigation.
+			notification.success(VerificationQueueMessage.COMPLETED);
+
+			Promise.resolve(
+				navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+					{ replace: true },
+				),
+			).catch(() => null);
+		},
+		[navigate],
+	);
+
 	const runVerificationQueue = useCallback((): void => {
 		void dispatch(pageActions.processVerificationQueue()).then((result) => {
 			const isFulfilled =
@@ -189,7 +223,13 @@ const Verification: React.FC = () => {
 				return;
 			}
 
-			const { failed } = result.payload;
+			const { completedDocumentId, failed } = result.payload;
+
+			if (completedDocumentId !== null) {
+				goToCompletedDocument(completedDocumentId);
+
+				return;
+			}
 
 			if (
 				failed?.item.payload.action === PageVerificationAction.CORRECT &&
@@ -201,7 +241,7 @@ const Verification: React.FC = () => {
 				});
 			}
 		});
-	}, [dispatch]);
+	}, [dispatch, goToCompletedDocument]);
 
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {
