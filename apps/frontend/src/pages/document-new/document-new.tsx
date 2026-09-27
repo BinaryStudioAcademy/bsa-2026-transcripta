@@ -182,6 +182,7 @@ const useIngestPolling = ({
 	navigate,
 	resumedDocument,
 	setIngestingDocumentId,
+	setIsStartingProcessing,
 	setRejection,
 }: UseIngestPollingParameters): void => {
 	const resumedDocumentReference = useRef(resumedDocument);
@@ -207,15 +208,6 @@ const useIngestPolling = ({
 					INGESTION_FAILED_MESSAGE;
 
 				setRejection(timeoutMessage);
-
-				void (async (): Promise<void> => {
-					await navigate(
-						configureString(AppRoute.DOCUMENT, {
-							id: String(ingestingDocumentId),
-						}),
-						{ state: { errorMessage: timeoutMessage } },
-					);
-				})();
 				return;
 			}
 
@@ -243,12 +235,6 @@ const useIngestPolling = ({
 		const { progress, status } = resumedDocument;
 
 		if (status === DocumentStatus.FAILED) {
-			setIngestingDocumentId(null);
-			const errorMessage =
-				resumedDocument.errorMessage ?? INGESTION_FAILED_MESSAGE;
-
-			setRejection(errorMessage);
-
 			return;
 		}
 
@@ -268,6 +254,7 @@ const useIngestPolling = ({
 		resumedDocument,
 		setIngestingDocumentId,
 		setRejection,
+		setIsStartingProcessing,
 	]);
 };
 
@@ -476,50 +463,38 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback(
-		(values: UploadFormValues): void => {
-			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
+	const handleProcessDocument = useCallback((): void => {
+		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
 
-			if (!targetId || isStartingProcessing) {
-				return;
+		if (!targetId || isStartingProcessing) {
+			return;
+		}
+
+		const documentId = Number(targetId);
+
+		setRejection(null);
+		setIsStartingProcessing(true);
+
+		setIngestingDocumentId(documentId);
+
+		void (async (): Promise<void> => {
+			try {
+				await dispatch(documentActions.ingest(documentId)).unwrap();
+				createdDocumentIdReference.current = null;
+			} catch (error: unknown) {
+				setIngestingDocumentId(null);
+				const message =
+					error instanceof Error
+						? error.message
+						: ((error as { message?: string }).message ??
+							INGESTION_FAILED_MESSAGE);
+				notification.error(message);
+				setRejection(message);
+			} finally {
+				setIsStartingProcessing(false);
 			}
-
-			const documentId = Number(targetId);
-
-			const startProcessing = async (): Promise<void> => {
-				setIsStartingProcessing(true);
-
-				try {
-					await dispatch(
-						documentActions.getUploadUrl({
-							id: documentId,
-							payload: {
-								presetId: values.presetId,
-								title: values.title,
-							},
-						}),
-					).unwrap();
-				} catch {
-					return;
-				} finally {
-					setIsStartingProcessing(false);
-				}
-
-				setIngestingDocumentId(documentId);
-				void dispatch(documentActions.ingest(documentId))
-					.unwrap()
-					.catch((error: unknown) => {
-						const { message } = error as { message?: string };
-
-						setIngestingDocumentId(null);
-						setRejection(message ?? INGESTION_FAILED_MESSAGE);
-					});
-			};
-
-			void startProcessing();
-		},
-		[dispatch, isStartingProcessing, resumeDocumentId],
-	);
+		})();
+	}, [dispatch, isStartingProcessing, resumeDocumentId]);
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -555,11 +530,15 @@ const DocumentNew: React.FC = () => {
 		navigate,
 		resumedDocument,
 		setIngestingDocumentId,
+		setIsStartingProcessing,
 		setRejection,
 	});
 
 	const getScreenState = (): ScreenStateType => {
 		if (ingestingDocumentId) {
+			return ScreenState.INGESTING;
+		}
+		if (resumedDocument?.status === DocumentStatus.INGESTING) {
 			return ScreenState.INGESTING;
 		}
 		if (isZipProcessing) {

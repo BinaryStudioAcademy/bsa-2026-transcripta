@@ -9,6 +9,7 @@ type UseIngestPollingParameters = {
 	navigate: NavigateFunction;
 	resumedDocument: DocumentGetByIdResponseDto | null;
 	setIngestingDocumentId: React.Dispatch<React.SetStateAction<null | number>>;
+	setIsStartingProcessing: React.Dispatch<React.SetStateAction<boolean>>;
 	setRejection: React.Dispatch<React.SetStateAction<null | string>>;
 };
 
