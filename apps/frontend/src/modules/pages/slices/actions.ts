@@ -27,7 +27,7 @@ import {
 } from "../libs/types/types.js";
 import { name as sliceName } from "./pages.slice.js";
 
-type LoadPagesParameters = {
+type GetPagesParameters = {
 	documentId: number;
 	query: DocumentGetPagesQueryDto;
 };
@@ -90,10 +90,24 @@ const reprocessPage = createAsyncThunk<
 
 const loadPages = createAsyncThunk<
 	DocumentGetPagesResponseDto,
-	LoadPagesParameters,
+	GetPagesParameters,
 	AsyncThunkConfig
 >(
 	`${sliceName}/load-pages`,
+	({ documentId, query }, { extra }) => {
+		const { documentApi } = extra;
+
+		return documentApi.getPages(documentId, query);
+	},
+	{ serializeError },
+);
+
+const refreshPages = createAsyncThunk<
+	DocumentGetPagesResponseDto,
+	GetPagesParameters,
+	AsyncThunkConfig
+>(
+	`${sliceName}/refresh-pages`,
 	({ documentId, query }, { extra }) => {
 		const { documentApi } = extra;
 
@@ -184,6 +198,7 @@ export {
 	discardVerificationQueue,
 	loadPages,
 	processVerificationQueue,
+	refreshPages,
 	reprocessPage,
 	undoPage,
 	verifyPage,

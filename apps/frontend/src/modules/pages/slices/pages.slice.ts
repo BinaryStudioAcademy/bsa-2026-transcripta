@@ -10,6 +10,7 @@ import {
 	discardVerificationQueue,
 	loadPages,
 	processVerificationQueue,
+	refreshPages,
 	reprocessPage,
 	undoPage,
 	verifyPage,
@@ -55,6 +56,28 @@ const verificationStatusMap = {
 	[PageVerificationAction.SKIP]: PageStatus.SKIPPED,
 } as const;
 
+const mergePages = (
+	state: Pick<State, "byId" | "idsByPageNo" | "rollback">,
+	pages: DocumentGetPagesItemResponseDto[],
+): void => {
+	for (const page of pages) {
+		if (state.rollback[page.id]) {
+			continue;
+		}
+
+		const previous = state.byId[page.id];
+
+		state.byId[page.id] =
+			previous?.imageUrl || previous?.thumbUrl
+				? {
+						...page,
+						imageUrl: previous.imageUrl ?? page.imageUrl,
+						thumbUrl: previous.thumbUrl ?? page.thumbUrl,
+					}
+				: page;
+		state.idsByPageNo[page.pageNo] = page.id;
+	}
+};
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		builder.addCase(processVerificationQueue.pending, (state) => {
@@ -221,21 +244,16 @@ const { actions, name, reducer } = createSlice({
 		});
 
 		builder.addCase(loadPages.fulfilled, (state, action) => {
-			for (const page of action.payload.items) {
-				// A page with a request in flight keeps its optimistic state
-				// until that request settles.
-				if (state.rollback[page.id]) {
-					continue;
-				}
-
-				state.byId[page.id] = page;
-				state.idsByPageNo[page.pageNo] = page.id;
-			}
+			mergePages(state, action.payload.items);
 			state.dataStatus = DataStatus.FULFILLED;
 		});
 
 		builder.addCase(loadPages.rejected, (state) => {
 			state.dataStatus = DataStatus.REJECTED;
+		});
+
+		builder.addCase(refreshPages.fulfilled, (state, action) => {
+			mergePages(state, action.payload.items);
 		});
 	},
 	initialState,

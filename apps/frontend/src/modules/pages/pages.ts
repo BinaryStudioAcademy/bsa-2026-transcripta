@@ -11,11 +11,15 @@ const pageApi = new PageApi({
 });
 
 export { pageApi };
+
+export { PROCESSING_PAGE_STATUSES } from "./libs/constants/constants.js";
+
 export {
 	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";
+
 export { /** @public */ actions, reducer } from "./slices/pages.js";
 
 export {
