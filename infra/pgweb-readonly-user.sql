@@ -22,9 +22,9 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO transcripta_ro;
 -- Tables created later (migrations) must be readable too, otherwise QA loses
 -- visibility of exactly the newest thing they are asked to test.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
-	GRANT SELECT ON TABLES TO transcripta_ro;
+    GRANT SELECT ON TABLES TO transcripta_ro;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
-	GRANT SELECT ON SEQUENCES TO transcripta_ro;
+    GRANT SELECT ON SEQUENCES TO transcripta_ro;
 
 -- Belt and braces: even a future GRANT cannot make this role write.
 ALTER ROLE transcripta_ro SET default_transaction_read_only = on;

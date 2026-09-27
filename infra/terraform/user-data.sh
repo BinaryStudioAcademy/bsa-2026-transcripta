@@ -132,12 +132,12 @@ YAML
 # --- Caddy: terminates TLS and renews the Let's Encrypt certificate itself ---
 cat >"$APP_DIR/Caddyfile" <<CADDY
 ${DOMAIN}, www.${DOMAIN} {
-	handle_path /db/* {
-		reverse_proxy pgweb:8081
-	}
-	handle {
-		reverse_proxy backend:3001
-	}
+    handle_path /db/* {
+        reverse_proxy pgweb:8081
+    }
+    handle {
+        reverse_proxy backend:3001
+    }
 }
 CADDY
 
