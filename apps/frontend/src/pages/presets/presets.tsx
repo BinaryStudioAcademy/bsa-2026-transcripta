@@ -22,12 +22,12 @@ const Presets: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
-	const { dataStatus, presets } = useAppSelector(({ presets }) => ({
-		dataStatus: presets.dataStatus,
+	const { presets, presetsStatus } = useAppSelector(({ presets }) => ({
 		presets: presets.presets,
+		presetsStatus: presets.presetsStatus,
 	}));
 
-	const isLoading = dataStatus === DataStatus.PENDING;
+	const isLoading = presetsStatus === DataStatus.PENDING;
 
 	useEffect(() => {
 		void dispatch(presetsActions.loadAll());

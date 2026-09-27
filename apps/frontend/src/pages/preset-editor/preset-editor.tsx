@@ -1,6 +1,10 @@
 import React, { type ChangeEvent } from "react";
 
-import { Button, ThemeToggle } from "~/libs/components/components.js";
+import {
+	Button,
+	LoaderOverlay,
+	ThemeToggle,
+} from "~/libs/components/components.js";
 import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
@@ -42,13 +46,19 @@ const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const { id } = useParams<{ id?: string }>();
 
-	const { createStatus, presets, selectedPreset, selectedPresetStatus } =
-		useAppSelector(({ presets }) => ({
-			createStatus: presets.createStatus,
-			presets: presets.presets,
-			selectedPreset: presets.selectedPreset,
-			selectedPresetStatus: presets.selectedPresetStatus,
-		}));
+	const {
+		createStatus,
+		presets,
+		presetsStatus,
+		selectedPreset,
+		selectedPresetStatus,
+	} = useAppSelector(({ presets }) => ({
+		createStatus: presets.createStatus,
+		presets: presets.presets,
+		presetsStatus: presets.presetsStatus,
+		selectedPreset: presets.selectedPreset,
+		selectedPresetStatus: presets.selectedPresetStatus,
+	}));
 
 	const initialPresetId = id ? Number(id) : null;
 
@@ -62,9 +72,11 @@ const PresetEditor: React.FC = () => {
 	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
 
-	const isPresetLoading = selectedPresetStatus === DataStatus.PENDING;
+	const isLoading =
+		selectedPresetStatus === DataStatus.PENDING ||
+		presetsStatus === DataStatus.PENDING;
 	const isSaving = createStatus === DataStatus.PENDING;
-	const isFormDisabled = isPresetLoading || isSaving || !selectedPreset;
+	const isFormDisabled = isLoading || isSaving || !selectedPreset;
 
 	const outputFields =
 		selectedPreset && basePresetId
@@ -246,133 +258,141 @@ const PresetEditor: React.FC = () => {
 				<ThemeToggle />
 			</header>
 
-			<main className="preset-editor__main">
-				<div className="preset-editor__container">
-					<section className="preset-editor__card">
-						<div className="preset-editor__basic-fields">
-							<div className="preset-editor__field">
-								<label className="tx-label" htmlFor="based-on">
-									Based on
-								</label>
+			{isLoading ? (
+				<LoaderOverlay label="Loading presets" />
+			) : (
+				<main className="preset-editor__main">
+					<div className="preset-editor__container">
+						<section className="preset-editor__card">
+							<div className="preset-editor__basic-fields">
+								<div className="preset-editor__field">
+									<label className="tx-label" htmlFor="based-on">
+										Based on
+									</label>
 
-								<div className="tx-selectwrap">
-									<select
+									<div className="tx-selectwrap">
+										<select
+											className="tx-input"
+											disabled={
+												presets.length === EMPTY_LENGTH || isFormDisabled
+											}
+											id="based-on"
+											onChange={handleBasePresetChange}
+											value={basePresetId ?? ""}
+										>
+											{presets.length === EMPTY_LENGTH && (
+												<option value="">Loading presets...</option>
+											)}
+
+											{presets.map((preset) => (
+												<option key={preset.id} value={preset.id}>
+													{`${preset.name} v${String(preset.version)}`}
+												</option>
+											))}
+										</select>
+									</div>
+								</div>
+
+								<div className="preset-editor__field">
+									<label className="tx-label" htmlFor="preset-name">
+										Name
+									</label>
+
+									<input
 										className="tx-input"
-										disabled={presets.length === EMPTY_LENGTH || isFormDisabled}
-										id="based-on"
-										onChange={handleBasePresetChange}
-										value={basePresetId ?? ""}
-									>
-										{presets.length === EMPTY_LENGTH && (
-											<option value="">Loading presets...</option>
-										)}
-
-										{presets.map((preset) => (
-											<option key={preset.id} value={preset.id}>
-												{`${preset.name} v${String(preset.version)}`}
-											</option>
-										))}
-									</select>
+										disabled={isFormDisabled}
+										id="preset-name"
+										onChange={handleNameChange}
+										value={name}
+									/>
 								</div>
 							</div>
 
-							<div className="preset-editor__field">
-								<label className="tx-label" htmlFor="preset-name">
-									Name
+							<div className="preset-editor__section">
+								<label className="tx-label" htmlFor="instructions">
+									Instructions for the model
 								</label>
 
-								<input
-									className="tx-input"
+								<textarea
+									className="tx-input preset-editor__instructions"
 									disabled={isFormDisabled}
-									id="preset-name"
-									onChange={handleNameChange}
-									value={name}
+									id="instructions"
+									onChange={handleInstructionsChange}
+									rows={3}
+									value={instructions}
 								/>
 							</div>
-						</div>
 
-						<div className="preset-editor__section">
-							<label className="tx-label" htmlFor="instructions">
-								Instructions for the model
-							</label>
-
-							<textarea
-								className="tx-input preset-editor__instructions"
-								disabled={isFormDisabled}
-								id="instructions"
-								onChange={handleInstructionsChange}
-								rows={3}
-								value={instructions}
+							<PresetGlossary
+								entries={entries}
+								isDisabled={isFormDisabled}
+								onAddEntry={handleAddEntry}
+								onKindOptionClick={handleKindOptionClick}
+								onRemoveButtonClick={handleRemoveButtonClick}
+								onTypeButtonClick={handleTypeButtonClick}
+								onValueChange={handleGlossaryValueChange}
+								openTypeId={openTypeId}
 							/>
-						</div>
 
-						<PresetGlossary
-							entries={entries}
-							isDisabled={isFormDisabled}
-							onAddEntry={handleAddEntry}
-							onKindOptionClick={handleKindOptionClick}
-							onRemoveButtonClick={handleRemoveButtonClick}
-							onTypeButtonClick={handleTypeButtonClick}
-							onValueChange={handleGlossaryValueChange}
-							openTypeId={openTypeId}
-						/>
+							<div className="preset-editor__output-section">
+								<div className="preset-editor__output-heading">
+									<svg
+										aria-hidden="true"
+										fill="none"
+										height="13"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										viewBox="0 0 24 24"
+										width="13"
+									>
+										<rect height="11" rx="2" width="18" x="3" y="11" />
+										<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+									</svg>
 
-						<div className="preset-editor__output-section">
-							<div className="preset-editor__output-heading">
-								<svg
-									aria-hidden="true"
-									fill="none"
-									height="13"
-									stroke="currentColor"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									viewBox="0 0 24 24"
-									width="13"
-								>
-									<rect height="11" rx="2" width="18" x="3" y="11" />
-									<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-								</svg>
-
-								<span className="tx-label">
-									Output fields (from the template, not editable)
-								</span>
-							</div>
-
-							<div className="preset-editor__output-fields">
-								{outputFields.map((field) => (
-									<span className="preset-editor__output-item" key={field}>
-										<span className="preset-editor__output-chip">{field}</span>
-										<span className="preset-editor__output-separator">·</span>
+									<span className="tx-label">
+										Output fields (from the template, not editable)
 									</span>
-								))}
+								</div>
+
+								<div className="preset-editor__output-fields">
+									{outputFields.map((field) => (
+										<span className="preset-editor__output-item" key={field}>
+											<span className="preset-editor__output-chip">
+												{field}
+											</span>
+											<span className="preset-editor__output-separator">·</span>
+										</span>
+									))}
+								</div>
 							</div>
-						</div>
 
-						<div className="preset-editor__actions">
-							<p className="preset-editor__notice">
-								Saving creates a new preset version. Documents already in
-								progress continue using the version they started with.
-							</p>
+							<div className="preset-editor__actions">
+								<p className="preset-editor__notice">
+									Saving creates a new preset version. Documents already in
+									progress continue using the version they started with.
+								</p>
 
-							<div className="preset-editor__buttons">
-								<Button
-									isDisabled={isFormDisabled}
-									label="Cancel"
-									onClick={handleCancel}
-								/>
+								<div className="preset-editor__buttons">
+									<Button
+										isDisabled={isFormDisabled}
+										label="Cancel"
+										onClick={handleCancel}
+									/>
 
-								<Button
-									isDisabled={isFormDisabled}
-									isPrimary
-									label={isSaving ? "Saving..." : "Save preset"}
-									onClick={handleSubmit}
-								/>
+									<Button
+										isDisabled={isFormDisabled}
+										isPrimary
+										label={isSaving ? "Saving..." : "Save preset"}
+										onClick={handleSubmit}
+									/>
+								</div>
 							</div>
-						</div>
-					</section>
-				</div>
-			</main>
+						</section>
+					</div>
+				</main>
+			)}
 		</div>
 	);
 };

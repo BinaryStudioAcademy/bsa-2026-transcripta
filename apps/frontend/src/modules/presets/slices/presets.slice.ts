@@ -11,16 +11,16 @@ import { create, loadAll, loadById } from "./actions.js";
 
 type State = {
 	createStatus: DataStatusValue;
-	dataStatus: DataStatusValue;
 	presets: PresetGetAllItemResponseDto[];
+	presetsStatus: DataStatusValue;
 	selectedPreset: null | PresetGetByIdResponseDto;
 	selectedPresetStatus: DataStatusValue;
 };
 
 const initialState: State = {
 	createStatus: DataStatus.IDLE,
-	dataStatus: DataStatus.IDLE,
 	presets: [],
+	presetsStatus: DataStatus.IDLE,
 	selectedPreset: null,
 	selectedPresetStatus: DataStatus.IDLE,
 };
@@ -28,16 +28,16 @@ const initialState: State = {
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		builder.addCase(loadAll.pending, (state) => {
-			state.dataStatus = DataStatus.PENDING;
+			state.presetsStatus = DataStatus.PENDING;
 		});
 
 		builder.addCase(loadAll.fulfilled, (state, action) => {
 			state.presets = action.payload.items;
-			state.dataStatus = DataStatus.FULFILLED;
+			state.presetsStatus = DataStatus.FULFILLED;
 		});
 
 		builder.addCase(loadAll.rejected, (state) => {
-			state.dataStatus = DataStatus.REJECTED;
+			state.presetsStatus = DataStatus.REJECTED;
 		});
 
 		builder.addCase(loadById.pending, (state) => {
