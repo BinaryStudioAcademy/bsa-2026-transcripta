@@ -1,12 +1,11 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import {
 	AppRoute,
 	DataStatus,
 	PageVerificationAction,
 } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
-import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -20,8 +19,8 @@ import {
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
-import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
+import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
