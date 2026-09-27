@@ -41,14 +41,14 @@
 }
 
 .presets-page__table {
-	grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+	grid-template-columns: auto auto minmax(0, 2fr) auto;
 }
 
 .presets-page__row {
 	position: relative;
 	display: grid;
 	grid-template-columns: subgrid;
-	grid-column: 1 / span 2;
+	grid-column: 1 / span 3;
 }
 
 .presets-page__row-link {
@@ -71,7 +71,8 @@
 	outline-offset: -2px;
 }
 
-.presets-page__name-cell {
+.presets-page__name-cell,
+.presets-page__version-cell {
 	font-weight: 500;
 	color: var(--text);
 	background-color: var(--surface);

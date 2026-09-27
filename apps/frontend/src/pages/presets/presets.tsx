@@ -93,6 +93,10 @@ const Presets: React.FC = () => {
 								</span>
 
 								<span className="tx-table__columnheader" role="columnheader">
+									Version
+								</span>
+
+								<span className="tx-table__columnheader" role="columnheader">
 									Description
 								</span>
 
@@ -119,6 +123,18 @@ const Presets: React.FC = () => {
 													{preset.name}
 												</span>
 											</Link>
+										</span>
+
+										<span
+											className={[
+												"tx-table__cell",
+												styles["presets-page__version-cell"],
+											]
+												.filter(Boolean)
+												.join(" ")}
+											role="cell"
+										>
+											v{preset.version}
 										</span>
 
 										<span
