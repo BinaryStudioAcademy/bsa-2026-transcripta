@@ -5,6 +5,10 @@ import {
 } from "~/libs/components/components.js";
 import { useRef } from "~/libs/hooks/hooks.js";
 
+import {
+	EVERYTHING_VERIFIED,
+	PREPARING_DOCUMENTS,
+} from "../constants/constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
@@ -18,6 +22,7 @@ import { VerificationEdit, VerificationPageText } from "./components.js";
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
 	editConflictDraft: EditConflictDraft | null;
+	hasVerifiedPages: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPaused: boolean;
@@ -38,6 +43,7 @@ type VerificationWorkspaceProperties = {
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
 	editConflictDraft,
+	hasVerifiedPages,
 	isCompleted,
 	isEditing,
 	isPaused,
@@ -151,11 +157,16 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
+		const preparingMessage = hasVerifiedPages
+			? EVERYTHING_VERIFIED
+			: PREPARING_DOCUMENTS;
+
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
 					isPaused={isPaused}
 					isToggleDisabled={isToggleDisabled}
+					message={preparingMessage}
 					onToggleProcessing={onToggleProcessing}
 				/>
 			</div>
