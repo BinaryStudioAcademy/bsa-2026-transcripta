@@ -870,6 +870,7 @@ class PageService {
 				await this.rederiveStructuredQueue.add({
 					currentTranscriptionId: result.transcriptionId,
 					documentId: result.documentId,
+					jobCreatedAt: new Date().toISOString(),
 					pageId,
 					pageNo: result.pageNo,
 					text: payload.text,
