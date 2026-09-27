@@ -1,5 +1,5 @@
 import React from 'react';
-const GLYPH={confirmed:'✓',corrected:'✎',skipped:'↷',current:'●',ready:'▓',running:'░',queued:'·',error:'!'};
+const GLYPH={confirmed:'✓',corrected:'✎',skipped:'↷',auto:'⊙',current:'●',ready:'▓',running:'░',queued:'·',error:'!'};
 export function PageStrip({pages=[],onSelect,onPrev,onNext,thumbs=true,legend=false,...rest}){
   return <div {...rest}>
     <div className="tx-pstrip">
@@ -10,6 +10,6 @@ export function PageStrip({pages=[],onSelect,onPrev,onNext,thumbs=true,legend=fa
       </button>)}
       <button className="tx-page" aria-label="Next" onClick={onNext}>►</button>
     </div>
-    {legend?<div className="tx-pstrip-legend" style={{marginTop:6}}>▓ ready&ensp;░ running&ensp;· queued</div>:null}
+    {legend?<div className="tx-pstrip-legend" style={{marginTop:6}}>⊙ auto&ensp;▓ ready&ensp;░ running&ensp;· queued</div>:null}
   </div>;
 }

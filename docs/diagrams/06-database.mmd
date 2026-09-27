@@ -85,7 +85,13 @@ erDiagram
     }
 
     document_export {
-        int id PK "serial"
-        enum format "json - csv - txt"
-        text object_key "ready file in S3"
-    }
+    int id PK "serial"
+    int document_id FK "REFERENCES document(id) ON DELETE CASCADE"
+    enum format "csv | json | txt"
+    enum status "failed | queued | ready"
+    text object_key "ready file in S3"
+    int requested_by FK "REFERENCES users(id)"
+    int size_bytes "nullable"
+    timestamptz finished_at "nullable"
+    text error_message "nullable"
+}

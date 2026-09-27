@@ -56,7 +56,7 @@ LAYOUT SHELLS — ship as copyable templates/ starting points; every product scr
 
 PRODUCT COMPONENTS — beyond the core kit, the system MUST include:
 1. kbd keycaps — physical raised keys (not bordered text), mono labels, rest + pressed; shown beside actions ("Enter Correct · E Edit · S Skip"); "?" opens a shortcut overlay.
-2. Page-strip pager with 8 page states: confirmed ✓, corrected ✎, skipped ↷, current ●, ready ▓, running ░, queued ·, error !. One specimen row shows all 8: ◄ 44✓ 45✓ 46✎ [47●] 48▓ 49▓ 50▓ 51· ► with legend "▓ ready ░ running · queued". Distinguishable by glyph/shape, not color alone; hover shows a page thumbnail.
+2. Page-strip pager with 9 page states: confirmed ✓, corrected ✎, skipped ↷, auto ⊙, current ●, ready ▓, running ░, queued ·, error !. `auto` marks a page transcribed by "Transcribe the rest" and accepted without review — a dotted border, never the confirmed green, because no human read it and its text is deliberately kept out of the lexicon. One specimen row shows all 9: ◄ 44✓ 45✓ 46✎ [47●] 48▓ 49▓ 50▓ 51· ► with legend "▓ ready ░ running · queued". Distinguishable by glyph/shape, not color alone; hover shows a page thumbnail.
 3. Inline context-word highlight mark — seal-red tint on lexicon words inside transcription text, with tooltip; legible in both themes.
 4. Budget meter — "$spent / $limit" in mono, with amber warning and hard-stop ("$10.00 / $10.00" + "Raise the limit") states.
 5. Progress bars — determinate, mono captions ("dykanka-1887.pdf · 180 MB · 71%"; "page 48 of 50 · about 40 seconds"); never an endless spinner — always a reason and an approximate time.
@@ -82,7 +82,7 @@ Before approving, check:
 - [ ] Dark theme is first-class ("reading room at night"): warm near-black surfaces, amber-tinted accents, and the scanned-page demo stays light as the brightest object
 - [ ] Core kit pages exist with full state coverage: button variants (primary/secondary/ghost/destructive) each with hover/focus/active/disabled, form controls, tabs, chips in every status color, tooltip, toast, modal, themed table
 - [ ] The three layout shells ship as copyable templates: app shell (sidebar with Documents/Presets nav + active state + user row, topbar with display-serif page title), focus shell (no sidebar, slim header), centered-card auth shell — and the readme says screens must compose from them
-- [ ] All 10 product-specific components are in the catalogue: kbd keycaps, 8-state page-strip pager, context-word highlight mark with tooltip, budget meter, progress bars, split-pane with draggable divider, status-distinct table rows, dropzone, empty/degraded patterns, queued-actions chip
+- [ ] All 10 product-specific components are in the catalogue: kbd keycaps, 9-state page-strip pager, context-word highlight mark with tooltip, budget meter, progress bars, split-pane with draggable divider, status-distinct table rows, dropzone, empty/degraded patterns, queued-actions chip
 - [ ] Page-strip specimen shows the exact row ◄ 44✓ 45✓ 46✎ [47●] 48▓ 49▓ 50▓ 51· ► with legend "▓ ready ░ running · queued", and states stay distinguishable with color removed (glyph/shape carries meaning)
 - [ ] Every component specimen is rendered in both light and dark theme, not just a token-table dark column
 - [ ] Focus state is a visible 2px seal-red ring on every interactive element in both themes; state logic follows the derivation rule (hover deepens, active presses, disabled desaturates toward paper)
@@ -401,7 +401,7 @@ Before approving, check:
 Run: New design project, system attached. This is the product's hero screen — spend the most care here.
 
 ````text
-Design the **verification screen** for Transcripta — a web app that transcribes scanned handwritten documents. A human verifies a machine transcription page by page; the headline number is seconds per page, target **under 10** — every extra second costs 5 minutes on a 300-page document. Everything on this screen exists to make that fast: keyboard-first, dense, zero animation. Desktop only. Use the attached design system throughout (seal-red accent for the context-word mark and primary actions, mono tabular figures for every number, kbd keycap component, 8-state page-strip pager, queued-actions chip).
+Design the **verification screen** for Transcripta — a web app that transcribes scanned handwritten documents. A human verifies a machine transcription page by page; the headline number is seconds per page, target **under 10** — every extra second costs 5 minutes on a 300-page document. Everything on this screen exists to make that fast: keyboard-first, dense, zero animation. Desktop only. Use the attached design system throughout (seal-red accent for the context-word mark and primary actions, mono tabular figures for every number, kbd keycap component, 9-state page-strip pager, queued-actions chip).
 
 **This stage is three turns in one chat. Paste Turn 1, decide the variant ("go with A/B/C"), then paste Turns 2 and 3.** The DO-NOT list at the end binds all three turns.
 
@@ -411,7 +411,7 @@ Design the **verification screen** for Transcripta — a web app that transcribe
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ Parish register, 1887  ●●●○○○○○○○  47 / 300  $0.98 / $10.00  [3 unsaved] │
+│ Parish register, 1887  ●●●○○○○○○○ 47/300 $0.98/$10.00 [3 unsaved] [rest] │
 ├───────────────────────────────╥──────────────────────────────────────────┤
 │                               ║  No. 15. Born on 11 January, Anna.       │
 │     PAGE IMAGE (the scan)     ║  Parents: peasant of ‹Dykanka› village,  │
@@ -424,13 +424,17 @@ Design the **verification screen** for Transcripta — a web app that transcribe
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Header bar:** title "Parish register, 1887" in the display face; mini progress dots "●●●○○○○○○○"; "47 / 300"; budget "$0.98 / $10.00" — all figures mono tabular. Right side: queued-actions chip "3 unsaved actions" — visible, quiet, **non-blocking** (never a modal or toast).
+**Header bar:** title "Parish register, 1887" in the display face; mini progress dots "●●●○○○○○○○"; "47 / 300"; budget "$0.98 / $10.00" — all figures mono tabular. Right side: queued-actions chip "3 unsaved actions" — visible, quiet, **non-blocking** (never a modal or toast); then the quiet secondary action "Transcribe the rest" (never seal-red — the primary action on this screen is Correct, and this one is used once per document, not once per page).
+
+**"Transcribe the rest" — the escape from page-by-page.** The sliding window only advances when the human verifies a page, so on a 500-page document a verifier who is satisfied after page 50 still has 450 keystrokes between them and a complete export. This control queues every remaining page for transcription in one go. It does **not** mark them verified: those pages become `transcribed`, not `confirmed`, so the verification count stays honest and unreviewed text never feeds the lexicon (context poisoning — [03-core-logic.md](../docs/03-core-logic.md) §6 — is the one thing this feature must not cause). Verifying afterwards still works, page by page, in any order.
+
+It opens the design system's `Dialog`, following the "Raise the limit?" pattern where the price sits in the button: title "Transcribe the rest?", body "450 pages have not been read yet. They will be transcribed but not marked as verified — you can still review them afterwards.", actions `[Cancel]` and `[Transcribe 450 pages · $6.03]`. The estimate is pages-remaining × the document's observed average cost per page; if that would exceed the remaining budget, the dialog says so and the primary action becomes "Raise the limit" instead. Hidden entirely when nothing is left to queue.
 
 **Left zone — the page image. The source of truth.** The largest, most dominant zone. **Draw the scan:** a warm aged-paper rectangle, faint ruled lines, several rows of illegible cursive strokes, an ink blot or two — never an empty image placeholder or a generic photo icon. Corner hints "wheel — zoom · drag — pan"; small toolbar: zoom, image-contrast control (faded ink), font-size A−/A+ for the text pane (verifiers have different eyesight).
 
 **Right zone — the transcription.** Sample text exactly: "No. 15. Born on 11 January, Anna. Parents: peasant of Dykanka village, Petr Ivanenko and his lawful wife Maria, both Orthodox." — with **Dykanka** and **Ivanenko** carrying the context-word highlight mark (seal-red tint). This is the product's signature element and its defence against context poisoning: highlighted words are the verifier's scan-first checklist — check these first, skim the rest. Show the tooltip open on "Dykanka": "from the lexicon, seen on 4 pages". Pane footer legend: "‹word› — suggested by the context". Note on the sketch: the ‹ › around Dykanka/Ivanenko in the layout sketch stand for the highlight mark — render the tint only, no brackets around the words in the pane text; the ‹ › appear literally only in the legend line.
 
-**Bottom zone.** Action bar: [✓ Correct] [✎ Edit] [↷ Skip], each with a kbd keycap (Enter, E, S); muted hint line "← previous · Ctrl+Z undo · Space zoom · ? shortcuts". Show a visible keyboard focus ring on [✓ Correct]. Page strip: ◄ 44 45 46 [47] 48 49 50 51 ► with marks ✓ ↷ ✎ ● ▓ ▓ ▓ · — page 45 carries the skipped mark ↷ (its record was illegible). Full 8-state vocabulary: ✓ confirmed, ✎ corrected, ↷ skipped, ● current, ▓ ready, ░ running, · queued, ! error; legend "▓ ready ░ running · queued". Show hover on page 45 with a small scan-thumbnail popover (clicking jumps to that page).
+**Bottom zone.** Action bar: [✓ Correct] [✎ Edit] [↷ Skip], each with a kbd keycap (Enter, E, S); muted hint line "← previous · Ctrl+Z undo · Space zoom · ? shortcuts". Show a visible keyboard focus ring on [✓ Correct]. Page strip: ◄ 44 45 46 [47] 48 49 50 51 ► with marks ✓ ↷ ✎ ● ▓ ▓ ▓ · — page 45 carries the skipped mark ↷ (its record was illegible). Full 9-state vocabulary: ✓ confirmed, ✎ corrected, ↷ skipped, ⊙ auto, ● current, ▓ ready, ░ running, · queued, ! error; legend "⊙ auto ▓ ready ░ running · queued". Show hover on page 45 with a small scan-thumbnail popover (clicking jumps to that page).
 
 **Theme: dark** — this screen's natural home (long evening sessions): near-black warm surfaces; the drawn scan stays light and is the **brightest object on screen**. Tooltip open, chip visible, strip hover shown.
 
@@ -444,6 +448,7 @@ Using the chosen highlight treatment and the same shell as the approved artboard
 1. **Light theme** — same screen.
 2. **Edit mode** — right pane becomes a textarea holding the record text, caret visible; keycap hints "Ctrl+Enter save · Esc cancel"; action bar swaps to those two actions.
 3. **Shortcuts overlay** (opened with ?): centered panel of keycap → action pairs: Enter/→ Correct, next · ← Previous · E Edit · S Skip · Ctrl+Z Undo · Space Zoom · ? this list.
+4. **"Transcribe the rest" confirmation** — the design system's `Dialog` over the dark artboard: title "Transcribe the rest?", body "450 pages have not been read yet. They will be transcribed but not marked as verified — you can still review them afterwards.", actions `[Cancel]` (ghost) and `[Transcribe 450 pages · $6.03]` (seal-red, figures mono tabular). Show the header behind it reading "50 / 500".
 
 ━━ TURN 3 — the four degraded states, one calm-card pattern ━━
 
@@ -452,6 +457,7 @@ Same shell as the approved dark artboard; the header keeps "Parish register, 188
 2. **Budget exhausted:** card "Spent $10.00 of $10.00" (the money format rule — $, two decimals — applies here too) with primary action "Raise the limit"; header budget reads "$10.00 / $10.00" in warning amber. This state must visually demand action.
 3. **Model unavailable:** "Service unavailable" + [Try again].
 4. **Page failed:** "Failed after 3 attempts" + [Re-read] [Type it by hand]; that page shows the ! error mark in the strip.
+5. **The rest is being transcribed** (after "Transcribe the rest" was confirmed): the header reads "50 / 500", the page strip shows a long run of ░ and · to the right of the cursor, and a quiet non-blocking line under the action bar: "Transcribing the remaining 450 pages · 38 done". No card and no modal — the human keeps verifying while it runs, which is the whole point.
 
 **DO NOT (all three turns):** no transition animations anywhere, even implied in annotations (200 ms × 300 pages = a minute of pure waiting); no mobile version; no invented features (no confidence scores, comments, chat, avatars, collaboration); never use seal red for errors — errors use the cooler, darker error red; no blocking modals or toasts for the offline state; no bare spinners in degraded states; no paper texture behind the transcription text — legibility over decoration.
 ````

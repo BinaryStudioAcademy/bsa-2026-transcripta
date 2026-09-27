@@ -1,4 +1,5 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
@@ -12,6 +13,7 @@ import {
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
@@ -25,6 +27,7 @@ import {
 	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
+import "./verification.css";
 import {
 	VerificationFooter,
 	VerificationHeader,
@@ -38,7 +41,6 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
-import "./verification.css";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
@@ -57,6 +59,7 @@ const Verification: React.FC = () => {
 		useState<EditConflictDraft | null>(null);
 
 	const pageStartedAtReference = useRef(Date.now());
+	const cursorInitializedForReference = useRef<null | number>(null);
 
 	const document = useAppSelector(({ documents }) => documents.document);
 
@@ -89,26 +92,59 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		cursorInitializedForReference.current = null;
 		dispatch(pageActions.reset());
-
-		if (document && document.id === documentId) {
-			return;
-		}
-
 		void dispatch(documentActions.loadById(documentId));
-	}, [id, document, dispatch]);
+	}, [id, dispatch]);
 
 	useEffect(() => {
-		if (!document) {
+		const documentId = Number(id);
+
+		if (!Number.isFinite(documentId) || !document) {
 			return;
 		}
 
-		dispatch(
-			pageActions.setCursorPageNo(
-				Math.min(document.cursorPageNo, document.pageCount),
+		if (currentPage?.transcription) {
+			return;
+		}
+
+		const timeoutId = setInterval(() => {
+			void dispatch(
+				pageActions.loadPages({
+					documentId,
+					query: {
+						from: cursorPageNo,
+						limit: MAX_LOADED_PAGES,
+					},
+				}),
+			);
+		}, PollingIntervalsMS.DEFAULT);
+
+		return () => {
+			clearInterval(timeoutId);
+		};
+	}, [id, dispatch, currentPage?.transcription, cursorPageNo, document]);
+
+	useEffect(() => {
+		if (
+			!document ||
+			document.id !== Number(id) ||
+			cursorInitializedForReference.current === document.id
+		) {
+			return;
+		}
+
+		cursorInitializedForReference.current = document.id;
+
+		const initialPageNo = Math.max(
+			MIN_NUMBER_OF_PAGES,
+			Math.min(
+				document.cursorPageNo || MIN_NUMBER_OF_PAGES,
+				document.pageCount || MIN_NUMBER_OF_PAGES,
 			),
 		);
-	}, [document, dispatch]);
+		dispatch(pageActions.setCursorPageNo(initialPageNo));
+	}, [document, dispatch, id]);
 
 	useEffect(() => {
 		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES || isPagesLoading) {
@@ -360,6 +396,7 @@ const Verification: React.FC = () => {
 			<VerificationWorkspace
 				currentPage={currentPage}
 				editConflictDraft={editConflictDraft}
+				hasVerifiedPages={document.progress.pagesVerified > INITIAL_COUNT}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isPauseDisabled={document.status !== DocumentStatus.PROCESSING}
