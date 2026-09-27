@@ -13,6 +13,11 @@ const WHEEL_DELTA_THRESHOLD = 0;
 const ZOOM_IN_DIRECTION = 1;
 const ZOOM_OUT_DIRECTION = -1;
 const ZOOM_PAN_RESET = 0;
+const LEXICON_TIP = {
+	PAGE: "page",
+	PAGES: "pages",
+	PREFIX: "from the lexicon, seen on",
+} as const;
 const MIN_TABLE_LINES = 2;
 const TABLE_CELL_SEPARATOR = "|";
 const ILLEGIBLE_MARKER = "[?]";
@@ -48,6 +53,7 @@ export {
 	ILLEGIBLE_MARKER,
 	INITIAL_SPLIT_POSITION,
 	INITIAL_ZOOM,
+	LEXICON_TIP,
 	MAX_LOADED_PAGES,
 	MAX_SPLIT_POSITION,
 	MAX_ZOOM,
