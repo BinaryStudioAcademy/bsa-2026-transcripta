@@ -406,6 +406,29 @@ Every confirmation shifts the window and enqueues one new page.
 For the MVP a **fixed N = 5** is used. Auto-tuning N goes to the backlog: first
 we need to see the real latency numbers.
 
+### Escaping the window — "Transcribe the rest"
+
+The window assumes the human reads every page. Once they trust the output, that
+assumption becomes a cost: on a 500-page document a verifier who is satisfied at
+page 50 still needs 450 keystrokes before the export is complete, because
+nothing but a verification moves the window.
+
+**"Transcribe the rest"** queues every remaining page at once, ignoring the
+window. The pages become `transcribed`, **not** `confirmed` — the feature buys
+transcription, never verification. Two reasons this distinction is not
+negotiable:
+
+- Only `confirmed` and `corrected` pages feed the context
+  ([`page.repository.ts`](../apps/backend/src/modules/pages/page.repository.ts)),
+  so auto-confirming unread text would pour it straight into the lexicon. That
+  is context poisoning, the failure mode this product is built to avoid
+  ([03-core-logic.md](03-core-logic.md) §6).
+- The verification count stays truthful. "50 of 500 verified" remains the honest
+  number, and CER measured against it stays meaningful.
+
+The pages already in flight are unaffected; the human keeps verifying while the
+rest is transcribed behind them.
+
 ### The window alone is not enough — concurrency is the second parameter
 
 A window of 5 says how far ahead we prepare. It says nothing about whether the
