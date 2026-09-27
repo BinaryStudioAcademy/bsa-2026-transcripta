@@ -15,6 +15,7 @@ Coverage includes authentication and session handling; document management; uplo
 - Check that refresh, reopening, reconnects, and stale or failed requests preserve or correctly recover the current verification position, completed corrections/actions, and queued or offline actions where supported.
 - Verify that the UI uses backend data consistently, including page and document status, progress, budget, current page, and the latest corrected content.
 - Review the verification experience manually: scan and text presentation, keyboard actions, editing, undo, navigation, highlighted context words, and rollback when an optimistic action fails.
+- Verify the completion flow: once the last remaining page of a document is confirmed, corrected or skipped and the document reaches the `done` state, the user is returned to the document page and a success confirmation informs them that verification is complete.
 - Check the desktop layout at supported widths, especially the two-pane verification screen. Mobile layout is outside the MVP acceptance scope.
 
 ## 2.2 Backend / API
