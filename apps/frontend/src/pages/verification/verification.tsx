@@ -1,9 +1,6 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
-import {
-	DataStatus,
-	HTTPCode,
-	PageVerificationAction,
-} from "~/libs/enums/enums.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
+import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -16,19 +13,21 @@ import {
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
 import {
 	actions as pageActions,
 	selectCurrentPage,
 	selectCursorPageNo,
+	selectIsVerificationQueueBusy,
 	selectLastVerifiedPageId,
 	selectPagesDataStatus,
 	selectPagesForStrip,
 	selectReprocessingPageId,
 	selectVerificationCursorPageNo,
-	selectVerificationDataStatus,
 	type VerifyPageRequestDto,
 } from "~/modules/pages/pages.js";
 
+import "./verification.css";
 import {
 	VerificationFooter,
 	VerificationHeader,
@@ -42,7 +41,6 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
-import "./verification.css";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
@@ -61,6 +59,7 @@ const Verification: React.FC = () => {
 		useState<EditConflictDraft | null>(null);
 
 	const pageStartedAtReference = useRef(Date.now());
+	const cursorInitializedForReference = useRef<null | number>(null);
 
 	const document = useAppSelector(({ documents }) => documents.document);
 
@@ -73,13 +72,12 @@ const Verification: React.FC = () => {
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
 	const pagesForStrip = useAppSelector(selectPagesForStrip);
 	const cursorPageNo = useAppSelector(selectCursorPageNo);
+	const isVerificationQueueBusy = useAppSelector(selectIsVerificationQueueBusy);
 	const verificationCursorPageNo = useAppSelector(
 		selectVerificationCursorPageNo,
 	);
-	const verificationDataStatus = useAppSelector(selectVerificationDataStatus);
 	const reprocessingPageId = useAppSelector(selectReprocessingPageId);
 
-	const isVerifying = verificationDataStatus === DataStatus.PENDING;
 	const isReprocessing =
 		currentPage !== undefined && reprocessingPageId === currentPage.id;
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
@@ -94,26 +92,59 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		cursorInitializedForReference.current = null;
 		dispatch(pageActions.reset());
-
-		if (document && document.id === documentId) {
-			return;
-		}
-
 		void dispatch(documentActions.loadById(documentId));
-	}, [id, document, dispatch]);
+	}, [id, dispatch]);
 
 	useEffect(() => {
-		if (!document) {
+		const documentId = Number(id);
+
+		if (!Number.isFinite(documentId) || !document) {
 			return;
 		}
 
-		dispatch(
-			pageActions.setCursorPageNo(
-				Math.min(document.cursorPageNo, document.pageCount),
+		if (currentPage?.transcription) {
+			return;
+		}
+
+		const timeoutId = setInterval(() => {
+			void dispatch(
+				pageActions.loadPages({
+					documentId,
+					query: {
+						from: cursorPageNo,
+						limit: MAX_LOADED_PAGES,
+					},
+				}),
+			);
+		}, PollingIntervalsMS.DEFAULT);
+
+		return () => {
+			clearInterval(timeoutId);
+		};
+	}, [id, dispatch, currentPage?.transcription, cursorPageNo, document]);
+
+	useEffect(() => {
+		if (
+			!document ||
+			document.id !== Number(id) ||
+			cursorInitializedForReference.current === document.id
+		) {
+			return;
+		}
+
+		cursorInitializedForReference.current = document.id;
+
+		const initialPageNo = Math.max(
+			MIN_NUMBER_OF_PAGES,
+			Math.min(
+				document.cursorPageNo || MIN_NUMBER_OF_PAGES,
+				document.pageCount || MIN_NUMBER_OF_PAGES,
 			),
 		);
-	}, [document, dispatch]);
+		dispatch(pageActions.setCursorPageNo(initialPageNo));
+	}, [document, dispatch, id]);
 
 	useEffect(() => {
 		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES || isPagesLoading) {
@@ -149,36 +180,36 @@ const Verification: React.FC = () => {
 		setIsEditing(false);
 	}, [cursorPageNo]);
 
-	const reloadPage = useCallback(
-		(pageNo: number): void => {
-			if (!document) {
+	const runVerificationQueue = useCallback((): void => {
+		void dispatch(pageActions.processVerificationQueue()).then((result) => {
+			const isFulfilled =
+				pageActions.processVerificationQueue.fulfilled.match(result);
+
+			if (!isFulfilled) {
 				return;
 			}
 
-			void dispatch(
-				pageActions.loadPages({
-					documentId: document.id,
-					query: {
-						from: pageNo,
-						limit: MAX_LOADED_PAGES,
-					},
-				}),
-			);
-		},
-		[dispatch, document],
-	);
+			const { failed } = result.payload;
+
+			if (
+				failed?.item.payload.action === PageVerificationAction.CORRECT &&
+				failed.item.payload.text !== undefined
+			) {
+				setEditConflictDraft({
+					pageNo: failed.item.pageNo,
+					text: failed.item.payload.text,
+				});
+			}
+		});
+	}, [dispatch]);
 
 	const handleVerify = useCallback(
-		async (
-			action: PageVerificationActionValue,
-			text?: string,
-		): Promise<boolean> => {
-			if (!currentPage || !document || isVerifying) {
+		(action: PageVerificationActionValue, text?: string): boolean => {
+			if (!currentPage || !document) {
 				return false;
 			}
 
 			const { transcription } = currentPage;
-			const pageNo = currentPage.pageNo;
 			const durationMs = Date.now() - pageStartedAtReference.current;
 
 			let payload: VerifyPageRequestDto;
@@ -212,63 +243,41 @@ const Verification: React.FC = () => {
 				};
 			}
 
-			const wasManualTranscription = !transcription;
-
 			dispatch(
-				pageActions.verifyOptimistic({
+				pageActions.enqueueVerification({
+					item: {
+						documentId: document.id,
+						pageId: currentPage.id,
+						pageNo: currentPage.pageNo,
+						payload,
+					},
 					pageCount: document.pageCount,
-					pageId: currentPage.id,
-					payload,
 				}),
 			);
 
-			const result = await dispatch(
-				pageActions.verifyPage({
-					pageId: currentPage.id,
-					payload,
-				}),
-			);
+			runVerificationQueue();
 
-			const isRejected = pageActions.verifyPage.rejected.match(result);
-
-			if (
-				isRejected &&
-				"status" in result.error &&
-				result.error.status === HTTPCode.CONFLICT
-			) {
-				if (action === PageVerificationAction.CORRECT && text !== undefined) {
-					setEditConflictDraft({
-						pageNo,
-						text,
-					});
-				}
-
-				notification.error(
-					"The verification could not be completed. The latest page version has been loaded.",
-				);
-
-				reloadPage(pageNo);
-			}
-
-			if (!isRejected && wasManualTranscription) {
-				reloadPage(pageNo);
-			}
-
-			return !isRejected;
+			return true;
 		},
-		[currentPage, dispatch, document, reloadPage, isVerifying],
+		[currentPage, dispatch, document, runVerificationQueue],
 	);
 
 	const handleConfirm = useCallback((): void => {
-		void handleVerify(PageVerificationAction.CONFIRM);
+		handleVerify(PageVerificationAction.CONFIRM);
 	}, [handleVerify]);
 
 	const handleSkip = useCallback((): void => {
-		void handleVerify(PageVerificationAction.SKIP);
+		handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
 	const handleUndo = useCallback((): void => {
-		if (lastVerifiedPageId === null || isVerifying || isEditing) {
+		if (isVerificationQueueBusy && !isEditing) {
+			notification.info("Wait until the queued actions are saved, then undo");
+
+			return;
+		}
+
+		if (lastVerifiedPageId === null || isEditing) {
 			return;
 		}
 
@@ -285,22 +294,15 @@ const Verification: React.FC = () => {
 				}
 			},
 		);
-	}, [dispatch, isEditing, isVerifying, lastVerifiedPageId]);
+	}, [dispatch, isEditing, isVerificationQueueBusy, lastVerifiedPageId]);
 
 	const handleSaveEdit = useCallback(
 		(text: string): void => {
-			void (async (): Promise<void> => {
-				const success = await handleVerify(
-					PageVerificationAction.CORRECT,
-					text,
-				);
+			const isQueued = handleVerify(PageVerificationAction.CORRECT, text);
 
-				if (success) {
-					setEditConflictDraft(null);
-				} else {
-					setIsEditing(true);
-				}
-			})();
+			if (isQueued) {
+				setEditConflictDraft(null);
+			}
 		},
 		[handleVerify],
 	);
@@ -326,12 +328,12 @@ const Verification: React.FC = () => {
 			Boolean(currentPage?.transcription) ||
 			currentPage?.status === PageStatus.FAILED;
 
-		if (!canEdit || isVerifying || isReprocessing) {
+		if (!canEdit || isReprocessing) {
 			return;
 		}
 
 		setIsEditing((value) => !value);
-	}, [currentPage, isReprocessing, isVerifying]);
+	}, [currentPage, isReprocessing]);
 
 	const handleToggleShortcuts = useCallback((): void => {
 		setIsShortcutsOpen((value) => !value);
@@ -394,11 +396,11 @@ const Verification: React.FC = () => {
 			<VerificationWorkspace
 				currentPage={currentPage}
 				editConflictDraft={editConflictDraft}
+				hasVerifiedPages={document.progress.pagesVerified > INITIAL_COUNT}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isPauseDisabled={document.status !== DocumentStatus.PROCESSING}
 				isReprocessing={isReprocessing}
-				isVerifying={isVerifying}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
 				onPause={handlePause}

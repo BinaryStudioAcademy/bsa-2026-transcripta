@@ -12,9 +12,10 @@ import {
 	BUDGET_LOWERED_MESSAGE,
 	BUDGET_STOP_NOTIFICATION_MESSAGE,
 	BUDGET_UPLOAD_FAILED_MESSAGE,
-	EMPTY_STRING,
+	INGESTION_FAILED_MESSAGE,
 	INITIAL_COUNT,
 	MINIMUM_VALID_DOCUMENT_ID,
+	NOTIFICATION_DELAY_MS,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
@@ -22,6 +23,7 @@ import {
 	useAppSelector,
 	useCallback,
 	useEffect,
+	useLocation,
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
@@ -35,6 +37,7 @@ import {
 	DocumentTitleBlock,
 	ExportBlock,
 	GroundTruthBlock,
+	LexiconBlock,
 	PagesBlock,
 	TranscriptionBlock,
 	VerificationBlock,
@@ -44,6 +47,8 @@ import styles from "./styles.module.css";
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+	const location = useLocation();
+	const locationState = location.state as null | { errorMessage?: string };
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
@@ -75,10 +80,14 @@ const Document: React.FC = () => {
 		};
 	}, [documentId, isValidId, dispatch]);
 
-	const lastNotifiedBudgetStopIdReference = useRef<null | number>(null);
+	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
+	const isNotifyingReference = useRef<boolean>(false);
+	const previousStatusReference = useRef<null | string>(null);
+	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
 
 	useEffect(() => {
 		if (!currentDocument) {
+			previousStatusReference.current = null;
 			return;
 		}
 
@@ -88,19 +97,54 @@ const Document: React.FC = () => {
 			return;
 		}
 
+		const isFailedStatus = currentDocument.status === DocumentStatus.FAILED;
 		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
+		const previousStatus = previousStatusReference.current;
 
-		if (isBudgetStop) {
-			if (lastNotifiedBudgetStopIdReference.current !== currentDocument.id) {
-				notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
-				lastNotifiedBudgetStopIdReference.current = currentDocument.id;
-			}
-		} else {
-			if (lastNotifiedBudgetStopIdReference.current === currentDocument.id) {
-				lastNotifiedBudgetStopIdReference.current = null;
-			}
+		previousStatusReference.current = currentDocument.status;
+
+		const hasBudgetBeenNotified = notifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		const shouldNotifyBudget =
+			isBudgetStop &&
+			(!hasBudgetBeenNotified || previousStatus !== DocumentStatus.BUDGET_STOP);
+
+		if (shouldNotifyBudget && !isNotifyingReference.current) {
+			isNotifyingReference.current = true;
+
+			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+
+			notifiedDocumentsReference.current.add(currentDocument.id);
+
+			setTimeout(() => {
+				isNotifyingReference.current = false;
+			}, NOTIFICATION_DELAY_MS);
 		}
-	}, [currentDocument, id]);
+
+		const hasFailedBeenNotified = failedNotifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		if (isFailedStatus && !hasFailedBeenNotified) {
+			failedNotifiedDocumentsReference.current.add(currentDocument.id);
+
+			const errorMessage =
+				currentDocument.errorMessage ||
+				locationState?.errorMessage ||
+				INGESTION_FAILED_MESSAGE;
+
+			notification.error(errorMessage);
+		}
+	}, [
+		currentDocument,
+		currentDocument?.id,
+		currentDocument?.status,
+		currentDocument?.errorMessage,
+		id,
+		locationState?.errorMessage,
+	]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -125,7 +169,7 @@ const Document: React.FC = () => {
 			.unwrap()
 			.then(() => {
 				setIsConfirmOpen(false);
-				Promise.resolve(navigate(AppRoute.DOCUMENTS)).catch(() => null);
+				return navigate(AppRoute.DOCUMENTS);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);
@@ -167,8 +211,7 @@ const Document: React.FC = () => {
 						message?: string;
 					};
 					const firstDetail = typedError.details?.[INITIAL_COUNT];
-					const errorMessage =
-						firstDetail?.message ?? typedError.message ?? EMPTY_STRING;
+					const errorMessage = firstDetail?.message ?? typedError.message ?? "";
 					const isBudgetValidationError =
 						errorMessage.includes(BUDGET_GREATER_MESSAGE) ||
 						errorMessage.includes(BUDGET_LOWERED_MESSAGE);
@@ -204,6 +247,11 @@ const Document: React.FC = () => {
 			currentDocument.progress.pagesReadyToCheck +
 			currentDocument.progress.pagesSkipped
 		: INITIAL_COUNT;
+
+	const errorMessageToDisplay =
+		currentDocument?.errorMessage ||
+		locationState?.errorMessage ||
+		INGESTION_FAILED_MESSAGE;
 
 	if (!isValidId || hasError) {
 		return <NotFound />;
@@ -248,7 +296,7 @@ const Document: React.FC = () => {
 								<section>
 									<h2>Ingest failed</h2>
 									<DocumentFailedBlock
-										errorMessage={currentDocument.errorMessage}
+										errorMessage={errorMessageToDisplay}
 										onRetry={handleRetry}
 									/>
 								</section>
@@ -291,6 +339,8 @@ const Document: React.FC = () => {
 										pagesTranscribed={pagesTranscribed}
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
+
+									<LexiconBlock documentId={currentDocument.id} />
 
 									<ExportBlock
 										documentId={currentDocument.id}

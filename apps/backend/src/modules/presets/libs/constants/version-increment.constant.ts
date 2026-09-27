@@ -1,0 +1,3 @@
+const VERSION_INCREMENT = 1;
+
+export { VERSION_INCREMENT };

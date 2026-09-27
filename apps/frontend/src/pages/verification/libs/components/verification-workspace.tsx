@@ -5,6 +5,10 @@ import {
 } from "~/libs/components/components.js";
 import { useRef } from "~/libs/hooks/hooks.js";
 
+import {
+	EVERYTHING_VERIFIED,
+	PREPARING_DOCUMENTS,
+} from "../constants/constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
@@ -18,11 +22,11 @@ import { VerificationEdit, VerificationPageText } from "./components.js";
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
 	editConflictDraft: EditConflictDraft | null;
+	hasVerifiedPages: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPauseDisabled: boolean;
 	isReprocessing: boolean;
-	isVerifying: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onPause: () => void;
@@ -38,11 +42,11 @@ type VerificationWorkspaceProperties = {
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
 	editConflictDraft,
+	hasVerifiedPages,
 	isCompleted,
 	isEditing,
 	isPauseDisabled,
 	isReprocessing,
-	isVerifying,
 	isZoomed,
 	onConfirm,
 	onPause,
@@ -83,7 +87,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						</span>
 
 						<VerificationEdit
-							isDisabled={isVerifying}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text=""
@@ -115,7 +118,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					{isEditing ? (
 						<VerificationEdit
-							isDisabled={isVerifying}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
@@ -126,7 +128,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 							<div className="verification-actions">
 								<Button
-									isDisabled={isVerifying}
 									isPrimary={true}
 									label="Confirm"
 									onClick={onConfirm}
@@ -134,19 +135,13 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 								/>
 
 								<Button
-									isDisabled={isVerifying}
 									isSecondary={true}
 									label="Correct"
 									onClick={onToggleEdit}
 									type="button"
 								/>
 
-								<Button
-									isDisabled={isVerifying}
-									label="Skip"
-									onClick={onSkip}
-									type="button"
-								/>
+								<Button label="Skip" onClick={onSkip} type="button" />
 							</div>
 						</>
 					)}
@@ -160,10 +155,15 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
+		const preparingMessage = hasVerifiedPages
+			? EVERYTHING_VERIFIED
+			: PREPARING_DOCUMENTS;
+
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
 					isPauseDisabled={isPauseDisabled}
+					message={preparingMessage}
 					onPause={onPause}
 				/>
 			</div>

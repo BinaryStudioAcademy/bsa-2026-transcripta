@@ -10,6 +10,7 @@ import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentUpdateBudgetDto,
@@ -68,6 +69,19 @@ class DocumentApi extends BaseHTTPApi {
 		);
 
 		return await response.json<DocumentGetByIdResponseDto>();
+	}
+
+	public async getLexicon(id: number): Promise<DocumentGetLexiconResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.BY_ID_LEXICON, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.GET,
+			},
+		);
+
+		return await response.json<DocumentGetLexiconResponseDto>();
 	}
 
 	public async getPages(

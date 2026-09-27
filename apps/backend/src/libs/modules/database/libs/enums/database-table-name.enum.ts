@@ -1,6 +1,7 @@
 const DatabaseTableName = {
 	DOCUMENT: "document",
 	DOCUMENT_COST: "document_cost",
+	DOCUMENT_EXPORT: "document_export",
 	DOCUMENT_PROGRESS: "document_progress",
 	LEXICON_ENTRY: "lexicon_entry",
 	MIGRATIONS: "migrations",
