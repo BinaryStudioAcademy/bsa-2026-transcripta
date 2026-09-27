@@ -309,6 +309,8 @@ class DocumentService {
 			});
 		}
 
+		await this.documentRepository.updatePageCount(documentId, pageCount);
+
 		return pageCount;
 	}
 

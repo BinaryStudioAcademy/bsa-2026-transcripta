@@ -19,6 +19,7 @@ type Properties = {
 	isStartingProcessing: boolean;
 	isSubmitting: boolean;
 	isUploaded: boolean;
+	isUploading: boolean;
 	onCancelUpload: () => void;
 	onChangeFile: () => void;
 	onProcessDocument: (values: UploadFormValues) => void;
@@ -31,6 +32,7 @@ const UploadForm: React.FC<Properties> = ({
 	isStartingProcessing = false,
 	isSubmitting = false,
 	isUploaded = false,
+	isUploading = false,
 	onCancelUpload,
 	onChangeFile,
 	onProcessDocument,
@@ -60,6 +62,7 @@ const UploadForm: React.FC<Properties> = ({
 		},
 		[handleSubmit, onSubmit],
 	);
+
 	const handleProcessClick = useCallback(
 		(event_: React.MouseEvent<HTMLButtonElement>): void => {
 			void handleSubmit(onProcessDocument)(event_);
@@ -86,21 +89,34 @@ const UploadForm: React.FC<Properties> = ({
 			/>
 			<div className={styles["upload-form__actions"]}>
 				{isUploaded && (
-					<Button
-						isDisabled={isStartingProcessing}
-						isPrimary
-						label="Start Processing"
-						onClick={handleProcessClick}
-						type="button"
-					/>
+					<>
+						<Button
+							isDisabled={isStartingProcessing}
+							isPrimary
+							label={
+								isStartingProcessing ? "Processing..." : "Start Processing"
+							}
+							onClick={handleProcessClick}
+							type="button"
+						/>
+						<Button
+							isDisabled={isStartingProcessing}
+							label="Change file"
+							onClick={onChangeFile}
+							type="button"
+						/>
+					</>
 				)}
-				{isSubmitting ? (
+
+				{(isUploading || isSubmitting) && (
 					<Button
 						label="Cancel Upload"
 						onClick={onCancelUpload}
 						type="button"
 					/>
-				) : (
+				)}
+
+				{!isUploaded && !isUploading && !isSubmitting && (
 					<>
 						<Button isPrimary label="Upload" type="submit" />
 						<Button label="Change file" onClick={onChangeFile} type="button" />
