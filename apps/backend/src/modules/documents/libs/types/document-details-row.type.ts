@@ -1,3 +1,4 @@
+import { type DocumentExportRawItem } from "./document-export-raw-item.type.js";
 import { type DocumentStatusValue } from "./document-status-value.type.js";
 
 type DocumentDetailsRow = {
@@ -5,6 +6,7 @@ type DocumentDetailsRow = {
 	closedPct: number;
 	cursorPageNo: number;
 	errorMessage: null | string;
+	exports: DocumentExportRawItem[];
 	id: number;
 	pageCount: number;
 	pagesBlank: number;
