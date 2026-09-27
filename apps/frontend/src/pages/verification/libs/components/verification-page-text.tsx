@@ -19,27 +19,29 @@ const VerificationPageText: React.FC<Properties> = ({ text }: Properties) => {
 					const [head, ...body] = block.rows;
 
 					return (
-						<table
-							className="verification-transcription__table"
+						<div
+							className="verification-transcription__table-scroll"
 							key={blockIndex}
 						>
-							<thead>
-								<tr>
-									{(head ?? []).map((cell: string, cellIndex: number) => (
-										<th key={cellIndex}>{markUnreadable(cell)}</th>
-									))}
-								</tr>
-							</thead>
-							<tbody>
-								{body.map((row: string[], rowIndex: number) => (
-									<tr key={rowIndex}>
-										{row.map((cell: string, cellIndex: number) => (
-											<td key={cellIndex}>{markUnreadable(cell)}</td>
+							<table className="verification-transcription__table">
+								<thead>
+									<tr>
+										{(head ?? []).map((cell: string, cellIndex: number) => (
+											<th key={cellIndex}>{markUnreadable(cell)}</th>
 										))}
 									</tr>
-								))}
-							</tbody>
-						</table>
+								</thead>
+								<tbody>
+									{body.map((row: string[], rowIndex: number) => (
+										<tr key={rowIndex}>
+											{row.map((cell: string, cellIndex: number) => (
+												<td key={cellIndex}>{markUnreadable(cell)}</td>
+											))}
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
 					);
 				}
 
