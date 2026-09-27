@@ -38,13 +38,14 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
-import "./verification.css";
+import { usePagesPolling } from "./libs/hooks/use-pages-polling.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
 	type EditConflictDraft,
 	type PageVerificationActionValue,
 } from "./libs/types/types.js";
+import "./verification.css";
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -82,6 +83,12 @@ const Verification: React.FC = () => {
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 
+	usePagesPolling({
+		currentPageStatus: currentPage?.status,
+		cursorPageNo,
+		document,
+	});
+
 	useEffect(() => {
 		const documentId = Number(id);
 
@@ -91,15 +98,16 @@ const Verification: React.FC = () => {
 
 		dispatch(pageActions.reset());
 
-		if (document && document.id === documentId) {
-			return;
-		}
-
 		void dispatch(documentActions.loadById(documentId));
-	}, [id, document, dispatch]);
+		void dispatch(documentActions.startPolling(documentId));
+
+		return (): void => {
+			dispatch(documentActions.stopPolling());
+		};
+	}, [id, dispatch]);
 
 	useEffect(() => {
-		if (!document) {
+		if (!document || cursorPageNo >= MIN_NUMBER_OF_PAGES) {
 			return;
 		}
 
@@ -108,7 +116,7 @@ const Verification: React.FC = () => {
 				Math.min(document.cursorPageNo, document.pageCount),
 			),
 		);
-	}, [document, dispatch]);
+	}, [cursorPageNo, document, dispatch]);
 
 	useEffect(() => {
 		if (!document || cursorPageNo < MIN_NUMBER_OF_PAGES || isPagesLoading) {
@@ -309,6 +317,7 @@ const Verification: React.FC = () => {
 				notification.info("Navigation is not available in edit mode");
 				return;
 			}
+
 			dispatch(pageActions.setCursorPageNo(pageNo));
 		},
 		[dispatch, isEditing],
@@ -357,6 +366,7 @@ const Verification: React.FC = () => {
 				pageCount={document.pageCount}
 				pageNo={currentPage?.pageNo}
 			/>
+
 			<VerificationWorkspace
 				currentPage={currentPage}
 				editConflictDraft={editConflictDraft}
@@ -375,6 +385,7 @@ const Verification: React.FC = () => {
 				scanRef={scanRef}
 				zoom={zoom}
 			/>
+
 			<VerificationFooter
 				currentPageNo={cursorPageNo}
 				cursorPageNo={verificationCursorPageNo}
@@ -385,6 +396,7 @@ const Verification: React.FC = () => {
 				pageCount={document.pageCount}
 				pages={pagesForStrip}
 			/>
+
 			{isShortcutsOpen && (
 				<VerificationShortcutsDialog onClose={handleToggleShortcuts} />
 			)}
