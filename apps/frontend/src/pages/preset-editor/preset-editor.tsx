@@ -17,6 +17,7 @@ import {
 
 import "./preset-editor.css";
 
+import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as presetsActions } from "~/modules/presets/presets.js";
 
 import type {
@@ -31,6 +32,7 @@ import {
 	isGlossaryType,
 	mapSeedGlossary,
 } from "./libs/helpers/helpers.js";
+import { PresetCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
 
 const handleCancel = (): void => {
 	// TODO: Navigate back when routing is connected.
@@ -62,7 +64,7 @@ const PresetEditor: React.FC = () => {
 
 	const isPresetLoading = selectedPresetStatus === DataStatus.PENDING;
 	const isSaving = createStatus === DataStatus.PENDING;
-	const isFormDisabled = isPresetLoading || isSaving;
+	const isFormDisabled = isPresetLoading || isSaving || !selectedPreset;
 
 	const outputFields =
 		selectedPreset && basePresetId
@@ -111,29 +113,27 @@ const PresetEditor: React.FC = () => {
 			return;
 		}
 
-		setOpenTypeId(null);
+		const result = PresetCreateValidationSchema.safeParse({
+			familyId: selectedPreset.familyId,
+			instructions,
+			name,
+			seedGlossary: entries.map(({ kind, value }) => ({
+				kind,
+				value,
+			})),
+		});
 
-		const trimmedName = name.trim();
-		const trimmedInstructions = instructions.trim();
+		if (!result.success) {
+			const [firstError] = result.error.issues;
 
-		if (!trimmedName || !trimmedInstructions) {
+			notification.error(firstError?.message ?? "Invalid preset data");
+
 			return;
 		}
 
-		void dispatch(
-			presetsActions.create({
-				familyId: selectedPreset.familyId,
-				instructions: trimmedInstructions,
-				name: trimmedName,
-				seedGlossary: entries
-					.filter(({ value }) => value.trim())
-					.map(({ kind, value }) => ({
-						kind,
-						value: value.trim(),
-					})),
-			}),
-		);
+		void dispatch(presetsActions.create(result.data));
 	}, [dispatch, entries, instructions, name, selectedPreset]);
+
 	const handleAddEntry = useCallback((): void => {
 		setEntries((currentEntries) => [...currentEntries, createEntry()]);
 	}, []);
