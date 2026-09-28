@@ -17,7 +17,11 @@ import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
-import { VerificationEdit, VerificationPageText } from "./components.js";
+import {
+	BlankStateCard,
+	VerificationEdit,
+	VerificationPageText,
+} from "./components.js";
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
@@ -30,6 +34,7 @@ type VerificationWorkspaceProperties = {
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onPause: () => void;
+	onReprocess: () => void;
 	onReRead: () => void;
 	onSaveEdit: (text: string) => void;
 	onSkip: () => void;
@@ -50,6 +55,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	isZoomed,
 	onConfirm,
 	onPause,
+	onReprocess,
 	onReRead,
 	onSaveEdit,
 	onSkip,
@@ -78,6 +84,17 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	} = useResizableSplit();
 
 	const workspaceContent = (() => {
+		if (currentPage?.status === PageStatus.BLANK) {
+			return (
+				<div className="verification-blank-state">
+					<BlankStateCard
+						isLoading={isReprocessing}
+						onReprocess={onReprocess}
+					/>
+				</div>
+			);
+		}
+
 		if (currentPage?.status === PageStatus.FAILED) {
 			if (isEditing) {
 				return (

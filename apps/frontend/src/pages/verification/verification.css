@@ -242,6 +242,10 @@
 	align-items: center;
 }
 
+.verification-blank-state {
+	margin: auto;
+}
+
 .verification-failed-state {
 	margin: auto;
 }
