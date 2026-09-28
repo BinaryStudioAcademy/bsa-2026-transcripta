@@ -16,9 +16,9 @@ const BlankStateCard: React.FC<Properties> = ({
 			<div className="tx-state-actions">
 				<Button
 					isDisabled={isLoading}
+					isSecondary
 					label="Reprocess"
 					onClick={onReprocess}
-					type="button"
 				/>
 			</div>
 		</div>
