@@ -1,3 +1,5 @@
+import { LexiconEntryKind } from "@transcripta/shared";
+
 type GlossaryEntry = {
 	id: string;
 	kind: GlossaryType;
@@ -5,13 +7,6 @@ type GlossaryEntry = {
 	value: string;
 };
 
-type GlossaryType =
-	| "abbreviation"
-	| "formula"
-	| "other"
-	| "person name"
-	| "place"
-	| "surname"
-	| "term";
+type GlossaryType = (typeof LexiconEntryKind)[keyof typeof LexiconEntryKind];
 
 export type { GlossaryEntry, GlossaryType };

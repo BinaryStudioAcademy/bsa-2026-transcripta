@@ -81,7 +81,7 @@ const PresetGlossary: React.FC<Properties> = ({
 											onClick={onKindOptionClick}
 											role="option"
 										>
-											<span>{kind}</span>
+											<span>{kind.replaceAll("_", " ")}</span>
 											<span className="preset-editor__type-option-check">
 												{entry.kind === kind ? "✓" : ""}
 											</span>
