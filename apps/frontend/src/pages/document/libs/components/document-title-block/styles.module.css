@@ -20,6 +20,11 @@
 	max-width: 100%;
 }
 
+.title-wrapper[data-tip]::after {
+	left: 0;
+	transform: none;
+}
+
 .title {
 	min-width: 0;
 	margin: 0;

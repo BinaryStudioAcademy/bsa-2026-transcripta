@@ -74,6 +74,12 @@
 	max-width: 100%;
 }
 
+.documents-page__title-wrapper[data-tip]::after,
+.documents-page__footer-title-wrapper[data-tip]::after {
+	left: 0;
+	transform: none;
+}
+
 .documents-page__title-text {
 	min-width: 0;
 	overflow: hidden;
