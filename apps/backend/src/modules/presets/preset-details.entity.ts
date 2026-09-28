@@ -1,13 +1,6 @@
 import { type PresetGetByIdResponseDto } from "@transcripta/shared";
 
-type PresetDetailsProperties = {
-	familyId: number;
-	id: number;
-	instructions: string;
-	name: string;
-	outputSchema: Record<string, unknown>;
-	seedGlossary: Record<string, unknown>[] | string[];
-};
+import { type PresetDetailsProperties } from "./libs/types/types.js";
 
 class PresetDetailsEntity {
 	private familyId: number;
