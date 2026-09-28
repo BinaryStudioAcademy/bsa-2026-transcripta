@@ -344,14 +344,14 @@ const Documents: React.FC = () => {
 												.join(" ")}
 											role="cell"
 										>
-								<Link
-									className={styles["documents-page__row-link"] ?? ""}
-									onKeyDown={handleRowKeyDown}
-									state={rowState}
-									to={rowRoute}
-								>
-									<DocumentTitleCell title={document.title} />
-								</Link>
+											<Link
+												className={styles["documents-page__row-link"] ?? ""}
+												onKeyDown={handleRowKeyDown}
+												state={rowState}
+												to={rowRoute}
+											>
+												<DocumentTitleCell title={document.title} />
+											</Link>
 										</span>
 										<span
 											className={[
