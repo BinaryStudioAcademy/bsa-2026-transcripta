@@ -1,15 +1,18 @@
 import { Button } from "~/libs/components/components.js";
+import { ToggleProcessingLabel } from "~/libs/enums/enums.js";
 
 type Properties = {
-	isPauseDisabled: boolean;
+	isPaused: boolean;
+	isToggleDisabled: boolean;
 	message?: string;
-	onPause: () => void;
+	onToggleProcessing: () => void;
 };
 
 const PreparingStateCard: React.FC<Properties> = ({
-	isPauseDisabled,
+	isPaused,
+	isToggleDisabled,
 	message,
-	onPause,
+	onToggleProcessing,
 }: Properties) => {
 	return (
 		<div className="tx-state">
@@ -17,10 +20,15 @@ const PreparingStateCard: React.FC<Properties> = ({
 			<p className="tx-state-reason">{message}</p>
 			<div className="tx-state-actions">
 				<Button
-					isDisabled={isPauseDisabled}
-					isSecondary
-					label="Pause"
-					onClick={onPause}
+					isDisabled={isToggleDisabled}
+					isPrimary={isPaused}
+					isSecondary={!isPaused}
+					label={
+						isPaused
+							? ToggleProcessingLabel.RESUME
+							: ToggleProcessingLabel.PAUSE
+					}
+					onClick={onToggleProcessing}
 				/>
 			</div>
 		</div>
