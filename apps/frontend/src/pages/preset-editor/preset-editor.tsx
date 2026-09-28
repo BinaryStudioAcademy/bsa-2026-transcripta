@@ -8,19 +8,21 @@ import {
 import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
-} from "~/libs/constants/common.constants.js";
+	GO_BACK,
+} from "~/libs/constants/constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
+
+import "./preset-editor.css";
+
 import {
 	useAppDispatch,
 	useAppSelector,
 	useCallback,
 	useEffect,
+	useNavigate,
 	useParams,
 	useState,
 } from "~/libs/hooks/hooks.js";
-
-import "./preset-editor.css";
-
 import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as presetsActions,
@@ -45,12 +47,9 @@ import {
 } from "./libs/helpers/helpers.js";
 import { PresetCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
 
-const handleCancel = (): void => {
-	// TODO: Navigate back when routing is connected.
-};
-
 const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 	const { id } = useParams<{ id?: string }>();
 
 	const createStatus = useAppSelector(selectCreateStatus);
@@ -144,6 +143,12 @@ const PresetEditor: React.FC = () => {
 
 		void dispatch(presetsActions.create(result.data));
 	}, [dispatch, entries, instructions, name, selectedPreset]);
+
+	const handleCancel = useCallback((): void => {
+		void (async (): Promise<void> => {
+			await navigate(GO_BACK);
+		})();
+	}, [navigate]);
 
 	const handleAddEntry = useCallback((): void => {
 		setEntries((currentEntries) => [...currentEntries, createEntry()]);
