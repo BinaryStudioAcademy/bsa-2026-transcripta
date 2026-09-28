@@ -13,15 +13,4 @@ type GlossaryType =
 	| "surname"
 	| "term";
 
-type PresetEditorFormValues = {
-	description: string;
-	instructions: string;
-	name: string;
-	seedGlossary: GlossaryEntry[];
-};
-
-export type {
-	GlossaryEntry,
-	GlossaryType,
-	/** @public */ PresetEditorFormValues,
-};
+export type { GlossaryEntry, GlossaryType };
