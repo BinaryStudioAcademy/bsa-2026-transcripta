@@ -406,6 +406,13 @@ const Verification: React.FC = () => {
 		handlePageSelect(cursorPageNo + PAGE_STEP);
 	}, [cursorPageNo, handlePageSelect, document]);
 
+	const handleReprocess = useCallback((): void => {
+		if (!currentPage) {
+			return;
+		}
+		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
+	}, [currentPage, dispatch]);
+
 	useVerificationKeyboard({
 		onConfirm: handleConfirm,
 		onEdit: handleToggleEdit,
@@ -444,6 +451,7 @@ const Verification: React.FC = () => {
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
 				onPause={handlePause}
+				onReprocess={handleReprocess}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
