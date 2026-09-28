@@ -75,6 +75,7 @@ list below needs its own block — 19 blocks that nobody will write for us.
 | `POST`   | `/api/v1/lexicon/:id/invalidate` | Mark a word as wrong                           |
 |          |                                  |                                                |
 | `GET`    | `/api/v1/presets`                | List of presets                                |
+| `GET`    | `/api/v1/presets/:id`            | Get full preset data                           |
 | `POST`   | `/api/v1/presets`                | Create one, or a new version                   |
 |          |                                  |                                                |
 | `POST`   | `/api/v1/documents/:id/export`   | Request an export                              |
@@ -395,6 +396,66 @@ and flags `confirmed` / `corrected` pages via `page_event` (no text rewrite).
 Another user's entry — or a missing id — returns `404`. Already invalidated —
 `409`. Confirmed pages are not reprocessed automatically. Overwriting what a
 human confirmed is worse than leaving the mistake in place.
+
+---
+
+## `GET /api/v1/presets`
+
+Returns built-in public presets and presets owned by the current user.
+
+Private presets owned by other users are not included. The response contains
+summary data only; full preset data is available through
+`GET /api/v1/presets/:id`.
+
+```jsonc
+// response 200
+{
+	"items": [
+		{
+			"id": 12,
+			"familyId": 7,
+			"version": 2,
+			"name": "19th-century parish register",
+			"description": "",
+		},
+		{
+			"id": 15,
+			"familyId": 9,
+			"version": 1,
+			"name": "Church records",
+			"description": "",
+		},
+	],
+}
+```
+
+---
+
+## `GET /api/v1/presets/:id`
+
+Authenticated users can get the full data of a preset if it is public or
+owned by the current user.
+
+```jsonc
+// response 200
+{
+	"id": 12,
+	"familyId": 7,
+	"name": "19th-century parish register",
+	"instructions": "This is a page from a parish register...",
+	"outputSchema": {
+		"type": "object",
+		"properties": {},
+	},
+	"seedGlossary": [
+		{
+			"kind": "formula",
+			"value": "born and baptised",
+			"note": "birth record",
+		},
+	],
+}
+```
 
 ---
 

@@ -1,9 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { type PresetGetAllResponseDto } from "@transcripta/shared";
 
 import { serializeError } from "~/libs/helpers/helpers.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 
+import {
+	type PresetCreateRequestDto,
+	type PresetCreateResponseDto,
+	type PresetGetAllResponseDto,
+	type PresetGetByIdResponseDto,
+} from "../libs/types/types.js";
 import { name as sliceName } from "./presets.slice.js";
 
 const loadAll = createAsyncThunk<
@@ -20,4 +25,32 @@ const loadAll = createAsyncThunk<
 	{ serializeError },
 );
 
-export { loadAll };
+const loadById = createAsyncThunk<
+	PresetGetByIdResponseDto,
+	number,
+	AsyncThunkConfig
+>(
+	`${sliceName}/load-by-id`,
+	(id, { extra }) => {
+		const { presetApi } = extra;
+
+		return presetApi.getById(id);
+	},
+	{ serializeError },
+);
+
+const create = createAsyncThunk<
+	PresetCreateResponseDto,
+	PresetCreateRequestDto,
+	AsyncThunkConfig
+>(
+	`${sliceName}/create`,
+	(payload, { extra }) => {
+		const { presetApi } = extra;
+
+		return presetApi.create(payload);
+	},
+	{ serializeError },
+);
+
+export { create, loadAll, loadById };

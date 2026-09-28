@@ -12,4 +12,12 @@ const presetApi = new PresetApi({
 
 export { presetApi };
 
-export { /** @public */ actions, reducer } from "./slices/presets.js";
+export { actions, reducer } from "./slices/presets.js";
+
+export {
+	selectCreateStatus,
+	selectPresets,
+	selectPresetsStatus,
+	selectSelectedPreset,
+	selectSelectedPresetStatus,
+} from "./slices/selectors.js";
