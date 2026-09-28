@@ -33,6 +33,18 @@ export {
 } from "./libs/types/types.js";
 export { AuthApiPath } from "./modules/auth/auth.js";
 export {
+	type DocumentExportCreateRequestDto,
+	type DocumentExportCreateResponseDto,
+	type DocumentExportFormatValue,
+	type DocumentExportGetByIdResponseDto,
+	type DocumentExportStatusValue,
+	DocumentExportCreateRequestValidationSchema,
+	DocumentExportFormat,
+	DocumentExportGetByIdParametersValidationSchema,
+	DocumentExportsApiPath,
+	DocumentExportStatus,
+} from "./modules/document-exports/document-exports.js";
+export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
@@ -91,9 +103,13 @@ export {
 	verifyPageParameters,
 } from "./modules/pages/pages.js";
 export {
+	type PresetCreateRequestDto,
+	type PresetCreateResponseDto,
 	type PresetGetAllItemResponseDto,
 	type PresetGetAllResponseDto,
+	PresetCreateValidationSchema,
 	PresetsApiPath,
+	PresetValidationMessage,
 } from "./modules/presets/presets.js";
 export {
 	type UserGetAllItemResponseDto,

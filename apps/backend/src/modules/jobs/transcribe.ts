@@ -1109,6 +1109,10 @@ const createTranscribeHandler =
 		}
 
 		if (!(await claimQueuedPageOrSkip({ documentId, logger, pageId }))) {
+			const queuedPages = await pageRepository.findQueuedPages(documentId);
+
+			await enqueuePages(queuedPages, enqueuePage, logger);
+
 			return;
 		}
 

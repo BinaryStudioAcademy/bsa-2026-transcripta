@@ -90,6 +90,7 @@ select.tx-input{appearance:none;-webkit-appearance:none;padding-right:26px;curso
 .tx-page--confirmed{color:var(--ok-text)}
 .tx-page--corrected{color:var(--ok-text)}
 .tx-page--skipped{color:var(--text-3)}
+.tx-page--auto{color:var(--text-2);border-color:var(--hairline-strong);border-style:dotted}
 .tx-page--current{background:var(--accent);color:var(--on-accent)}
 .tx-page--current:hover{background:var(--accent)}
 .tx-page--ready{color:var(--text);border-color:var(--hairline-strong);background:var(--surface)}

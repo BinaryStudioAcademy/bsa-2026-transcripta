@@ -14,7 +14,7 @@ const BudgetIndicator: React.FC<Properties> = ({
 	return (
 		<span className="tx-num">
 			{formatMoney(spentUsd)} / {formatMoney(limitUsd)}
-			{typeof usedPct === "number" && ` (${String(usedPct)}%)`}
+			{typeof usedPct === "number" && ` (${String(usedPct)}%)`} spent
 		</span>
 	);
 };

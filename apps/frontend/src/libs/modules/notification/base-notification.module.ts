@@ -8,6 +8,10 @@ class BaseNotification {
 	public info(message: string): void {
 		toast.info(message);
 	}
+
+	public success(message: string): void {
+		toast.success(message);
+	}
 }
 
 export { BaseNotification };

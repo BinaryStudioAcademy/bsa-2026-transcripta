@@ -36,6 +36,8 @@ class TranscriptionModel extends AbstractModel {
 
 	public rawResponse!: string;
 
+	public rederiveStructuredJobCreatedAt!: null | string;
+
 	public structured!: null | Record<string, unknown>;
 
 	public text!: string;
