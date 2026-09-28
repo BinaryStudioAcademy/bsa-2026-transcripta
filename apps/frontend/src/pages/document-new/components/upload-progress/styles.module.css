@@ -35,6 +35,11 @@
 	max-width: 260px;
 }
 
+.upload-progress-file-wrapper[data-tip]::after {
+	left: 0;
+	transform: none;
+}
+
 .upload-progress-file-name {
 	min-width: 0;
 	overflow: hidden;
