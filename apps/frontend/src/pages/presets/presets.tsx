@@ -146,7 +146,7 @@ const Presets: React.FC = () => {
 												.join(" ")}
 											role="cell"
 										>
-											{preset.description || "No description"}
+											{preset.description}
 										</span>
 									</div>
 
