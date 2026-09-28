@@ -1,34 +1,70 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { type PresetGetAllItemResponseDto } from "@transcripta/shared";
 
 import { DataStatus } from "~/libs/enums/enums.js";
 import { type DataStatusValue } from "~/libs/types/types.js";
 
-import { loadAll } from "./actions.js";
+import {
+	type PresetGetAllItemResponseDto,
+	type PresetGetByIdResponseDto,
+} from "../libs/types/types.js";
+import { create, loadAll, loadById } from "./actions.js";
 
 type State = {
-	dataStatus: DataStatusValue;
+	createStatus: DataStatusValue;
 	presets: PresetGetAllItemResponseDto[];
+	presetsStatus: DataStatusValue;
+	selectedPreset: null | PresetGetByIdResponseDto;
+	selectedPresetStatus: DataStatusValue;
 };
 
 const initialState: State = {
-	dataStatus: DataStatus.IDLE,
+	createStatus: DataStatus.IDLE,
 	presets: [],
+	presetsStatus: DataStatus.IDLE,
+	selectedPreset: null,
+	selectedPresetStatus: DataStatus.IDLE,
 };
 
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		builder.addCase(loadAll.pending, (state) => {
-			state.dataStatus = DataStatus.PENDING;
+			state.presetsStatus = DataStatus.PENDING;
 		});
 
 		builder.addCase(loadAll.fulfilled, (state, action) => {
 			state.presets = action.payload.items;
-			state.dataStatus = DataStatus.FULFILLED;
+			state.presetsStatus = DataStatus.FULFILLED;
 		});
 
 		builder.addCase(loadAll.rejected, (state) => {
-			state.dataStatus = DataStatus.REJECTED;
+			state.presetsStatus = DataStatus.REJECTED;
+		});
+
+		builder.addCase(loadById.pending, (state) => {
+			state.selectedPreset = null;
+			state.selectedPresetStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(loadById.fulfilled, (state, action) => {
+			state.selectedPreset = action.payload;
+			state.selectedPresetStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(loadById.rejected, (state) => {
+			state.selectedPreset = null;
+			state.selectedPresetStatus = DataStatus.REJECTED;
+		});
+
+		builder.addCase(create.pending, (state) => {
+			state.createStatus = DataStatus.PENDING;
+		});
+
+		builder.addCase(create.fulfilled, (state) => {
+			state.createStatus = DataStatus.FULFILLED;
+		});
+
+		builder.addCase(create.rejected, (state) => {
+			state.createStatus = DataStatus.REJECTED;
 		});
 	},
 	initialState,
