@@ -1,0 +1,3 @@
+const REDIS_RETRY_MAX_DELAY_MS = 5000;
+
+export { REDIS_RETRY_MAX_DELAY_MS };

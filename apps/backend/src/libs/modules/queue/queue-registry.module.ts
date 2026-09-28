@@ -4,10 +4,10 @@ import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import {
 	ConnectionEvents,
-	ConnectionStatuses,
 	LoggerMessages,
 	QueueErrorMessage,
 } from "./libs/constants/constants.js";
+import { closeRedisConnection } from "./libs/helpers/helpers.js";
 import { type QueueLifecycle } from "./libs/types/types.js";
 
 const EMPTY_ERRORS_LENGTH = 0;
@@ -50,11 +50,7 @@ class QueueRegistry {
 			}
 		}
 
-		if (this.connection.status === ConnectionStatuses.READY) {
-			await this.connection.quit();
-		} else if (this.connection.status !== ConnectionStatuses.END) {
-			this.connection.disconnect();
-		}
+		await closeRedisConnection(this.connection);
 
 		this.isConnected = false;
 		this.logger.info(LoggerMessages.REDIS_CONNECTION_CLOSED);
