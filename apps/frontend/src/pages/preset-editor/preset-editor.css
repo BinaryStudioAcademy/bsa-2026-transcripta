@@ -10,7 +10,7 @@
 	min-width: 0;
 	height: 100%;
 	color: var(--text);
-	background: var(--background);
+	background: var(--bg);
 }
 
 .preset-editor__header {
@@ -19,19 +19,19 @@
 	align-items: center;
 	justify-content: space-between;
 	height: var(--preset-editor-header-height);
-	padding: 0 20px;
+	padding: 0 var(--sp-5);
 	border-bottom: 1px solid var(--hairline);
 }
 
 .preset-editor__title {
 	margin: 0;
-	font: 600 22px/1.15 var(--font-display);
+	font: 600 var(--fs-xl-1) / var(--lh-tight) var(--font-display);
 }
 
 .preset-editor__main {
 	box-sizing: border-box;
 	flex: 1 1 0%;
-	padding: 20px;
+	padding: var(--sp-5);
 	overflow: auto;
 }
 
@@ -51,8 +51,8 @@
 .preset-editor__basic-fields {
 	display: grid;
 	grid-template-columns: 240px minmax(0, 1fr);
-	gap: 12px 16px;
-	padding: 16px 20px;
+	gap: var(--sp-3) var(--sp-4);
+	padding: var(--sp-4) var(--sp-5);
 }
 
 .preset-editor__field {
@@ -60,7 +60,7 @@
 }
 
 .preset-editor__section {
-	padding: 16px 20px;
+	padding: var(--sp-4) var(--sp-5);
 	border-top: 1px solid var(--hairline);
 }
 
@@ -71,19 +71,19 @@
 
 .preset-editor__section-heading {
 	display: flex;
-	gap: 16px;
+	gap: var(--sp-4);
 	align-items: baseline;
 	justify-content: space-between;
-	margin-bottom: 4px;
+	margin-bottom: var(--sp-1);
 }
 
 .preset-editor__section-title {
 	margin: 0;
-	font: 600 15px/1.2 var(--font-display);
+	font: 600 15px / var(--lh-heading) var(--font-display);
 }
 
 .preset-editor__section-subtitle {
-	font: 400 12px/1.2 var(--font-ui);
+	font: 400 var(--fs-xs) / var(--lh-heading) var(--font-ui);
 	color: var(--text-3);
 }
 
@@ -115,7 +115,7 @@
 	align-items: center;
 	width: fit-content;
 	padding: 5px 8px;
-	font: 500 12px/1 var(--font-ui);
+	font: 500 var(--fs-xs) / 1 var(--font-ui);
 	color: var(--text-2);
 	cursor: pointer;
 	background: transparent;
@@ -143,7 +143,7 @@
 	left: 0;
 	z-index: 50;
 	min-width: 170px;
-	padding: 4px;
+	padding: var(--sp-1);
 	background: var(--surface);
 	border: 1px solid var(--hairline-strong);
 	border-radius: var(--r-md);
@@ -152,11 +152,11 @@
 
 .preset-editor__type-option {
 	display: flex;
-	gap: 12px;
+	gap: var(--sp-3);
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	padding: 8px;
+	padding: var(--sp-2);
 	font: 400 12.5px/1 var(--font-ui);
 	color: var(--text);
 	text-align: left;
@@ -172,7 +172,7 @@
 }
 
 .preset-editor__type-option-check {
-	font-size: 11px;
+	font-size: var(--fs-2xs);
 	color: var(--accent-text);
 }
 
@@ -181,7 +181,7 @@
 	width: 100%;
 	min-width: 0;
 	padding: 5px 2px;
-	font: 400 13px/1.3 var(--font-ui);
+	font: 400 var(--fs-sm) / var(--lh-card-heading) var(--font-ui);
 	color: var(--text);
 	outline: none;
 	background: transparent;
@@ -189,8 +189,8 @@
 }
 
 .preset-editor__remove-button {
-	padding: 4px;
-	font: 500 14px/1 var(--font-ui);
+	padding: var(--sp-1);
+	font: 500 var(--fs-md) / 1 var(--font-ui);
 	color: var(--text-3);
 	text-align: center;
 	cursor: pointer;
@@ -209,7 +209,7 @@
 }
 
 .preset-editor__output-section {
-	padding: 14px 20px;
+	padding: var(--sp-4) var(--sp-5);
 	background: var(--surface-2);
 	border-top: 1px solid var(--hairline);
 }
@@ -243,8 +243,8 @@
 	display: inline-flex;
 	align-items: center;
 	height: 22px;
-	padding: 0 8px;
-	font: 500 12px/1 var(--font-mono);
+	padding: 0 var(--sp-2);
+	font: 500 var(--fs-xs) / 1 var(--font-mono);
 	color: var(--text-2);
 	background: var(--surface);
 	border: 1px solid var(--hairline);
@@ -252,7 +252,7 @@
 }
 
 .preset-editor__output-separator {
-	font: 400 12px/1 var(--font-mono);
+	font: 400 var(--fs-xs) / 1 var(--font-mono);
 	color: var(--text-3);
 }
 
@@ -263,9 +263,9 @@
 .preset-editor__actions {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px 16px;
+	gap: 10px var(--sp-4);
 	align-items: center;
-	padding: 12px 20px;
+	padding: var(--sp-3) var(--sp-5);
 	border-top: 1px solid var(--hairline);
 }
 
@@ -273,7 +273,7 @@
 	flex: 1 1 280px;
 	min-width: 280px;
 	margin: 0;
-	font: 400 12px/1.5 var(--font-ui);
+	font: 400 var(--fs-xs) / var(--lh-body-wide) var(--font-ui);
 	color: var(--text-3);
 }
 
@@ -285,7 +285,7 @@
 
 @media (width <= 640px) {
 	.preset-editor__main {
-		padding: 12px;
+		padding: var(--sp-3);
 	}
 
 	.preset-editor__basic-fields {
