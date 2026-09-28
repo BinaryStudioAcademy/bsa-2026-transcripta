@@ -45,6 +45,7 @@
 .preset-editor__error {
 	width: 100%;
 	max-width: 720px;
+	margin: 0 auto;
 	overflow: visible;
 	background: var(--surface);
 	border: 1px solid var(--hairline);
