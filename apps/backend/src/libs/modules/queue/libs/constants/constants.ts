@@ -5,3 +5,5 @@ export { PAGE_TRANSCRIBE_JOB_ATTEMPTS } from "./page-transcribe-job-attempts.con
 export { PAGE_TRANSCRIBE_JOB_ID_PREFIX } from "./page-transcribe-job-id-prefix.constant.js";
 export { QueueErrorMessage } from "./queue-error-message.constant.js";
 export { REDIS_CONNECT_TIMEOUT_MS } from "./redis-connect-timeout.constant.js";
+export { REDIS_RETRY_DELAY_STEP_MS } from "./redis-retry-delay-step.constant.js";
+export { REDIS_RETRY_MAX_DELAY_MS } from "./redis-retry-max-delay.constant.js";
