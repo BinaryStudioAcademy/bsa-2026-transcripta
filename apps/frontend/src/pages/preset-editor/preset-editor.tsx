@@ -337,8 +337,8 @@ const PresetEditor: React.FC = () => {
 								isDisabled={isFormDisabled}
 								name={name}
 								onBasePresetChange={handleBasePresetChange}
-								onInstructionsChange={handleInstructionsChange}
 								onDescriptionChange={handleDescriptionChange}
+								onInstructionsChange={handleInstructionsChange}
 								onNameChange={handleNameChange}
 								presets={presets}
 							/>
