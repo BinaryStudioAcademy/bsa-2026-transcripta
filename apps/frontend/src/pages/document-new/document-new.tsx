@@ -483,38 +483,57 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback((): void => {
-		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
+	const handleProcessDocument = useCallback(
+		(values: UploadFormValues): void => {
+			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
 
-		if (!targetId || isStartingProcessing) {
-			return;
-		}
-
-		const documentId = Number(targetId);
-
-		setRejection(null);
-		setIsStartingProcessing(true);
-
-		setIngestingDocumentId(documentId);
-
-		void (async (): Promise<void> => {
-			try {
-				await dispatch(documentActions.ingest(documentId)).unwrap();
-				createdDocumentIdReference.current = null;
-			} catch (error: unknown) {
-				setIngestingDocumentId(null);
-				const message =
-					error instanceof Error
-						? error.message
-						: ((error as { message?: string }).message ??
-							INGESTION_FAILED_MESSAGE);
-				notification.error(message);
-				setRejection(message);
-			} finally {
-				setIsStartingProcessing(false);
+			if (!targetId || isStartingProcessing) {
+				return;
 			}
-		})();
-	}, [dispatch, isStartingProcessing, resumeDocumentId]);
+
+			const documentId = Number(targetId);
+
+			setRejection(null);
+			setIsStartingProcessing(true);
+
+			void (async (): Promise<void> => {
+				try {
+					await dispatch(
+						documentActions.getUploadUrl({
+							id: documentId,
+							payload: {
+								presetId: values.presetId,
+								title: values.title,
+							},
+						}),
+					).unwrap();
+				} catch {
+					// The error notification is shown by errorHandlingMiddleware.
+					setIsStartingProcessing(false);
+					return;
+				}
+
+				setIngestingDocumentId(documentId);
+
+				try {
+					await dispatch(documentActions.ingest(documentId)).unwrap();
+					createdDocumentIdReference.current = null;
+				} catch (error: unknown) {
+					setIngestingDocumentId(null);
+					const message =
+						error instanceof Error
+							? error.message
+							: ((error as { message?: string }).message ??
+								INGESTION_FAILED_MESSAGE);
+					notification.error(message);
+					setRejection(message);
+				} finally {
+					setIsStartingProcessing(false);
+				}
+			})();
+		},
+		[dispatch, isStartingProcessing, resumeDocumentId],
+	);
 
 	const acceptFile = useCallback(
 		(file: File): void => {

@@ -11,6 +11,8 @@ import { type Database } from "./libs/types/types.js";
 class BaseDatabase implements Database {
 	private appConfig: Config;
 
+	private knexInstance: Knex | null = null;
+
 	private logger: Logger;
 
 	public constructor(config: Config, logger: Logger) {
@@ -49,7 +51,24 @@ class BaseDatabase implements Database {
 	public connect(): ReturnType<Database["connect"]> {
 		this.logger.info("Establish DB connection...");
 
-		Model.knex(knex.default(this.environmentConfig));
+		this.knexInstance = knex.default(this.environmentConfig);
+
+		Model.knex(this.knexInstance);
+	}
+
+	/**
+	 * The pool keeps sockets open, and `pool.min` never lets the reaper take
+	 * them, so nothing closes them on its own. Without this the process hangs
+	 * on shutdown exactly like an unclosed Redis connection would.
+	 */
+	public async disconnect(): Promise<void> {
+		const knexInstance = this.knexInstance;
+
+		this.knexInstance = null;
+
+		if (knexInstance) {
+			await knexInstance.destroy();
+		}
 	}
 }
 

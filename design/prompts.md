@@ -482,7 +482,7 @@ Run: New design project, system attached.
 ````text
 Design the **Preset editor** screen for Transcripta (use the attached Transcripta design system — reference tokens by intent only: paper background, ivory cards, ink text, seal-red primary accent, mono figures, display-serif headings, sans UI body, Lucide icons). This is a compact working-tool form, not a marketing page: dense spacing, visible focus rings, keyboard-friendly.
 
-**Product logic (must be legible in the UI).** A preset holds three parts, but only two are human-edited: **instructions** (a plain textarea) and a **seed glossary** (a word list where each row has a kind dropdown plus add/remove). The third part, the **output schema**, comes with the chosen base template and is NOT editable in the MVP — no field builder, no raw JSON. The app ships four built-in presets to base a new one on: Parish register, Medical record, Diary, Ledger. Presets are **immutable**: saving changes always creates a new version — the UI must say this plainly, otherwise a user who edits a preset mid-document will not understand why already-processed pages did not change.
+**Product logic (must be legible in the UI).** A preset holds three parts, but only two are human-edited: **instructions** (a plain textarea) and a **seed glossary** (a word list where each row has a kind dropdown plus add/remove). Alongside them the user names the preset and may give it an optional one-line **description** - it is what the Presets list shows under the name, and it is the only way a user-made preset gets one, since the built-in four carry theirs from the seed. The third part, the **output schema**, comes with the chosen base template and is NOT editable in the MVP — no field builder, no raw JSON. The app ships four built-in presets to base a new one on: Parish register, Medical record, Diary, Ledger. Presets are **immutable**: saving changes always creates a new version — the UI must say this plainly, otherwise a user who edits a preset mid-document will not understand why already-processed pages did not change.
 
 **App shell.** Compose on the design system's app-shell template — sidebar with "Presets" active, topbar with the page title; the sketch below is the content column only.
 
@@ -493,6 +493,7 @@ New preset                          [chip: based on · Parish register]
 ┌──────────────────────────────────────────────────────────────┐
 │ Based on:  [ Parish register ▾ ]   ← the output schema comes │
 │ Name:      [ Dykanka, 1880s ]           from here            │
+│ Description: [ Parish records, Poltava region ]  (optional)  │
 │ Instructions for the model                                   │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ This is a page from a late 19th-century parish register. │ │
@@ -511,7 +512,7 @@ New preset                          [chip: based on · Parish register]
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Exact content strings:** page title "New preset"; "Based on" value "Parish register" (its open state lists Parish register, Medical record, Diary, Ledger); Name "Dykanka, 1880s"; the instructions text above, verbatim; glossary section label "Seed glossary — known names and phrases to help the first pages" with "[+ add word]"; the four glossary rows above, verbatim; the kind dropdown's open state lists person name, surname, place, term, formula, abbreviation, other; output-field chips `record_no · date · given_name · surname · place · notes` in mono, with caption "from the template, not editable" and a small lock icon; immutability notice: "Presets are immutable — saving creates a new version. Pages already processed keep the version they were read with; only pages processed from now on use the new one."; primary button "Save preset" (seal-red).
+**Exact content strings:** page title "New preset"; "Based on" value "Parish register" (its open state lists Parish register, Medical record, Diary, Ledger); Name "Dykanka, 1880s"; Description "Parish records, Poltava region" with the hint "(optional)"; the instructions text above, verbatim; glossary section label "Seed glossary — known names and phrases to help the first pages" with "[+ add word]"; the four glossary rows above, verbatim; the kind dropdown's open state lists person name, surname, place, term, formula, abbreviation, other; output-field chips `record_no · date · given_name · surname · place · notes` in mono, with caption "from the template, not editable" and a small lock icon; immutability notice: "Presets are immutable — saving creates a new version. Pages already processed keep the version they were read with; only pages processed from now on use the new one."; primary button "Save preset" (seal-red).
 
 **Material character (intent language, from the attached system):** glossary rows sit on hairline rules like ledger lines, not in heavy bordered input boxes; the locked output-fields block reads like an impressed stamp or printer's plate — ivory-on-ivory, lock icon, mono chips — clearly not a form surface; the display serif only for the page title and section labels, the UI sans for everything else.
 

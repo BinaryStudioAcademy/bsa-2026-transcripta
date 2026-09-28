@@ -1,12 +1,15 @@
-import {
-	type PresetGetAllResponseDto,
-	PresetsApiPath,
-} from "@transcripta/shared";
-
 import { APIPath, ContentType, HTTPMethod } from "~/libs/enums/enums.js";
 import { BaseHTTPApi } from "~/libs/modules/api/api.js";
 import { type HTTP } from "~/libs/modules/http/http.js";
 import { type Storage } from "~/libs/modules/storage/storage.js";
+
+import { PresetsApiPath } from "./libs/enums/enums.js";
+import {
+	type PresetCreateRequestDto,
+	type PresetCreateResponseDto,
+	type PresetGetAllResponseDto,
+	type PresetGetByIdResponseDto,
+} from "./libs/types/types.js";
 
 type Constructor = {
 	baseUrl: string;
@@ -17,6 +20,22 @@ type Constructor = {
 class PresetApi extends BaseHTTPApi {
 	public constructor({ baseUrl, http, storage }: Constructor) {
 		super({ baseUrl, http, path: APIPath.PRESETS, storage });
+	}
+
+	public async create(
+		payload: PresetCreateRequestDto,
+	): Promise<PresetCreateResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(PresetsApiPath.ROOT, {}),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify(payload),
+			},
+		);
+
+		return await response.json<PresetCreateResponseDto>();
 	}
 
 	public async getAll(): Promise<PresetGetAllResponseDto> {
@@ -30,6 +49,19 @@ class PresetApi extends BaseHTTPApi {
 		);
 
 		return await response.json<PresetGetAllResponseDto>();
+	}
+
+	public async getById(id: number): Promise<PresetGetByIdResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(PresetsApiPath.BY_ID, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.GET,
+			},
+		);
+
+		return await response.json<PresetGetByIdResponseDto>();
 	}
 }
 
