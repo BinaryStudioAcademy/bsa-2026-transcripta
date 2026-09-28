@@ -141,8 +141,11 @@ const PresetEditor: React.FC = () => {
 			return;
 		}
 
-		void dispatch(presetsActions.create(result.data));
-	}, [dispatch, entries, instructions, name, selectedPreset]);
+		void dispatch(presetsActions.create(result.data))
+			.unwrap()
+			.then(() => navigate(GO_BACK))
+			.catch(() => null);
+	}, [dispatch, entries, instructions, name, navigate, selectedPreset]);
 
 	const handleCancel = useCallback((): void => {
 		void (async (): Promise<void> => {
