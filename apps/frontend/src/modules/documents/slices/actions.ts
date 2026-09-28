@@ -16,10 +16,11 @@ import {
 	type DocumentUpdateBudgetDto,
 	type DocumentUploadUrlRequestDto,
 	type DocumentUploadUrlResponseDto,
+	type ExportFormatValue,
 } from "~/modules/documents/documents.js";
 
 import {
-	POLLING_FAILED_MESSAGE,
+	MOCK_EXPORT_DELAY_MS,
 	POLLING_FAILED_NOTIFICATION,
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
@@ -143,14 +144,18 @@ const pollDocumentById = createAsyncThunk<
 	{ serializeError },
 );
 
-const resume = createAsyncThunk<number, number, AsyncThunkConfig>(
+const resume = createAsyncThunk<
+	DocumentGetByIdResponseDto,
+	number,
+	AsyncThunkConfig
+>(
 	`${sliceName}/resume`,
 	async (id, { extra }) => {
 		const { documentApi } = extra;
 
-		await documentApi.resume(id);
+		const document = await documentApi.resume(id);
 
-		return id;
+		return document;
 	},
 	{ serializeError },
 );
@@ -206,10 +211,8 @@ const startPolling = createAsyncThunk<unknown, number, AsyncThunkConfig>(
 					}
 					isRequestInFlight = false;
 				})
-				.catch((error: unknown) => {
+				.catch(() => {
 					if (consecutiveErrors === INITIAL_COUNT) {
-						// eslint-disable-next-line no-console
-						console.error(POLLING_FAILED_MESSAGE, error);
 						notification.error(POLLING_FAILED_NOTIFICATION);
 					}
 
@@ -249,6 +252,20 @@ const updateBudget = createAsyncThunk<
 	{ serializeError },
 );
 
+const requestExport = createAsyncThunk<
+	{ name: string; readyMeta: string },
+	{ documentId: number; format: ExportFormatValue },
+	AsyncThunkConfig
+>(
+	`${sliceName}/request-export`,
+	async ({ format }) => {
+		await new Promise((resolve) => setTimeout(resolve, MOCK_EXPORT_DELAY_MS));
+
+		return { name: `export.${format}`, readyMeta: "just now" };
+	},
+	{ serializeError },
+);
+
 export {
 	create,
 	getUploadUrl,
@@ -258,6 +275,7 @@ export {
 	pause,
 	pollDocumentById,
 	remove,
+	requestExport,
 	resume,
 	startPolling,
 	stopPolling,

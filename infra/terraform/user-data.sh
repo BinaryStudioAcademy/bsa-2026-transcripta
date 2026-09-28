@@ -11,6 +11,7 @@ ACCOUNT="940521992973"
 REGISTRY="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
 IMAGE="${REGISTRY}/transcripta-backend:latest"
 APP_DIR="/opt/transcripta"
+DOMAIN="transcripta.world"
 
 # --- swap: t4g.micro has only 1 GB, and it runs Node + Postgres + Redis ---
 if [ ! -f /swapfile ]; then
@@ -60,8 +61,8 @@ services:
     image: ${BACKEND_IMAGE}
     restart: unless-stopped
     env_file: .env.prod
-    ports:
-      - "80:3001"
+    expose:
+      - "3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,10 +93,70 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  # Read-only database viewer for QA. No published port: it is reachable only
+  # through Caddy at /db, over TLS and behind its own basic auth. Exposing
+  # 8081 publicly would put an admin UI for the production database on a bare
+  # HTTP port, which is how the hand-rolled predecessor of this service ran.
+  pgweb:
+    image: sosedoff/pgweb:0.16.2
+    restart: unless-stopped
+    expose:
+      - "8081"
+    environment:
+      PGWEB_DATABASE_URL: postgres://${PGWEB_DB_USER}:${PGWEB_DB_PASSWORD}@postgres:5432/transcripta?sslmode=disable
+      PGWEB_AUTH_USER: ${PGWEB_AUTH_USER}
+      PGWEB_AUTH_PASS: ${PGWEB_AUTH_PASS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - backend
+      - pgweb
 volumes:
   pgdata:
   redisdata:
+  caddydata:
+  caddyconfig:
 YAML
+
+# --- Caddy: terminates TLS and renews the Let's Encrypt certificate itself ---
+cat >"$APP_DIR/Caddyfile" <<CADDY
+${DOMAIN}, www.${DOMAIN} {
+    handle_path /db/* {
+        reverse_proxy pgweb:8081
+    }
+    handle {
+        reverse_proxy backend:3001
+    }
+}
+CADDY
+
+# --- pgweb credentials: read from SSM so no password lands in git ---
+# Create them once with:
+#   aws ssm put-parameter --name /transcripta/pgweb-db-password  --type SecureString --value '<pw>'
+#   aws ssm put-parameter --name /transcripta/pgweb-auth-password --type SecureString --value '<pw>'
+PGWEB_DB_USER="transcripta_ro"
+PGWEB_AUTH_USER="qa"
+PGWEB_DB_PASSWORD="$(aws ssm get-parameter --name /transcripta/pgweb-db-password --with-decryption --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
+PGWEB_AUTH_PASS="$(aws ssm get-parameter --name /transcripta/pgweb-auth-password --with-decryption --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
+
+cat >"$APP_DIR/.env" <<ENVPGWEB
+PGWEB_DB_USER=${PGWEB_DB_USER}
+PGWEB_DB_PASSWORD=${PGWEB_DB_PASSWORD}
+PGWEB_AUTH_USER=${PGWEB_AUTH_USER}
+PGWEB_AUTH_PASS=${PGWEB_AUTH_PASS}
+ENVPGWEB
+chmod 600 "$APP_DIR/.env"
 
 cat >"$APP_DIR/.env.prod" <<'ENV'
 NODE_ENV=production

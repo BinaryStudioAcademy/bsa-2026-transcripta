@@ -4,6 +4,7 @@ const StorageErrorMessage = {
 	LIST_OBJECTS_MISSING_CONTINUATION_TOKEN:
 		"Storage listing did not return a continuation token.",
 	OBJECT_NOT_UPLOADED: "Object was not uploaded",
+	OBJECT_TOO_LARGE: "Object too large",
 } as const;
 
 export { StorageErrorMessage };

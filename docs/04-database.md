@@ -59,7 +59,7 @@ transcription_cache     (standalone, unrelated)
 | 3   | `document`            | Uploaded file, status, budget, cursor position                      |
 | 4   | `page`                | A page: image keys, status, who verified it                         |
 | 5   | `transcription`       | Model read + corrections + cost + context + prompt + raw response   |
-| 6   | `lexicon_entry`       | Document lexicon with frequencies                                   |
+| 6   | `lexicon_entry`       | Document lexicon with page counters                                 |
 | 7   | `page_event`          | Action history. Append-only                                         |
 | 8   | `transcription_cache` | So we never pay twice for the same thing                            |
 | 9   | `document_export`     | Generated exports                                                   |
@@ -220,24 +220,24 @@ inserts a current transcription row (`text` empty, `raw_response` filled)
 so `GET /api/v1/pages/:id/debug` can show what the model returned while the
 page stays `failed`.
 
-### 4. `distinct_pages` separately from `freq`
+### 4. `distinct_pages` separately from `page_count`
 
 ```sql
-freq           integer  -- how many times the word occurred
-distinct_pages integer  -- on how many DIFFERENT pages
+page_count     integer  -- confirmed pages after per-page dedupe (not occurrences)
+distinct_pages integer  -- eligibility threshold; bumps only when last_page_no changes
 ```
 
 The threshold for entering the context is counted on `distinct_pages`.
 
-A surname mentioned 30 times on one page may be a single mistake repeated
-inside a table. A surname appearing once on three pages is three independent
-confirmations. The second is more reliable.
+`page_count` and `distinct_pages` usually move together. They diverge when the
+same page is confirmed more than once: `page_count` would rise again, while
+`distinct_pages` stays put because `last_page_no` did not change.
 
 A partial index for the main context-building query:
 
 ```sql
 CREATE INDEX lexicon_topk_idx
-  ON lexicon_entry (document_id, distinct_pages DESC, freq DESC)
+  ON lexicon_entry (document_id, distinct_pages DESC, page_count DESC)
   WHERE invalidated_at IS NULL;
 ```
 

@@ -21,7 +21,7 @@
 	border-radius: 2px;
 }
 
-.tx-budget-bar i {
+.tx-budget-bar__fill {
 	display: block;
 	height: 100%;
 	background: var(--ok);
@@ -33,7 +33,7 @@
 	border-color: color-mix(in oklab, var(--warn) 55%, transparent);
 }
 
-.tx-budget--warn .tx-budget-bar i {
+.tx-budget--warn .tx-budget-bar__fill {
 	background: var(--warn);
 }
 
@@ -43,6 +43,6 @@
 	border-color: color-mix(in oklab, var(--danger) 55%, transparent);
 }
 
-.tx-budget--stop .tx-budget-bar i {
+.tx-budget--stop .tx-budget-bar__fill {
 	background: var(--danger);
 }

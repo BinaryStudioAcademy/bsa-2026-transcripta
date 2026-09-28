@@ -58,13 +58,14 @@ erDiagram
         text edited_text "what the human corrected"
         jsonb context_used "WHICH context went in: pageIds, lexiconIds, hash"
         numeric cost_usd "price of this very call"
+        timestamptz rederive_structured_job_created_at "Timestamp of creating the last rederive structured job"
         bool is_current "exactly one current row per page"
     }
 
     lexicon_entry {
         int id PK "serial, NOT bigserial - pg would return int8 as a string"
         text value_display "as written in the document"
-        int freq "how many times it occurred"
+        int page_count "confirmed pages after per-page dedupe"
         int distinct_pages "threshold for entering the context = 2"
         timestamptz invalidated_at "not NULL - the word was ruled wrong"
     }
@@ -84,7 +85,13 @@ erDiagram
     }
 
     document_export {
-        int id PK "serial"
-        enum format "json - csv - txt"
-        text object_key "ready file in S3"
-    }
+    int id PK "serial"
+    int document_id FK "REFERENCES document(id) ON DELETE CASCADE"
+    enum format "csv | json | txt"
+    enum status "failed | queued | ready"
+    text object_key "ready file in S3"
+    int requested_by FK "REFERENCES users(id)"
+    int size_bytes "nullable"
+    timestamptz finished_at "nullable"
+    text error_message "nullable"
+}

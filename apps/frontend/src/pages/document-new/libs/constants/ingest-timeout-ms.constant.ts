@@ -1,0 +1,3 @@
+const INGEST_TIMEOUT_MS = 60_000;
+
+export { INGEST_TIMEOUT_MS };

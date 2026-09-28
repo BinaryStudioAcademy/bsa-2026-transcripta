@@ -65,7 +65,9 @@ CREATE TYPE lexicon_kind AS ENUM (
   'person_name', 'surname', 'place', 'term', 'formula', 'abbreviation', 'other'
 );
 
-CREATE TYPE export_format AS ENUM ('json', 'csv', 'txt');
+CREATE TYPE document_export_format AS ENUM ('json', 'csv', 'txt');
+
+CREATE TYPE document_export_status AS ENUM ('queued', 'ready', 'failed');
 
 
 -- =============================================================================
@@ -275,7 +277,7 @@ CREATE TABLE transcription (
   cost_usd      numeric(12,6) NOT NULL DEFAULT 0,
   latency_ms    integer     NOT NULL DEFAULT 0,
   from_cache    boolean     NOT NULL DEFAULT false,
-
+  rederive_structured_job_created_at timestamptz DEFAULT NULL,
   is_current    boolean     NOT NULL DEFAULT true,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now()
@@ -308,10 +310,11 @@ CREATE TABLE lexicon_entry (
   value_normalized text         NOT NULL,   -- for deduplication: "ivanenko"
   value_display    text         NOT NULL,   -- for the prompt: "Ivanenko"
 
-  freq             integer      NOT NULL DEFAULT 1,
-  -- The threshold for entering the context is counted ON THIS field, not on freq.
-  -- A surname 30 times on one page is a weaker signal than
-  -- a surname once on each of three pages.
+  -- Pages this value was confirmed on (one increment per confirmed page after
+  -- per-page dedupe by kind + normalized value). Not raw occurrence count.
+  page_count       integer      NOT NULL DEFAULT 1,
+  -- Eligibility for the context prompt. Increments only when last_page_no
+  -- changes, so confirming the same page twice cannot inflate it.
   distinct_pages   integer      NOT NULL DEFAULT 1,
   first_page_no    integer      NOT NULL,
   last_page_no     integer      NOT NULL,
@@ -324,12 +327,12 @@ CREATE TABLE lexicon_entry (
   updated_at       timestamptz  NOT NULL DEFAULT now(),
 
   CONSTRAINT lexicon_unique UNIQUE (document_id, kind, value_normalized),
-  CONSTRAINT lexicon_freq_positive CHECK (freq >= 1)
+  CONSTRAINT lexicon_page_count_positive CHECK (page_count >= 1)
 );
 
 -- The main context-building query: top-K live words
 CREATE INDEX lexicon_topk_idx
-  ON lexicon_entry (document_id, distinct_pages DESC, freq DESC)
+  ON lexicon_entry (document_id, distinct_pages DESC, page_count DESC)
   WHERE invalidated_at IS NULL;
 
 
@@ -407,15 +410,16 @@ CREATE TABLE transcription_cache (
 -- =============================================================================
 
 CREATE TABLE document_export (
-  id           serial        PRIMARY KEY,
-  document_id  integer       NOT NULL REFERENCES document(id) ON DELETE CASCADE,
-  format       export_format NOT NULL,
-  status       text          NOT NULL DEFAULT 'queued',  -- queued | ready | failed
-  object_key   text,
-  requested_by integer       NOT NULL REFERENCES users(id),
-  created_at   timestamptz   NOT NULL DEFAULT now(),
-  updated_at   timestamptz   NOT NULL DEFAULT now(),
-  finished_at  timestamptz,
+  id            serial                 PRIMARY KEY,
+  document_id   integer                NOT NULL REFERENCES document(id) ON DELETE CASCADE,
+  format        document_export_format NOT NULL,
+  status        document_export_status NOT NULL DEFAULT 'queued',
+  object_key    text,
+  requested_by  integer                NOT NULL REFERENCES users(id),
+  size_bytes    integer,
+  created_at    timestamptz            NOT NULL DEFAULT now(),
+  updated_at    timestamptz            NOT NULL DEFAULT now(),
+  finished_at   timestamptz,
   error_message text
 );
 
@@ -516,7 +520,7 @@ CREATE TRIGGER lexicon_touch BEFORE UPDATE ON lexicon_entry
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER transcription_touch BEFORE UPDATE ON transcription
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-CREATE TRIGGER export_touch BEFORE UPDATE ON document_export
+CREATE TRIGGER document_export_touch BEFORE UPDATE ON document_export
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER cache_touch BEFORE UPDATE ON transcription_cache
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();

@@ -10,6 +10,8 @@ const LoggerMessages = {
 	REDIS_CONNECTION_ERROR: "Redis connection error.",
 	WORKER_CLOSE_FAILED: (name: string): string =>
 		`Failed to close worker for queue ${name}.`,
+	WORKER_RESUME_FAILED: (name: string): string =>
+		`Failed to resume worker for queue ${name}.`,
 } as const;
 
 export { LoggerMessages };

@@ -105,7 +105,7 @@ const Hero: React.FC = () => {
 						<span className="hero__budget">
 							<span className="tx-budget">
 								<span className="tx-budget-bar">
-									<i className="hero__budget-progress" />
+									<i className="hero__budget-progress tx-budget-bar__fill" />
 								</span>
 								$0.98 / $10.00
 							</span>

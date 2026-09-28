@@ -3,6 +3,7 @@ import {
 	MAX_PERCENTAGE,
 	PERCENTAGE_MULTIPLIER,
 } from "~/libs/constants/common.constants.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { useOverflowTooltip } from "~/libs/hooks/hooks.js";
 
@@ -59,7 +60,9 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 
 			{pageNo !== undefined && pageCount !== undefined && (
 				<span className="verification-header__page">
-					page {pageNo} of {pageCount}
+					{pageCount > INITIAL_COUNT
+						? `page ${String(pageNo)} of ${String(pageCount)}`
+						: `page ${String(pageNo)} (processing...)`}
 				</span>
 			)}
 
@@ -68,10 +71,10 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			<div className="verification-header__shortcuts">
 				<span className="tx-kbdrow">
 					<span>
-						<kbd className="tx-kbd">Enter</kbd>Correct
+						<kbd className="tx-kbd">Enter</kbd>Confirm
 					</span>
 					<span>
-						<kbd className="tx-kbd">E</kbd>Edit
+						<kbd className="tx-kbd">E</kbd>Correct
 					</span>
 					<span>
 						<kbd className="tx-kbd">S</kbd>Skip
@@ -95,7 +98,10 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			<div className="verification-header__budget">
 				<span className="tx-budget">
 					<span className="tx-budget-bar">
-						<i style={{ width: `${String(budgetPercentage)}%` }} />
+						<i
+							className="tx-budget-bar__fill"
+							style={{ width: `${String(budgetPercentage)}%` }}
+						/>
 					</span>
 					${budgetSpent} / ${budgetLimit}
 				</span>

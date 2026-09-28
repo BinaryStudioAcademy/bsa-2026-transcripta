@@ -1,8 +1,14 @@
 import { logger } from "~/libs/modules/logger/logger.js";
-import { pageTranscribeQueue } from "~/libs/modules/queue/queue.js";
+import {
+	pageTranscribeQueue,
+	rederiveStructuredQueue,
+} from "~/libs/modules/queue/queue.js";
 
 import { DocumentModel } from "../documents/document.model.js";
 import { DocumentRepository } from "../documents/document.repository.js";
+import { LexiconEntryModel } from "../lexicon/lexicon-entry.model.js";
+import { LexiconUpdateService } from "../lexicon/lexicon-update.service.js";
+import { LexiconRepository } from "../lexicon/lexicon.repository.js";
 import { TranscriptionModel } from "../transcription/transcription.model.js";
 import { TranscriptionRepository } from "../transcription/transcription.repository.js";
 import { PageEventModel } from "./page-event/page-event.model.js";
@@ -15,15 +21,18 @@ import { PageService } from "./page.service.js";
 const documentRepository = new DocumentRepository(DocumentModel);
 const transcriptionRepository = new TranscriptionRepository(TranscriptionModel);
 const pageEventRepository = new PageEventRepository(PageEventModel);
-
 const pageRepository = new PageRepository(PageModel);
+const lexiconRepository = new LexiconRepository(LexiconEntryModel);
+const lexiconUpdateService = new LexiconUpdateService({ lexiconRepository });
 
 const pageService = new PageService({
 	documentRepository,
+	lexiconUpdateService,
 	logger,
 	pageEventRepository,
 	pageRepository,
 	pageTranscribeQueue,
+	rederiveStructuredQueue,
 	transcriptionRepository,
 });
 

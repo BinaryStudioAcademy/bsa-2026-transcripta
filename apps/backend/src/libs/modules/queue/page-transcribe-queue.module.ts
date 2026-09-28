@@ -3,7 +3,10 @@ import { type Processor } from "bullmq";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import { BaseQueue } from "./base-queue.module.js";
-import { PAGE_TRANSCRIBE_JOB_ATTEMPTS } from "./libs/constants/constants.js";
+import {
+	PAGE_TRANSCRIBE_JOB_ATTEMPTS,
+	PAGE_TRANSCRIBE_JOB_ID_PREFIX,
+} from "./libs/constants/constants.js";
 import { QueueName } from "./libs/enums/enums.js";
 import {
 	type PageTranscribeJobData,
@@ -32,6 +35,9 @@ class PageTranscribeQueue extends BaseQueue<PageTranscribeJobData> {
 	): Promise<void> {
 		await this.addJob(data, {
 			attempts: PAGE_TRANSCRIBE_JOB_ATTEMPTS,
+			jobId: `${PAGE_TRANSCRIBE_JOB_ID_PREFIX}${String(data.pageId)}`,
+			removeOnComplete: true,
+			removeOnFail: true,
 			...(options?.delay === undefined ? {} : { delay: options.delay }),
 		});
 	}

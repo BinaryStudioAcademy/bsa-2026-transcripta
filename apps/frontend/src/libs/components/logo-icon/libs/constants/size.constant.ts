@@ -4,4 +4,10 @@ const SIZE_CLASS_NAME = {
 	small: "sm",
 } as const;
 
-export { SIZE_CLASS_NAME };
+const SIZE_PX = {
+	large: 21,
+	medium: 18,
+	small: 14,
+} as const;
+
+export { SIZE_CLASS_NAME, SIZE_PX };

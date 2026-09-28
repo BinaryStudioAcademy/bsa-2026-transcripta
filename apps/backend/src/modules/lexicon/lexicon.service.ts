@@ -6,7 +6,7 @@ import {
 	PageStatus,
 } from "@transcripta/shared";
 
-import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
+import { LexiconEntryModel } from "~/modules/lexicon/lexicon-entry.model.js";
 
 import { type LexiconRepository } from "./lexicon.repository.js";
 import { LexiconErrorMessage } from "./libs/enums/enums.js";

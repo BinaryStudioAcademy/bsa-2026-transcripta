@@ -1,3 +1,1 @@
-const ANTHROPIC_DIRECT_PREFIX = "anthropic-direct:";
-
-export { ANTHROPIC_DIRECT_PREFIX };
+export { ANTHROPIC_DIRECT_PREFIX } from "~/context/libs/constants/anthropic-direct-prefix.constant.js";

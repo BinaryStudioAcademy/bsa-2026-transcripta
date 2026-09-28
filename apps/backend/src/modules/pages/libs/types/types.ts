@@ -4,9 +4,11 @@ export { type ReprocessPageHandlerOptions } from "./page-reprocess-handler-optio
 export { type ReprocessPagePayload } from "./page-reprocess-payload.type.js";
 export { type RestorePagePayload } from "./page-restore-payload.type.js";
 export { type PageServiceDependencies } from "./page-service-dependencies.type.js";
+export { type UndoPageHandlerOptions } from "./page-undo-handler-options.type.js";
 export { type UpdatePageVerificationPayload } from "./page-update-verification-payload.type.js";
 export { type VerifyPageHandlerOptions } from "./page-verify-handler-options.type.js";
 export { type VerifyPagePayload } from "./page-verify-payload.type.js";
 export { type PageWithText } from "./page-with-text.type.js";
 export { type PageWithTranscriptionRow } from "./page-with-transcription-row.type.js";
 export { type RefillPageWindowOptions } from "./refill-page-window-options.type.js";
+export { type ResolveTranscriptionForVerifyPayload } from "./resolve-transcription-for-verify-payload.type.js";

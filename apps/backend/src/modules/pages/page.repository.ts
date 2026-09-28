@@ -30,6 +30,37 @@ class PageRepository {
 		return PageEntity.initialize(page);
 	}
 
+	public async findAllByDocumentId(
+		documentId: number,
+	): Promise<PageWithTranscriptionRow[]> {
+		const knex = this.pageModel.knex();
+
+		return await knex
+			.select<PageWithTranscriptionRow[]>([
+				"p.id",
+				"p.pageNo",
+				"p.status",
+				"p.imageKey",
+				"p.thumbKey",
+				"p.attempts",
+				"p.lastError",
+				"t.id as transcriptionId",
+				knex.raw("COALESCE(t.edited_text, t.text) as ??", [
+					"transcriptionText",
+				]),
+				knex.raw("COALESCE(t.edited_structured, t.structured) as ??", [
+					"transcriptionStructured",
+				]),
+				"t.contextUsed as transcriptionContextUsed",
+			])
+			.from(`${DatabaseTableName.PAGE} as p`)
+			.leftJoin(`${DatabaseTableName.TRANSCRIPTION} as t`, (builder) => {
+				builder.on("t.pageId", "p.id").andOnVal("t.isCurrent", true);
+			})
+			.where("p.documentId", documentId)
+			.orderBy("p.pageNo", "asc");
+	}
+
 	public async findByDocumentAndPageNo(
 		documentId: number,
 		pageNo: number,
@@ -51,8 +82,9 @@ class PageRepository {
 		from: number;
 		limit: number;
 	}): Promise<PageWithTranscriptionRow[]> {
-		return await this.pageModel
-			.knex()
+		const knex = this.pageModel.knex();
+
+		return await knex
 			.select<PageWithTranscriptionRow[]>([
 				"p.id",
 				"p.pageNo",
@@ -62,9 +94,12 @@ class PageRepository {
 				"p.attempts",
 				"p.lastError",
 				"t.id as transcriptionId",
-				"t.text as transcriptionText",
-				"t.editedText as transcriptionEditedText",
-				"t.structured as transcriptionStructured",
+				knex.raw("COALESCE(t.edited_text, t.text) as ??", [
+					"transcriptionText",
+				]),
+				knex.raw("COALESCE(t.edited_structured, t.structured) as ??", [
+					"transcriptionStructured",
+				]),
 				"t.contextUsed as transcriptionContextUsed",
 			])
 			.from(`${DatabaseTableName.PAGE} as p`)

@@ -1,0 +1,3 @@
+const UPLOADS_STORAGE_KEY_PREFIX = "uploads/";
+
+export { UPLOADS_STORAGE_KEY_PREFIX };

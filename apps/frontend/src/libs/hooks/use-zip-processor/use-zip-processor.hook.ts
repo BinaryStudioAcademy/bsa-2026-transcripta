@@ -187,6 +187,8 @@ const useZipProcessor = (options: ZipProcessorOptions): ZipProcessor => {
 					worker.postMessage({
 						arrayBuffer,
 						maxPages: DEFAULT_MAX_PAGES,
+						maxUncompressedBytes:
+							DEFAULT_MAX_ARCHIVE_SIZE_MB * BYTES_IN_MEGABYTE,
 						type: "init",
 					});
 				})

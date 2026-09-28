@@ -44,13 +44,13 @@ INSERT INTO preset (
   'Parish records of births, marriages and deaths. Cursive, faded ink.',
 
   -- instructions: goes into the USER MESSAGE, not the system one
+  -- Marking rules ([?], [...], word(?)) live in SYSTEM_PROMPT (#475).
   'This is a page from a late 19th-century Orthodox parish register.
 The text is written in cursive and the ink has faded in places.
 
 Rules:
 - Preserve the original spelling, including archaic letters. Do not modernise.
 - Expand abbreviations in square brackets: "archpr." -> "archpr.[iest]".
-- Mark the illegible as [?] and the completely lost as [...].
 - Keep dates exactly as written, do not convert the calendar.
 - Return an empty cell as null, not as an empty string.',
 
@@ -58,8 +58,12 @@ Rules:
   -- automatically. This saves a separate LLM call for entity extraction.
   '{
     "type": "object",
-    "required": ["records"],
+    "required": ["records", "page_text"],
     "properties": {
+      "page_text": {
+        "type": "string",
+        "description": "The whole page as continuous readable text, exactly as written on the scan."
+      },
       "records": {
         "type": "array",
         "items": {
@@ -149,7 +153,7 @@ ON CONFLICT (document_id, page_no) DO NOTHING;
 -- references the ids of these rows.
 
 INSERT INTO lexicon_entry (document_id, kind, value_normalized, value_display,
-                           freq, distinct_pages, first_page_no, last_page_no) VALUES
+                           page_count, distinct_pages, first_page_no, last_page_no) VALUES
   (1, 'surname',     'ivanenko', 'Ivanenko', 3, 2, 1, 2),
   (1, 'place',       'dykanka',  'Dykanka',  2, 2, 1, 2),
   -- distinct_pages = 1 -> DOES NOT feed the context yet (threshold is 2)

@@ -7,8 +7,11 @@ import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentDetailsEntity } from "~/modules/documents/document-details.entity.js";
 import { DocumentEntity } from "~/modules/documents/document.entity.js";
 import { type DocumentModel } from "~/modules/documents/document.model.js";
-import { LexiconEntryModel } from "~/modules/documents/lexicon-entry.model.js";
-import { CLOSED_PAGE_STATUSES } from "~/modules/pages/libs/constants/constants.js";
+import { LexiconEntryModel } from "~/modules/lexicon/lexicon-entry.model.js";
+import {
+	CLOSED_PAGE_STATUSES,
+	VERIFIED_PAGE_STATUSES,
+} from "~/modules/pages/libs/constants/constants.js";
 import { PageModel } from "~/modules/pages/page.model.js";
 
 import { EMPTY_COLLECTION_LENGTH } from "./libs/constants/constants.js";
@@ -99,7 +102,17 @@ class DocumentRepository {
 				"dp.title",
 				"dp.status",
 				"dp.pageCount",
-				"dp.cursorPageNo",
+				knex.raw(
+					`coalesce(
+						case when dp.cursor_page_no > dp.page_count then (
+							select min(p.page_no) from ?? p
+							where p.document_id = dp.document_id
+								and p.status not in (${VERIFIED_PAGE_STATUSES.map(() => "?").join(", ")})
+						) end,
+						least(dp.cursor_page_no, dp.page_count)
+					) as ??`,
+					[DatabaseTableName.PAGE, ...VERIFIED_PAGE_STATUSES, "cursorPageNo"],
+				),
 				knex.raw("round(dp.budget_usd, 2)::text as ??", ["budgetUsd"]),
 				knex.raw("round(dp.spent_usd, 2)::text as ??", ["spentUsd"]),
 				knex.raw(
@@ -119,6 +132,26 @@ class DocumentRepository {
 				"dp.pagesSkipped",
 				"dp.verifiedPct",
 				"dp.closedPct",
+				knex.raw(
+					`coalesce(
+					(
+						select json_agg(
+							json_build_object(
+								'id', de.id,
+								'format', de.format,
+								'status', de.status,
+								'objectKey', de.object_key,
+								'sizeBytes', de.size_bytes,
+								'createdAt', de.created_at
+							) order by de.created_at desc
+						)
+						from ?? de
+						where de.document_id = d.id
+					),
+					'[]'::json
+				) as ??`,
+					[DatabaseTableName.DOCUMENT_EXPORT, "exports"],
+				),
 			])
 			.from(`${DatabaseTableName.DOCUMENT} as d`)
 			.innerJoin(
@@ -149,6 +182,98 @@ class DocumentRepository {
 			.query(trx)
 			.findById(id)
 			.where({ ownerId })
+			.forUpdate();
+
+		return document ? DocumentEntity.initialize(document) : null;
+	}
+
+	public async findByIdAndOwnerIdForUpdateWithDetails(
+		id: number,
+		ownerId: number,
+		trx: Transaction,
+	): Promise<DocumentDetailsEntity | null> {
+		const knex = this.documentModel.knex();
+
+		const document = await knex
+			.select<DocumentDetailsRow>([
+				"dp.documentId as id",
+				"d.error_message as errorMessage",
+				"dp.title",
+				"dp.status",
+				"dp.pageCount",
+				"dp.cursorPageNo",
+				knex.raw("round(dp.budget_usd, 2)::text as ??", ["budgetUsd"]),
+				knex.raw("round(dp.spent_usd, 2)::text as ??", ["spentUsd"]),
+				knex.raw(
+					"coalesce(round(dp.spent_usd / nullif(dp.budget_usd, 0) * 100, 1), 0)::float8 as ??",
+					["usedPct"],
+				),
+				"pr.id as presetId",
+				"pr.name as presetName",
+				"pr.version as presetVersion",
+				"dp.pagesTotal",
+				"dp.pagesVerified",
+				"dp.pagesReadyToCheck",
+				"dp.pagesInWork",
+				"dp.pagesPending",
+				"dp.pagesFailed",
+				"dp.pagesBlank",
+				"dp.pagesSkipped",
+				"dp.verifiedPct",
+				"dp.closedPct",
+				knex.raw(
+					`coalesce(
+					(
+						select json_agg(
+							json_build_object(
+								'id', de.id,
+								'format', de.format,
+								'status', de.status,
+								'objectKey', de.object_key,
+								'sizeBytes', de.size_bytes,
+								'createdAt', de.created_at
+							) order by de.created_at desc
+						)
+						from ?? de
+						where de.document_id = d.id
+					),
+					'[]'::json
+				) as ??`,
+					[DatabaseTableName.DOCUMENT_EXPORT, "exports"],
+				),
+			])
+			.from(`${DatabaseTableName.DOCUMENT} as d`)
+			.innerJoin(
+				`${DatabaseTableName.DOCUMENT_PROGRESS} as dp`,
+				"dp.documentId",
+				"d.id",
+			)
+			.innerJoin(`${DatabaseTableName.PRESET} as pr`, "pr.id", "d.presetId")
+			.where({
+				"d.id": id,
+				"d.ownerId": ownerId,
+			})
+			.transacting(trx)
+			.forUpdate("d")
+			.first();
+
+		if (!document) {
+			return null;
+		}
+
+		return DocumentDetailsEntity.initialize(document);
+	}
+
+	public async findByIdAndOwnerIdWithPresetForUpdate(
+		id: number,
+		ownerId: number,
+		trx: Transaction,
+	): Promise<DocumentEntity | null> {
+		const document = await this.documentModel
+			.query(trx)
+			.findById(id)
+			.where({ ownerId })
+			.withGraphFetched(DocumentRelationName.PRESET)
 			.forUpdate();
 
 		return document ? DocumentEntity.initialize(document) : null;
@@ -186,7 +311,7 @@ class DocumentRepository {
 				"id",
 				"kind",
 				"valueDisplay",
-				"freq",
+				"pageCount",
 				"distinctPages",
 				"firstPageNo",
 				"lastPageNo",
@@ -222,6 +347,15 @@ class DocumentRepository {
 		return document ? DocumentEntity.initialize(document) : null;
 	}
 
+	public async findWithPresetById(id: number): Promise<DocumentEntity | null> {
+		const document = await this.documentModel
+			.query()
+			.findById(id)
+			.withGraphFetched(DocumentRelationName.PRESET);
+
+		return document ? DocumentEntity.initialize(document) : null;
+	}
+
 	public async markDoneIfAllPagesClosed(
 		id: number,
 		trx: Transaction,
@@ -235,6 +369,7 @@ class DocumentRepository {
 			.query(trx)
 			.patch({ status: DocumentStatus.DONE })
 			.where({ id })
+			.whereNot("status", DocumentStatus.INGESTING)
 			.whereNotExists(openPages)
 			.execute();
 	}
@@ -393,6 +528,23 @@ class DocumentRepository {
 		await this.documentModel
 			.query(trx)
 			.patch({ sourceKey })
+			.where({ id })
+			.execute();
+	}
+
+	public updateSpentUsd(id: number, spentUsd: number, trx?: Transaction) {
+		return this.documentModel
+			.query(trx)
+			.patch({
+				spentUsd: raw("spent_usd + ?", [spentUsd]),
+				status: raw(
+					`CASE
+						WHEN (spent_usd + ?) >= budget_usd THEN ?
+						ELSE status
+					END`,
+					[spentUsd, DocumentStatus.BUDGET_STOP],
+				),
+			})
 			.where({ id })
 			.execute();
 	}

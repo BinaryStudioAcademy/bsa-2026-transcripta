@@ -1,5 +1,6 @@
 import { DocumentStatus, type ValueOf } from "@transcripta/shared";
 
+import { type Preset } from "../context/libs/types/preset.type.js";
 import {
 	DEFAULT_BUDGET_USD,
 	DEFAULT_SPENT_USD,
@@ -9,12 +10,6 @@ import { DocumentErrorMessage } from "./libs/enums/enums.js";
 import { type DocumentGetAllItemResponseDto } from "./libs/types/types.js";
 
 type DocumentStatusValue = ValueOf<typeof DocumentStatus>;
-
-type Preset = {
-	settings: {
-		blankStdevThreshold?: number;
-	};
-};
 
 class DocumentEntity {
 	private budgetUsd: string;
@@ -229,6 +224,7 @@ class DocumentEntity {
 
 	public toObjectWithPreset(): DocumentGetAllItemResponseDto & {
 		preset: Preset;
+		presetId: number;
 		sourceKey: string;
 	} {
 		if (this.sourceKey === null) {
@@ -242,6 +238,7 @@ class DocumentEntity {
 		return {
 			...this.toObject(),
 			preset: this.preset,
+			presetId: this.presetId,
 			sourceKey: this.sourceKey,
 		};
 	}

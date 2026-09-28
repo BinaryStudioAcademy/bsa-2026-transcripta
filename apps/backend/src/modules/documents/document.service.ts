@@ -2,6 +2,9 @@ import {
 	ContentType,
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentExportCreateResponseDto,
+	type DocumentExportFormatValue,
+	DocumentExportStatus,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesResponseDto,
@@ -14,20 +17,25 @@ import { ForeignKeyViolationError } from "objection";
 
 import {
 	ObjectNotUploadedError,
+	ObjectTooLargeError,
 	PDFTimeoutError,
 } from "~/libs/exceptions/exceptions.js";
 import { PDFPageProcessor } from "~/libs/modules/pdf-page-processor/pdf-page-processor.js";
+import { type DocumentExportQueue } from "~/libs/modules/queue/document-export/document-export-queue.module.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
 import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 import {
 	buildContextWords,
-	buildPageLexiconMap,
 	extractLexiconIds,
+	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
 
 import { sha256 } from "../context/libs/helpers/hash.helper.js";
+import { DocumentExportEntity } from "../document-exports/document-export.entity.js";
+import { type DocumentExportRepository } from "../document-exports/document-export.repository.js";
+import { refillPageWindow } from "../pages/libs/helpers/helpers.js";
 import { PageEntity } from "../pages/page.entity.js";
 import { type PageRepository } from "../pages/page.repository.js";
 import { DocumentEntity } from "./document.entity.js";
@@ -35,24 +43,32 @@ import { DocumentModel } from "./document.model.js";
 import { type DocumentRepository } from "./document.repository.js";
 import {
 	DOCUMENT_OWNER_ID_FOREIGN,
+	DOCUMENT_STATUSES_TO_EXPORT,
 	EMPTY_COLLECTION_LENGTH,
 	MAX_DOCUMENT_PAGES,
 	NON_DELETABLE_DOCUMENT_STATUSES,
+	PAGES_STORAGE_KEY_PREFIX,
 	PAGES_TO_QUEUE,
+	UPLOADS_STORAGE_KEY_PREFIX,
 } from "./libs/constants/constants.js";
 import {
 	DocumentErrorMessage,
 	DocumentStatus,
+	DocumentValidationRule,
 	PageStatus,
 } from "./libs/enums/enums.js";
 import {
+	type DocumentExportRawItem,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdResponseDto,
 	type DocumentServiceDependencies,
 	type DocumentUploadUrlRequestDto,
+	type ValueOf,
 } from "./libs/types/types.js";
 
 class DocumentService {
+	private documentExportQueue: DocumentExportQueue;
+	private documentExportRepository: DocumentExportRepository;
 	private documentRepository: DocumentRepository;
 	private pageRepository: PageRepository;
 	private pageTranscribeQueue: PageTranscribeQueue;
@@ -60,12 +76,16 @@ class DocumentService {
 	private storage: BaseStorage;
 
 	public constructor({
+		documentExportQueue,
+		documentExportRepository,
 		documentRepository,
 		pageRepository,
 		pageTranscribeQueue,
 		pdfPageProcessor,
 		storage,
 	}: DocumentServiceDependencies) {
+		this.documentExportQueue = documentExportQueue;
+		this.documentExportRepository = documentExportRepository;
 		this.documentRepository = documentRepository;
 		this.pageRepository = pageRepository;
 		this.pdfPageProcessor = pdfPageProcessor;
@@ -74,7 +94,37 @@ class DocumentService {
 	}
 
 	private buildSourceKey(documentId: number): string {
-		return `uploads/${documentId.toString()}/original.pdf`;
+		return `${UPLOADS_STORAGE_KEY_PREFIX}${documentId.toString()}/original.pdf`;
+	}
+
+	private async checkFileSize(
+		documentId: number,
+		filePath: string,
+	): Promise<void> {
+		let fileSize: number;
+		try {
+			fileSize = await this.pdfPageProcessor.getFileSize(filePath);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+
+			await this.documentRepository.setError(documentId, errorMessage);
+			throw new HTTPError({
+				message: errorMessage,
+				status: HTTPCode.UNPROCESSED_ENTITY,
+			});
+		}
+
+		if (fileSize > DocumentValidationRule.MAX_FILE_BYTES) {
+			await this.documentRepository.setError(
+				documentId,
+				DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+			);
+			throw new HTTPError({
+				message: DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE,
+				status: HTTPCode.CONTENT_TOO_LARGE,
+			});
+		}
 	}
 
 	private collectLexiconIds(pages: PageWithTranscriptionRow[]): number[] {
@@ -100,17 +150,28 @@ class DocumentService {
 		let filePath: string;
 
 		try {
-			const downloadResult = await this.storage.downloadToTempFolder(sourceKey);
+			const downloadResult = await this.storage.downloadToTempFolder(
+				sourceKey,
+				DocumentValidationRule.MAX_FILE_BYTES,
+			);
 			clear = downloadResult.clear;
 			filePath = downloadResult.filePath;
 		} catch (error) {
 			const isObjectNotUploaded = error instanceof ObjectNotUploadedError;
-			const finalErrorMessage = isObjectNotUploaded
-				? DocumentErrorMessage.DOCUMENT_NOT_UPLOADED
-				: DocumentErrorMessage.DOWNLOAD_FAILED;
-			const statusCode = isObjectNotUploaded
-				? HTTPCode.NOT_FOUND
-				: HTTPCode.INTERNAL_SERVER_ERROR;
+			const isObjectTooLarge = error instanceof ObjectTooLargeError;
+			let finalErrorMessage: string;
+			let statusCode: ValueOf<typeof HTTPCode>;
+
+			if (isObjectNotUploaded) {
+				finalErrorMessage = DocumentErrorMessage.DOCUMENT_NOT_UPLOADED;
+				statusCode = HTTPCode.NOT_FOUND;
+			} else if (isObjectTooLarge) {
+				finalErrorMessage = DocumentErrorMessage.EXCEEDED_MAX_FILE_SIZE;
+				statusCode = HTTPCode.CONTENT_TOO_LARGE;
+			} else {
+				finalErrorMessage = DocumentErrorMessage.DOWNLOAD_FAILED;
+				statusCode = HTTPCode.INTERNAL_SERVER_ERROR;
+			}
 
 			await this.documentRepository.setError(documentId, finalErrorMessage);
 			throw new HTTPError({
@@ -163,29 +224,12 @@ class DocumentService {
 		}
 	}
 
-	private async enqueueTranscriptionPages(
-		documentId: number,
-		pages: PageEntity[],
-	): Promise<void> {
-		await Promise.all(
-			pages.map((page) => {
-				const { id, pageNo } = page.toObject();
-
-				return this.pageTranscribeQueue.add({
-					documentId,
-					pageId: id,
-					pageNo,
-				});
-			}),
-		);
-	}
-
 	private async finalizeIngest(
 		documentId: number,
 		userId: number,
 		pageCount: number,
-	): Promise<PageEntity[]> {
-		return await DocumentModel.transaction(async (trx) => {
+	): Promise<void> {
+		await DocumentModel.transaction(async (trx) => {
 			const currentDocument =
 				await this.documentRepository.findByIdAndOwnerIdForUpdate(
 					documentId,
@@ -198,19 +242,42 @@ class DocumentService {
 			}
 
 			await this.documentRepository.updatePageCount(documentId, pageCount, trx);
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.READY,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
 
-			return await this.pageRepository.findQueuedPages(documentId, trx);
+			const currentStatus = currentDocument.toObject().status;
+			if (currentStatus === DocumentStatus.INGESTING) {
+				await this.documentRepository.updateStatus(
+					documentId,
+					DocumentStatus.READY,
+					trx,
+				);
+			}
 		});
+	}
+
+	private async getExportsWithUrls(exports: DocumentExportRawItem[]) {
+		return await Promise.all(
+			exports.map(async (exportData) => {
+				let downloadUrl: null | string = null;
+
+				if (
+					exportData.status === DocumentExportStatus.READY &&
+					exportData.objectKey
+				) {
+					downloadUrl = await this.storage.getExportDownloadSignedUrl(
+						exportData.objectKey,
+					);
+				}
+
+				return {
+					createdAt: exportData.createdAt,
+					downloadUrl,
+					format: exportData.format,
+					id: exportData.id,
+					sizeBytes: exportData.sizeBytes,
+					status: exportData.status,
+				};
+			}),
+		);
 	}
 
 	private async getIngestPageCount(
@@ -241,6 +308,8 @@ class DocumentService {
 				status: HTTPCode.CONTENT_TOO_LARGE,
 			});
 		}
+
+		await this.documentRepository.updatePageCount(documentId, pageCount);
 
 		return pageCount;
 	}
@@ -310,25 +379,64 @@ class DocumentService {
 		filePath: string,
 	): Promise<number> {
 		const { id: documentId, preset } = document.toObjectWithPreset();
+		await this.checkFileSize(documentId, filePath);
 		const pageCount = await this.getIngestPageCount(documentId, filePath);
-		const {
-			settings: { blankStdevThreshold },
-		} = preset;
-		const existingPagesArray =
+		const { blankStdevThreshold } = preset.settings ?? {};
+		const existingPageNumbers =
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
-		const existingPagesSet = new Set<number>(existingPagesArray);
+		const seenPageNumbers = new Set<number>(existingPageNumbers);
 
 		for (let page = 1; page <= pageCount; page++) {
-			if (existingPagesSet.has(page)) {
+			if (seenPageNumbers.has(page)) {
 				continue;
 			}
 
-			await this.processPage({
+			const createdPage = await this.processPage({
 				blankStdevThreshold: blankStdevThreshold ?? null,
 				documentId,
 				filePath,
 				page,
 			});
+
+			const pageData = createdPage.toObject();
+
+			if (pageData.status === PageStatus.BLANK) {
+				continue;
+			}
+
+			const documentRecord = await this.documentRepository.findById(documentId);
+			const currentStatus = documentRecord?.toObject().status;
+
+			const isStoppedOrPaused =
+				!currentStatus ||
+				currentStatus === DocumentStatus.BUDGET_STOP ||
+				currentStatus === DocumentStatus.PAUSED;
+
+			if (isStoppedOrPaused) {
+				continue;
+			}
+
+			const newlyQueuedPages = await DocumentModel.transaction(async (trx) => {
+				return await refillPageWindow({
+					documentId,
+					pageRepository: this.pageRepository,
+					quantity: PAGES_TO_QUEUE,
+					trx,
+				});
+			});
+
+			if (newlyQueuedPages.length > EMPTY_LENGTH) {
+				await Promise.all(
+					newlyQueuedPages.map((queuedPage: PageEntity) => {
+						const { id, pageNo } = queuedPage.toObject();
+						return this.pageTranscribeQueue.add({
+							documentId,
+							pageId: id,
+							pageNo,
+						});
+					}),
+				);
+			}
 		}
 
 		return pageCount;
@@ -344,7 +452,7 @@ class DocumentService {
 		documentId: number;
 		filePath: string;
 		page: number;
-	}): Promise<void> {
+	}): Promise<PageEntity> {
 		let pngPath: string;
 		try {
 			pngPath = await this.pdfPageProcessor.convertPageToPNG(filePath, page);
@@ -398,7 +506,7 @@ class DocumentService {
 			status: isBlank ? PageStatus.BLANK : PageStatus.PENDING,
 			thumbKey: thumbnailKey,
 		});
-		await this.pageRepository.create(pageEntity);
+		return await this.pageRepository.create(pageEntity);
 	}
 
 	private throwDocumentNotFoundError(): never {
@@ -411,13 +519,6 @@ class DocumentService {
 	private throwInvalidStatusToPauseError(): never {
 		throw new HTTPError({
 			message: DocumentValidationMessage.INVALID_STATUS_TO_PAUSE,
-			status: HTTPCode.CONFLICT,
-		});
-	}
-
-	private throwInvalidStatusToResumeError(): never {
-		throw new HTTPError({
-			message: DocumentValidationMessage.INVALID_STATUS_TO_RESUME,
 			status: HTTPCode.CONFLICT,
 		});
 	}
@@ -494,6 +595,56 @@ class DocumentService {
 		}
 	}
 
+	public async createExport({
+		documentId,
+		format,
+		userId,
+	}: {
+		documentId: number;
+		format: DocumentExportFormatValue;
+		userId: number;
+	}): Promise<DocumentExportCreateResponseDto> {
+		const document = await this.documentRepository.findByIdAndOwnerId(
+			documentId,
+			userId,
+		);
+
+		if (document === null) {
+			throw new HTTPError({
+				message: DocumentValidationMessage.DOCUMENT_NOT_FOUND,
+				status: HTTPCode.NOT_FOUND,
+			});
+		}
+
+		const documentStatus = document.toObject().status;
+
+		if (!DOCUMENT_STATUSES_TO_EXPORT.has(documentStatus)) {
+			throw new HTTPError({
+				message: DocumentErrorMessage.INVALID_STATUS_TO_EXPORT,
+				status: HTTPCode.CONFLICT,
+			});
+		}
+
+		const createdExport = await this.documentExportRepository.create(
+			DocumentExportEntity.initializeNew({
+				documentId,
+				format,
+				requestedBy: userId,
+				status: DocumentExportStatus.QUEUED,
+			}),
+		);
+
+		const exportData = createdExport.toObject();
+
+		await this.documentExportQueue.add({
+			documentId,
+			exportId: exportData.id,
+			format,
+		});
+
+		return { id: exportData.id };
+	}
+
 	public async delete(id: number, ownerId: number): Promise<void> {
 		await DocumentModel.transaction(async (trx) => {
 			const document =
@@ -519,11 +670,11 @@ class DocumentService {
 
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.UPLOADS,
-				prefix: `uploads/${id.toString()}/`,
+				prefix: `${UPLOADS_STORAGE_KEY_PREFIX}${id.toString()}/`,
 			});
 			await this.storage.deleteByPrefix({
 				bucket: StorageBucket.PAGES,
-				prefix: `pages/${id.toString()}/`,
+				prefix: `${PAGES_STORAGE_KEY_PREFIX}${id.toString()}/`,
 			});
 
 			await this.documentRepository.deleteById(id, trx);
@@ -555,7 +706,15 @@ class DocumentService {
 				status: HTTPCode.NOT_FOUND,
 			});
 		}
-		return document.toObject();
+
+		const documentData = document.toObject();
+
+		const exportsWithUrls = await this.getExportsWithUrls(documentData.exports);
+
+		return {
+			...documentData,
+			exports: exportsWithUrls,
+		};
 	}
 
 	public async findLexicon(
@@ -631,9 +790,8 @@ class DocumentService {
 					this.getPresignedUrl(page.thumbKey),
 				]);
 
-				const text =
-					page.transcriptionEditedText ?? page.transcriptionText ?? "";
-				const pageLexiconById = buildPageLexiconMap(
+				const text = page.transcriptionText ?? "";
+				const pageLexiconById = mapPageLexicons(
 					page.transcriptionContextUsed,
 					lexiconById,
 				);
@@ -685,9 +843,9 @@ class DocumentService {
 				});
 			}
 
-			const documentObject = document.toObject();
+			const documentData = document.toObject();
 
-			if (documentObject.status !== DocumentStatus.DRAFT) {
+			if (documentData.status !== DocumentStatus.DRAFT) {
 				throw new HTTPError({
 					message: DocumentErrorMessage.NOT_DRAFT,
 					status: HTTPCode.CONFLICT,
@@ -750,16 +908,13 @@ class DocumentService {
 
 		try {
 			const pageCount = await this.preparePages(document, filePath);
-			const pages = await this.finalizeIngest(documentId, userId, pageCount);
-
-			await this.enqueueTranscriptionPages(documentId, pages);
+			await this.finalizeIngest(documentId, userId, pageCount);
 		} catch (error) {
 			await this.handleIngestError(documentId, error);
 		} finally {
 			await clear();
 		}
 	}
-
 	public async pause(documentId: number, userId: number): Promise<void> {
 		const document = await this.documentRepository.findByIdAndOwnerId(
 			documentId,
@@ -804,39 +959,70 @@ class DocumentService {
 			this.throwInvalidStatusToPauseError();
 		}
 	}
-	public async resume(documentId: number, userId: number): Promise<void> {
-		const pages = await DocumentModel.transaction(async (trx) => {
-			const document =
-				await this.documentRepository.findByIdAndOwnerIdForUpdate(
+
+	public async resume(
+		documentId: number,
+		userId: number,
+	): Promise<DocumentGetByIdResponseDto> {
+		const { document, isPaused, pages } = await DocumentModel.transaction(
+			async (trx) => {
+				const document =
+					await this.documentRepository.findByIdAndOwnerIdForUpdateWithDetails(
+						documentId,
+						userId,
+						trx,
+					);
+
+				if (!document) {
+					this.throwDocumentNotFoundError();
+				}
+
+				const documentObject = document.toObject();
+
+				if (documentObject.status !== DocumentStatus.PAUSED) {
+					return { document: documentObject, isPaused: false, pages: [] };
+				}
+
+				await this.documentRepository.updateStatus(
 					documentId,
-					userId,
+					DocumentStatus.PROCESSING,
+					trx,
+				);
+				await this.pageRepository.updateFirstPendingPagesAsQueued(
+					documentId,
+					PAGES_TO_QUEUE,
 					trx,
 				);
 
-			if (!document) {
-				this.throwDocumentNotFoundError();
-			}
+				const pages = await this.pageRepository.findQueuedPages(
+					documentId,
+					trx,
+				);
 
-			if (document.toObject().status !== DocumentStatus.PAUSED) {
-				this.throwInvalidStatusToResumeError();
-			}
+				return {
+					document: {
+						...documentObject,
+						status: DocumentStatus.PROCESSING,
+					},
+					isPaused: true,
+					pages,
+				};
+			},
+		);
 
-			await this.documentRepository.updateStatus(
-				documentId,
-				DocumentStatus.PROCESSING,
-				trx,
-			);
-			await this.pageRepository.updateFirstPendingPagesAsQueued(
-				documentId,
-				PAGES_TO_QUEUE,
-				trx,
-			);
+		const exportsWithUrls = await this.getExportsWithUrls(document.exports);
 
-			return await this.pageRepository.findQueuedPages(documentId, trx);
-		});
+		const documentToReturn = {
+			...document,
+			exports: exportsWithUrls,
+		};
+
+		if (!isPaused) {
+			return documentToReturn;
+		}
 
 		if (pages.length === EMPTY_COLLECTION_LENGTH) {
-			return;
+			return documentToReturn;
 		}
 
 		try {
@@ -851,6 +1037,8 @@ class DocumentService {
 					});
 				}),
 			);
+
+			return documentToReturn;
 		} catch (error) {
 			await this.documentRepository.updateOwnedStatusFrom({
 				currentStatus: DocumentStatus.PROCESSING,

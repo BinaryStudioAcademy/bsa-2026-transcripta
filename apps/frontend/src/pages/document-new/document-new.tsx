@@ -1,14 +1,19 @@
 import {
 	DocumentValidationMessage,
 	DocumentValidationRule,
+	EMPTY_LENGTH,
 	HTTPCode,
 } from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
 
 import { ThemeToggle } from "~/libs/components/components.js";
-import { UPLOAD_WARNING_MESSAGE } from "~/libs/constants/constants.js";
-import { AppRoute, BlockerState, DataStatus } from "~/libs/enums/enums.js";
+import {
+	INITIAL_COUNT as EMPTY_COUNT,
+	INGESTION_FAILED_MESSAGE,
+	UPLOAD_WARNING_MESSAGE,
+} from "~/libs/constants/constants.js";
+import { AppRoute, BlockerState } from "~/libs/enums/enums.js";
 import { ZipProcessingStatus } from "~/libs/enums/zip-processing-status.enum.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -23,12 +28,18 @@ import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
 } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { actions as presetsActions } from "~/modules/presets/presets.js";
 
 import { Dropzone } from "./components/dropzone/dropzone.js";
+import { IngestProgress } from "./components/ingest-progress/ingest-progress.js";
+import { DEFAULT_PRESET_FALLBACK } from "./components/upload-form/libs/constants/constants.js";
 import { UploadFormValues } from "./components/upload-form/libs/types/types.js";
 import { UploadForm } from "./components/upload-form/upload-form.js";
 import { UploadProgress } from "./components/upload-progress/upload-progress.js";
 import {
+	INGEST_POLL_INTERVAL_MS,
+	INGEST_TIMEOUT_MS,
 	MAX_RETRIES,
 	ZERO_UPLOAD_PROGRESS,
 	ZIP_FILE_REGEX,
@@ -45,20 +56,240 @@ import {
 import {
 	type LocationState,
 	type ScreenStateType,
+	type UploadTarget,
+	type UseIngestPollingParameters,
 } from "./libs/types/types.js";
 import styles from "./styles.module.css";
 
+const resolveUploadTarget = async ({
+	controller,
+	createdDocumentId,
+	dispatch,
+	file,
+	persistDocumentId,
+	resumeDocumentId,
+	values,
+}: {
+	controller: AbortController;
+	createdDocumentId: null | number;
+	dispatch: ReturnType<typeof useAppDispatch>;
+	file: File;
+	persistDocumentId: (documentId: number) => void;
+	resumeDocumentId: number | undefined;
+	values: UploadFormValues;
+}): Promise<UploadTarget> => {
+	const activeId = createdDocumentId ?? resumeDocumentId;
+
+	if (activeId) {
+		const response = await dispatch(
+			documentActions.getUploadUrl({
+				id: Number(activeId),
+				payload: {
+					fileBytes: file.size,
+					fileName: file.name,
+					presetId: values.presetId,
+					title: values.title,
+				},
+				signal: controller.signal,
+			}),
+		).unwrap();
+		return { docId: Number(activeId), uploadUrl: response.uploadUrl };
+	}
+
+	const payload: DocumentCreateRequestDto = {
+		fileBytes: file.size,
+		fileName: file.name,
+		presetId: values.presetId,
+		title: values.title,
+	};
+
+	const response = await dispatch(documentActions.create(payload)).unwrap();
+	persistDocumentId(response.id);
+	return { docId: response.id, uploadUrl: response.uploadUrl };
+};
+
+const performUploadAttempts = async ({
+	controller,
+	createdDocumentId,
+	dispatch,
+	file,
+	onProgress,
+	persistDocumentId,
+	resumeDocumentId,
+	values,
+}: {
+	controller: AbortController;
+	createdDocumentId: null | number;
+	dispatch: ReturnType<typeof useAppDispatch>;
+	file: File;
+	onProgress: (progress: number) => void;
+	persistDocumentId: (documentId: number) => void;
+	resumeDocumentId: number | undefined;
+	values: UploadFormValues;
+}): Promise<void> => {
+	let { docId, uploadUrl } = await resolveUploadTarget({
+		controller,
+		createdDocumentId,
+		dispatch,
+		file,
+		persistDocumentId,
+		resumeDocumentId,
+		values,
+	});
+
+	if (!uploadUrl) {
+		return;
+	}
+
+	let isSuccess = false;
+	let retryCount = 0;
+
+	while (!isSuccess) {
+		try {
+			await uploadFile({
+				file,
+				onProgress,
+				signal: controller.signal,
+				uploadUrl,
+			});
+
+			isSuccess = true;
+		} catch (error: unknown) {
+			if (controller.signal.aborted) {
+				throw new Error(DocumentNotificationMessage.UPLOAD_CANCELLED);
+			}
+
+			const isForbiddenError =
+				error instanceof UploadError && error.status === HTTPCode.FORBIDDEN;
+
+			if (isForbiddenError && docId && retryCount < MAX_RETRIES) {
+				retryCount++;
+				notification.info(DocumentNotificationMessage.EXPIRED_LINK);
+
+				const refreshed = await dispatch(
+					documentActions.getUploadUrl({
+						id: docId,
+						signal: controller.signal,
+					}),
+				).unwrap();
+
+				uploadUrl = refreshed.uploadUrl;
+			} else {
+				throw error;
+			}
+		}
+	}
+};
+
+const useIngestPolling = ({
+	dispatch,
+	ingestingDocumentId,
+	navigate,
+	resumedDocument,
+	setIngestingDocumentId,
+	setIsStartingProcessing,
+	setRejection,
+}: UseIngestPollingParameters): void => {
+	const resumedDocumentReference = useRef(resumedDocument);
+
+	useEffect(() => {
+		resumedDocumentReference.current = resumedDocument;
+	}, [resumedDocument]);
+
+	useEffect(() => {
+		if (!ingestingDocumentId) {
+			return;
+		}
+
+		const startedAt = Date.now();
+
+		void dispatch(documentActions.loadById(ingestingDocumentId));
+
+		const poll = (): void => {
+			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
+				setIngestingDocumentId(null);
+				const timeoutMessage =
+					resumedDocumentReference.current?.errorMessage ??
+					INGESTION_FAILED_MESSAGE;
+
+				setRejection(timeoutMessage);
+				return;
+			}
+
+			void dispatch(documentActions.pollDocumentById(ingestingDocumentId));
+		};
+
+		const timer = setInterval(poll, INGEST_POLL_INTERVAL_MS);
+
+		return (): void => {
+			clearInterval(timer);
+		};
+	}, [
+		dispatch,
+		ingestingDocumentId,
+		navigate,
+		setIngestingDocumentId,
+		setRejection,
+	]);
+
+	useEffect(() => {
+		if (!ingestingDocumentId || resumedDocument?.id !== ingestingDocumentId) {
+			return;
+		}
+
+		const { progress, status } = resumedDocument;
+
+		if (status === DocumentStatus.FAILED) {
+			return;
+		}
+
+		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
+			setIngestingDocumentId(null);
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.VERIFICATION, {
+						id: String(ingestingDocumentId),
+					}),
+				);
+			})();
+		}
+	}, [
+		ingestingDocumentId,
+		navigate,
+		resumedDocument,
+		setIngestingDocumentId,
+		setRejection,
+		setIsStartingProcessing,
+	]);
+};
+
 const DocumentNew: React.FC = () => {
+	const { presets } = useAppSelector(({ presets }) => ({
+		presets: presets.presets,
+	}));
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [selectedArchive, setSelectedArchive] = useState<File | null>(null);
 	const [rejection, setRejection] = useState<null | string>(null);
 	const [uploadProgress, setUploadProgress] = useState(ZERO_UPLOAD_PROGRESS);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isUploaded, setIsUploaded] = useState(false);
+	const [isStartingProcessing, setIsStartingProcessing] = useState(false);
+	const [ingestingDocumentId, setIngestingDocumentId] = useState<null | number>(
+		null,
+	);
 
 	const fileInputReference = useRef<HTMLInputElement>(null);
 	const abortControllerReference = useRef<AbortController | null>(null);
 	const createdDocumentIdReference = useRef<null | number>(null);
+
+	const isMountedReference = useRef(true);
+
+	useEffect(() => {
+		isMountedReference.current = true;
+		return () => {
+			isMountedReference.current = false;
+		};
+	}, []);
 
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
@@ -129,6 +360,10 @@ const DocumentNew: React.FC = () => {
 	}, [resumeDocumentId, dispatch]);
 
 	useEffect(() => {
+		void dispatch(presetsActions.loadAll());
+	}, [dispatch]);
+
+	useEffect(() => {
 		if (blocker.state === BlockerState.BLOCKED) {
 			const confirmLeave = globalThis.confirm(UPLOAD_WARNING_MESSAGE);
 
@@ -144,10 +379,7 @@ const DocumentNew: React.FC = () => {
 		}
 	}, [blocker, resetZipProcessor]);
 
-	const { dataStatus, resumedDocument } = useAppSelector(({ documents }) => ({
-		dataStatus: documents.dataStatus,
-		resumedDocument: documents.document,
-	}));
+	const resumedDocument = useAppSelector(({ documents }) => documents.document);
 
 	const handleUpload = useCallback(
 		(values: UploadFormValues) => {
@@ -167,91 +399,18 @@ const DocumentNew: React.FC = () => {
 			abortControllerReference.current = controller;
 			setIsUploading(true);
 
-			const fetchTargetUrl = async (): Promise<{
-				docId: number;
-				uploadUrl: string;
-			}> => {
-				const activeId = createdDocumentIdReference.current ?? resumeDocumentId;
-
-				if (activeId) {
-					const response = await dispatch(
-						documentActions.getUploadUrl({
-							id: Number(activeId),
-							payload: {
-								fileBytes: selectedFile.size,
-								fileName: selectedFile.name,
-								presetId: values.presetId,
-								title: values.title,
-							},
-							signal: controller.signal,
-						}),
-					).unwrap();
-					return { docId: Number(activeId), uploadUrl: response.uploadUrl };
-				}
-
-				const payload: DocumentCreateRequestDto = {
-					fileBytes: selectedFile.size,
-					fileName: selectedFile.name,
-					presetId: values.presetId,
-					title: values.title,
-				};
-
-				const response = await dispatch(
-					documentActions.create(payload),
-				).unwrap();
-				createdDocumentIdReference.current = response.id;
-				return { docId: response.id, uploadUrl: response.uploadUrl };
-			};
-
-			const attemptUpload = async (): Promise<void> => {
-				let { docId, uploadUrl } = await fetchTargetUrl();
-
-				if (!uploadUrl) {
-					return;
-				}
-
-				let isSuccess = false;
-				let retryCount = 0;
-
-				while (!isSuccess) {
-					try {
-						await uploadFile({
-							file: selectedFile,
-							onProgress: setUploadProgress,
-							signal: controller.signal,
-							uploadUrl,
-						});
-
-						isSuccess = true;
-					} catch (error: unknown) {
-						if (controller.signal.aborted) {
-							throw new Error(DocumentNotificationMessage.UPLOAD_CANCELLED);
-						}
-
-						const isForbiddenError =
-							error instanceof UploadError &&
-							error.status === HTTPCode.FORBIDDEN;
-
-						if (isForbiddenError && docId && retryCount < MAX_RETRIES) {
-							retryCount++;
-							notification.info(DocumentNotificationMessage.EXPIRED_LINK);
-
-							const refreshed = await dispatch(
-								documentActions.getUploadUrl({
-									id: docId,
-									signal: controller.signal,
-								}),
-							).unwrap();
-
-							uploadUrl = refreshed.uploadUrl;
-						} else {
-							throw error;
-						}
-					}
-				}
-			};
-
-			void attemptUpload()
+			void performUploadAttempts({
+				controller,
+				createdDocumentId: createdDocumentIdReference.current,
+				dispatch,
+				file: selectedFile,
+				onProgress: setUploadProgress,
+				persistDocumentId: (documentId) => {
+					createdDocumentIdReference.current = documentId;
+				},
+				resumeDocumentId,
+				values,
+			})
 				.then(() => {
 					if (controller.signal.aborted) {
 						return;
@@ -287,6 +446,8 @@ const DocumentNew: React.FC = () => {
 		setSelectedArchive(null);
 		setRejection(null);
 		setUploadProgress(ZERO_UPLOAD_PROGRESS);
+		setIsUploaded(false);
+		createdDocumentIdReference.current = null;
 
 		if (fileInputReference.current) {
 			fileInputReference.current.value = "";
@@ -304,27 +465,56 @@ const DocumentNew: React.FC = () => {
 		notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
 	}, [resetSelection]);
 
-	const handleProcessDocument = useCallback(() => {
+	const goToDocument = useCallback(
+		(documentId: number): void => {
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+				);
+			})();
+		},
+		[navigate],
+	);
+
+	const handleOpenDocument = useCallback((): void => {
+		if (ingestingDocumentId) {
+			setIngestingDocumentId(null);
+			goToDocument(ingestingDocumentId);
+		}
+	}, [goToDocument, ingestingDocumentId]);
+
+	const handleProcessDocument = useCallback((): void => {
 		const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
-		if (!targetId) {
+
+		if (!targetId || isStartingProcessing) {
 			return;
 		}
 
-		void dispatch(documentActions.ingest(Number(targetId)));
+		const documentId = Number(targetId);
+
+		setRejection(null);
+		setIsStartingProcessing(true);
+
+		setIngestingDocumentId(documentId);
 
 		void (async (): Promise<void> => {
 			try {
-				await navigate(
-					configureString(AppRoute.DOCUMENT, {
-						id: String(targetId),
-					}),
-				);
+				await dispatch(documentActions.ingest(documentId)).unwrap();
+				createdDocumentIdReference.current = null;
 			} catch (error: unknown) {
-				// eslint-disable-next-line no-console
-				console.error(error);
+				setIngestingDocumentId(null);
+				const message =
+					error instanceof Error
+						? error.message
+						: ((error as { message?: string }).message ??
+							INGESTION_FAILED_MESSAGE);
+				notification.error(message);
+				setRejection(message);
+			} finally {
+				setIsStartingProcessing(false);
 			}
 		})();
-	}, [resumeDocumentId, dispatch, navigate]);
+	}, [dispatch, isStartingProcessing, resumeDocumentId]);
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -358,9 +548,28 @@ const DocumentNew: React.FC = () => {
 
 	const handleChangeFile = useCallback((): void => {
 		resetSelection();
-	}, [resetSelection]);
+		void (async (): Promise<void> => {
+			await navigate(location.pathname, { replace: true, state: {} });
+		})();
+	}, [resetSelection, navigate, location.pathname]);
+
+	useIngestPolling({
+		dispatch,
+		ingestingDocumentId,
+		navigate,
+		resumedDocument,
+		setIngestingDocumentId,
+		setIsStartingProcessing,
+		setRejection,
+	});
 
 	const getScreenState = (): ScreenStateType => {
+		if (ingestingDocumentId) {
+			return ScreenState.INGESTING;
+		}
+		if (resumedDocument?.status === DocumentStatus.INGESTING) {
+			return ScreenState.INGESTING;
+		}
 		if (isZipProcessing) {
 			return ScreenState.PROCESSING;
 		}
@@ -375,9 +584,12 @@ const DocumentNew: React.FC = () => {
 	};
 
 	const screenState = getScreenState();
-	const isSubmitting = dataStatus === DataStatus.PENDING;
-	const isFormDisabled = isSubmitting || isUploading || isUploaded;
+	const isSubmitting = isUploading;
+	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
+
+	const presetOptions =
+		presets.length > EMPTY_LENGTH ? presets : [DEFAULT_PRESET_FALLBACK];
 
 	return (
 		<div className={styles["new-document-page"]}>
@@ -398,6 +610,18 @@ const DocumentNew: React.FC = () => {
 						/>
 					)}
 
+					{screenState === ScreenState.INGESTING && (
+						<IngestProgress
+							onOpenDocument={handleOpenDocument}
+							pagesReady={
+								(resumedDocument?.progress.pagesReadyToCheck ?? EMPTY_COUNT) +
+								(resumedDocument?.progress.pagesVerified ?? EMPTY_COUNT)
+							}
+							pagesTotal={resumedDocument?.progress.pagesTotal ?? EMPTY_COUNT}
+							title={displayTitle}
+						/>
+					)}
+
 					{screenState === ScreenState.PROCESSING && selectedArchive && (
 						<UploadProgress
 							fileName={selectedArchive.name}
@@ -415,14 +639,20 @@ const DocumentNew: React.FC = () => {
 									fileSize={selectedFile.size}
 									percent={uploadProgress}
 								/>
+								{rejection && (
+									<div className={styles["rejection-error"]}>{rejection}</div>
+								)}
 								<UploadForm
 									fileName={displayTitle}
+									isStartingProcessing={isStartingProcessing}
 									isSubmitting={isFormDisabled}
 									isUploaded={isUploaded}
+									isUploading={isUploading}
 									onCancelUpload={handleCancelUpload}
 									onChangeFile={handleChangeFile}
 									onProcessDocument={handleProcessDocument}
 									onSubmit={handleUpload}
+									presetOptions={presetOptions}
 								/>
 							</>
 						)}

@@ -33,6 +33,18 @@ export {
 } from "./libs/types/types.js";
 export { AuthApiPath } from "./modules/auth/auth.js";
 export {
+	type DocumentExportCreateRequestDto,
+	type DocumentExportCreateResponseDto,
+	type DocumentExportFormatValue,
+	type DocumentExportGetByIdResponseDto,
+	type DocumentExportStatusValue,
+	DocumentExportCreateRequestValidationSchema,
+	DocumentExportFormat,
+	DocumentExportGetByIdParametersValidationSchema,
+	DocumentExportsApiPath,
+	DocumentExportStatus,
+} from "./modules/document-exports/document-exports.js";
+export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
@@ -64,6 +76,10 @@ export {
 	KILOBYTES_IN_MEGABYTE,
 } from "./modules/documents/documents.js";
 export {
+	type LexiconEntryKindValue,
+	LexiconEntryKind,
+} from "./modules/lexicon/lexicon-entry.js";
+export {
 	type LexiconIdRequestDto,
 	type LexiconInvalidateRequestDto,
 	type LexiconInvalidateResponseDto,
@@ -76,6 +92,7 @@ export {
 	type PageStatusValue,
 	type PageVerificationActionValue,
 	type UndoPageResponseDto,
+	type VerifyPageLexiconItemDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 	PageApiPath,
@@ -85,6 +102,15 @@ export {
 	verifyPage,
 	verifyPageParameters,
 } from "./modules/pages/pages.js";
+export {
+	type PresetCreateRequestDto,
+	type PresetCreateResponseDto,
+	type PresetGetAllItemResponseDto,
+	type PresetGetAllResponseDto,
+	PresetCreateValidationSchema,
+	PresetsApiPath,
+	PresetValidationMessage,
+} from "./modules/presets/presets.js";
 export {
 	type UserGetAllItemResponseDto,
 	type UserGetAllResponseDto,

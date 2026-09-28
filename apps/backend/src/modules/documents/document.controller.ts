@@ -2,6 +2,8 @@ import {
 	DocumentBudgetUpdateValidationSchema,
 	type DocumentCreateRequestDto,
 	DocumentCreateValidationSchema,
+	type DocumentExportCreateRequestDto,
+	DocumentExportCreateRequestValidationSchema,
 	type DocumentGetByIdParametersDto,
 	DocumentGetByIdParametersValidationSchema,
 	type DocumentGetPagesQueryDto,
@@ -51,6 +53,14 @@ import {
  *           format: number
  *           minimum: 1
  *           maximum: 524288000
+ *     DocumentCreateExportRequest:
+ *       type: object
+ *       required:
+ *         - format
+ *       properties:
+ *         format:
+ *           type: string
+ *           enum: [json, csv, txt]
  *     DocumentCreateResponse:
  *       type: object
  *       properties:
@@ -120,6 +130,12 @@ import {
  *           pattern: "^\\d{1,6}(\\.\\d{1,4})?$"
  *           example: "20.00"
  */
+type DocumentCreateExportOptions = APIHandlerOptions<{
+	body: DocumentExportCreateRequestDto;
+	params: DocumentIdRequestDto;
+	user: TokenPayload;
+}>;
+
 type DocumentCreateOptions = APIHandlerOptions<{
 	body: DocumentCreateRequestDto;
 	user: TokenPayload;
@@ -236,6 +252,9 @@ class DocumentController extends BaseController {
 			method: HTTPMethod.POST,
 			path: DocumentsApiPath.INGEST,
 			preHandler: authGuard,
+			validation: {
+				params: DocumentIdValidationSchema,
+			},
 		});
 
 		this.addRoute({
@@ -269,6 +288,17 @@ class DocumentController extends BaseController {
 				params: DocumentGetByIdParametersValidationSchema,
 			},
 		});
+
+		this.addRoute({
+			handler: (this.createExport as APIHandler).bind(this),
+			method: HTTPMethod.POST,
+			path: DocumentsApiPath.EXPORT,
+			preHandler: authGuard,
+			validation: {
+				body: DocumentExportCreateRequestValidationSchema,
+				params: DocumentGetByIdParametersValidationSchema,
+			},
+		});
 	}
 
 	/**
@@ -299,6 +329,46 @@ class DocumentController extends BaseController {
 			payload: await this.documentService.create({
 				...options.body,
 				ownerId: options.user.userId,
+			}),
+			status: HTTPCode.CREATED,
+		};
+	}
+
+	/**
+	 * @swagger
+	 * /documents/{id}/export:
+	 *   post:
+	 *     description: Request a document export in json, csv, or txt format
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         schema:
+	 *           type: integer
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: "#/components/schemas/DocumentCreateExportRequest"
+	 *     responses:
+	 *       201:
+	 *         description: Export queued successfully
+	 *       404:
+	 *         description: Document not found or user is not owner
+	 *       409:
+	 *         description: Document is not ingested yet
+	 */
+	private async createExport(
+		options: DocumentCreateExportOptions,
+	): Promise<APIHandlerResponse> {
+		return {
+			payload: await this.documentService.createExport({
+				documentId: options.params.id,
+				format: options.body.format,
+				userId: options.user.userId,
 			}),
 			status: HTTPCode.CREATED,
 		};
@@ -409,7 +479,7 @@ class DocumentController extends BaseController {
 	 *           minimum: 1
 	 *     responses:
 	 *       200:
-	 *         description: Lexicon entries ordered by distinct pages then frequency
+	 *         description: Lexicon entries ordered by distinct pages then page count
 	 *       404:
 	 *         description: Document not found
 	 */
@@ -618,7 +688,7 @@ class DocumentController extends BaseController {
 	 * @swagger
 	 * /documents/{id}/resume:
 	 *   post:
-	 *     description: Back to processing, and re-enqueue what still needs work
+	 *     description: Back to processing, and re-enqueue what still needs work. Returns current document DTO
 	 *     security:
 	 *       - bearerAuth: []
 	 *     parameters:
@@ -641,9 +711,12 @@ class DocumentController extends BaseController {
 	private async resume(
 		options: DocumentIdHandlerOptions,
 	): Promise<APIHandlerResponse> {
-		await this.documentService.resume(options.params.id, options.user.userId);
+		const document = await this.documentService.resume(
+			options.params.id,
+			options.user.userId,
+		);
 		return {
-			payload: null,
+			payload: document,
 			status: HTTPCode.OK,
 		};
 	}

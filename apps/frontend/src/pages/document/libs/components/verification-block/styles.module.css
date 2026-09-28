@@ -32,7 +32,6 @@
 
 .resume-link:active {
 	background-color: var(--accent-active);
-	transform: translateY(1px);
 }
 
 .resume-link:focus-visible {

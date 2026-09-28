@@ -101,8 +101,8 @@ const Dropzone: React.FC<Properties> = ({
 			>
 				{rejection ? (
 					<>
-						<b>{rejection}</b>
-						<small>
+						<b className={styles["dropzone__title"]}>{rejection}</b>
+						<small className={styles["dropzone__hint"]}>
 							PDFs up to <span>{DEFAULT_MAX_FILE_SIZE_MB} MB</span>, ZIPs up to{" "}
 							<span>{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB</span>, up to{" "}
 							<span>{DEFAULT_MAX_PAGES} pages</span>
@@ -120,7 +120,7 @@ const Dropzone: React.FC<Properties> = ({
 					</>
 				) : (
 					<>
-						<b>
+						<b className={styles["dropzone__title"]}>
 							Drag a PDF here, or{" "}
 							<button
 								className={styles["dropzone__link"]}
@@ -129,7 +129,7 @@ const Dropzone: React.FC<Properties> = ({
 								choose a file
 							</button>
 						</b>
-						<small>
+						<small className={styles["dropzone__hint"]}>
 							PDFs up to <span>{DEFAULT_MAX_FILE_SIZE_MB} MB</span>, ZIPs up to{" "}
 							<span>{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB</span>, up to{" "}
 							<span>{DEFAULT_MAX_PAGES} pages</span>

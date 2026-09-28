@@ -3,13 +3,14 @@ import { type TranscribeFailureReasonValue } from "./transcribe-failure-reason-v
 
 type RecordFailureOptions = Pick<
 	Dependencies,
-	"documentRepository" | "enqueuePage" | "pageRepository"
+	"documentRepository" | "enqueuePage" | "logger" | "pageRepository"
 > & {
 	documentId: number;
 	event?: {
 		details: Record<string, unknown>;
 		durationMs: number;
 	};
+	lastError?: string;
 	pageId: number;
 	reason: TranscribeFailureReasonValue;
 };

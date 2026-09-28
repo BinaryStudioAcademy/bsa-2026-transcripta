@@ -8,6 +8,7 @@ export {
 	type PageStatusValue,
 	type PageVerificationActionValue,
 	type UndoPageResponseDto,
+	type VerifyPageLexiconItemDto,
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "./libs/types/types.js";

@@ -10,7 +10,9 @@ import {
 import {
 	BUDGET_STOP_NOTIFICATION_MESSAGE,
 	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INGESTION_FAILED_MESSAGE,
 	INITIAL_COUNT,
+	MINIMUM_VALID_DOCUMENT_ID,
 	NOTIFICATION_DELAY_MS,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
@@ -19,18 +21,21 @@ import {
 	useAppSelector,
 	useCallback,
 	useEffect,
+	useLocation,
 	useNavigate,
 	useParams,
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { NotFound } from "~/pages/not-found/not-found.js";
 
 import {
 	DocumentFailedBlock,
 	DocumentTitleBlock,
 	ExportBlock,
 	GroundTruthBlock,
+	LexiconBlock,
 	PagesBlock,
 	TranscriptionBlock,
 	VerificationBlock,
@@ -40,6 +45,8 @@ import styles from "./styles.module.css";
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
+	const location = useLocation();
+	const locationState = location.state as null | { errorMessage?: string };
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
@@ -51,10 +58,12 @@ const Document: React.FC = () => {
 
 	const { id } = useParams();
 
-	useEffect(() => {
-		const documentId = Number(id);
+	const documentId = Number(id);
+	const isValidId =
+		Number.isInteger(documentId) && documentId >= MINIMUM_VALID_DOCUMENT_ID;
 
-		if (!Number.isFinite(documentId)) {
+	useEffect(() => {
+		if (!isValidId) {
 			return;
 		}
 
@@ -64,11 +73,12 @@ const Document: React.FC = () => {
 		return () => {
 			dispatch(documentActions.stopPolling());
 		};
-	}, [id, dispatch]);
+	}, [documentId, isValidId, dispatch]);
 
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const isNotifyingReference = useRef<boolean>(false);
 	const previousStatusReference = useRef<null | string>(null);
+	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
 
 	useEffect(() => {
 		if (!currentDocument) {
@@ -82,21 +92,21 @@ const Document: React.FC = () => {
 			return;
 		}
 
+		const isFailedStatus = currentDocument.status === DocumentStatus.FAILED;
 		const isBudgetStop = currentDocument.status === DocumentStatus.BUDGET_STOP;
 		const previousStatus = previousStatusReference.current;
 
 		previousStatusReference.current = currentDocument.status;
 
-		const hasAlreadyBeenNotified = notifiedDocumentsReference.current.has(
+		const hasBudgetBeenNotified = notifiedDocumentsReference.current.has(
 			currentDocument.id,
 		);
 
-		const shouldNotify =
+		const shouldNotifyBudget =
 			isBudgetStop &&
-			(!hasAlreadyBeenNotified ||
-				previousStatus !== DocumentStatus.BUDGET_STOP);
+			(!hasBudgetBeenNotified || previousStatus !== DocumentStatus.BUDGET_STOP);
 
-		if (shouldNotify && !isNotifyingReference.current) {
+		if (shouldNotifyBudget && !isNotifyingReference.current) {
 			isNotifyingReference.current = true;
 
 			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
@@ -107,7 +117,29 @@ const Document: React.FC = () => {
 				isNotifyingReference.current = false;
 			}, NOTIFICATION_DELAY_MS);
 		}
-	}, [currentDocument, currentDocument?.id, currentDocument?.status, id]);
+
+		const hasFailedBeenNotified = failedNotifiedDocumentsReference.current.has(
+			currentDocument.id,
+		);
+
+		if (isFailedStatus && !hasFailedBeenNotified) {
+			failedNotifiedDocumentsReference.current.add(currentDocument.id);
+
+			const errorMessage =
+				currentDocument.errorMessage ||
+				locationState?.errorMessage ||
+				INGESTION_FAILED_MESSAGE;
+
+			notification.error(errorMessage);
+		}
+	}, [
+		currentDocument,
+		currentDocument?.id,
+		currentDocument?.status,
+		currentDocument?.errorMessage,
+		id,
+		locationState?.errorMessage,
+	]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -132,8 +164,7 @@ const Document: React.FC = () => {
 			.unwrap()
 			.then(() => {
 				setIsConfirmOpen(false);
-				// eslint-disable-next-line sonarjs/void-use -- navigate() can return a promise here; no-floating-promises requires marking it void
-				void navigate(AppRoute.DOCUMENTS);
+				return navigate(AppRoute.DOCUMENTS);
 			})
 			.catch(() => {
 				setIsConfirmOpen(false);
@@ -177,13 +208,13 @@ const Document: React.FC = () => {
 			return;
 		}
 
-		const documentId = currentDocument.id;
+		const retryDocumentId = currentDocument.id;
 
-		void dispatch(documentActions.ingest(documentId))
+		void dispatch(documentActions.ingest(retryDocumentId))
 			.unwrap()
 			.then(async () => {
-				await dispatch(documentActions.loadById(documentId)).unwrap();
-				void dispatch(documentActions.startPolling(documentId));
+				await dispatch(documentActions.loadById(retryDocumentId)).unwrap();
+				void dispatch(documentActions.startPolling(retryDocumentId));
 			});
 	}, [currentDocument, dispatch]);
 
@@ -193,10 +224,18 @@ const Document: React.FC = () => {
 			currentDocument.progress.pagesSkipped
 		: INITIAL_COUNT;
 
+	const errorMessageToDisplay =
+		currentDocument?.errorMessage ||
+		locationState?.errorMessage ||
+		INGESTION_FAILED_MESSAGE;
+
+	if (!isValidId || hasError) {
+		return <NotFound />;
+	}
+
 	return (
 		<div className={styles["document-page"]}>
 			{isLoading && <LoaderOverlay label="Loading document" />}
-			{hasError && <p>Unable to load the document.</p>}
 
 			{currentDocument && (
 				<>
@@ -233,12 +272,24 @@ const Document: React.FC = () => {
 								<section>
 									<h2>Ingest failed</h2>
 									<DocumentFailedBlock
-										errorMessage={currentDocument.errorMessage}
+										errorMessage={errorMessageToDisplay}
 										onRetry={handleRetry}
 									/>
 								</section>
 							) : (
 								<>
+									<TranscriptionBlock
+										budgetLimitUsd={currentDocument.budget.limitUsd}
+										budgetSpentUsd={currentDocument.budget.spentUsd}
+										cursorPageNo={currentDocument.cursorPageNo}
+										onRaiseLimitClick={handleOpenRaiseLimit}
+										pagesBlank={currentDocument.progress.pagesBlank}
+										pagesFailed={currentDocument.progress.pagesFailed}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTranscribed={pagesTranscribed}
+										status={currentDocument.status}
+									/>
+
 									<PagesBlock
 										cursorPageNo={currentDocument.cursorPageNo}
 										pagesBlank={currentDocument.progress.pagesBlank}
@@ -265,19 +316,14 @@ const Document: React.FC = () => {
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
 
-									<TranscriptionBlock
-										budgetLimitUsd={currentDocument.budget.limitUsd}
-										budgetSpentUsd={currentDocument.budget.spentUsd}
-										cursorPageNo={currentDocument.cursorPageNo}
-										onRaiseLimitClick={handleOpenRaiseLimit}
-										pagesBlank={currentDocument.progress.pagesBlank}
-										pagesFailed={currentDocument.progress.pagesFailed}
-										pagesTotal={currentDocument.progress.pagesTotal}
-										pagesTranscribed={pagesTranscribed}
-										status={currentDocument.status}
-									/>
+									<LexiconBlock documentId={currentDocument.id} />
 
-									<ExportBlock />
+									<ExportBlock
+										documentId={currentDocument.id}
+										documentTitle={currentDocument.title}
+										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesVerified={currentDocument.progress.pagesVerified}
+									/>
 
 									{currentDocument.groundTruth && (
 										<GroundTruthBlock

@@ -7,10 +7,14 @@ import {
 type Storage = {
 	deleteByPrefix(options: DeleteByPrefixRequest): Promise<void>;
 	downloadPageImage(key: string): Promise<Buffer>;
-	downloadToTempFolder(sourceKey: string): Promise<{
+	downloadToTempFolder(
+		sourceKey: string,
+		maxSize?: number,
+	): Promise<{
 		clear: () => Promise<void>;
 		filePath: string;
 	}>;
+	getExportDownloadSignedUrl(key: string): Promise<string>;
 	getReadSignedUrl(key: string): Promise<string>;
 	getUploadSignedUrl(
 		options: UploadSignedUrlRequest,
@@ -29,6 +33,15 @@ type Storage = {
 		imageKey: string;
 		thumbnailKey: string;
 	}>;
+	uploadExport({
+		body,
+		contentType,
+		key,
+	}: {
+		body: Buffer;
+		contentType: string;
+		key: string;
+	}): Promise<void>;
 };
 
 export { type Storage };

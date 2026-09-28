@@ -1,15 +1,18 @@
-import { DocumentValidationRule, EMPTY_LENGTH } from "@transcripta/shared";
+import {
+	DocumentValidationRule,
+	EMPTY_LENGTH,
+	type PresetGetAllItemResponseDto,
+} from "@transcripta/shared";
 import React from "react";
 
 import { Button, Input } from "~/libs/components/components.js";
 import { Select } from "~/libs/components/select/select.js";
-import { useAppForm, useCallback } from "~/libs/hooks/hooks.js";
+import { useAppForm, useCallback, useWatch } from "~/libs/hooks/hooks.js";
 
 import { uploadFormValidationSchema } from "../../libs/validation-schemas/validation-schemas.js";
 import {
 	DEFAULT_PRESET_ID,
 	DEFAULT_PRESET_INDEX,
-	MOCK_PRESET_OPTIONS,
 	PDF_EXTENSION_REGEX,
 } from "./libs/constants/constants.js";
 import { type UploadFormValues } from "./libs/types/types.js";
@@ -30,24 +33,28 @@ const getDefaultTitle = (fileName: string): string => {
 
 type Properties = {
 	fileName: string;
+	isStartingProcessing: boolean;
 	isSubmitting: boolean;
 	isUploaded: boolean;
+	isUploading: boolean;
 	onCancelUpload: () => void;
 	onChangeFile: () => void;
-	onProcessDocument: () => void;
+	onProcessDocument: (values: UploadFormValues) => void;
 	onSubmit: (values: UploadFormValues) => void;
-	presetOptions?: typeof MOCK_PRESET_OPTIONS;
+	presetOptions: PresetGetAllItemResponseDto[];
 };
 
 const UploadForm: React.FC<Properties> = ({
 	fileName,
+	isStartingProcessing = false,
 	isSubmitting = false,
 	isUploaded = false,
+	isUploading = false,
 	onCancelUpload,
 	onChangeFile,
 	onProcessDocument,
 	onSubmit,
-	presetOptions = MOCK_PRESET_OPTIONS,
+	presetOptions,
 }: Properties) => {
 	const { control, errors, handleSubmit } = useAppForm<UploadFormValues>({
 		defaultValues: {
@@ -57,11 +64,27 @@ const UploadForm: React.FC<Properties> = ({
 		validationSchema: uploadFormValidationSchema,
 	});
 
+	const selectedPresetId = useWatch({
+		control,
+		name: "presetId",
+	});
+
+	const selectedPreset = presetOptions.find(
+		(preset) => preset.id === Number(selectedPresetId),
+	);
+
 	const handleFormSubmit = useCallback(
 		(event_: React.BaseSyntheticEvent): void => {
 			void handleSubmit(onSubmit)(event_);
 		},
 		[handleSubmit, onSubmit],
+	);
+
+	const handleProcessClick = useCallback(
+		(event_: React.MouseEvent<HTMLButtonElement>): void => {
+			void handleSubmit(onProcessDocument)(event_);
+		},
+		[handleSubmit, onProcessDocument],
 	);
 
 	return (
@@ -77,26 +100,41 @@ const UploadForm: React.FC<Properties> = ({
 			<Select
 				control={control}
 				errors={errors}
+				helperText={selectedPreset?.description ?? ""}
 				label="Presets"
 				name="presetId"
 				options={presetOptions}
 			/>
 			<div className={styles["upload-form__actions"]}>
 				{isUploaded && (
-					<Button
-						isPrimary
-						label="Start Processing"
-						onClick={onProcessDocument}
-						type="button"
-					/>
+					<>
+						<Button
+							isDisabled={isStartingProcessing}
+							isPrimary
+							label={
+								isStartingProcessing ? "Processing..." : "Start Processing"
+							}
+							onClick={handleProcessClick}
+							type="button"
+						/>
+						<Button
+							isDisabled={isStartingProcessing}
+							label="Change file"
+							onClick={onChangeFile}
+							type="button"
+						/>
+					</>
 				)}
-				{isSubmitting ? (
+
+				{(isUploading || isSubmitting) && (
 					<Button
 						label="Cancel Upload"
 						onClick={onCancelUpload}
 						type="button"
 					/>
-				) : (
+				)}
+
+				{!isUploaded && !isUploading && !isSubmitting && (
 					<>
 						<Button isPrimary label="Upload" type="submit" />
 						<Button label="Change file" onClick={onChangeFile} type="button" />

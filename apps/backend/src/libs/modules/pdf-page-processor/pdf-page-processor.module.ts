@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import fs from "node:fs/promises";
+import fs, { stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import sharp, { type Sharp } from "sharp";
@@ -91,6 +91,15 @@ class PDFPageProcessor implements IPDFPageProcessor {
 				? new PDFTimeoutError(ErrorMessage.CONVERT_PAGE_TIMEOUT)
 				: new Error(ErrorMessage.FAILED_TO_CONVERT_PAGE);
 			throw customError;
+		}
+	}
+
+	public async getFileSize(filePath: string): Promise<number> {
+		try {
+			const stats = await stat(filePath);
+			return stats.size;
+		} catch {
+			throw new Error(ErrorMessage.FAILED_TO_GET_FILE_SIZE);
 		}
 	}
 

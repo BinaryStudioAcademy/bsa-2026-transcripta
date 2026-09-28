@@ -1,0 +1,3 @@
+const BACKOFF_DELAY = 60_000;
+
+export { BACKOFF_DELAY };

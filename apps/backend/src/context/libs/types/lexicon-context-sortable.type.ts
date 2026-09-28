@@ -1,6 +1,6 @@
 type LexiconContextSortable = {
 	distinctPages: number;
-	freq: number;
+	pageCount: number;
 	valueDisplay: string;
 };
 

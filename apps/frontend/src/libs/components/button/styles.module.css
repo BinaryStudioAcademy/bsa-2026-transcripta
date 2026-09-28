@@ -16,10 +16,6 @@
 	outline-offset: 1px;
 }
 
-:where(.button):active {
-	transform: translateY(1px);
-}
-
 :where(.button--basic) {
 	color: var(--text-2);
 	background-color: transparent;
@@ -47,6 +43,10 @@
 	color: var(--text);
 	background: var(--surface);
 	border: 1px solid var(--hairline-strong);
+}
+
+:where(.button--secondary):active {
+	background: var(--surface-2);
 }
 
 :where(.button--fluid) {

@@ -10,6 +10,7 @@ import {
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
+	type DocumentGetLexiconResponseDto,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 	type DocumentUpdateBudgetDto,
@@ -68,6 +69,19 @@ class DocumentApi extends BaseHTTPApi {
 		);
 
 		return await response.json<DocumentGetByIdResponseDto>();
+	}
+
+	public async getLexicon(id: number): Promise<DocumentGetLexiconResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.BY_ID_LEXICON, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.GET,
+			},
+		);
+
+		return await response.json<DocumentGetLexiconResponseDto>();
 	}
 
 	public async getPages(
@@ -148,8 +162,8 @@ class DocumentApi extends BaseHTTPApi {
 		);
 	}
 
-	public async resume(id: number): Promise<void> {
-		await this.load(
+	public async resume(id: number): Promise<DocumentGetByIdResponseDto> {
+		const response = await this.load(
 			this.getFullEndpoint(DocumentsApiPath.RESUME, {
 				id: String(id),
 			}),
@@ -160,6 +174,8 @@ class DocumentApi extends BaseHTTPApi {
 				payload: JSON.stringify({}),
 			},
 		);
+
+		return await response.json<DocumentGetByIdResponseDto>();
 	}
 
 	public async updateBudget(

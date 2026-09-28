@@ -55,7 +55,6 @@
 
 .tx-btn--primary:active:not(:disabled) {
 	background: var(--accent-active);
-	transform: translateY(1px);
 }
 
 .tx-btn--secondary {
@@ -69,7 +68,6 @@
 
 .tx-btn--secondary:active:not(:disabled) {
 	background: var(--surface-2);
-	transform: translateY(1px);
 }
 
 .tx-btn--ghost {
@@ -82,7 +80,8 @@
 }
 
 .tx-btn--ghost:active:not(:disabled) {
-	transform: translateY(1px);
+	color: var(--text);
+	background: var(--surface-2);
 }
 
 .tx-btn--destructive {
@@ -96,5 +95,4 @@
 
 .tx-btn--destructive:active:not(:disabled) {
 	background: var(--danger-active);
-	transform: translateY(1px);
 }
