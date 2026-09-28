@@ -245,9 +245,13 @@ class DocumentService {
 
 			const currentStatus = currentDocument.toObject().status;
 			if (currentStatus === DocumentStatus.INGESTING) {
+				const transcriptionStarted =
+					await this.pageRepository.hasStartedTranscription(documentId, trx);
 				await this.documentRepository.updateStatus(
 					documentId,
-					DocumentStatus.READY,
+					transcriptionStarted
+						? DocumentStatus.PROCESSING
+						: DocumentStatus.READY,
 					trx,
 				);
 			}
