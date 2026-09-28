@@ -27,6 +27,7 @@ import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
+	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { actions as presetsActions } from "~/modules/presets/presets.js";
@@ -261,6 +262,32 @@ const useIngestPolling = ({
 		setRejection,
 		setIsStartingProcessing,
 	]);
+};
+
+const useScreenState = (
+	ingestingDocumentId: null | number,
+	resumedDocument: DocumentGetByIdResponseDto | null,
+	isZipProcessing: boolean,
+	isUploading: boolean,
+	selectedFile: File | null,
+): ScreenStateType => {
+	if (ingestingDocumentId) {
+		return ScreenState.INGESTING;
+	}
+	if (resumedDocument?.status === DocumentStatus.INGESTING) {
+		return ScreenState.INGESTING;
+	}
+	if (isZipProcessing) {
+		return ScreenState.PROCESSING;
+	}
+	if (isUploading) {
+		return ScreenState.UPLOADING;
+	}
+	if (selectedFile) {
+		return ScreenState.SELECTED;
+	}
+
+	return ScreenState.REST;
 };
 
 const DocumentNew: React.FC = () => {
@@ -582,27 +609,13 @@ const DocumentNew: React.FC = () => {
 		setRejection,
 	});
 
-	const getScreenState = (): ScreenStateType => {
-		if (ingestingDocumentId) {
-			return ScreenState.INGESTING;
-		}
-		if (resumedDocument?.status === DocumentStatus.INGESTING) {
-			return ScreenState.INGESTING;
-		}
-		if (isZipProcessing) {
-			return ScreenState.PROCESSING;
-		}
-		if (isUploading) {
-			return ScreenState.UPLOADING;
-		}
-		if (selectedFile) {
-			return ScreenState.SELECTED;
-		}
-
-		return ScreenState.REST;
-	};
-
-	const screenState = getScreenState();
+	const screenState = useScreenState(
+		ingestingDocumentId,
+		resumedDocument,
+		isZipProcessing,
+		isUploading,
+		selectedFile,
+	);
 	const isSubmitting = isUploading;
 	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
