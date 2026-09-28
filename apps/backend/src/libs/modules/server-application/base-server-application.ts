@@ -16,6 +16,7 @@ import { type Config } from "~/libs/modules/config/config.js";
 import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
+import { closeRedisConnection } from "~/libs/modules/queue/libs/helpers/helpers.js";
 import { type QueueRegistry } from "~/libs/modules/queue/queue-registry.module.js";
 import { DocumentCleanupQueue } from "~/libs/modules/queue/queue.js";
 import {
@@ -27,6 +28,7 @@ import {
 import {
 	DEFAULT_VALIDATION_ERROR_MESSAGE,
 	INVALID_JSON_BODY_ERROR_MESSAGE,
+	ShutdownLoggerMessages,
 } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
@@ -48,6 +50,11 @@ type Constructor = {
 	title: string;
 };
 
+type ShutdownClosing = {
+	close: () => Promise<unknown>;
+	name: string;
+};
+
 class BaseServerApplication implements ServerApplication {
 	private apis: ServerApplicationApi[];
 
@@ -59,9 +66,13 @@ class BaseServerApplication implements ServerApplication {
 
 	private documentCleanupQueue: DocumentCleanupQueue;
 
+	private isShuttingDown = false;
+
 	private logger: Logger;
 
 	private queueRegistry: QueueRegistry;
+
+	private rateLimitConnection: null | Redis = null;
 
 	private title: string;
 
@@ -190,7 +201,7 @@ class BaseServerApplication implements ServerApplication {
 	private initShutdown(): void {
 		for (const signal of ["SIGINT", "SIGTERM"] as const) {
 			process.once(signal, () => {
-				this.shutdown();
+				void this.shutdown();
 			});
 		}
 	}
@@ -209,14 +220,42 @@ class BaseServerApplication implements ServerApplication {
 		});
 	}
 
-	private shutdown(): void {
-		void this.app.close().catch((error: unknown) => {
-			this.logger.error("Failed to close server.", { error });
-		});
+	/**
+	 * Runs once, whether the process is stopping on a signal or on a boot that
+	 * already failed, and returns only when every handle it owns is closed —
+	 * the process then exits on its own instead of hanging on the first socket
+	 * nobody closed.
+	 */
+	private async shutdown(): Promise<void> {
+		if (this.isShuttingDown) {
+			return;
+		}
 
-		void this.queueRegistry.close().catch((error: unknown) => {
-			this.logger.error("Failed to close queues.", { error });
-		});
+		this.isShuttingDown = true;
+
+		// Order matters: closing the workers waits for the job in flight, so the
+		// connections that job needs have to outlive it.
+		const closings: ShutdownClosing[] = [
+			{ close: () => this.app.close(), name: "server" },
+			{ close: () => this.queueRegistry.close(), name: "queues" },
+			{
+				close: () => closeRedisConnection(this.rateLimitConnection),
+				name: "rate limit connection",
+			},
+			{ close: () => this.database.disconnect(), name: "database" },
+		];
+
+		for (const closing of closings) {
+			try {
+				await closing.close();
+			} catch (error) {
+				this.logger.error(ShutdownLoggerMessages.FAILED(closing.name), {
+					error,
+				});
+			}
+		}
+
+		this.logger.info(ShutdownLoggerMessages.CLOSED);
 	}
 
 	public addRoute(parameters: ServerApplicationRouteParameters): void {
@@ -277,8 +316,7 @@ class BaseServerApplication implements ServerApplication {
 
 			this.initShutdown();
 		} catch (error) {
-			await this.app.close().catch(() => null);
-			await this.queueRegistry.close().catch(() => null);
+			await this.shutdown();
 
 			if (error instanceof Error) {
 				this.logger.error(error.message, {
@@ -299,6 +337,14 @@ class BaseServerApplication implements ServerApplication {
 			limits: { fileSize: FILE_SIZE_LIMIT },
 		});
 
+		// Kept in a field, not inlined into the plugin options: the rate limiter
+		// does not close what it is given, so a connection created here and
+		// dropped on the floor is exactly what kept the process alive after
+		// SIGINT once the queues were already closed.
+		this.rateLimitConnection = new Redis(this.config.ENV.REDIS.URL, {
+			maxRetriesPerRequest: null,
+		});
+
 		await this.app.register(fastifyRateLimit, {
 			errorResponseBuilder: (_request, context) => {
 				throw new HTTPError({
@@ -307,9 +353,7 @@ class BaseServerApplication implements ServerApplication {
 				});
 			},
 			global: false,
-			redis: new Redis(this.config.ENV.REDIS.URL, {
-				maxRetriesPerRequest: null,
-			}),
+			redis: this.rateLimitConnection,
 		});
 
 		await Promise.all(
