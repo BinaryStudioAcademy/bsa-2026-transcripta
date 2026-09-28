@@ -3,6 +3,7 @@ import {
 	MAX_PERCENTAGE,
 	PERCENTAGE_MULTIPLIER,
 } from "~/libs/constants/common.constants.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 
 import { DEFAULT_BUDGET, ZERO_BUDGET } from "../constants/budget.constants.js";
@@ -42,7 +43,9 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 
 			{pageNo !== undefined && pageCount !== undefined && (
 				<span className="verification-header__page">
-					page {pageNo} of {pageCount}
+					{pageCount > INITIAL_COUNT
+						? `page ${String(pageNo)} of ${String(pageCount)}`
+						: `page ${String(pageNo)} (processing...)`}
 				</span>
 			)}
 
