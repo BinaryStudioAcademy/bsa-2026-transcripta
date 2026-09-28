@@ -1,11 +1,10 @@
-import { EMPTY_LENGTH } from "@transcripta/shared";
-
 import {
 	Button,
 	Link,
 	LoaderOverlay,
 	ThemeToggle,
 } from "~/libs/components/components.js";
+import { EMPTY_LENGTH } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
