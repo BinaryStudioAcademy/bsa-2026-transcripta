@@ -32,7 +32,6 @@
 	position: relative;
 	display: inline-flex;
 	min-width: 0;
-	max-width: 260px;
 }
 
 .upload-progress-file-wrapper[data-tip]::after {
@@ -45,12 +44,6 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-@media (width <= 640px) {
-	.upload-progress-file-wrapper {
-		max-width: 160px;
-	}
 }
 
 .upload-progress-size {
