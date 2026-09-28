@@ -327,3 +327,8 @@
 		justify-content: flex-end;
 	}
 }
+
+.preset-editor__hint {
+	color: var(--text-3);
+	font-weight: 400;
+}
