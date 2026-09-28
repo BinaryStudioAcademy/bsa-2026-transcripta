@@ -1,6 +1,7 @@
 type GlossaryEntry = {
 	id: string;
 	kind: GlossaryType;
+	note?: string;
 	value: string;
 };
 

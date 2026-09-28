@@ -128,8 +128,9 @@ const PresetEditor: React.FC = () => {
 			familyId: selectedPreset.familyId,
 			instructions,
 			name,
-			seedGlossary: entries.map(({ kind, value }) => ({
+			seedGlossary: entries.map(({ kind, note, value }) => ({
 				kind,
+				note,
 				value,
 			})),
 		});
