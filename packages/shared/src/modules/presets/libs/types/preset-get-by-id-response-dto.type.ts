@@ -1,6 +1,6 @@
 type PresetGetByIdResponseDto = {
-	id: number;
 	familyId: number;
+	id: number;
 	instructions: string;
 	name: string;
 	outputSchema: Record<string, unknown>;
