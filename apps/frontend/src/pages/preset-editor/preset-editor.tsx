@@ -1,19 +1,12 @@
 import React, { type ChangeEvent } from "react";
 
-import {
-	Button,
-	LoaderOverlay,
-	ThemeToggle,
-} from "~/libs/components/components.js";
+import { LoaderOverlay, ThemeToggle } from "~/libs/components/components.js";
 import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
 	GO_BACK,
 } from "~/libs/constants/constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
-
-import "./preset-editor.css";
-
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -23,6 +16,9 @@ import {
 	useParams,
 	useState,
 } from "~/libs/hooks/hooks.js";
+
+import "./preset-editor.css";
+
 import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as presetsActions,
@@ -38,7 +34,12 @@ import type {
 	GlossaryType,
 } from "./libs/types/preset-editor.types.js";
 
-import { PresetGlossary } from "./libs/components/preset-glossary.js";
+import {
+	PresetBasicFields,
+	PresetEditorActions,
+	PresetGlossary,
+	PresetOutputFields,
+} from "./libs/components/components.js";
 import {
 	createEntry,
 	getOutputFields,
@@ -271,64 +272,16 @@ const PresetEditor: React.FC = () => {
 				<main className="preset-editor__main">
 					<div className="preset-editor__container">
 						<section className="preset-editor__card">
-							<div className="preset-editor__basic-fields">
-								<div className="preset-editor__field">
-									<label className="tx-label" htmlFor="based-on">
-										Based on
-									</label>
-
-									<div className="tx-selectwrap">
-										<select
-											className="tx-input"
-											disabled={
-												presets.length === EMPTY_LENGTH || isFormDisabled
-											}
-											id="based-on"
-											onChange={handleBasePresetChange}
-											value={basePresetId ?? ""}
-										>
-											{presets.length === EMPTY_LENGTH && (
-												<option value="">Loading presets...</option>
-											)}
-
-											{presets.map((preset) => (
-												<option key={preset.id} value={preset.id}>
-													{`${preset.name} v${String(preset.version)}`}
-												</option>
-											))}
-										</select>
-									</div>
-								</div>
-
-								<div className="preset-editor__field">
-									<label className="tx-label" htmlFor="preset-name">
-										Name
-									</label>
-
-									<input
-										className="tx-input"
-										disabled={isFormDisabled}
-										id="preset-name"
-										onChange={handleNameChange}
-										value={name}
-									/>
-								</div>
-							</div>
-
-							<div className="preset-editor__section">
-								<label className="tx-label" htmlFor="instructions">
-									Instructions for the model
-								</label>
-
-								<textarea
-									className="tx-input preset-editor__instructions"
-									disabled={isFormDisabled}
-									id="instructions"
-									onChange={handleInstructionsChange}
-									rows={3}
-									value={instructions}
-								/>
-							</div>
+							<PresetBasicFields
+								basePresetId={basePresetId}
+								instructions={instructions}
+								isDisabled={isFormDisabled}
+								name={name}
+								onBasePresetChange={handleBasePresetChange}
+								onInstructionsChange={handleInstructionsChange}
+								onNameChange={handleNameChange}
+								presets={presets}
+							/>
 
 							<PresetGlossary
 								entries={entries}
@@ -341,61 +294,14 @@ const PresetEditor: React.FC = () => {
 								openTypeId={openTypeId}
 							/>
 
-							<div className="preset-editor__output-section">
-								<div className="preset-editor__output-heading">
-									<svg
-										aria-hidden="true"
-										fill="none"
-										height="13"
-										stroke="currentColor"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										viewBox="0 0 24 24"
-										width="13"
-									>
-										<rect height="11" rx="2" width="18" x="3" y="11" />
-										<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-									</svg>
+							<PresetOutputFields fields={outputFields} />
 
-									<span className="tx-label">
-										Output fields (from the template, not editable)
-									</span>
-								</div>
-
-								<div className="preset-editor__output-fields">
-									{outputFields.map((field) => (
-										<span className="preset-editor__output-item" key={field}>
-											<span className="preset-editor__output-chip">
-												{field}
-											</span>
-											<span className="preset-editor__output-separator">·</span>
-										</span>
-									))}
-								</div>
-							</div>
-
-							<div className="preset-editor__actions">
-								<p className="preset-editor__notice">
-									Saving creates a new preset version. Documents already in
-									progress continue using the version they started with.
-								</p>
-
-								<div className="preset-editor__buttons">
-									<Button
-										isDisabled={isFormDisabled}
-										label="Cancel"
-										onClick={handleCancel}
-									/>
-
-									<Button
-										isDisabled={isFormDisabled}
-										isPrimary
-										label={isSaving ? "Saving..." : "Save preset"}
-										onClick={handleSubmit}
-									/>
-								</div>
-							</div>
+							<PresetEditorActions
+								isDisabled={isFormDisabled}
+								isSaving={isSaving}
+								onCancel={handleCancel}
+								onSubmit={handleSubmit}
+							/>
 						</section>
 					</div>
 				</main>
