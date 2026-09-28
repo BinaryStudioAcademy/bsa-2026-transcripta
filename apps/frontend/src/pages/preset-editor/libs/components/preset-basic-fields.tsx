@@ -6,10 +6,12 @@ import { EMPTY_LENGTH } from "~/libs/constants/constants.js";
 
 type Properties = {
 	basePresetId: null | number;
+	description: string;
 	instructions: string;
 	isDisabled: boolean;
 	name: string;
 	onBasePresetChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+	onDescriptionChange: (event: ChangeEvent<HTMLInputElement>) => void;
 	onInstructionsChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
 	onNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
 	presets: PresetGetAllItemResponseDto[];
@@ -17,10 +19,12 @@ type Properties = {
 
 const PresetBasicFields: React.FC<Properties> = ({
 	basePresetId,
+	description,
 	instructions,
 	isDisabled,
 	name,
 	onBasePresetChange,
+	onDescriptionChange,
 	onInstructionsChange,
 	onNameChange,
 	presets,
@@ -67,6 +71,21 @@ const PresetBasicFields: React.FC<Properties> = ({
 						value={name}
 					/>
 				</div>
+			</div>
+
+			<div className="preset-editor__section">
+				<label className="tx-label" htmlFor="preset-description">
+					Description <span className="preset-editor__hint">(optional)</span>
+				</label>
+
+				<input
+					className="tx-input"
+					disabled={isDisabled}
+					id="preset-description"
+					onChange={onDescriptionChange}
+					placeholder="Shown under the name in the presets list"
+					value={description}
+				/>
 			</div>
 
 			<div className="preset-editor__section">
