@@ -8,14 +8,11 @@ import {
 	ThemeToggle,
 } from "~/libs/components/components.js";
 import {
-	BUDGET_GREATER_MESSAGE,
-	BUDGET_LOWERED_MESSAGE,
 	BUDGET_STOP_NOTIFICATION_MESSAGE,
 	BUDGET_UPLOAD_FAILED_MESSAGE,
 	INGESTION_FAILED_MESSAGE,
 	INITIAL_COUNT,
 	MINIMUM_VALID_DOCUMENT_ID,
-	NOTIFICATION_DELAY_MS,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
@@ -81,7 +78,6 @@ const Document: React.FC = () => {
 	}, [documentId, isValidId, dispatch]);
 
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
-	const isNotifyingReference = useRef<boolean>(false);
 	const previousStatusReference = useRef<null | string>(null);
 	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
 
@@ -103,24 +99,21 @@ const Document: React.FC = () => {
 
 		previousStatusReference.current = currentDocument.status;
 
-		const hasBudgetBeenNotified = notifiedDocumentsReference.current.has(
-			currentDocument.id,
-		);
-
 		const shouldNotifyBudget =
 			isBudgetStop &&
-			(!hasBudgetBeenNotified || previousStatus !== DocumentStatus.BUDGET_STOP);
+			previousStatus !== DocumentStatus.BUDGET_STOP &&
+			!notifiedDocumentsReference.current.has(currentDocument.id);
 
-		if (shouldNotifyBudget && !isNotifyingReference.current) {
-			isNotifyingReference.current = true;
-
-			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
-
+		if (shouldNotifyBudget) {
 			notifiedDocumentsReference.current.add(currentDocument.id);
+			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+		}
 
-			setTimeout(() => {
-				isNotifyingReference.current = false;
-			}, NOTIFICATION_DELAY_MS);
+		if (
+			!isBudgetStop &&
+			notifiedDocumentsReference.current.has(currentDocument.id)
+		) {
+			notifiedDocumentsReference.current.delete(currentDocument.id);
 		}
 
 		const hasFailedBeenNotified = failedNotifiedDocumentsReference.current.has(
@@ -212,11 +205,8 @@ const Document: React.FC = () => {
 					};
 					const firstDetail = typedError.details?.[INITIAL_COUNT];
 					const errorMessage = firstDetail?.message ?? typedError.message ?? "";
-					const isBudgetValidationError =
-						errorMessage.includes(BUDGET_GREATER_MESSAGE) ||
-						errorMessage.includes(BUDGET_LOWERED_MESSAGE);
 
-					if (isBudgetValidationError) {
+					if (errorMessage) {
 						setServerValidationError(errorMessage);
 						return;
 					}

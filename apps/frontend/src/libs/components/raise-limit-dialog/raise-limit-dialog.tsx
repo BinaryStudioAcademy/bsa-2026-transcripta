@@ -29,6 +29,13 @@ const RaiseLimitDialog: React.FC<
 	).toFixed(CURRENCY_DECIMAL_PLACES);
 
 	const [validationError, setValidationError] = useState<null | string>(null);
+	const [activeServerError, setActiveServerError] = useState<
+		null | string | undefined
+	>(serverError);
+
+	React.useEffect(() => {
+		setActiveServerError(serverError);
+	}, [serverError]);
 
 	const { control, handleSubmit } = useAppForm<FormValuesRaiseBudgetLimit>({
 		defaultValues: { limitUsd: suggestedLimit },
@@ -45,9 +52,12 @@ const RaiseLimitDialog: React.FC<
 			if (validationError) {
 				setValidationError(null);
 			}
+			if (activeServerError) {
+				setActiveServerError(null);
+			}
 			field.onChange(event);
 		},
-		[field, validationError],
+		[field, validationError, activeServerError],
 	);
 
 	const handleFormSubmit = useCallback(
@@ -68,7 +78,7 @@ const RaiseLimitDialog: React.FC<
 		[handleSubmit, spentUsd, onSubmit],
 	);
 
-	const displayError = validationError || serverError;
+	const displayError = validationError || activeServerError;
 
 	return (
 		<div className={styles["scrim"]}>
