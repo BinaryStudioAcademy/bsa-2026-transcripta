@@ -1,6 +1,7 @@
 import { EMPTY_LENGTH } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
+import { PresetDetailsEntity } from "./preset-details.entity.js";
 import { PresetEntity } from "./preset.entity.js";
 import { type PresetModel } from "./preset.model.js";
 
@@ -59,6 +60,31 @@ class PresetRepository {
 		return presets
 			.toSorted((firstPreset, secondPreset) => firstPreset.id - secondPreset.id)
 			.map((preset) => PresetEntity.initialize(preset));
+	}
+
+	public async findByIdAndUserId(
+		id: number,
+		userId: number,
+	): Promise<null | PresetDetailsEntity> {
+		const preset = await this.presetModel
+			.query()
+			.select(
+				"id",
+				"familyId",
+				"name",
+				"description",
+				"instructions",
+				"seedGlossary",
+				"outputSchema",
+			)
+			.where("id", id)
+			.where((builder) => {
+				builder.where("isPublic", true).orWhere("ownerId", userId);
+			})
+			.first()
+			.execute();
+
+		return preset ? PresetDetailsEntity.initialize(preset) : null;
 	}
 
 	public async findFamilyMaxVersion(familyId: number): Promise<number> {

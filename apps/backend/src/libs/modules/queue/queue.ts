@@ -11,7 +11,11 @@ import { transcriptionService } from "~/modules/transcription/transcription.js";
 import { storage } from "../storage/storage.js";
 import { documentCleanupQueue } from "./document-cleanup/document-cleanup.js";
 import { documentExportQueue } from "./document-export/document-export.js";
-import { REDIS_CONNECT_TIMEOUT_MS } from "./libs/constants/constants.js";
+import {
+	REDIS_CONNECT_TIMEOUT_MS,
+	REDIS_RETRY_DELAY_STEP_MS,
+	REDIS_RETRY_MAX_DELAY_MS,
+} from "./libs/constants/constants.js";
 import { createPageTranscribeQueue } from "./page-transcribe-queue-factory.js";
 import { QueueRegistry } from "./queue-registry.module.js";
 import { rederiveStructuredQueue } from "./rederive-structured/rederive-structured.js";
@@ -21,7 +25,8 @@ const redis = new Redis(config.ENV.REDIS.URL, {
 	enableOfflineQueue: false,
 	lazyConnect: true,
 	maxRetriesPerRequest: null,
-	retryStrategy: () => null,
+	retryStrategy: (attempt: number) =>
+		Math.min(attempt * REDIS_RETRY_DELAY_STEP_MS, REDIS_RETRY_MAX_DELAY_MS),
 });
 
 const pageTranscribeQueue = createPageTranscribeQueue({
