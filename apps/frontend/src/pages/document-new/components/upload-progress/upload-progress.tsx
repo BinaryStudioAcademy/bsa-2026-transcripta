@@ -20,7 +20,7 @@ const UploadProgress: React.FC<Properties> = ({
 	fileSize,
 	percent,
 }: Properties) => {
-	const { checkTruncation, elementRef, isTruncated } =
+	const { checkTruncation, elementReference, isTruncated } =
 		useOverflowTooltip<HTMLSpanElement>(fileName);
 
 	return (
@@ -51,7 +51,7 @@ const UploadProgress: React.FC<Properties> = ({
 					>
 						<span
 							className={styles["upload-progress-file-name"]}
-							ref={elementRef}
+							ref={elementReference}
 						>
 							{fileName}
 						</span>

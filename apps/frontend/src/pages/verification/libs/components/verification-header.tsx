@@ -24,8 +24,8 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 	pageCount,
 	pageNo,
 }) => {
-	const { checkTruncation, elementRef, isTruncated } =
-		useOverflowTooltip<HTMLElement>(documentTitle);
+	const { checkTruncation, elementReference, isTruncated } =
+		useOverflowTooltip(documentTitle);
 
 	const budgetPercentage =
 		budgetLimit === ZERO_BUDGET
@@ -52,7 +52,7 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 					data-tip={isTruncated ? documentTitle : undefined}
 					onMouseEnter={checkTruncation}
 				>
-					<strong className="verification-header__title" ref={elementRef}>
+					<strong className="verification-header__title" ref={elementReference}>
 						{documentTitle}
 					</strong>
 				</span>

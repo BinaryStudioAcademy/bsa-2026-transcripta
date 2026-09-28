@@ -23,7 +23,7 @@ const DocumentTitleBlock: React.FC<Properties> = ({
 	status,
 	title,
 }: Properties) => {
-	const { checkTruncation, elementRef, isTruncated } =
+	const { checkTruncation, elementReference, isTruncated } =
 		useOverflowTooltip<HTMLHeadingElement>(title);
 
 	return (
@@ -36,7 +36,7 @@ const DocumentTitleBlock: React.FC<Properties> = ({
 					data-tip={isTruncated ? title : undefined}
 					onMouseEnter={checkTruncation}
 				>
-					<h1 className={styles["title"]} ref={elementRef}>
+					<h1 className={styles["title"]} ref={elementReference}>
 						{title}
 					</h1>
 				</div>

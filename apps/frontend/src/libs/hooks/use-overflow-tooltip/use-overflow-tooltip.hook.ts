@@ -2,18 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type UseOverflowTooltipReturn<T extends HTMLElement> = {
 	checkTruncation: () => void;
-	elementRef: React.RefObject<T | null>;
+	elementReference: React.RefObject<null | T>;
 	isTruncated: boolean;
 };
 
 const useOverflowTooltip = <T extends HTMLElement = HTMLElement>(
 	dependency?: unknown,
 ): UseOverflowTooltipReturn<T> => {
-	const elementRef = useRef<T | null>(null);
+	const elementReference = useRef<null | T>(null);
 	const [isTruncated, setIsTruncated] = useState(false);
 
 	const checkTruncation = useCallback((): void => {
-		const element = elementRef.current;
+		const element = elementReference.current;
 
 		if (!element) {
 			return;
@@ -23,7 +23,7 @@ const useOverflowTooltip = <T extends HTMLElement = HTMLElement>(
 	}, []);
 
 	useEffect(() => {
-		const element = elementRef.current;
+		const element = elementReference.current;
 
 		if (!element) {
 			return;
@@ -56,7 +56,7 @@ const useOverflowTooltip = <T extends HTMLElement = HTMLElement>(
 
 	return {
 		checkTruncation,
-		elementRef,
+		elementReference,
 		isTruncated,
 	};
 };

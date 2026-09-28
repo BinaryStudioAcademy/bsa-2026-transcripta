@@ -1,6 +1,7 @@
 import {
 	BYTES_IN_KILOBYTE,
 	configureString,
+	type DocumentGetAllItemResponseDto,
 	DocumentStatus,
 	DocumentValidationRule,
 	KILOBYTES_IN_MEGABYTE,
@@ -50,7 +51,7 @@ type TitleCellProperties = {
 const DocumentTitleCell: React.FC<TitleCellProperties> = ({
 	title,
 }: TitleCellProperties) => {
-	const { checkTruncation, elementRef, isTruncated } =
+	const { checkTruncation, elementReference, isTruncated } =
 		useOverflowTooltip<HTMLSpanElement>(title);
 
 	return (
@@ -64,7 +65,10 @@ const DocumentTitleCell: React.FC<TitleCellProperties> = ({
 			data-tip={isTruncated ? title : undefined}
 			onMouseEnter={checkTruncation}
 		>
-			<span className={styles["documents-page__title-text"]} ref={elementRef}>
+			<span
+				className={styles["documents-page__title-text"]}
+				ref={elementReference}
+			>
 				{title}
 			</span>
 		</span>
@@ -74,7 +78,7 @@ const DocumentTitleCell: React.FC<TitleCellProperties> = ({
 const DocumentFooterTitle: React.FC<TitleCellProperties> = ({
 	title,
 }: TitleCellProperties) => {
-	const { checkTruncation, elementRef, isTruncated } =
+	const { checkTruncation, elementReference, isTruncated } =
 		useOverflowTooltip<HTMLSpanElement>(title);
 
 	return (
@@ -88,10 +92,117 @@ const DocumentFooterTitle: React.FC<TitleCellProperties> = ({
 			data-tip={isTruncated ? title : undefined}
 			onMouseEnter={checkTruncation}
 		>
-			<span className={styles["documents-page__footer-title"]} ref={elementRef}>
+			<span
+				className={styles["documents-page__footer-title"]}
+				ref={elementReference}
+			>
 				{title}
 			</span>
 		</span>
+	);
+};
+
+type DocumentRowProperties = {
+	document: DocumentGetAllItemResponseDto;
+	onDeleteClick: (id: number) => void;
+	onRaiseLimitClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+	onRowActionClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+	onRowKeyDown: (event: React.KeyboardEvent<HTMLAnchorElement>) => void;
+};
+
+const DocumentRow: React.FC<DocumentRowProperties> = ({
+	document,
+	onDeleteClick,
+	onRaiseLimitClick,
+	onRowActionClick,
+	onRowKeyDown,
+}: DocumentRowProperties) => {
+	const handleDeleteClick = useCallback((): void => {
+		onDeleteClick(document.id);
+	}, [document.id, onDeleteClick]);
+
+	const isDraft = document.status === DocumentStatus.DRAFT;
+	const rowRoute = isDraft
+		? AppRoute.DOCUMENTS_NEW
+		: configureString(AppRoute.DOCUMENT, {
+				id: String(document.id),
+			});
+
+	const rowState = isDraft ? { documentId: document.id } : undefined;
+
+	const progressCursor =
+		document.pageCount === EMPTY_LENGTH
+			? EMPTY_LENGTH
+			: Math.min(document.cursorPageNo, document.pageCount);
+
+	return (
+		<div className="tx-table__row" data-document-id={document.id} role="row">
+			<div className={styles["documents-page__row"]}>
+				<span
+					className={["tx-table__cell", styles["documents-page__title-cell"]]
+						.filter(Boolean)
+						.join(" ")}
+					role="cell"
+				>
+					<Link
+						className={styles["documents-page__row-link"] ?? ""}
+						onKeyDown={onRowKeyDown}
+						state={rowState}
+						to={rowRoute}
+					>
+						<DocumentTitleCell title={document.title} />
+					</Link>
+				</span>
+				<span
+					className={["tx-table__cell", styles["documents-page__status-cell"]]
+						.filter(Boolean)
+						.join(" ")}
+					role="cell"
+				>
+					<StatusChip status={document.status} />
+
+					{document.status !== DocumentStatus.FAILED &&
+						document.pagesFailed > EMPTY_LENGTH && (
+							<Button
+								className={[
+									styles["documents-page__row-action"],
+									styles["documents-page__reread-link"],
+								]
+									.filter(Boolean)
+									.join(" ")}
+								label="Open to re-read failed pages"
+								onClick={onRowActionClick}
+							/>
+						)}
+					{document.status === DocumentStatus.BUDGET_STOP && (
+						<Button
+							className={styles["documents-page__row-action"]}
+							isSecondary
+							isSmall
+							label="Raise the limit"
+							onClick={onRaiseLimitClick}
+						/>
+					)}
+				</span>
+				<span className="tx-table__cell tx-num" role="cell">
+					{progressCursor} / {document.pageCount}
+				</span>
+				<span className="tx-table__cell tx-num" role="cell">
+					{formatMoney(document.spentUsd)} / {formatMoney(document.budgetUsd)}
+				</span>
+			</div>
+			<span className="tx-table__cell" role="cell">
+				<OverflowMenu
+					items={[
+						{
+							isDanger: true,
+							label: "Delete",
+							onClick: handleDeleteClick,
+						},
+					]}
+				/>
+			</span>
+		</div>
 	);
 };
 
@@ -306,109 +417,16 @@ const Documents: React.FC = () => {
 							<span className="tx-table__columnheader" role="columnheader" />
 						</div>
 
-						{documents.map((document) => {
-							const handleDeleteClick = (): void => {
-								setPendingDeleteId(document.id);
-							};
-
-							const isDraft = document.status === DocumentStatus.DRAFT;
-							const rowRoute = isDraft
-								? AppRoute.DOCUMENTS_NEW
-								: configureString(AppRoute.DOCUMENT, {
-										id: String(document.id),
-									});
-
-							const rowState = isDraft
-								? { documentId: document.id }
-								: undefined;
-
-							const progressCursor =
-								document.pageCount === EMPTY_LENGTH
-									? EMPTY_LENGTH
-									: Math.min(document.cursorPageNo, document.pageCount);
-
-							return (
-								<div
-									className="tx-table__row"
-									data-document-id={document.id}
-									key={document.id}
-									role="row"
-								>
-									<div className={styles["documents-page__row"]}>
-										<span
-											className={[
-												"tx-table__cell",
-												styles["documents-page__title-cell"],
-											]
-												.filter(Boolean)
-												.join(" ")}
-											role="cell"
-										>
-											<Link
-												className={styles["documents-page__row-link"] ?? ""}
-												onKeyDown={handleRowKeyDown}
-												state={rowState}
-												to={rowRoute}
-											>
-												<DocumentTitleCell title={document.title} />
-											</Link>
-										</span>
-										<span
-											className={[
-												"tx-table__cell",
-												styles["documents-page__status-cell"],
-											]
-												.filter(Boolean)
-												.join(" ")}
-											role="cell"
-										>
-											<StatusChip status={document.status} />
-
-											{document.status !== DocumentStatus.FAILED &&
-												document.pagesFailed > EMPTY_LENGTH && (
-													<Button
-														className={[
-															styles["documents-page__row-action"],
-															styles["documents-page__reread-link"],
-														]
-															.filter(Boolean)
-															.join(" ")}
-														label="Open to re-read failed pages"
-														onClick={handleRowActionClick}
-													/>
-												)}
-											{document.status === DocumentStatus.BUDGET_STOP && (
-												<Button
-													className={styles["documents-page__row-action"]}
-													isSecondary
-													isSmall
-													label="Raise the limit"
-													onClick={handleRaiseLimitClick}
-												/>
-											)}
-										</span>
-										<span className="tx-table__cell tx-num" role="cell">
-											{progressCursor} / {document.pageCount}
-										</span>
-										<span className="tx-table__cell tx-num" role="cell">
-											{formatMoney(document.spentUsd)} /{" "}
-											{formatMoney(document.budgetUsd)}
-										</span>
-									</div>
-									<span className="tx-table__cell" role="cell">
-										<OverflowMenu
-											items={[
-												{
-													isDanger: true,
-													label: "Delete",
-													onClick: handleDeleteClick,
-												},
-											]}
-										/>
-									</span>
-								</div>
-							);
-						})}
+						{documents.map((document) => (
+							<DocumentRow
+								document={document}
+								key={document.id}
+								onDeleteClick={setPendingDeleteId}
+								onRaiseLimitClick={handleRaiseLimitClick}
+								onRowActionClick={handleRowActionClick}
+								onRowKeyDown={handleRowKeyDown}
+							/>
+						))}
 					</div>
 				)}
 
