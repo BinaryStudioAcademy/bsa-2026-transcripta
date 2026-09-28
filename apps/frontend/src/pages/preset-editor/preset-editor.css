@@ -39,13 +39,22 @@
 	max-width: var(--preset-editor-content-max-width);
 }
 
-.preset-editor__card {
+.preset-editor__card,
+.preset-editor__error {
 	width: 100%;
 	max-width: 720px;
 	overflow: visible;
 	background: var(--surface);
 	border: 1px solid var(--hairline);
 	border-radius: var(--r-lg);
+}
+
+.preset-editor__error {
+	max-width: 450px;
+	padding: var(--sp-3);
+	margin: auto;
+	font: 600 var(--fs-xl) var(--font-display);
+	text-align: center;
 }
 
 .preset-editor__basic-fields {

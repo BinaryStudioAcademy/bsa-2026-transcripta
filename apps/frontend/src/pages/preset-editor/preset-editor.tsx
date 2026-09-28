@@ -1,12 +1,16 @@
 import React, { type ChangeEvent } from "react";
 
-import { LoaderOverlay, ThemeToggle } from "~/libs/components/components.js";
+import {
+	Button,
+	LoaderOverlay,
+	ThemeToggle,
+} from "~/libs/components/components.js";
 import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
 	GO_BACK,
 } from "~/libs/constants/constants.js";
-import { DataStatus } from "~/libs/enums/enums.js";
+import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -59,12 +63,14 @@ const PresetEditor: React.FC = () => {
 	const selectedPreset = useAppSelector(selectSelectedPreset);
 	const selectedPresetStatus = useAppSelector(selectSelectedPresetStatus);
 
-	const initialPresetId = id ? Number(id) : null;
+	const presetId = id ? Number(id) : null;
+	const isNewPreset = !id;
+	const isValidPresetId =
+		presetId !== null && Number.isInteger(presetId) && presetId > EMPTY_LENGTH;
+	const isInvalidPresetId = Boolean(id) && !isValidPresetId;
 
 	const [basePresetId, setBasePresetId] = useState<null | number>(
-		initialPresetId && Number.isFinite(initialPresetId)
-			? initialPresetId
-			: null,
+		isValidPresetId ? presetId : null,
 	);
 	const [name, setName] = useState("");
 	const [instructions, setInstructions] = useState("");
@@ -75,6 +81,8 @@ const PresetEditor: React.FC = () => {
 		selectedPresetStatus === DataStatus.PENDING ||
 		presetsStatus === DataStatus.PENDING;
 	const isSaving = createStatus === DataStatus.PENDING;
+	const isNotFound =
+		isInvalidPresetId || selectedPresetStatus === DataStatus.REJECTED;
 	const isFormDisabled = isLoading || isSaving || !selectedPreset;
 
 	const outputFields =
@@ -83,16 +91,22 @@ const PresetEditor: React.FC = () => {
 			: [];
 
 	useEffect(() => {
-		if (basePresetId === null && presets.length !== EMPTY_LENGTH) {
-			const firstPreset = presets[FIRST_INDEX];
-
-			if (!firstPreset) {
-				return;
-			}
-
-			setBasePresetId(firstPreset.id);
+		if (
+			!isNewPreset ||
+			basePresetId !== null ||
+			presets.length === EMPTY_LENGTH
+		) {
+			return;
 		}
-	}, [basePresetId, presets]);
+
+		const firstPreset = presets[FIRST_INDEX];
+
+		if (!firstPreset) {
+			return;
+		}
+
+		setBasePresetId(firstPreset.id);
+	}, [basePresetId, isNewPreset, presets]);
 
 	useEffect(() => {
 		if (presets.length === EMPTY_LENGTH) {
@@ -152,6 +166,12 @@ const PresetEditor: React.FC = () => {
 	const handleCancel = useCallback((): void => {
 		void (async (): Promise<void> => {
 			await navigate(GO_BACK);
+		})();
+	}, [navigate]);
+
+	const handleBackToPresets = useCallback((): void => {
+		void (async (): Promise<void> => {
+			await navigate(AppRoute.PRESETS);
 		})();
 	}, [navigate]);
 
@@ -259,6 +279,25 @@ const PresetEditor: React.FC = () => {
 		},
 		[handleRemoveEntry],
 	);
+
+	if (isNotFound) {
+		return (
+			<div className="preset-editor">
+				<header className="preset-editor__header">
+					<h1 className="preset-editor__title">Preset not found</h1>
+					<ThemeToggle />
+				</header>
+
+				<main className="preset-editor__main">
+					<section className="preset-editor__error">
+						<p>The requested preset does not exist.</p>
+
+						<Button label="Back to presets" onClick={handleBackToPresets} />
+					</section>
+				</main>
+			</div>
+		);
+	}
 
 	return (
 		<div className="preset-editor">
