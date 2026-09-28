@@ -3,8 +3,14 @@ import React from "react";
 import styles from "./styles.module.css";
 
 type Properties = {
+	"aria-expanded"?: boolean;
+	"aria-haspopup"?: React.AriaAttributes["aria-haspopup"];
+	"aria-label"?: string;
+	"aria-selected"?: boolean;
 	children?: React.ReactNode;
 	className?: string | undefined;
+	"data-id"?: string;
+	"data-kind"?: string;
 	isDanger?: boolean;
 	isDisabled?: boolean;
 	isFluid?: boolean;
@@ -13,6 +19,7 @@ type Properties = {
 	isSmall?: boolean;
 	label?: string;
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
+	role?: React.AriaRole;
 	type?: "button" | "submit";
 };
 
@@ -32,8 +39,14 @@ const getVariantClassName = (
 };
 
 const Button: React.FC<Properties> = ({
+	"aria-expanded": ariaExpanded,
+	"aria-haspopup": ariaHaspopup,
+	"aria-label": ariaLabel,
+	"aria-selected": ariaSelected,
 	children,
 	className,
+	"data-id": dataId,
+	"data-kind": dataKind,
 	isDanger = false,
 	isDisabled = false,
 	isFluid = false,
@@ -42,6 +55,7 @@ const Button: React.FC<Properties> = ({
 	isSmall = false,
 	label,
 	onClick,
+	role,
 	type = "button",
 }: Properties) => {
 	const buttonClassName = [
@@ -58,9 +72,16 @@ const Button: React.FC<Properties> = ({
 
 	return (
 		<button
+			aria-expanded={ariaExpanded}
+			aria-haspopup={ariaHaspopup}
+			aria-label={ariaLabel}
+			aria-selected={ariaSelected}
 			className={buttonClassName}
+			data-id={dataId}
+			data-kind={dataKind}
 			disabled={isDisabled}
 			onClick={onClick}
+			role={role}
 			type={type}
 		>
 			{label}
