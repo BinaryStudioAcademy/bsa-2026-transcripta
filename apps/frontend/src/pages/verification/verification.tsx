@@ -1,9 +1,4 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
-import {
-	INITIAL_COUNT,
-	MINIMUM_VALID_DOCUMENT_ID,
-} from "~/libs/constants/constants.js";
-import { DataStatus, PageVerificationAction } from "~/libs/enums/enums.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import {
 	AppRoute,
@@ -23,7 +18,6 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
-import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
 import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import {
@@ -53,6 +47,7 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
+import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import {
@@ -81,13 +76,6 @@ const Verification: React.FC = () => {
 		({ documents }) => documents.documentDataStatus,
 	);
 
-	const pauseResumeDataStatus = useAppSelector(
-		({ documents }) =>
-			documents.pauseResumeDataStatuses[
-				document?.id ?? MINIMUM_VALID_DOCUMENT_ID
-			],
-	);
-
 	const currentPage = useAppSelector(selectCurrentPage);
 	const lastVerifiedPageId = useAppSelector(selectLastVerifiedPageId);
 	const pagesDataStatus = useAppSelector(selectPagesDataStatus);
@@ -104,12 +92,8 @@ const Verification: React.FC = () => {
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 
-	const isPaused = document?.status === DocumentStatus.PAUSED;
-	const isProcessingToggleAvailable =
-		document?.status === DocumentStatus.PROCESSING || isPaused;
-	const isProcessingToggleDisabled =
-		pauseResumeDataStatus === DataStatus.PENDING ||
-		!isProcessingToggleAvailable;
+	const { isPaused, isToggleDisabled, onToggleProcessing } =
+		useProcessingToggle(document);
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 
@@ -374,20 +358,6 @@ const Verification: React.FC = () => {
 		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
 	}, [currentPage, dispatch]);
 
-	const handleToggleProcessing = useCallback((): void => {
-		if (!document) {
-			return;
-		}
-
-		if (isPaused) {
-			void dispatch(documentActions.resume(document.id));
-
-			return;
-		}
-
-		void dispatch(documentActions.pause(document.id));
-	}, [dispatch, document, isPaused]);
-
 	const handleToggleEdit = useCallback((): void => {
 		const canEdit =
 			Boolean(currentPage?.transcription) ||
@@ -466,14 +436,14 @@ const Verification: React.FC = () => {
 				isEditing={isEditing}
 				isPaused={isPaused}
 				isReprocessing={isReprocessing}
-				isToggleDisabled={isProcessingToggleDisabled}
+				isToggleDisabled={isToggleDisabled}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
-				onToggleProcessing={handleToggleProcessing}
+				onToggleProcessing={onToggleProcessing}
 				pageCount={document.pageCount}
 				scanRef={scanRef}
 				zoom={zoom}
