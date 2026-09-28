@@ -36,7 +36,9 @@
 }
 
 .preset-editor__container {
+	width: 100%;
 	max-width: var(--preset-editor-content-max-width);
+	margin: 0 auto;
 }
 
 .preset-editor__card,

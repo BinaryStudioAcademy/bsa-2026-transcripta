@@ -1,4 +1,6 @@
 .presets-page {
+	--presets-content-max-width: 960px;
+
 	display: flex;
 	flex-direction: column;
 	min-height: 100%;
@@ -33,11 +35,15 @@
 }
 
 .presets-page__main {
+	box-sizing: border-box;
 	display: flex;
 	flex: 1;
 	flex-direction: column;
 	gap: var(--sp-4);
+	width: 100%;
+	max-width: var(--presets-content-max-width);
 	padding: var(--sp-5);
+	margin: 0 auto;
 }
 
 .presets-page__table {
