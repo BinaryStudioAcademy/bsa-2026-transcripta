@@ -107,7 +107,10 @@ export {
 	type PresetCreateResponseDto,
 	type PresetGetAllItemResponseDto,
 	type PresetGetAllResponseDto,
+	type PresetGetByIdParametersDto,
+	type PresetGetByIdResponseDto,
 	PresetCreateValidationSchema,
+	PresetGetByIdParametersValidationSchema,
 	PresetsApiPath,
 	PresetValidationMessage,
 } from "./modules/presets/presets.js";
