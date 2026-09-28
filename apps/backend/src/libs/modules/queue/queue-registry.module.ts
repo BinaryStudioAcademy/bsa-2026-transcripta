@@ -6,14 +6,16 @@ import {
 	ConnectionEvents,
 	LoggerMessages,
 	QueueErrorMessage,
+	REDIS_CONNECT_TIMEOUT_MS,
 } from "./libs/constants/constants.js";
-import { closeRedisConnection } from "./libs/helpers/helpers.js";
+import { closeRedisConnection, withTimeout } from "./libs/helpers/helpers.js";
 import { type QueueLifecycle } from "./libs/types/types.js";
 
 const EMPTY_ERRORS_LENGTH = 0;
 
 type Constructor = {
 	connection: Redis;
+	connectTimeoutMs?: number;
 	logger: Logger;
 	queues: QueueLifecycle[];
 };
@@ -21,14 +23,22 @@ type Constructor = {
 class QueueRegistry {
 	private connection: Redis;
 
+	private connectTimeoutMs: number;
+
 	private isConnected = false;
 
 	private logger: Logger;
 
 	private queues: QueueLifecycle[];
 
-	public constructor({ connection, logger, queues }: Constructor) {
+	public constructor({
+		connection,
+		connectTimeoutMs = REDIS_CONNECT_TIMEOUT_MS,
+		logger,
+		queues,
+	}: Constructor) {
 		this.connection = connection;
+		this.connectTimeoutMs = connectTimeoutMs;
 		this.logger = logger;
 		this.queues = queues;
 
@@ -71,8 +81,14 @@ class QueueRegistry {
 		const connectedQueues: QueueLifecycle[] = [];
 
 		try {
-			await this.connection.connect();
-			await this.connection.ping();
+			await withTimeout(
+				(async () => {
+					await this.connection.connect();
+					await this.connection.ping();
+				})(),
+				this.connectTimeoutMs,
+				QueueErrorMessage.REDIS_UNAVAILABLE,
+			);
 
 			for (const queue of this.queues) {
 				await queue.connect(this.connection);
