@@ -132,6 +132,7 @@ const processVerificationQueue = createAsyncThunk<
 		};
 
 		let item = getNextItem();
+		let completedDocumentId: null | number = null;
 
 		while (item) {
 			const { pageId, payload } = item;
@@ -159,7 +160,17 @@ const processVerificationQueue = createAsyncThunk<
 					notification.error(getDiscardedVerificationsMessage(discarded));
 				}
 
-				return { discarded, failed: { error: result.error, item } };
+				return {
+					completedDocumentId,
+					discarded,
+					failed: { error: result.error, item },
+				};
+			}
+
+			// The backend has no page after this one, so it has just closed the
+			// document: the caller leaves verification when it sees the id back.
+			if (result.payload.next === null) {
+				completedDocumentId = item.documentId;
 			}
 
 			const wasManualTranscription = payload.transcriptionId === undefined;
@@ -171,7 +182,7 @@ const processVerificationQueue = createAsyncThunk<
 			item = getNextItem();
 		}
 
-		return { discarded: [], failed: null };
+		return { completedDocumentId, discarded: [], failed: null };
 	},
 	{
 		condition: (_, { getState }) =>
