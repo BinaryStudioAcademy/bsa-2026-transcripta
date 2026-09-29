@@ -107,6 +107,10 @@ class QueueRegistry {
 			throw new Error(QueueErrorMessage.REDIS_UNAVAILABLE, { cause: error });
 		}
 	}
+
+	public getQueues(): QueueLifecycle[] {
+		return this.queues;
+	}
 }
 
 export { QueueRegistry };
