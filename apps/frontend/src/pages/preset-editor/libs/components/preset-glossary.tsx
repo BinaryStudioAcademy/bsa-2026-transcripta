@@ -1,6 +1,7 @@
 import React from "react";
 
 import { Button } from "~/libs/components/components.js";
+import { useEffect, useRef } from "~/libs/hooks/hooks.js";
 
 import type { GlossaryEntry } from "../../libs/types/preset-editor.types.js";
 
@@ -10,6 +11,7 @@ type Properties = {
 	entries: GlossaryEntry[];
 	isDisabled: boolean;
 	onAddEntry: () => void;
+	onCloseTypeSelector: () => void;
 	onKindOptionClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 	onRemoveButtonClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 	onTypeButtonClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -21,12 +23,40 @@ const PresetGlossary: React.FC<Properties> = ({
 	entries,
 	isDisabled,
 	onAddEntry,
+	onCloseTypeSelector,
 	onKindOptionClick,
 	onRemoveButtonClick,
 	onTypeButtonClick,
 	onValueChange,
 	openTypeId,
 }) => {
+	const typeSelectorReference = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleDocumentMouseDown = (event: MouseEvent): void => {
+			if (
+				typeSelectorReference.current &&
+				!typeSelectorReference.current.contains(event.target as Node)
+			) {
+				onCloseTypeSelector();
+			}
+		};
+
+		const handleDocumentKeyDown = (event: KeyboardEvent): void => {
+			if (event.key === "Escape") {
+				onCloseTypeSelector();
+			}
+		};
+
+		document.addEventListener("mousedown", handleDocumentMouseDown);
+		document.addEventListener("keydown", handleDocumentKeyDown);
+
+		return (): void => {
+			document.removeEventListener("mousedown", handleDocumentMouseDown);
+			document.removeEventListener("keydown", handleDocumentKeyDown);
+		};
+	}, [onCloseTypeSelector]);
+
 	return (
 		<div className="preset-editor__section preset-editor__glossary">
 			<div className="preset-editor__section-heading">
@@ -50,7 +80,10 @@ const PresetGlossary: React.FC<Properties> = ({
 			<div className="preset-editor__glossary-list">
 				{entries.map((entry) => (
 					<div className="preset-editor__glossary-row" key={entry.id}>
-						<div className="preset-editor__type-selector">
+						<div
+							className="preset-editor__type-selector"
+							ref={openTypeId === entry.id ? typeSelectorReference : null}
+						>
 							<Button
 								aria-expanded={openTypeId === entry.id}
 								aria-haspopup="listbox"
@@ -60,7 +93,7 @@ const PresetGlossary: React.FC<Properties> = ({
 								isSmall
 								onClick={onTypeButtonClick}
 							>
-								<span>{entry.kind}</span>
+								<span>{entry.kind.replaceAll("_", " ")}</span>
 								<span className="preset-editor__type-chevron">▾</span>
 							</Button>
 
