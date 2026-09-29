@@ -14,7 +14,6 @@ export { MAX_FAILURES_BEFORE_STOP } from "./max-failures-before-stop.constant.js
 export { MINIMUM_VALID_DOCUMENT_ID } from "./minimum-valid-document-id.constant.js";
 export { GO_BACK } from "./navigation.constant.js";
 export { NO_MORE_THAN_TWO_DECIMALS_BUDGET } from "./no-more-than-two-decimals-budget.constant.js";
-export { NOTIFICATION_DELAY_MS } from "./notification-delay.constant.js";
 export { SIGN_UP_FAILED } from "./sign-up-failed.constant.js";
 export { SUGGESTED_LIMIT_INCREMENT } from "./suggested-limit-increment.constant.js";
 export { UPLOAD_WARNING_MESSAGE } from "./upload-message.constant.js";

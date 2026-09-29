@@ -25,17 +25,21 @@ import {
 	type Properties,
 } from "./types/types.js";
 
-const RaiseLimitDialog: React.FC<Properties> = ({
-	currentLimitUsd,
-	onCancel,
-	onSubmit,
-	spentUsd,
-}: Properties) => {
+const RaiseLimitDialog: React.FC<
+	Properties & { serverError?: null | string }
+> = ({ currentLimitUsd, onCancel, onSubmit, serverError, spentUsd }) => {
 	const suggestedLimit = (
 		Number(currentLimitUsd) + SUGGESTED_LIMIT_INCREMENT
 	).toFixed(CURRENCY_DECIMAL_PLACES);
 
 	const [validationError, setValidationError] = useState<null | string>(null);
+	const [activeServerError, setActiveServerError] = useState<
+		null | string | undefined
+	>(serverError);
+
+	React.useEffect(() => {
+		setActiveServerError(serverError);
+	}, [serverError]);
 
 	const { control, handleSubmit } = useAppForm<FormValuesRaiseBudgetLimit>({
 		defaultValues: { limitUsd: suggestedLimit },
@@ -66,10 +70,12 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 			} else {
 				setValidationError(null);
 			}
-
+			if (activeServerError) {
+				setActiveServerError(null);
+			}
 			field.onChange(event);
 		},
-		[field],
+		[field, activeServerError],
 	);
 
 	const handleFormSubmit = useCallback(
@@ -96,6 +102,8 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 		},
 		[handleSubmit, spentUsd, onSubmit],
 	);
+
+	const displayError = validationError || activeServerError;
 
 	return (
 		<div className={styles["scrim"]}>
@@ -142,8 +150,8 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 						/>
 					</div>
 
-					{validationError && (
-						<p className={styles["error-message"]}>{validationError}</p>
+					{displayError && (
+						<p className={styles["error-message"]}>{displayError}</p>
 					)}
 
 					<div className={styles["actions"]}>
