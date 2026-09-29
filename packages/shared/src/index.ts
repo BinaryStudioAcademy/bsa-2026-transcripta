@@ -44,6 +44,7 @@ export {
 	DocumentExportGetByIdParametersValidationSchema,
 	DocumentExportsApiPath,
 	DocumentExportStatus,
+	getDocumentExportFileName,
 } from "./modules/document-exports/document-exports.js";
 export {
 	type DocumentCreateRequestDto,

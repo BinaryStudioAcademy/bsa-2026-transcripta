@@ -1,8 +1,9 @@
+import { getDocumentExportFileName } from "@transcripta/shared";
+
 import {
 	type DocumentExport,
 	type DocumentExportItemResponseDto,
 } from "../types/types.js";
-import { getExportFileName } from "./get-export-file-name.helper.js";
 import { getExportMeta } from "./get-export-meta.helper.js";
 
 const getDocumentExport = (
@@ -12,7 +13,7 @@ const getDocumentExport = (
 	downloadUrl: documentExport.downloadUrl,
 	exportId: documentExport.id,
 	id: String(documentExport.id),
-	name: getExportFileName(documentTitle, documentExport.format),
+	name: getDocumentExportFileName(documentTitle, documentExport.format),
 	readyMeta: getExportMeta(documentExport),
 	status: documentExport.status,
 });

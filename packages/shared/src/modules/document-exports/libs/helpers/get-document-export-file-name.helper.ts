@@ -1,10 +1,10 @@
-import { type ExportFormatValue } from "../types/types.js";
+import { type DocumentExportFormatValue } from "../types/types.js";
 
 const FALLBACK_FILE_NAME = "export";
 
-const getExportFileName = (
+const getDocumentExportFileName = (
 	documentTitle: string,
-	format: ExportFormatValue,
+	format: DocumentExportFormatValue,
 ): string => {
 	const slug = documentTitle
 		.toLowerCase()
@@ -15,4 +15,4 @@ const getExportFileName = (
 	return `${slug || FALLBACK_FILE_NAME}.${format}`;
 };
 
-export { getExportFileName };
+export { getDocumentExportFileName };

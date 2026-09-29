@@ -1,4 +1,5 @@
 import { type ActionReducerMapBuilder, createSlice } from "@reduxjs/toolkit";
+import { getDocumentExportFileName } from "@transcripta/shared";
 
 import { INGESTION_FAILED_MESSAGE } from "~/libs/constants/constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
@@ -15,11 +16,7 @@ import {
 	ExportStatusLabel,
 } from "~/modules/documents/libs/enums/enums.js";
 
-import {
-	getDocumentExport,
-	getExportFileName,
-	getExportMeta,
-} from "../libs/helpers/helpers.js";
+import { getDocumentExport, getExportMeta } from "../libs/helpers/helpers.js";
 import {
 	create,
 	ingest,
@@ -202,7 +199,7 @@ const registerExportReducers = (builder: ExtraReducersBuilder): void => {
 			downloadUrl: null,
 			exportId: null,
 			id: action.meta.requestId,
-			name: getExportFileName(documentTitle, format),
+			name: getDocumentExportFileName(documentTitle, format),
 			readyMeta: ExportStatusLabel.PREPARING,
 			status: DocumentExportStatus.QUEUED,
 		});
