@@ -49,11 +49,7 @@ const useVerificationKeyboard = ({
 			if (isUndoShortcut) {
 				event.preventDefault();
 				onUndo();
-			}
-		};
 
-		const handleKeyUp = (event: KeyboardEvent): void => {
-			if (!canHandleShortcut(event.target)) {
 				return;
 			}
 
@@ -67,27 +63,37 @@ const useVerificationKeyboard = ({
 			}
 
 			if (event.key === "?") {
+				event.preventDefault();
 				onToggleShortcuts();
+
 				return;
 			}
 
 			if (event.key === "ArrowLeft") {
+				event.preventDefault();
 				onPrevious();
+
 				return;
 			}
 
 			if (event.key === "Enter" || event.key === "ArrowRight") {
+				event.preventDefault();
 				onConfirm();
+
 				return;
 			}
 
 			if (event.code === "KeyE") {
+				event.preventDefault();
 				onEdit();
+
 				return;
 			}
 
 			if (event.code === "KeyS") {
+				event.preventDefault();
 				onSkip();
+
 				return;
 			}
 
@@ -97,12 +103,10 @@ const useVerificationKeyboard = ({
 			}
 		};
 
-		globalThis.addEventListener("keydown", handleKeyDown);
-		globalThis.addEventListener("keyup", handleKeyUp);
+		globalThis.addEventListener("keydown", handleKeyDown, true);
 
 		return () => {
-			globalThis.removeEventListener("keydown", handleKeyDown);
-			globalThis.removeEventListener("keyup", handleKeyUp);
+			globalThis.removeEventListener("keydown", handleKeyDown, true);
 		};
 	}, [
 		onConfirm,
