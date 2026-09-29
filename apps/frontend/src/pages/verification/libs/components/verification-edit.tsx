@@ -88,15 +88,19 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 					type="button"
 				/>
 
-				<span>
-					<kbd className="tx-kbd">{isMacOs ? "⌘+Enter" : "Ctrl+Enter"}</kbd>
-					{" — Save and next"}
-				</span>
+				<span className="tx-kbdrow">
+					<span>
+						<kbd className="tx-kbd">
+							{isMacOs ? "⌘+Enter" : "Ctrl+Enter"}
+						</kbd>
+						{" — Save and next"}
+					</span>
 
-				<Button isDisabled={isDisabled} onClick={onCancel} type="button">
-					<kbd className="tx-kbd">Esc</kbd>
-					{" — cancel"}
-				</Button>
+					<span>
+						<kbd className="tx-kbd">Esc</kbd>
+						{" — cancel"}
+					</span>
+				</span>
 			</div>
 		</div>
 	);
