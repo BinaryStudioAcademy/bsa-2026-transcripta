@@ -30,6 +30,7 @@ import {
 	DEFAULT_VALIDATION_ERROR_MESSAGE,
 	INVALID_JSON_BODY_ERROR_MESSAGE,
 	ShutdownLoggerMessages,
+	TRUSTED_PROXY_HOPS,
 } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
@@ -100,6 +101,13 @@ class BaseServerApplication implements ServerApplication {
 	private initApp(): void {
 		this.app = Fastify({
 			ignoreTrailingSlash: true,
+			// Caddy terminates TLS in front of the backend, so without this every
+			// request arrives from its container address and the per-IP auth rate
+			// limit becomes one shared counter for the whole site.
+			// 1, not true: trust exactly the one hop we run. Trusting the entire
+			// X-Forwarded-For chain would let a client spoof its own address and
+			// skip the limit altogether.
+			trustProxy: TRUSTED_PROXY_HOPS,
 		});
 	}
 
