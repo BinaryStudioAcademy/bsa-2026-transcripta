@@ -1,6 +1,11 @@
-import { HTTPCode, HTTPError } from "@transcripta/shared";
+import {
+	getDocumentExportFileName,
+	HTTPCode,
+	HTTPError,
+} from "@transcripta/shared";
 
 import { type BaseStorage } from "~/libs/modules/storage/base-storage.module.js";
+import { type DocumentRepository } from "~/modules/documents/document.repository.js";
 
 import { type DocumentExportRepository } from "./document-export.repository.js";
 import {
@@ -11,16 +16,20 @@ import { type DocumentExportGetByIdResponseDto } from "./libs/types/types.js";
 
 class DocumentExportService {
 	private documentExportRepository: DocumentExportRepository;
+	private documentRepository: DocumentRepository;
 	private storage: BaseStorage;
 
 	public constructor({
 		documentExportRepository,
+		documentRepository,
 		storage,
 	}: {
 		documentExportRepository: DocumentExportRepository;
+		documentRepository: DocumentRepository;
 		storage: BaseStorage;
 	}) {
 		this.documentExportRepository = documentExportRepository;
+		this.documentRepository = documentRepository;
 		this.storage = storage;
 	}
 
@@ -47,9 +56,24 @@ class DocumentExportService {
 			exportData.status === DocumentExportStatus.READY &&
 			exportData.objectKey
 		) {
-			downloadUrl = await this.storage.getExportDownloadSignedUrl(
-				exportData.objectKey,
+			const document = await this.documentRepository.findById(
+				exportData.documentId,
 			);
+
+			if (!document) {
+				throw new HTTPError({
+					message: DocumentExportErrorMessage.DOCUMENT_NOT_FOUND,
+					status: HTTPCode.NOT_FOUND,
+				});
+			}
+
+			downloadUrl = await this.storage.getExportDownloadSignedUrl({
+				fileName: getDocumentExportFileName(
+					document.toObject().title,
+					exportData.format,
+				),
+				key: exportData.objectKey,
+			});
 		}
 
 		return {

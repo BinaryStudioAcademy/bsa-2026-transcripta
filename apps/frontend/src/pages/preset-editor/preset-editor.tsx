@@ -322,6 +322,10 @@ const PresetEditor: React.FC = () => {
 		[handleRemoveEntry],
 	);
 
+	const handleCloseTypeSelector = useCallback((): void => {
+		setOpenTypeId(null);
+	}, []);
+
 	if (isNotFound) {
 		return (
 			<div className="preset-editor">
@@ -371,6 +375,7 @@ const PresetEditor: React.FC = () => {
 								entries={entries}
 								isDisabled={isFormDisabled}
 								onAddEntry={handleAddEntry}
+								onCloseTypeSelector={handleCloseTypeSelector}
 								onKindOptionClick={handleKindOptionClick}
 								onRemoveButtonClick={handleRemoveButtonClick}
 								onTypeButtonClick={handleTypeButtonClick}

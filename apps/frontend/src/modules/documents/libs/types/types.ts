@@ -3,6 +3,9 @@ export { type ExportFormatValue } from "./export-format-value.type.js";
 export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentExportCreateRequestDto,
+	type DocumentExportCreateResponseDto,
+	type DocumentExportItemResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
