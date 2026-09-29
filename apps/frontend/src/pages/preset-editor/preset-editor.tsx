@@ -18,6 +18,7 @@ import {
 	useEffect,
 	useNavigate,
 	useParams,
+	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
 
@@ -91,6 +92,7 @@ const PresetEditor: React.FC = () => {
 	};
 
 	const isDirty = isPresetFormDirty(initialFormState, currentFormState);
+	const initialStateInitialized = useRef(false);
 
 	const isLoading =
 		selectedPresetStatus === DataStatus.PENDING ||
@@ -148,14 +150,19 @@ const PresetEditor: React.FC = () => {
 		setDescription(selectedPreset.description);
 		setInstructions(selectedPreset.instructions);
 		setEntries(initialEntries);
-		setInitialFormState({
-			basePresetId,
-			description: selectedPreset.description,
-			entries: initialEntries,
-			instructions: selectedPreset.instructions,
-			name: selectedPreset.name,
-		});
 		setOpenTypeId(null);
+
+		if (!initialStateInitialized.current) {
+			setInitialFormState({
+				basePresetId,
+				description: selectedPreset.description,
+				entries: initialEntries,
+				instructions: selectedPreset.instructions,
+				name: selectedPreset.name,
+			});
+
+			initialStateInitialized.current = true;
+		}
 	}, [selectedPreset, basePresetId]);
 
 	const handleSubmit = useCallback((): void => {
