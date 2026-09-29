@@ -88,7 +88,7 @@ const splitPageBlocks = (text: string): PageBlock[] => {
 		const line = lines[index];
 
 		if (line === undefined) {
-			continue;
+			break;
 		}
 
 		if (!isTableRow(line.text)) {

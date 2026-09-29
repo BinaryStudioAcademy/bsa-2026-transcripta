@@ -82,13 +82,7 @@ const VerificationPageText: React.FC<Properties> = ({
 				);
 			})}
 			{blocks.length === FIRST_INDEX && (
-				<p className="verification-transcription__paragraph">
-					{markText({
-						contextWords: lexiconWords,
-						segment: "",
-						segmentStart: EMPTY_LENGTH,
-					})}
-				</p>
+				<p className="verification-transcription__paragraph">{text}</p>
 			)}
 		</div>
 	);
