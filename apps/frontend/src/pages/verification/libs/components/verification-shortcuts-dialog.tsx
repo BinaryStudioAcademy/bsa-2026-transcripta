@@ -1,4 +1,5 @@
 import { Button } from "~/libs/components/components.js";
+import { getIsMacOs } from "~/libs/helpers/helpers.js";
 
 type VerificationShortcutsDialogProperties = {
 	onClose: () => void;
@@ -7,6 +8,8 @@ type VerificationShortcutsDialogProperties = {
 const VerificationShortcutsDialog: React.FC<
 	VerificationShortcutsDialogProperties
 > = ({ onClose }) => {
+	const isMacOs = getIsMacOs();
+
 	return (
 		<div className="tx-scrim">
 			<div className="tx-dialog">
@@ -28,7 +31,7 @@ const VerificationShortcutsDialog: React.FC<
 					<kbd className="tx-kbd">S</kbd>
 					<span>Skip</span>
 
-					<kbd className="tx-kbd">Ctrl+Z</kbd>
+					<kbd className="tx-kbd">{isMacOs ? "⌘+Z" : "Ctrl+Z"}</kbd>
 					<span>Undo</span>
 
 					<kbd className="tx-kbd">Space</kbd>
