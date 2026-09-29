@@ -90,9 +90,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 
 				<span className="tx-kbdrow">
 					<span>
-						<kbd className="tx-kbd">
-							{isMacOs ? "⌘+Enter" : "Ctrl+Enter"}
-						</kbd>
+						<kbd className="tx-kbd">{isMacOs ? "⌘+Enter" : "Ctrl+Enter"}</kbd>
 						{" — Save and next"}
 					</span>
 
