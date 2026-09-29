@@ -113,6 +113,24 @@ class BaseConfig implements Config {
 					format: Number,
 				},
 			},
+			QUEUE_BOARD: {
+				// The board can delete, retry and drain jobs, so it stays off
+				// unless a password is set: an empty password disables the route
+				// rather than publishing an unguarded control panel.
+				PASSWORD: {
+					default: "",
+					doc: "Basic-auth password for the queue board; empty disables the board",
+					env: "QUEUE_BOARD_PASSWORD",
+					format: String,
+					sensitive: true,
+				},
+				USERNAME: {
+					default: "admin",
+					doc: "Basic-auth username for the queue board",
+					env: "QUEUE_BOARD_USERNAME",
+					format: String,
+				},
+			},
 			REDIS: {
 				URL: {
 					default: "redis://localhost:6379",

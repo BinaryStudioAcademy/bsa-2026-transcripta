@@ -148,6 +148,10 @@ class BaseQueue<TData> implements QueueLifecycle {
 		}
 	}
 
+	public getQueue(): null | Queue<Job<TData>> {
+		return this.queue;
+	}
+
 	public async pauseWorkerFor(durationMs: number): Promise<void> {
 		if (!this.worker) {
 			return;
