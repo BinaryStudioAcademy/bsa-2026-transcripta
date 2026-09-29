@@ -108,20 +108,30 @@ function canHandleShortcut(): boolean {
 }
 
 useEffect(() => {
-	const onKeyUp = (e: KeyboardEvent) => {
+	const onKeyDown = (e: KeyboardEvent) => {
 		if (!canHandleShortcut()) return;
-		if (e.ctrlKey || e.metaKey || e.altKey) return; // leave system combos alone
-		handleKey(e.key);
+		if (e.repeat) return;
+		if (e.ctrlKey || e.metaKey || e.altKey) return;
+		if (!handleKey(e)) return;
+		e.preventDefault();
 	};
-	document.addEventListener("keyup", onKeyUp);
-	return () => document.removeEventListener("keyup", onKeyUp);
+	document.addEventListener("keydown", onKeyDown, true);
+	return () => document.removeEventListener("keydown", onKeyDown, true);
 }, [handleKey]);
 ```
 
-Two non-obvious points:
+Four non-obvious points:
 
-- **`keyup`, not `keydown`.** On `keydown` a held key auto-repeats and the
-  human accidentally confirms five pages instead of one.
+- **`keydown`, not `keyup`.** Only a `keydown` default action can be
+  cancelled. Handling the shortcut on `keyup` lets the focused element react
+  first: after clicking the `►` arrow the button keeps focus, so `Enter`
+  activates it _and_ confirms, and the page that gets confirmed is the one the
+  arrow just revealed. The human confirms a page they never read.
+- **`preventDefault()` on every handled key.** The shortcut claims the
+  keystroke, so no focused control — a page strip arrow, an action button, a
+  scrollable table — reacts to it as well.
+- **`e.repeat` guards the auto-repeat.** Without it a held `Enter` confirms
+  five pages instead of one.
 - **Skip `Ctrl`/`Cmd`/`Alt`.** Otherwise `Ctrl+C` fires the "confirm"
   shortcut.
 
