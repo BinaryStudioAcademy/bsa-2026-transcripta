@@ -3,6 +3,7 @@ export {
 	DocumentExportsApiPath,
 	DocumentExportStatus,
 } from "./libs/enums/enums.js";
+export { getDocumentExportFileName } from "./libs/helpers/helpers.js";
 export {
 	type DocumentExportCreateRequestDto,
 	type DocumentExportCreateResponseDto,

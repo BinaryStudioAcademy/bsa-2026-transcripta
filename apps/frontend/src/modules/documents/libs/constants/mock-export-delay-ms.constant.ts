@@ -1,3 +1,0 @@
-const MOCK_EXPORT_DELAY_MS = 2000;
-
-export { MOCK_EXPORT_DELAY_MS };
