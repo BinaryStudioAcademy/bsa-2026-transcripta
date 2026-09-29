@@ -299,7 +299,7 @@ const Document: React.FC = () => {
 										onRaiseLimitClick={handleOpenRaiseLimit}
 										pagesBlank={currentDocument.progress.pagesBlank}
 										pagesFailed={currentDocument.progress.pagesFailed}
-										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTotal={currentDocument.pageCount}
 										pagesTranscribed={pagesTranscribed}
 										status={currentDocument.status}
 									/>
@@ -314,7 +314,7 @@ const Document: React.FC = () => {
 											currentDocument.progress.pagesReadyToCheck
 										}
 										pagesSkipped={currentDocument.progress.pagesSkipped}
-										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTotal={currentDocument.pageCount}
 										pagesTranscribed={pagesTranscribed}
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
@@ -322,11 +322,11 @@ const Document: React.FC = () => {
 									<VerificationBlock
 										cursorPageNo={currentDocument.cursorPageNo}
 										documentId={currentDocument.id}
+										pageCount={currentDocument.pageCount}
 										pagesReadyToCheck={
 											currentDocument.progress.pagesReadyToCheck
 										}
 										pagesSkipped={currentDocument.progress.pagesSkipped}
-										pagesTranscribed={pagesTranscribed}
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
 
@@ -335,7 +335,7 @@ const Document: React.FC = () => {
 									<ExportBlock
 										documentId={currentDocument.id}
 										documentTitle={currentDocument.title}
-										pagesTotal={currentDocument.progress.pagesTotal}
+										pagesTotal={currentDocument.pageCount}
 										pagesVerified={currentDocument.progress.pagesVerified}
 									/>
 
