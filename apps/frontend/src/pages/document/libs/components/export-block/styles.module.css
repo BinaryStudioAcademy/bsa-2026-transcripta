@@ -1,62 +1,86 @@
 .note {
-	margin: var(--sp-3) 0 0;
+	margin: var(--sp-3) 0;
 	font-size: var(--fs-xs);
-	line-height: var(--lh-body-wide);
+	line-height: 1.5;
 	color: var(--text-3);
 }
 
 .empty {
-	margin: var(--sp-3) 0 0;
+	padding-top: 10px;
+	margin: 0;
 	font-size: var(--fs-xs);
+	line-height: 1.5;
 	color: var(--text-3);
+	border-top: 1px solid var(--hairline);
 }
 
 .list {
-	display: flex;
-	flex-direction: column;
-	gap: var(--sp-2);
 	padding: 0;
-	margin: var(--sp-3) 0 0;
+	margin: 0;
 	list-style: none;
 }
 
 .row {
 	display: flex;
-	gap: var(--sp-2);
-	align-items: baseline;
-	font-size: var(--fs-xs);
+	gap: var(--sp-3);
+	align-items: center;
+	padding: 10px 0;
+	border-top: 1px solid var(--hairline);
 }
 
 .status {
-	font-family: var(--font-mono);
+	flex: none;
+	font: 500 var(--fs-xs) / 1 var(--font-mono);
 	color: var(--text-3);
+}
+
+.status-ready {
+	font-weight: 700;
+	color: var(--ok-text);
+}
+
+.status-failed {
+	font-weight: 700;
+	color: var(--danger-text);
+}
+
+.info {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
 }
 
 .name {
-	font-family: var(--font-mono);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font: 500 12.5px / 1 var(--font-mono);
+	font-variant-numeric: tabular-nums;
 	color: var(--text);
+	white-space: nowrap;
 }
 
 .meta {
+	font: 400 var(--fs-2xs) / 1.4 var(--font-mono);
+	font-variant-numeric: tabular-nums;
 	color: var(--text-3);
 }
 
-.download {
-	display: inline-flex;
-	align-items: center;
-	height: var(--ctl-sm);
-	padding: 0 var(--sp-2);
-	font-family: var(--font-ui);
-	font-size: var(--fs-xs);
-	font-weight: 500;
-	color: var(--text-2);
-	text-decoration: none;
-	border-radius: var(--r-md);
+.meta-failed {
+	color: var(--danger-text);
 }
 
-.download:hover,
-.download:active {
-	background-color: var(--surface-2);
+.download {
+	flex: none;
+	font: 500 var(--fs-xs) / 1 var(--font-ui);
+	color: var(--link);
+	text-decoration: underline;
+	border-radius: var(--r-sm);
+}
+
+.download:hover {
+	color: var(--accent-hover);
 }
 
 .download:focus-visible {

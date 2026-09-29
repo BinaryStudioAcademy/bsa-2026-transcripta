@@ -5,6 +5,7 @@ export {
 	type DocumentCreateResponseDto,
 	type DocumentExportCreateRequestDto,
 	type DocumentExportCreateResponseDto,
+	type DocumentExportItemResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,

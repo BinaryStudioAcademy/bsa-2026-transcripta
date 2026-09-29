@@ -5,7 +5,6 @@ import {
 	MAX_FAILURES_BEFORE_STOP,
 } from "~/libs/constants/constants.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
-import { HTTPError } from "~/libs/modules/http/http.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
 import {
@@ -15,6 +14,7 @@ import {
 import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentExportCreateResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
@@ -31,7 +31,6 @@ import {
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
 import { PollingIntervalsMS } from "../libs/enums/enums.js";
-import { formatFileSize } from "../libs/helpers/helpers.js";
 import { name as sliceName } from "./documents.slice.js";
 
 type GetUploadUrlPayload = {
@@ -42,19 +41,21 @@ type GetUploadUrlPayload = {
 
 type RequestExportPayload = {
 	documentId: number;
+	documentTitle: string;
 	format: ExportFormatValue;
-};
-
-type RequestExportResult = {
-	downloadUrl: string;
-	name: string;
-	readyMeta: string;
 };
 
 type UpdateBudgetPayload = {
 	id: number;
 	payload: DocumentUpdateBudgetDto;
 };
+
+type WatchExportPayload = {
+	documentId: number;
+	exportId: number;
+};
+
+const watchedExportIds = new Set<number>();
 
 let pollingIntervalId: null | ReturnType<typeof setInterval> = null;
 let consecutiveErrors = INITIAL_COUNT;
@@ -308,41 +309,52 @@ const updateBudget = createAsyncThunk<
 );
 
 const requestExport = createAsyncThunk<
-	RequestExportResult,
+	DocumentExportCreateResponseDto,
 	RequestExportPayload,
 	AsyncThunkConfig
 >(
 	`${sliceName}/request-export`,
-	async ({ documentId, format }, { extra }) => {
-		const { documentApi, documentExportApi } = extra;
+	({ documentId, format }, { extra }) => {
+		const { documentApi } = extra;
 
-		try {
-			const { id } = await documentApi.createExport(documentId, { format });
-			const documentExport = await waitForExportToFinish(() =>
-				documentExportApi.getById(id),
-			);
-
-			if (
-				documentExport.status !== DocumentExportStatus.READY ||
-				documentExport.downloadUrl === null
-			) {
-				throw new Error(EXPORT_FAILED_MESSAGE);
-			}
-
-			return {
-				downloadUrl: documentExport.downloadUrl,
-				name: `export.${format}`,
-				readyMeta: formatFileSize(documentExport.sizeBytes ?? INITIAL_COUNT),
-			};
-		} catch (error) {
-			notification.error(
-				error instanceof HTTPError ? error.message : EXPORT_FAILED_MESSAGE,
-			);
-
-			throw error;
-		}
+		return documentApi.createExport(documentId, { format });
 	},
 	{ serializeError },
+);
+
+const watchExport = createAsyncThunk<
+	DocumentExportGetByIdResponseDto,
+	WatchExportPayload,
+	AsyncThunkConfig
+>(
+	`${sliceName}/watch-export`,
+	async ({ exportId }, { extra }) => {
+		const { documentExportApi } = extra;
+
+		watchedExportIds.add(exportId);
+
+		try {
+			const documentExport = await waitForExportToFinish(() =>
+				documentExportApi.getById(exportId),
+			);
+
+			if (documentExport.status === DocumentExportStatus.FAILED) {
+				notification.error(EXPORT_FAILED_MESSAGE);
+			}
+
+			return documentExport;
+		} catch (error) {
+			notification.error(EXPORT_FAILED_MESSAGE);
+
+			throw error;
+		} finally {
+			watchedExportIds.delete(exportId);
+		}
+	},
+	{
+		condition: ({ exportId }) => !watchedExportIds.has(exportId),
+		serializeError,
+	},
 );
 
 export {
@@ -359,4 +371,5 @@ export {
 	startPolling,
 	stopPolling,
 	updateBudget,
+	watchExport,
 };

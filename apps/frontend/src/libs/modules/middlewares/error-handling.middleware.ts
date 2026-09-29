@@ -31,7 +31,7 @@ errorHandlingMiddleware.startListening({
 
 		if (
 			action.type === documentActions.ingest.rejected.type ||
-			action.type === documentActions.requestExport.rejected.type
+			action.type === documentActions.watchExport.rejected.type
 		) {
 			return;
 		}

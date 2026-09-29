@@ -1,5 +1,4 @@
 import { type ActionReducerMapBuilder, createSlice } from "@reduxjs/toolkit";
-import { INDEX_NOT_FOUND } from "@transcripta/shared";
 
 import { INGESTION_FAILED_MESSAGE } from "~/libs/constants/constants.js";
 import { DataStatus } from "~/libs/enums/enums.js";
@@ -10,8 +9,17 @@ import {
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
-import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import {
+	DocumentExportStatus,
+	DocumentStatus,
+	ExportStatusLabel,
+} from "~/modules/documents/libs/enums/enums.js";
 
+import {
+	getDocumentExport,
+	getExportFileName,
+	getExportMeta,
+} from "../libs/helpers/helpers.js";
 import {
 	create,
 	ingest,
@@ -23,6 +31,7 @@ import {
 	requestExport,
 	resume,
 	updateBudget,
+	watchExport,
 } from "./actions.js";
 
 type State = {
@@ -90,6 +99,10 @@ const registerDocumentStateReducers = (builder: ExtraReducersBuilder): void => {
 
 		state.document = action.payload;
 		state.documentDataStatus = DataStatus.FULFILLED;
+		state.documentExports[action.payload.id] = action.payload.exports.map(
+			(documentExport) =>
+				getDocumentExport(documentExport, action.payload.title),
+		);
 	});
 	builder.addCase(loadById.rejected, (state, action) => {
 		if (action.meta.arg !== state.requestedDocumentId) {
@@ -171,59 +184,68 @@ const registerPauseResumeReducers = (builder: ExtraReducersBuilder): void => {
 	});
 };
 
-const registerProcessingReducers = (builder: ExtraReducersBuilder): void => {
+const markExportFailed = (documentExport: DocumentExport | undefined): void => {
+	if (!documentExport) {
+		return;
+	}
+
+	documentExport.status = DocumentExportStatus.FAILED;
+	documentExport.readyMeta = ExportStatusLabel.FAILED;
+};
+
+const registerExportReducers = (builder: ExtraReducersBuilder): void => {
 	builder.addCase(requestExport.pending, (state, action) => {
-		const { documentId } = action.meta.arg;
+		const { documentId, documentTitle, format } = action.meta.arg;
 
-		if (!state.documentExports[documentId]) {
-			state.documentExports[documentId] = [];
-		}
-
+		state.documentExports[documentId] ??= [];
 		state.documentExports[documentId].unshift({
 			downloadUrl: null,
+			exportId: null,
 			id: action.meta.requestId,
-			name: `export.${action.meta.arg.format}`,
-			ready: false,
-			readyMeta: "Preparing…",
+			name: getExportFileName(documentTitle, format),
+			readyMeta: ExportStatusLabel.PREPARING,
+			status: DocumentExportStatus.QUEUED,
 		});
 	});
 	builder.addCase(requestExport.fulfilled, (state, action) => {
-		const { documentId } = action.meta.arg;
-		const exports = state.documentExports[documentId];
+		const documentExport = state.documentExports[
+			action.meta.arg.documentId
+		]?.find((export_) => export_.id === action.meta.requestId);
 
-		if (!exports) {
-			return;
+		if (documentExport) {
+			documentExport.exportId = action.payload.id;
 		}
-
-		const index = exports.findIndex(
-			(export_) => export_.id === action.meta.requestId,
-		);
-
-		if (index === INDEX_NOT_FOUND) {
-			return;
-		}
-
-		exports[index] = {
-			downloadUrl: action.payload.downloadUrl,
-			id: action.meta.requestId,
-			name: action.payload.name,
-			ready: true,
-			readyMeta: action.payload.readyMeta,
-		};
 	});
 	builder.addCase(requestExport.rejected, (state, action) => {
-		const { documentId } = action.meta.arg;
-		const exports = state.documentExports[documentId];
+		markExportFailed(
+			state.documentExports[action.meta.arg.documentId]?.find(
+				(export_) => export_.id === action.meta.requestId,
+			),
+		);
+	});
+	builder.addCase(watchExport.fulfilled, (state, action) => {
+		const documentExport = state.documentExports[
+			action.meta.arg.documentId
+		]?.find((export_) => export_.exportId === action.meta.arg.exportId);
 
-		if (!exports) {
+		if (!documentExport) {
 			return;
 		}
 
-		state.documentExports[documentId] = exports.filter(
-			(export_) => export_.id !== action.meta.requestId,
+		documentExport.downloadUrl = action.payload.downloadUrl;
+		documentExport.readyMeta = getExportMeta(action.payload);
+		documentExport.status = action.payload.status;
+	});
+	builder.addCase(watchExport.rejected, (state, action) => {
+		markExportFailed(
+			state.documentExports[action.meta.arg.documentId]?.find(
+				(export_) => export_.exportId === action.meta.arg.exportId,
+			),
 		);
 	});
+};
 
+const registerProcessingReducers = (builder: ExtraReducersBuilder): void => {
 	builder.addCase(ingest.pending, (state, action) => {
 		state.ingestDataStatus = DataStatus.PENDING;
 		state.ingestError = null;
@@ -277,6 +299,7 @@ const registerProcessingReducers = (builder: ExtraReducersBuilder): void => {
 const { actions, name, reducer } = createSlice({
 	extraReducers(builder) {
 		registerDocumentStateReducers(builder);
+		registerExportReducers(builder);
 		registerPauseResumeReducers(builder);
 		registerProcessingReducers(builder);
 	},

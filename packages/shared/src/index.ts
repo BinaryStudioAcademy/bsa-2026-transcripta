@@ -37,6 +37,7 @@ export {
 	type DocumentExportCreateResponseDto,
 	type DocumentExportFormatValue,
 	type DocumentExportGetByIdResponseDto,
+	type DocumentExportItemResponseDto,
 	type DocumentExportStatusValue,
 	DocumentExportCreateRequestValidationSchema,
 	DocumentExportFormat,
