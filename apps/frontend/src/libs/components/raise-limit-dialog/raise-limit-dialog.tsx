@@ -9,13 +9,13 @@ import {
 	NO_MORE_THAN_TWO_DECIMALS_BUDGET,
 	SUGGESTED_LIMIT_INCREMENT,
 } from "~/libs/constants/constants.js";
+import { DocumentValidationRule } from "~/libs/enums/enums.js";
 import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppForm,
 	useCallback,
 	useFormController,
 } from "~/libs/hooks/hooks.js";
-import { DocumentBudgetUpdateValidationSchema } from "~/libs/validation-schemas/validation-schemas.js";
 
 import styles from "./styles.module.css";
 import {
@@ -37,7 +37,6 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 
 	const { control, handleSubmit } = useAppForm<FormValuesRaiseBudgetLimit>({
 		defaultValues: { limitUsd: suggestedLimit },
-		validationSchema: DocumentBudgetUpdateValidationSchema,
 	});
 
 	const { field } = useFormController({
@@ -47,9 +46,18 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 
 	const handleInputChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>): void => {
-			if (validationError) {
+			const value = event.target.value;
+			const parts = value.trim().split(".");
+
+			if (
+				parts[DECIMAL_POSITION] &&
+				parts[DECIMAL_POSITION].length > CURRENCY_DECIMAL_PLACES
+			) {
+				setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
+			} else if (validationError === NO_MORE_THAN_TWO_DECIMALS_BUDGET) {
 				setValidationError(null);
 			}
+
 			field.onChange(event);
 		},
 		[field, validationError],
@@ -59,9 +67,8 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 		(event_: React.BaseSyntheticEvent): void => {
 			void handleSubmit((data) => {
 				const rawLimit = data.limitUsd.trim();
-				const decimalPart = rawLimit.split(".")[DECIMAL_POSITION];
 
-				if (decimalPart && decimalPart.length > CURRENCY_DECIMAL_PLACES) {
+				if (!DocumentValidationRule.LIMIT_USD_REGEX.test(rawLimit)) {
 					setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
 					return;
 				}
