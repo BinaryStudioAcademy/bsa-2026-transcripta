@@ -4,7 +4,9 @@ import { Button } from "~/libs/components/components.js";
 import {
 	BUDGET_FIELD_NAME,
 	CURRENCY_DECIMAL_PLACES,
+	DECIMAL_POINT,
 	DECIMAL_POSITION,
+	EMPTY_STRING,
 	GET_BUDGET_LIMIT_ERROR_MESSAGE,
 	NO_MORE_THAN_TWO_DECIMALS_BUDGET,
 	SUGGESTED_LIMIT_INCREMENT,
@@ -46,21 +48,28 @@ const RaiseLimitDialog: React.FC<Properties> = ({
 
 	const handleInputChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>): void => {
-			const value = event.target.value;
-			const parts = value.trim().split(".");
+			const value = event.target.value.trim();
 
 			if (
-				parts[DECIMAL_POSITION] &&
-				parts[DECIMAL_POSITION].length > CURRENCY_DECIMAL_PLACES
+				value !== EMPTY_STRING &&
+				!DocumentValidationRule.LIMIT_USD_REGEX.test(value)
 			) {
-				setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
-			} else if (validationError === NO_MORE_THAN_TWO_DECIMALS_BUDGET) {
+				const parts = value.split(DECIMAL_POINT);
+				if (
+					parts[DECIMAL_POSITION] &&
+					parts[DECIMAL_POSITION].length > CURRENCY_DECIMAL_PLACES
+				) {
+					setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
+				} else {
+					setValidationError(null);
+				}
+			} else {
 				setValidationError(null);
 			}
 
 			field.onChange(event);
 		},
-		[field, validationError],
+		[field],
 	);
 
 	const handleFormSubmit = useCallback(
