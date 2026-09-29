@@ -190,7 +190,13 @@ const Documents: React.FC = () => {
 			{isLoading && <LoaderOverlay label="Loading documents" />}
 
 			<header className={styles["documents-page__header"]}>
-				<h1 className={styles["documents-page__title"]}>Documents</h1>
+				<div className={styles["documents-page__heading"]}>
+					<h1 className={styles["documents-page__title"]}>Documents</h1>
+
+					{isRefreshing && (
+						<Loader label="Refreshing documents" size={LoaderSize.SMALL} />
+					)}
+				</div>
 
 				<div className={styles["documents-page__actions"]}>
 					<Button
@@ -199,11 +205,6 @@ const Documents: React.FC = () => {
 						label="+ New document"
 						onClick={handleNewDocument}
 					/>
-
-					{isRefreshing && (
-						<Loader label="Refreshing documents" size={LoaderSize.SMALL} />
-					)}
-
 					<ThemeToggle />
 				</div>
 			</header>

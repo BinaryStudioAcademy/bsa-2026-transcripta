@@ -12,6 +12,12 @@
 	border-bottom: 1px solid var(--hairline);
 }
 
+.documents-page__heading {
+	display: flex;
+	gap: var(--sp-2);
+	align-items: center;
+}
+
 .documents-page__title {
 	margin: 0;
 	font-family: var(--font-display);
