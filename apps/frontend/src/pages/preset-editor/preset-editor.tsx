@@ -36,6 +36,7 @@ import {
 import type {
 	GlossaryEntry,
 	GlossaryType,
+	PresetFormState,
 } from "./libs/types/preset-editor.types.js";
 
 import {
@@ -48,6 +49,7 @@ import {
 	createEntry,
 	getOutputFields,
 	isGlossaryType,
+	isPresetFormDirty,
 	mapSeedGlossary,
 } from "./libs/helpers/helpers.js";
 import { PresetCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
@@ -77,6 +79,18 @@ const PresetEditor: React.FC = () => {
 	const [instructions, setInstructions] = useState("");
 	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
+	const [initialFormState, setInitialFormState] =
+		useState<null | PresetFormState>(null);
+
+	const currentFormState: PresetFormState = {
+		basePresetId,
+		description,
+		entries,
+		instructions,
+		name,
+	};
+
+	const isDirty = isPresetFormDirty(initialFormState, currentFormState);
 
 	const isLoading =
 		selectedPresetStatus === DataStatus.PENDING ||
@@ -128,15 +142,24 @@ const PresetEditor: React.FC = () => {
 			return;
 		}
 
+		const initialEntries = mapSeedGlossary(selectedPreset.seedGlossary);
+
 		setName(selectedPreset.name);
 		setDescription(selectedPreset.description);
 		setInstructions(selectedPreset.instructions);
-		setEntries(mapSeedGlossary(selectedPreset.seedGlossary));
+		setEntries(initialEntries);
+		setInitialFormState({
+			basePresetId,
+			description: selectedPreset.description,
+			entries: initialEntries,
+			instructions: selectedPreset.instructions,
+			name: selectedPreset.name,
+		});
 		setOpenTypeId(null);
 	}, [selectedPreset, basePresetId]);
 
 	const handleSubmit = useCallback((): void => {
-		if (!selectedPreset) {
+		if (!selectedPreset || !isDirty) {
 			return;
 		}
 
@@ -168,6 +191,7 @@ const PresetEditor: React.FC = () => {
 		description,
 		dispatch,
 		entries,
+		isDirty,
 		instructions,
 		name,
 		navigate,
@@ -358,6 +382,7 @@ const PresetEditor: React.FC = () => {
 
 							<PresetEditorActions
 								isDisabled={isFormDisabled}
+								isFormChanged={isDirty}
 								isSaving={isSaving}
 								onCancel={handleCancel}
 								onSubmit={handleSubmit}
