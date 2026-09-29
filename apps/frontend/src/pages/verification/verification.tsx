@@ -374,6 +374,10 @@ const Verification: React.FC = () => {
 		setIsShortcutsOpen((value) => !value);
 	}, []);
 
+	const handleCloseShortcuts = useCallback((): void => {
+		setIsShortcutsOpen(false);
+	}, []);
+
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
 			if (isEditing) {
@@ -402,6 +406,7 @@ const Verification: React.FC = () => {
 	}, [cursorPageNo, handlePageSelect, document]);
 
 	useVerificationKeyboard({
+		onCloseShortcuts: handleCloseShortcuts,
 		onConfirm: handleConfirm,
 		onEdit: handleToggleEdit,
 		onPrevious: handlePrevious,
@@ -459,7 +464,7 @@ const Verification: React.FC = () => {
 				pages={pagesForStrip}
 			/>
 			{isShortcutsOpen && (
-				<VerificationShortcutsDialog onClose={handleToggleShortcuts} />
+				<VerificationShortcutsDialog onClose={handleCloseShortcuts} />
 			)}
 		</div>
 	);
