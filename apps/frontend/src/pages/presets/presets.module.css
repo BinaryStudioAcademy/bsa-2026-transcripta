@@ -41,7 +41,12 @@
 }
 
 .presets-page__table {
-	grid-template-columns: auto auto minmax(0, 2fr) auto;
+	grid-template-columns:
+		minmax(var(--sp-20), 2fr) minmax(var(--sp-20), 1fr) minmax(
+			var(--sp-24),
+			4fr
+		)
+		auto;
 }
 
 .presets-page__row {
@@ -73,6 +78,7 @@
 
 .presets-page__name-cell,
 .presets-page__version-cell {
+	min-width: 0;
 	font-weight: 500;
 	color: var(--text);
 	background-color: var(--surface);
@@ -101,6 +107,7 @@
 	position: relative;
 	z-index: 2;
 	color: var(--link);
+	white-space: nowrap;
 	text-decoration: underline;
 	text-decoration-color: color-mix(in oklab, var(--link) 45%, transparent);
 }
