@@ -1,4 +1,5 @@
 const QueueErrorMessage = {
+	BOARD_UNAUTHORIZED: "Unauthorized.",
 	FAILED_TO_CLOSE_REGISTRY: "Failed to close queue registry.",
 	QUEUE_NOT_CREATED: "Queue hasn't created!",
 	REDIS_UNAVAILABLE:
