@@ -41,9 +41,11 @@ import {
 	VerificationWorkspace,
 } from "./libs/components/components.js";
 import {
+	IDLE_DOCUMENT_STATUSES,
 	MAX_LOADED_PAGES,
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
+	SETTLED_PAGE_STATUSES,
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
@@ -121,10 +123,21 @@ const Verification: React.FC = () => {
 			return;
 		}
 
+		// Nothing will arrive for a page that has settled, or while the document
+		// is not being processed, so polling would repeat forever for nothing.
+		const isPageSettled =
+			currentPage !== undefined &&
+			SETTLED_PAGE_STATUSES.includes(currentPage.status);
+
+		if (isPageSettled || IDLE_DOCUMENT_STATUSES.includes(document.status)) {
+			return;
+		}
+
 		const timeoutId = setInterval(() => {
 			void dispatch(
 				pageActions.loadPages({
 					documentId,
+					isBackground: true,
 					query: {
 						from: cursorPageNo,
 						limit: MAX_LOADED_PAGES,
@@ -136,7 +149,7 @@ const Verification: React.FC = () => {
 		return () => {
 			clearInterval(timeoutId);
 		};
-	}, [id, dispatch, currentPage?.transcription, cursorPageNo, document]);
+	}, [id, dispatch, currentPage, cursorPageNo, document]);
 
 	useEffect(() => {
 		if (
