@@ -15,6 +15,7 @@ export {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
 	type DocumentExport,
+	type DocumentExportCreateResponseDto,
 	type DocumentGetAllItemResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
