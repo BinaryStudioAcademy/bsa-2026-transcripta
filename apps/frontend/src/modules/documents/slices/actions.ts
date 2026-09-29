@@ -5,8 +5,13 @@ import {
 	MAX_FAILURES_BEFORE_STOP,
 } from "~/libs/constants/constants.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
+import { HTTPError } from "~/libs/modules/http/http.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { type AsyncThunkConfig } from "~/libs/types/types.js";
+import {
+	type DocumentExportGetByIdResponseDto,
+	DocumentExportStatus,
+} from "~/modules/document-exports/document-exports.js";
 import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
@@ -20,17 +25,30 @@ import {
 } from "~/modules/documents/documents.js";
 
 import {
-	MOCK_EXPORT_DELAY_MS,
+	EXPORT_FAILED_MESSAGE,
+	EXPORT_POLLING_MAX_ATTEMPTS,
 	POLLING_FAILED_NOTIFICATION,
 	TERMINAL_DOCUMENT_STATUSES,
 } from "../libs/constants/constants.js";
 import { PollingIntervalsMS } from "../libs/enums/enums.js";
+import { formatFileSize } from "../libs/helpers/helpers.js";
 import { name as sliceName } from "./documents.slice.js";
 
 type GetUploadUrlPayload = {
 	id: number;
 	payload?: DocumentUploadUrlRequestDto;
 	signal?: AbortSignal;
+};
+
+type RequestExportPayload = {
+	documentId: number;
+	format: ExportFormatValue;
+};
+
+type RequestExportResult = {
+	downloadUrl: string;
+	name: string;
+	readyMeta: string;
 };
 
 type UpdateBudgetPayload = {
@@ -46,6 +64,43 @@ const clearActiveInterval = (): void => {
 		clearInterval(pollingIntervalId);
 		pollingIntervalId = null;
 	}
+};
+
+const wait = (ms: number): Promise<void> =>
+	new Promise((resolve) => {
+		setTimeout(resolve, ms);
+	});
+
+const waitForExportToFinish = async (
+	getExport: () => Promise<DocumentExportGetByIdResponseDto>,
+): Promise<DocumentExportGetByIdResponseDto> => {
+	let consecutiveFailures = INITIAL_COUNT;
+
+	for (
+		let attempt = INITIAL_COUNT;
+		attempt < EXPORT_POLLING_MAX_ATTEMPTS;
+		attempt++
+	) {
+		await wait(PollingIntervalsMS.DEFAULT);
+
+		try {
+			const documentExport = await getExport();
+
+			if (documentExport.status !== DocumentExportStatus.QUEUED) {
+				return documentExport;
+			}
+
+			consecutiveFailures = INITIAL_COUNT;
+		} catch (error) {
+			consecutiveFailures++;
+
+			if (consecutiveFailures >= MAX_FAILURES_BEFORE_STOP) {
+				throw error;
+			}
+		}
+	}
+
+	throw new Error(EXPORT_FAILED_MESSAGE);
 };
 
 const stopPolling = createAction(`${sliceName}/stop-polling`, () => {
@@ -253,15 +308,39 @@ const updateBudget = createAsyncThunk<
 );
 
 const requestExport = createAsyncThunk<
-	{ name: string; readyMeta: string },
-	{ documentId: number; format: ExportFormatValue },
+	RequestExportResult,
+	RequestExportPayload,
 	AsyncThunkConfig
 >(
 	`${sliceName}/request-export`,
-	async ({ format }) => {
-		await new Promise((resolve) => setTimeout(resolve, MOCK_EXPORT_DELAY_MS));
+	async ({ documentId, format }, { extra }) => {
+		const { documentApi, documentExportApi } = extra;
 
-		return { name: `export.${format}`, readyMeta: "just now" };
+		try {
+			const { id } = await documentApi.createExport(documentId, { format });
+			const documentExport = await waitForExportToFinish(() =>
+				documentExportApi.getById(id),
+			);
+
+			if (
+				documentExport.status !== DocumentExportStatus.READY ||
+				documentExport.downloadUrl === null
+			) {
+				throw new Error(EXPORT_FAILED_MESSAGE);
+			}
+
+			return {
+				downloadUrl: documentExport.downloadUrl,
+				name: `export.${format}`,
+				readyMeta: formatFileSize(documentExport.sizeBytes ?? INITIAL_COUNT),
+			};
+		} catch (error) {
+			notification.error(
+				error instanceof HTTPError ? error.message : EXPORT_FAILED_MESSAGE,
+			);
+
+			throw error;
+		}
 	},
 	{ serializeError },
 );

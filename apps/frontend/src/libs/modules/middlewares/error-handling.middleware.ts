@@ -29,7 +29,10 @@ errorHandlingMiddleware.startListening({
 			return;
 		}
 
-		if (action.type === documentActions.ingest.rejected.type) {
+		if (
+			action.type === documentActions.ingest.rejected.type ||
+			action.type === documentActions.requestExport.rejected.type
+		) {
 			return;
 		}
 

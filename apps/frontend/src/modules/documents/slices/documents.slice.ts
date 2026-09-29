@@ -180,6 +180,7 @@ const registerProcessingReducers = (builder: ExtraReducersBuilder): void => {
 		}
 
 		state.documentExports[documentId].unshift({
+			downloadUrl: null,
 			id: action.meta.requestId,
 			name: `export.${action.meta.arg.format}`,
 			ready: false,
@@ -203,6 +204,7 @@ const registerProcessingReducers = (builder: ExtraReducersBuilder): void => {
 		}
 
 		exports[index] = {
+			downloadUrl: action.payload.downloadUrl,
 			id: action.meta.requestId,
 			name: action.payload.name,
 			ready: true,

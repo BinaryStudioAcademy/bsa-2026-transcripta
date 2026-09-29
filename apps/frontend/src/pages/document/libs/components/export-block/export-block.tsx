@@ -50,9 +50,6 @@ const ExportBlock: React.FC<Properties> = ({
 		[dispatch, documentId],
 	);
 
-	// TODO: wire to a real file URL once #138 ships a download endpoint
-	const handleDownloadClick = useCallback((): void => {}, []);
-
 	return (
 		<>
 			<DocumentSection
@@ -79,10 +76,16 @@ const ExportBlock: React.FC<Properties> = ({
 								</span>
 								<span className={styles["name"]}>{export_.name}</span>
 								<span className={styles["meta"]}>{export_.readyMeta}</span>
-								{export_.ready && (
-									<Button isSmall onClick={handleDownloadClick}>
+								{export_.ready && export_.downloadUrl && (
+									<a
+										className={styles["download"]}
+										download
+										href={export_.downloadUrl}
+										rel="noreferrer"
+										target="_blank"
+									>
 										Download
-									</Button>
+									</a>
 								)}
 							</li>
 						))}
