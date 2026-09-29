@@ -264,13 +264,19 @@ const useIngestPolling = ({
 	]);
 };
 
-const useScreenState = (
-	ingestingDocumentId: null | number,
-	resumedDocument: DocumentGetByIdResponseDto | null,
-	isZipProcessing: boolean,
-	isUploading: boolean,
-	selectedFile: File | null,
-): ScreenStateType => {
+const useScreenState = ({
+	ingestingDocumentId,
+	isUploading,
+	isZipProcessing,
+	resumedDocument,
+	selectedFile,
+}: {
+	ingestingDocumentId: null | number;
+	isUploading: boolean;
+	isZipProcessing: boolean;
+	resumedDocument: DocumentGetByIdResponseDto | null;
+	selectedFile: File | null;
+}): ScreenStateType => {
 	if (ingestingDocumentId) {
 		return ScreenState.INGESTING;
 	}
@@ -609,13 +615,13 @@ const DocumentNew: React.FC = () => {
 		setRejection,
 	});
 
-	const screenState = useScreenState(
+	const screenState = useScreenState({
 		ingestingDocumentId,
-		resumedDocument,
-		isZipProcessing,
 		isUploading,
+		isZipProcessing,
+		resumedDocument,
 		selectedFile,
-	);
+	});
 	const isSubmitting = isUploading;
 	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
