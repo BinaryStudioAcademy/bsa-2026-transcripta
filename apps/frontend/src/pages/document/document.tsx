@@ -13,7 +13,6 @@ import {
 	INGESTION_FAILED_MESSAGE,
 	INITIAL_COUNT,
 	MINIMUM_VALID_DOCUMENT_ID,
-	NOTIFICATION_DELAY_MS,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
 import {
@@ -55,6 +54,9 @@ const Document: React.FC = () => {
 	);
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [isRaiseLimitOpen, setIsRaiseLimitOpen] = useState(false);
+	const [serverValidationError, setServerValidationError] = useState<
+		null | string
+	>(null);
 
 	const { id } = useParams();
 
@@ -76,7 +78,6 @@ const Document: React.FC = () => {
 	}, [documentId, isValidId, dispatch]);
 
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
-	const isNotifyingReference = useRef<boolean>(false);
 	const previousStatusReference = useRef<null | string>(null);
 	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
 
@@ -98,24 +99,21 @@ const Document: React.FC = () => {
 
 		previousStatusReference.current = currentDocument.status;
 
-		const hasBudgetBeenNotified = notifiedDocumentsReference.current.has(
-			currentDocument.id,
-		);
-
 		const shouldNotifyBudget =
 			isBudgetStop &&
-			(!hasBudgetBeenNotified || previousStatus !== DocumentStatus.BUDGET_STOP);
+			previousStatus !== DocumentStatus.BUDGET_STOP &&
+			!notifiedDocumentsReference.current.has(currentDocument.id);
 
-		if (shouldNotifyBudget && !isNotifyingReference.current) {
-			isNotifyingReference.current = true;
-
-			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
-
+		if (shouldNotifyBudget) {
 			notifiedDocumentsReference.current.add(currentDocument.id);
+			notification.error(BUDGET_STOP_NOTIFICATION_MESSAGE);
+		}
 
-			setTimeout(() => {
-				isNotifyingReference.current = false;
-			}, NOTIFICATION_DELAY_MS);
+		if (
+			!isBudgetStop &&
+			notifiedDocumentsReference.current.has(currentDocument.id)
+		) {
+			notifiedDocumentsReference.current.delete(currentDocument.id);
 		}
 
 		const hasFailedBeenNotified = failedNotifiedDocumentsReference.current.has(
@@ -172,10 +170,12 @@ const Document: React.FC = () => {
 	}, [currentDocument, dispatch, navigate]);
 
 	const handleOpenRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
 		setIsRaiseLimitOpen(true);
 	}, []);
 
 	const handleCancelRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
 		setIsRaiseLimitOpen(false);
 	}, []);
 
@@ -184,6 +184,8 @@ const Document: React.FC = () => {
 			if (!currentDocument) {
 				return;
 			}
+
+			setServerValidationError(null);
 
 			void dispatch(
 				documentActions.updateBudget({
@@ -196,7 +198,19 @@ const Document: React.FC = () => {
 					setIsRaiseLimitOpen(false);
 					void dispatch(documentActions.startPolling(currentDocument.id));
 				})
-				.catch(() => {
+				.catch((error: unknown) => {
+					const typedError = error as {
+						details?: { message: string }[];
+						message?: string;
+					};
+					const firstDetail = typedError.details?.[INITIAL_COUNT];
+					const errorMessage = firstDetail?.message ?? typedError.message ?? "";
+
+					if (errorMessage) {
+						setServerValidationError(errorMessage);
+						return;
+					}
+
 					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
 				});
 		},
@@ -354,6 +368,7 @@ const Document: React.FC = () => {
 					currentLimitUsd={currentDocument.budget.limitUsd}
 					onCancel={handleCancelRaiseLimit}
 					onSubmit={handleUpdateBudget}
+					serverError={serverValidationError}
 					spentUsd={currentDocument.budget.spentUsd}
 				/>
 			)}
