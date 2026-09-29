@@ -40,6 +40,7 @@ const pageTranscribeQueue = createPageTranscribeQueue({
 
 const queueRegistry = new QueueRegistry({
 	connection: redis,
+	connectTimeoutMs: REDIS_CONNECT_TIMEOUT_MS,
 	logger,
 	queues: [
 		pageTranscribeQueue,
