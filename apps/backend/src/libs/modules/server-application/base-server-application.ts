@@ -17,6 +17,7 @@ import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { closeRedisConnection } from "~/libs/modules/queue/libs/helpers/helpers.js";
+import { registerQueueBoard } from "~/libs/modules/queue/queue-board.module.js";
 import { type QueueRegistry } from "~/libs/modules/queue/queue-registry.module.js";
 import { DocumentCleanupQueue } from "~/libs/modules/queue/queue.js";
 import {
@@ -303,6 +304,13 @@ class BaseServerApplication implements ServerApplication {
 		try {
 			await this.queueRegistry.connect();
 			await this.documentCleanupQueue.init();
+
+			await registerQueueBoard({
+				app: this.app,
+				config: this.config,
+				logger: this.logger,
+				queues: this.queueRegistry.getQueues(),
+			});
 			await this.app.listen({
 				host: this.config.ENV.APP.HOST,
 				port: this.config.ENV.APP.PORT,

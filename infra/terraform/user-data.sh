@@ -141,14 +141,20 @@ ${DOMAIN}, www.${DOMAIN} {
 }
 CADDY
 
-# --- pgweb credentials: read from SSM so no password lands in git ---
+# --- pgweb and queue-board credentials: read from SSM so no password lands in git ---
 # Create them once with:
-#   aws ssm put-parameter --name /transcripta/pgweb-db-password  --type SecureString --value '<pw>'
-#   aws ssm put-parameter --name /transcripta/pgweb-auth-password --type SecureString --value '<pw>'
+#   aws ssm put-parameter --name /transcripta/pgweb-db-password    --type SecureString --value '<pw>'
+#   aws ssm put-parameter --name /transcripta/pgweb-auth-password  --type SecureString --value '<pw>'
+#   aws ssm put-parameter --name /transcripta/queue-board-password --type SecureString --value '<pw>'
 PGWEB_DB_USER="transcripta_ro"
 PGWEB_AUTH_USER="qa"
 PGWEB_DB_PASSWORD="$(aws ssm get-parameter --name /transcripta/pgweb-db-password --with-decryption --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
 PGWEB_AUTH_PASS="$(aws ssm get-parameter --name /transcripta/pgweb-auth-password --with-decryption --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
+
+# The queue board can delete, retry and drain jobs, so an absent password
+# leaves its route unregistered rather than publishing a control panel.
+QUEUE_BOARD_USERNAME="admin"
+QUEUE_BOARD_PASSWORD="$(aws ssm get-parameter --name /transcripta/queue-board-password --with-decryption --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
 
 cat >"$APP_DIR/.env" <<ENVPGWEB
 PGWEB_DB_USER=${PGWEB_DB_USER}
@@ -176,6 +182,13 @@ STORAGE_SECRET_ACCESS_KEY=
 AWS_REGION=us-east-1
 BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-6
 ENV
+
+# Appended separately: the heredoc above is quoted, so it does not expand these.
+cat >>"$APP_DIR/.env.prod" <<ENVBOARD
+QUEUE_BOARD_USERNAME=${QUEUE_BOARD_USERNAME}
+QUEUE_BOARD_PASSWORD=${QUEUE_BOARD_PASSWORD}
+ENVBOARD
+chmod 600 "$APP_DIR/.env.prod"
 
 # --- deploy script: ECR login, pull (retry until present), up ---
 cat >/usr/local/bin/transcripta-deploy.sh <<DEPLOY
