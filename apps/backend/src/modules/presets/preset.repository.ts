@@ -72,6 +72,7 @@ class PresetRepository {
 				"id",
 				"familyId",
 				"name",
+				"description",
 				"instructions",
 				"seedGlossary",
 				"outputSchema",

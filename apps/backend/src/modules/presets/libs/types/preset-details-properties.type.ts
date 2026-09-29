@@ -1,4 +1,5 @@
 type PresetDetailsProperties = {
+	description: string;
 	familyId: number;
 	id: number;
 	instructions: string;

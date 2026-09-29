@@ -73,6 +73,7 @@ const PresetEditor: React.FC = () => {
 		isValidPresetId ? presetId : null,
 	);
 	const [name, setName] = useState("");
+	const [description, setDescription] = useState("");
 	const [instructions, setInstructions] = useState("");
 	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
@@ -128,6 +129,7 @@ const PresetEditor: React.FC = () => {
 		}
 
 		setName(selectedPreset.name);
+		setDescription(selectedPreset.description);
 		setInstructions(selectedPreset.instructions);
 		setEntries(mapSeedGlossary(selectedPreset.seedGlossary));
 		setOpenTypeId(null);
@@ -139,6 +141,7 @@ const PresetEditor: React.FC = () => {
 		}
 
 		const result = PresetCreateValidationSchema.safeParse({
+			description,
 			familyId: selectedPreset.familyId,
 			instructions,
 			name,
@@ -161,7 +164,15 @@ const PresetEditor: React.FC = () => {
 			.unwrap()
 			.then(() => navigate(GO_BACK))
 			.catch(() => null);
-	}, [dispatch, entries, instructions, name, navigate, selectedPreset]);
+	}, [
+		description,
+		dispatch,
+		entries,
+		instructions,
+		name,
+		navigate,
+		selectedPreset,
+	]);
 
 	const handleCancel = useCallback((): void => {
 		void (async (): Promise<void> => {
@@ -209,6 +220,13 @@ const PresetEditor: React.FC = () => {
 			const presetId = Number(event.target.value);
 
 			setBasePresetId(presetId === EMPTY_LENGTH ? null : presetId);
+		},
+		[],
+	);
+
+	const handleDescriptionChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>): void => {
+			setDescription(event.target.value);
 		},
 		[],
 	);
@@ -314,10 +332,12 @@ const PresetEditor: React.FC = () => {
 						<section className="preset-editor__card">
 							<PresetBasicFields
 								basePresetId={basePresetId}
+								description={description}
 								instructions={instructions}
 								isDisabled={isFormDisabled}
 								name={name}
 								onBasePresetChange={handleBasePresetChange}
+								onDescriptionChange={handleDescriptionChange}
 								onInstructionsChange={handleInstructionsChange}
 								onNameChange={handleNameChange}
 								presets={presets}

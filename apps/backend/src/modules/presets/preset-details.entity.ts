@@ -3,6 +3,8 @@ import { type PresetGetByIdResponseDto } from "@transcripta/shared";
 import { type PresetDetailsProperties } from "./libs/types/types.js";
 
 class PresetDetailsEntity {
+	private description: string;
+
 	private familyId: number;
 
 	private id: number;
@@ -16,6 +18,7 @@ class PresetDetailsEntity {
 	private seedGlossary: Record<string, unknown>[] | string[];
 
 	private constructor({
+		description,
 		familyId,
 		id,
 		instructions,
@@ -23,6 +26,7 @@ class PresetDetailsEntity {
 		outputSchema,
 		seedGlossary,
 	}: PresetDetailsProperties) {
+		this.description = description;
 		this.familyId = familyId;
 		this.id = id;
 		this.instructions = instructions;
@@ -39,6 +43,7 @@ class PresetDetailsEntity {
 
 	public toObject(): PresetGetByIdResponseDto {
 		return {
+			description: this.description,
 			familyId: this.familyId,
 			id: this.id,
 			instructions: this.instructions,
