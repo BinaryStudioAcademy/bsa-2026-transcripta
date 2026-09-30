@@ -1,6 +1,7 @@
 import {
 	HTTPCode,
 	HTTPError,
+	LexiconEntrySource,
 	type PageDebugResponseDto,
 	PageStatus,
 	PageVerificationAction,
@@ -549,6 +550,7 @@ class PageService {
 					minDistinctPages,
 					outputSchema,
 					pageNo: page.pageNo,
+					source: LexiconEntrySource.MODEL,
 					structured: transcription.structured,
 					text: transcription.text,
 					trx,

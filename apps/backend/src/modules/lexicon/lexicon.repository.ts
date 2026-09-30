@@ -176,6 +176,7 @@ class LexiconRepository {
 			kind: entry.kind,
 			lastPageNo: entry.pageNo,
 			pageCount: 1,
+			source: entry.source,
 			valueDisplay: entry.valueDisplay,
 			valueNormalized: entry.valueNormalized,
 		}));
@@ -195,6 +196,16 @@ class LexiconRepository {
 					`),
 				lastPageNo: raw("EXCLUDED.last_page_no"),
 				pageCount: raw("lexicon_entry.page_count + 1"),
+				// A word a person corrected stays human-sourced even when the
+				// model later produces it again.
+				source: raw(`
+						CASE
+							WHEN lexicon_entry.source = 'human'
+								OR EXCLUDED.source = 'human'
+							THEN 'human'
+							ELSE 'model'
+						END::lexicon_source
+					`),
 				updatedAt: raw("now()"),
 			})
 			.returning("*");
