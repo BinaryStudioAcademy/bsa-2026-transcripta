@@ -358,6 +358,12 @@ const Verification: React.FC = () => {
 
 	const handleSaveEdit = useCallback(
 		(text: string): void => {
+			if (text.trim() === "") {
+				notification.info("Type the page text before saving");
+
+				return;
+			}
+
 			const isQueued = handleVerify(PageVerificationAction.CORRECT, text);
 
 			if (isQueued) {

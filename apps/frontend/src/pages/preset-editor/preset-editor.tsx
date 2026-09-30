@@ -21,6 +21,7 @@ import {
 	useEffect,
 	useNavigate,
 	useParams,
+	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
 import {
@@ -43,6 +44,7 @@ import {
 	getInitialErrors,
 	getOutputFields,
 	isGlossaryType,
+	isPresetFormDirty,
 	mapSeedGlossary,
 	mapValidationErrors,
 } from "./libs/helpers/helpers.js";
@@ -50,6 +52,7 @@ import {
 	type GlossaryEntry,
 	type GlossaryType,
 	type PresetFormErrors,
+	type PresetFormState,
 } from "./libs/types/preset-editor.types.js";
 import { PresetCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
 
@@ -79,6 +82,19 @@ const PresetEditor: React.FC = () => {
 	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
 	const [errors, setErrors] = useState<PresetFormErrors>(getInitialErrors());
+	const [initialFormState, setInitialFormState] =
+		useState<null | PresetFormState>(null);
+
+	const currentFormState: PresetFormState = {
+		basePresetId,
+		description,
+		entries,
+		instructions,
+		name,
+	};
+
+	const isDirty = isPresetFormDirty(initialFormState, currentFormState);
+	const initialStateInitialized = useRef(false);
 
 	const isLoading =
 		selectedPresetStatus === DataStatus.PENDING ||
@@ -130,15 +146,29 @@ const PresetEditor: React.FC = () => {
 			return;
 		}
 
+		const initialEntries = mapSeedGlossary(selectedPreset.seedGlossary);
+
 		setName(selectedPreset.name);
 		setDescription(selectedPreset.description);
 		setInstructions(selectedPreset.instructions);
-		setEntries(mapSeedGlossary(selectedPreset.seedGlossary));
+		setEntries(initialEntries);
 		setOpenTypeId(null);
+
+		if (!initialStateInitialized.current) {
+			setInitialFormState({
+				basePresetId,
+				description: selectedPreset.description,
+				entries: initialEntries,
+				instructions: selectedPreset.instructions,
+				name: selectedPreset.name,
+			});
+
+			initialStateInitialized.current = true;
+		}
 	}, [selectedPreset, basePresetId]);
 
 	const handleSubmit = useCallback((): void => {
-		if (!selectedPreset) {
+		if (!selectedPreset || !isDirty) {
 			return;
 		}
 
@@ -170,6 +200,7 @@ const PresetEditor: React.FC = () => {
 		description,
 		dispatch,
 		entries,
+		isDirty,
 		instructions,
 		name,
 		navigate,
@@ -395,6 +426,7 @@ const PresetEditor: React.FC = () => {
 
 							<PresetEditorActions
 								isDisabled={isFormDisabled}
+								isFormChanged={isDirty}
 								isSaving={isSaving}
 								onCancel={handleCancel}
 								onSubmit={handleSubmit}

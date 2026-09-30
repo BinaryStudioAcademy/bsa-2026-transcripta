@@ -16,4 +16,17 @@ type PresetFormErrors = {
 	name: null | string;
 };
 
-export { type GlossaryEntry, type GlossaryType, type PresetFormErrors };
+type PresetFormState = {
+	basePresetId: null | number;
+	description: string;
+	entries: GlossaryEntry[];
+	instructions: string;
+	name: string;
+};
+
+export {
+	type GlossaryEntry,
+	type GlossaryType,
+	type PresetFormState,
+	type PresetFormErrors,
+};
