@@ -35,7 +35,10 @@ import {
 	StorageBucket,
 	StorageErrorMessage,
 } from "./libs/enums/enums.js";
-import { addLeadingZeros } from "./libs/helpers/helpers.js";
+import {
+	addLeadingZeros,
+	getAttachmentContentDisposition,
+} from "./libs/helpers/helpers.js";
 import {
 	type DeleteByPrefixRequest,
 	type Storage,
@@ -247,10 +250,17 @@ class BaseStorage implements Storage {
 		}
 	}
 
-	public async getExportDownloadSignedUrl(key: string): Promise<string> {
+	public async getExportDownloadSignedUrl({
+		fileName,
+		key,
+	}: {
+		fileName: string;
+		key: string;
+	}): Promise<string> {
 		const command = new GetObjectCommand({
 			Bucket: this.buckets[StorageBucket.UPLOADS],
 			Key: key,
+			ResponseContentDisposition: getAttachmentContentDisposition(fileName),
 		});
 
 		return await getSignedUrl(this.client, command, {

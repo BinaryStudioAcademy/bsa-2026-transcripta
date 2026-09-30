@@ -28,8 +28,10 @@ import {
 
 import {
 	DEFAULT_VALIDATION_ERROR_MESSAGE,
+	INTERNAL_SERVER_ERROR_MESSAGE,
 	INVALID_JSON_BODY_ERROR_MESSAGE,
 	ShutdownLoggerMessages,
+	TRUSTED_PROXY_HOPS,
 } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
@@ -100,6 +102,13 @@ class BaseServerApplication implements ServerApplication {
 	private initApp(): void {
 		this.app = Fastify({
 			ignoreTrailingSlash: true,
+			// Caddy terminates TLS in front of the backend, so without this every
+			// request arrives from its container address and the per-IP auth rate
+			// limit becomes one shared counter for the whole site.
+			// 1, not true: trust exactly the one hop we run. Trusting the entire
+			// X-Forwarded-For chain would let a client spoof its own address and
+			// skip the limit altogether.
+			trustProxy: TRUSTED_PROXY_HOPS,
 		});
 	}
 
@@ -153,11 +162,18 @@ class BaseServerApplication implements ServerApplication {
 					return reply.status(HTTPCode.BAD_REQUEST).send(response);
 				}
 
-				this.logger.error(error.message);
+				// Whatever reaches this branch is ours to fix, not the client's:
+				// a PostgreSQL constraint, a storage or provider failure, a bug.
+				// The detail goes to the log and the response says nothing about
+				// it — this is the only place where a 500 used to hand the raw
+				// error message to whoever made the request.
+				this.logger.error(`[Internal Server Error]: ${error.message}`, {
+					stack: error instanceof Error ? error.stack : undefined,
+				});
 
 				const response: ServerCommonErrorResponse = {
 					errorType: ServerErrorType.COMMON,
-					message: error.message,
+					message: INTERNAL_SERVER_ERROR_MESSAGE,
 				};
 
 				return reply.status(HTTPCode.INTERNAL_SERVER_ERROR).send(response);

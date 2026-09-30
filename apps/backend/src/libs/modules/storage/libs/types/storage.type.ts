@@ -14,7 +14,10 @@ type Storage = {
 		clear: () => Promise<void>;
 		filePath: string;
 	}>;
-	getExportDownloadSignedUrl(key: string): Promise<string>;
+	getExportDownloadSignedUrl(options: {
+		fileName: string;
+		key: string;
+	}): Promise<string>;
 	getReadSignedUrl(key: string): Promise<string>;
 	getUploadSignedUrl(
 		options: UploadSignedUrlRequest,

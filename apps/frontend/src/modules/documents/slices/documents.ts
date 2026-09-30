@@ -12,6 +12,7 @@ import {
 	startPolling,
 	stopPolling,
 	updateBudget,
+	watchExport,
 } from "./actions.js";
 import { actions } from "./documents.slice.js";
 
@@ -30,6 +31,7 @@ const allActions = {
 	startPolling,
 	stopPolling,
 	updateBudget,
+	watchExport,
 };
 
 export { allActions as actions };

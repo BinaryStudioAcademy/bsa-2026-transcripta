@@ -1,8 +1,9 @@
 const PresetValidationMessage = {
 	DESCRIPTION_MAX_LENGTH: "Description must not exceed 2000 characters.",
+	FAMILY_ID_OUT_OF_RANGE: "Family id must not exceed 2147483647.",
 	FAMILY_ID_REQUIRE: "Family id must be a positive integer.",
 	INSTRUCTIONS_REQUIRE: "Instructions are required.",
-	NAME_MAX_LENGTH: "Name must not exceed 255 characters.",
+	NAME_MAX_LENGTH: "Name must not exceed 50 characters.",
 	NAME_REQUIRE: "Name is required.",
 	PRESET_ID_POSITIVE: "Preset id must be a positive integer",
 	PRESET_NOT_FOUND: "Preset not found.",

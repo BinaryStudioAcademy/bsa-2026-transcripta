@@ -10,6 +10,7 @@ import {
 	type DocumentGetPagesResponseDto,
 	DocumentValidationMessage,
 	EMPTY_LENGTH,
+	getDocumentExportFileName,
 	HTTPCode,
 	HTTPError,
 } from "@transcripta/shared";
@@ -245,16 +246,23 @@ class DocumentService {
 
 			const currentStatus = currentDocument.toObject().status;
 			if (currentStatus === DocumentStatus.INGESTING) {
+				const transcriptionStarted =
+					await this.pageRepository.hasStartedTranscription(documentId, trx);
 				await this.documentRepository.updateStatus(
 					documentId,
-					DocumentStatus.READY,
+					transcriptionStarted
+						? DocumentStatus.PROCESSING
+						: DocumentStatus.READY,
 					trx,
 				);
 			}
 		});
 	}
 
-	private async getExportsWithUrls(exports: DocumentExportRawItem[]) {
+	private async getExportsWithUrls(
+		exports: DocumentExportRawItem[],
+		documentTitle: string,
+	) {
 		return await Promise.all(
 			exports.map(async (exportData) => {
 				let downloadUrl: null | string = null;
@@ -263,9 +271,13 @@ class DocumentService {
 					exportData.status === DocumentExportStatus.READY &&
 					exportData.objectKey
 				) {
-					downloadUrl = await this.storage.getExportDownloadSignedUrl(
-						exportData.objectKey,
-					);
+					downloadUrl = await this.storage.getExportDownloadSignedUrl({
+						fileName: getDocumentExportFileName(
+							documentTitle,
+							exportData.format,
+						),
+						key: exportData.objectKey,
+					});
 				}
 
 				return {
@@ -709,7 +721,10 @@ class DocumentService {
 
 		const documentData = document.toObject();
 
-		const exportsWithUrls = await this.getExportsWithUrls(documentData.exports);
+		const exportsWithUrls = await this.getExportsWithUrls(
+			documentData.exports,
+			documentData.title,
+		);
 
 		return {
 			...documentData,
@@ -1010,7 +1025,10 @@ class DocumentService {
 			},
 		);
 
-		const exportsWithUrls = await this.getExportsWithUrls(document.exports);
+		const exportsWithUrls = await this.getExportsWithUrls(
+			document.exports,
+			document.title,
+		);
 
 		const documentToReturn = {
 			...document,

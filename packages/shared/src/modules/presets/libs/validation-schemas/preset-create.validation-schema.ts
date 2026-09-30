@@ -60,7 +60,13 @@ const PresetCreateValidationSchema = z.object<PresetCreateRequestValidationDto>(
 		familyId: z
 			.number()
 			.int()
-			.positive({ message: PresetValidationMessage.FAMILY_ID_REQUIRE }),
+			.positive({ message: PresetValidationMessage.FAMILY_ID_REQUIRE })
+			// The column is a PostgreSQL `integer`, so anything above 2^31 - 1
+			// never gets as far as the database: it is rejected here instead of
+			// coming back as a raw "integer out of range" 500.
+			.max(PresetValidationRule.ID_MAXIMUM, {
+				message: PresetValidationMessage.FAMILY_ID_OUT_OF_RANGE,
+			}),
 		instructions: z
 			.string()
 			.trim()
