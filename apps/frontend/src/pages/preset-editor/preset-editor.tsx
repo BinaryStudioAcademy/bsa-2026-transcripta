@@ -256,7 +256,7 @@ const PresetEditor: React.FC = () => {
 	);
 
 	const handleDescriptionChange = useCallback(
-		(event: ChangeEvent<HTMLInputElement>): void => {
+		(event: ChangeEvent<HTMLTextAreaElement>): void => {
 			setDescription(event.target.value);
 		},
 		[],
