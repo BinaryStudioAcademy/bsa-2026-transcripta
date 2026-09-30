@@ -27,6 +27,6 @@ type PresetFormState = {
 export {
 	type GlossaryEntry,
 	type GlossaryType,
-	type PresetFormState,
 	type PresetFormErrors,
+	type PresetFormState,
 };
