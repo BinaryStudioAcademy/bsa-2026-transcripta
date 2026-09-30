@@ -17,6 +17,7 @@ import { type Database } from "~/libs/modules/database/database.js";
 import { HTTPCode, HTTPError } from "~/libs/modules/http/http.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { closeRedisConnection } from "~/libs/modules/queue/libs/helpers/helpers.js";
+import { registerQueueBoard } from "~/libs/modules/queue/queue-board.module.js";
 import { type QueueRegistry } from "~/libs/modules/queue/queue-registry.module.js";
 import { DocumentCleanupQueue } from "~/libs/modules/queue/queue.js";
 import {
@@ -29,6 +30,7 @@ import {
 	DEFAULT_VALIDATION_ERROR_MESSAGE,
 	INVALID_JSON_BODY_ERROR_MESSAGE,
 	ShutdownLoggerMessages,
+	TRUSTED_PROXY_HOPS,
 } from "./libs/constants/constants.js";
 import {
 	type ServerApplication,
@@ -99,6 +101,13 @@ class BaseServerApplication implements ServerApplication {
 	private initApp(): void {
 		this.app = Fastify({
 			ignoreTrailingSlash: true,
+			// Caddy terminates TLS in front of the backend, so without this every
+			// request arrives from its container address and the per-IP auth rate
+			// limit becomes one shared counter for the whole site.
+			// 1, not true: trust exactly the one hop we run. Trusting the entire
+			// X-Forwarded-For chain would let a client spoof its own address and
+			// skip the limit altogether.
+			trustProxy: TRUSTED_PROXY_HOPS,
 		});
 	}
 
@@ -303,6 +312,13 @@ class BaseServerApplication implements ServerApplication {
 		try {
 			await this.queueRegistry.connect();
 			await this.documentCleanupQueue.init();
+
+			await registerQueueBoard({
+				app: this.app,
+				config: this.config,
+				logger: this.logger,
+				queues: this.queueRegistry.getQueues(),
+			});
 			await this.app.listen({
 				host: this.config.ENV.APP.HOST,
 				port: this.config.ENV.APP.PORT,

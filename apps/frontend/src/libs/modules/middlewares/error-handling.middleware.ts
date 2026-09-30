@@ -24,12 +24,16 @@ errorHandlingMiddleware.startListening({
 
 		if (
 			action.type === documentActions.pollDocumentById.rejected.type ||
-			action.type === documentActions.loadById.rejected.type
+			action.type === documentActions.loadById.rejected.type ||
+			action.type === documentActions.updateBudget.rejected.type
 		) {
 			return;
 		}
 
-		if (action.type === documentActions.ingest.rejected.type) {
+		if (
+			action.type === documentActions.ingest.rejected.type ||
+			action.type === documentActions.watchExport.rejected.type
+		) {
 			return;
 		}
 

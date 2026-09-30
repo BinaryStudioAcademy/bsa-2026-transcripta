@@ -23,6 +23,10 @@ type EnvironmentSchema = {
 	QUEUE: {
 		PAGE_TRANSCRIBE_CONCURRENCY: number;
 	};
+	QUEUE_BOARD: {
+		PASSWORD: string;
+		USERNAME: string;
+	};
 	REDIS: {
 		URL: string;
 	};

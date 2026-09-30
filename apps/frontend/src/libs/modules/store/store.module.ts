@@ -8,6 +8,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { AppEnvironment } from "~/libs/enums/enums.js";
 import { type Config } from "~/libs/modules/config/config.js";
 import { authApi, reducer as authReducer } from "~/modules/auth/auth.js";
+import { documentExportApi } from "~/modules/document-exports/document-exports.js";
 import {
 	documentApi,
 	reducer as documentsReducer,
@@ -28,6 +29,7 @@ import { errorHandlingMiddleware } from "../middlewares/middlewares.js";
 type ExtraArguments = {
 	authApi: typeof authApi;
 	documentApi: typeof documentApi;
+	documentExportApi: typeof documentExportApi;
 	lexiconApi: typeof lexiconApi;
 	pageApi: typeof pageApi;
 	presetApi: typeof presetApi;
@@ -77,6 +79,7 @@ class Store {
 		return {
 			authApi,
 			documentApi,
+			documentExportApi,
 			lexiconApi,
 			pageApi,
 			presetApi,

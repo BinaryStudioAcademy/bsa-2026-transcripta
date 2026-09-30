@@ -1,10 +1,7 @@
 import {
-	BYTES_IN_KILOBYTE,
 	configureString,
 	type DocumentGetAllItemResponseDto,
 	DocumentStatus,
-	DocumentValidationRule,
-	KILOBYTES_IN_MEGABYTE,
 } from "@transcripta/shared";
 import React, { useState } from "react";
 
@@ -12,6 +9,7 @@ import {
 	Button,
 	ConfirmDialog,
 	Link,
+	Loader,
 	LoaderOverlay,
 	OverflowMenu,
 	RaiseLimitDialog,
@@ -20,7 +18,7 @@ import {
 } from "~/libs/components/components.js";
 import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 import { BUDGET_UPLOAD_FAILED_MESSAGE } from "~/libs/constants/constants.js";
-import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
+import { AppRoute, DataStatus, LoaderSize } from "~/libs/enums/enums.js";
 import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppDispatch,
@@ -32,17 +30,10 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
-import {
-	DEFAULT_MAX_ARCHIVE_SIZE_MB,
-	DEFAULT_MAX_PAGES,
-} from "~/pages/document-new/libs/constants/constants.js";
 
+import { DocumentsEmptyState } from "./libs/components/documents-empty-state/documents-empty-state.js";
 import { EMPTY_LENGTH } from "./libs/constants/empty-length.constant.js";
 import styles from "./styles.module.css";
-
-const DEFAULT_MAX_FILE_SIZE_MB =
-	DocumentValidationRule.MAX_FILE_BYTES /
-	(BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE);
 
 type TitleCellProperties = {
 	title: string;
@@ -264,7 +255,9 @@ const Documents: React.FC = () => {
 		[],
 	);
 
-	const isLoading = dataStatus === DataStatus.PENDING;
+	const isLoading =
+		dataStatus === DataStatus.PENDING && documents.length === EMPTY_LENGTH;
+	const isRefreshing = dataStatus === DataStatus.PENDING && !isLoading;
 	const isEmpty =
 		dataStatus === DataStatus.FULFILLED && documents.length === EMPTY_LENGTH;
 	const documentsWithFailedPages = documents.filter(
@@ -348,7 +341,13 @@ const Documents: React.FC = () => {
 			{isLoading && <LoaderOverlay label="Loading documents" />}
 
 			<header className={styles["documents-page__header"]}>
-				<h1 className={styles["documents-page__title"]}>Documents</h1>
+				<div className={styles["documents-page__heading"]}>
+					<h1 className={styles["documents-page__title"]}>Documents</h1>
+
+					{isRefreshing && (
+						<Loader label="Refreshing documents" size={LoaderSize.SMALL} />
+					)}
+				</div>
 
 				<div className={styles["documents-page__actions"]}>
 					<Button
@@ -362,20 +361,7 @@ const Documents: React.FC = () => {
 			</header>
 
 			<main className={styles["documents-page__main"]}>
-				{isEmpty && (
-					<div className={styles["documents-page__empty"]}>
-						<h2 className={styles["documents-page__empty-title"]}>
-							No documents yet
-						</h2>
-						<p className={styles["documents-page__empty-description"]}>
-							Upload a PDF and start verifying in about a minute.
-						</p>
-						<p className={styles["documents-page__empty-meta"]}>
-							PDFs up to {DEFAULT_MAX_FILE_SIZE_MB} MB, ZIPs up to{" "}
-							{DEFAULT_MAX_ARCHIVE_SIZE_MB} MB, up to {DEFAULT_MAX_PAGES} pages
-						</p>
-					</div>
-				)}
+				{isEmpty && <DocumentsEmptyState />}
 
 				{!isEmpty && (
 					<div

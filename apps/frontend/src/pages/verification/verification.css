@@ -312,6 +312,10 @@
 	white-space: nowrap;
 }
 
+.verification-edit__actions .tx-kbdrow {
+	flex: none;
+}
+
 .verification-footer {
 	display: flex;
 	flex: 0 0 auto;
