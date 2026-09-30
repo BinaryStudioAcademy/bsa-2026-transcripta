@@ -1,6 +1,7 @@
 import { useEffect } from "~/libs/hooks/hooks.js";
 
 type UseVerificationKeyboardProperties = {
+	onCloseShortcuts: () => void;
 	onConfirm: () => void;
 	onEdit: () => void;
 	onPrevious: () => void;
@@ -20,6 +21,7 @@ const canHandleShortcut = (target: EventTarget | null): boolean => {
 };
 
 const useVerificationKeyboard = ({
+	onCloseShortcuts,
 	onConfirm,
 	onEdit,
 	onPrevious,
@@ -40,13 +42,19 @@ const useVerificationKeyboard = ({
 
 			const isUndoShortcut =
 				(event.ctrlKey || event.metaKey) &&
+				!event.shiftKey &&
 				!event.altKey &&
-				(event.key === "z" || event.key === "Z");
+				event.code === "KeyZ";
 
 			if (isUndoShortcut) {
 				event.preventDefault();
 				onUndo();
 
+				return;
+			}
+
+			if (event.key === "Escape") {
+				onCloseShortcuts();
 				return;
 			}
 
@@ -75,14 +83,14 @@ const useVerificationKeyboard = ({
 				return;
 			}
 
-			if (event.key === "e" || event.key === "E") {
+			if (event.code === "KeyE") {
 				event.preventDefault();
 				onEdit();
 
 				return;
 			}
 
-			if (event.key === "s" || event.key === "S") {
+			if (event.code === "KeyS") {
 				event.preventDefault();
 				onSkip();
 
@@ -105,6 +113,7 @@ const useVerificationKeyboard = ({
 		onEdit,
 		onSkip,
 		onPrevious,
+		onCloseShortcuts,
 		onToggleShortcuts,
 		onToggleZoom,
 		onUndo,

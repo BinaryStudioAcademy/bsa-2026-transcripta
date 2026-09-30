@@ -4,6 +4,8 @@ import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import { BaseQueue } from "./base-queue.module.js";
 import {
+	PAGE_TRANSCRIBE_COMPLETED_RETENTION,
+	PAGE_TRANSCRIBE_FAILED_RETENTION,
 	PAGE_TRANSCRIBE_JOB_ATTEMPTS,
 	PAGE_TRANSCRIBE_JOB_ID_PREFIX,
 } from "./libs/constants/constants.js";
@@ -36,8 +38,8 @@ class PageTranscribeQueue extends BaseQueue<PageTranscribeJobData> {
 		await this.addJob(data, {
 			attempts: PAGE_TRANSCRIBE_JOB_ATTEMPTS,
 			jobId: `${PAGE_TRANSCRIBE_JOB_ID_PREFIX}${String(data.pageId)}`,
-			removeOnComplete: true,
-			removeOnFail: true,
+			removeOnComplete: PAGE_TRANSCRIBE_COMPLETED_RETENTION,
+			removeOnFail: PAGE_TRANSCRIBE_FAILED_RETENTION,
 			...(options?.delay === undefined ? {} : { delay: options.delay }),
 		});
 	}

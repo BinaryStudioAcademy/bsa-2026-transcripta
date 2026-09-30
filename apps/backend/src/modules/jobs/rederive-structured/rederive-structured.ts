@@ -1,3 +1,4 @@
+import { LexiconEntrySource } from "@transcripta/shared";
 import { type Job } from "bullmq";
 
 import { type Logger } from "~/libs/modules/logger/logger.js";
@@ -121,6 +122,7 @@ const createRederiveStructuredHandler =
 						minDistinctPages,
 						outputSchema,
 						pageNo,
+						source: LexiconEntrySource.HUMAN,
 						structured: result.structured,
 						text,
 						trx,

@@ -76,8 +76,13 @@
 	border-top: 1px solid var(--hairline);
 }
 
-.preset-editor__instructions {
+textarea.preset-editor__instructions {
 	min-height: 72px;
+	resize: vertical;
+}
+
+textarea.preset-editor__description {
+	min-height: 35px;
 	resize: vertical;
 }
 
@@ -293,6 +298,20 @@
 	display: flex;
 	gap: 10px;
 	align-items: center;
+}
+
+.preset-editor__input-error,
+.preset-editor__input-error:hover:not(:disabled) {
+	border: 1px solid var(--danger);
+}
+
+.preset-editor__error-text {
+	display: block;
+	margin-top: 6px;
+	font-family: var(--font-ui);
+	font-size: var(--fs-sm);
+	line-height: var(--lh-ui);
+	color: var(--danger-text);
 }
 
 @media (width <= 640px) {

@@ -1,4 +1,5 @@
 import { Button } from "~/libs/components/components.js";
+import { getIsMacOs } from "~/libs/helpers/helpers.js";
 import {
 	useCallback,
 	useEffect,
@@ -21,6 +22,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 }) => {
 	const [value, setValue] = useState(text);
 	const textareaReference = useRef<HTMLTextAreaElement>(null);
+	const isMacOs = getIsMacOs();
 
 	useEffect(() => {
 		setValue(text);
@@ -45,7 +47,11 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				return;
 			}
 
-			if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+			const isSaveShortcut = isMacOs
+				? event.metaKey && !event.ctrlKey
+				: event.ctrlKey && !event.metaKey;
+
+			if (event.key === "Enter" && isSaveShortcut) {
 				event.preventDefault();
 
 				if (!isDisabled) {
@@ -53,7 +59,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				}
 			}
 		},
-		[isDisabled, onCancel, onSave, value],
+		[isDisabled, onCancel, onSave, value, isMacOs],
 	);
 
 	const handleSave = useCallback((): void => {
@@ -61,6 +67,13 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 			onSave(value);
 		}
 	}, [isDisabled, onSave, value]);
+
+	const handleSaveMouseDown = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			event.preventDefault();
+		},
+		[],
+	);
 
 	return (
 		<div className="verification-edit">
@@ -79,12 +92,13 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 					isPrimary={true}
 					label="Save and next"
 					onClick={handleSave}
+					onMouseDown={handleSaveMouseDown}
 					type="button"
 				/>
 
 				<span className="tx-kbdrow">
 					<span>
-						<kbd className="tx-kbd">Ctrl/⌘+Enter</kbd>
+						<kbd className="tx-kbd">{isMacOs ? "⌘+Enter" : "Ctrl+Enter"}</kbd>
 						{" — Save and next"}
 					</span>
 

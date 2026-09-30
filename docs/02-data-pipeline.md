@@ -103,7 +103,7 @@ The worker picks the job off the queue and does this:
      e. upload both to S3
      f. INSERT into the page table (status pending, or blank)
 5. Loop over pages (rendering, normalization, blank check, S3 upload, inserting row, and inmediately queuing for transcription if the active window limit is below 5 and the document id neither paused nor budget-stopped).
-6. document.status = 'ready';
+6. document.status = 'processing' if any page already left 'pending'/'blank' during the loop (transcription started), 'ready' otherwise;
 ```
 
 **The most important part is step 4 — the loop, one page at a time.**
@@ -326,8 +326,10 @@ repair request from step 7; a provider timeout deserves a retry with a delay;
 ### Who sets `document.status = 'done'`
 
 Every other status has an owner — `ingesting` and `ready` come from the ingest
-job, `processing` from the first transcription, `budget_stop` from the budget
-check. `done` is set by the **verify handler**, right after the cursor moves:
+job, `processing` from the ingest job when transcription started during
+splitting (step 6) or from the first transcription, `budget_stop` from the
+budget check. `done` is set by the **verify handler**, right after the cursor
+moves:
 
 ```sql
 UPDATE document SET status = 'done'
