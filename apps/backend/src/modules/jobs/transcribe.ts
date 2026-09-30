@@ -23,6 +23,11 @@ import {
 	validateSeedGlossaryBudget,
 } from "~/modules/context/context.js";
 import { type BuiltContext } from "~/modules/context/libs/types/types.js";
+import { correctionRuleRepository } from "~/modules/corrections/corrections.js";
+import {
+	applyCorrectionRules,
+	applyCorrectionRulesToStructured,
+} from "~/modules/corrections/libs/helpers/helpers.js";
 import { DocumentModel } from "~/modules/documents/document.model.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 import { refillPageWindow } from "~/modules/pages/libs/helpers/helpers.js";
@@ -1048,6 +1053,12 @@ const runTranscribePipeline = async ({
 		return;
 	}
 
+	// A reading the user already fixed on another page wins over the model's
+	// guess: the lexicon only suggests the word, so without this the same
+	// misreading would come back on every page.
+	const correctionRules =
+		await correctionRuleRepository.findByDocumentId(documentId);
+
 	await storeTranscription({
 		contextUsed: serializeContextUsed(context),
 		costUsd: resolved.costUsd,
@@ -1062,8 +1073,11 @@ const runTranscribePipeline = async ({
 		prompt: resolved.prompt,
 		provider: resolveModelProvider(modelId),
 		rawResponse: resolved.rawResponse,
-		structured: resolved.structured,
-		text: resolved.text,
+		structured: applyCorrectionRulesToStructured(
+			resolved.structured,
+			correctionRules,
+		),
+		text: applyCorrectionRules(resolved.text, correctionRules),
 	});
 
 	await applyBudgetStopIfExceeded(documentId);

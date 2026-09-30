@@ -1,4 +1,5 @@
 const DatabaseTableName = {
+	CORRECTION_RULE: "correction_rule",
 	DOCUMENT: "document",
 	DOCUMENT_COST: "document_cost",
 	DOCUMENT_EXPORT: "document_export",
