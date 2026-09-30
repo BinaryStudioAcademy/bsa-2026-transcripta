@@ -1,4 +1,5 @@
 import { OverflowMenu } from "~/libs/components/components.js";
+import { useOverflowTooltip } from "~/libs/hooks/hooks.js";
 import { type ValueOf } from "~/libs/types/types.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 
@@ -21,26 +22,41 @@ const DocumentTitleBlock: React.FC<Properties> = ({
 	presetName,
 	status,
 	title,
-}: Properties) => (
-	<div className={styles["title-row"]}>
-		<div className={styles["title-line"]}>
-			<h1 className={styles["title"]}>{title}</h1>
-			<DocumentStatusBlock documentId={documentId} status={status} />
-			<div className={styles["title-spacer"]} />
-			<OverflowMenu
-				items={[
-					{
-						isDanger: true,
-						label: "Delete",
-						onClick: onDeleteClick,
-					},
-				]}
-			/>
+}: Properties) => {
+	const { checkTruncation, elementReference, isTruncated } =
+		useOverflowTooltip<HTMLHeadingElement>(title);
+
+	return (
+		<div className={styles["title-row"]}>
+			<div className={styles["title-line"]}>
+				<div
+					className={[styles["title-wrapper"], isTruncated && "tx-tip"]
+						.filter(Boolean)
+						.join(" ")}
+					data-tip={isTruncated ? title : undefined}
+					onMouseEnter={checkTruncation}
+				>
+					<h1 className={styles["title"]} ref={elementReference}>
+						{title}
+					</h1>
+				</div>
+				<DocumentStatusBlock documentId={documentId} status={status} />
+				<div className={styles["title-spacer"]} />
+				<OverflowMenu
+					items={[
+						{
+							isDanger: true,
+							label: "Delete",
+							onClick: onDeleteClick,
+						},
+					]}
+				/>
+			</div>
+			<p className={styles["meta"]}>
+				<span className="tx-num">{pageCount}</span> pages · Preset: {presetName}
+			</p>
 		</div>
-		<p className={styles["meta"]}>
-			<span className="tx-num">{pageCount}</span> pages · Preset: {presetName}
-		</p>
-	</div>
-);
+	);
+};
 
 export { DocumentTitleBlock };
