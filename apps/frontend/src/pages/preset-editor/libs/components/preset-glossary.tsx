@@ -9,6 +9,7 @@ import { GLOSSARY_TYPES } from "../../libs/constants/preset-editor.constants.js"
 
 type Properties = {
 	entries: GlossaryEntry[];
+	errors: Record<string, string>;
 	isDisabled: boolean;
 	onAddEntry: () => void;
 	onCloseTypeSelector: () => void;
@@ -21,6 +22,7 @@ type Properties = {
 
 const PresetGlossary: React.FC<Properties> = ({
 	entries,
+	errors,
 	isDisabled,
 	onAddEntry,
 	onCloseTypeSelector,
@@ -131,14 +133,24 @@ const PresetGlossary: React.FC<Properties> = ({
 							Glossary value
 						</label>
 
-						<input
-							className="tx-input preset-editor__glossary-input"
-							data-id={entry.id}
-							disabled={isDisabled}
-							id={`glossary-value-${entry.id}`}
-							onChange={onValueChange}
-							value={entry.value}
-						/>
+						<div className="preset-editor__glossary-value">
+							<input
+								className={`tx-input preset-editor__glossary-input ${
+									errors[entry.id] ? "preset-editor__input-error" : ""
+								}`}
+								data-id={entry.id}
+								disabled={isDisabled}
+								id={`glossary-value-${entry.id}`}
+								onChange={onValueChange}
+								value={entry.value}
+							/>
+
+							{errors[entry.id] && (
+								<span className="preset-editor__error-text">
+									{errors[entry.id]}
+								</span>
+							)}
+						</div>
 
 						<Button
 							aria-label={`Remove ${entry.value || "glossary entry"}`}
