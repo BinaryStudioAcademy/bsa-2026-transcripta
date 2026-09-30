@@ -1,4 +1,4 @@
-import { PresetFormErrors } from "../types/preset-editor.types.js";
+import { type PresetFormErrors } from "../types/preset-editor.types.js";
 
 const getInitialErrors = (): PresetFormErrors => ({
 	description: null,
