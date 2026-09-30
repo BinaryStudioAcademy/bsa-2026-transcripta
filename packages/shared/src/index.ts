@@ -37,12 +37,14 @@ export {
 	type DocumentExportCreateResponseDto,
 	type DocumentExportFormatValue,
 	type DocumentExportGetByIdResponseDto,
+	type DocumentExportItemResponseDto,
 	type DocumentExportStatusValue,
 	DocumentExportCreateRequestValidationSchema,
 	DocumentExportFormat,
 	DocumentExportGetByIdParametersValidationSchema,
 	DocumentExportsApiPath,
 	DocumentExportStatus,
+	getDocumentExportFileName,
 } from "./modules/document-exports/document-exports.js";
 export {
 	type DocumentCreateRequestDto,
