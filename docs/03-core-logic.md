@@ -78,6 +78,7 @@ uncertain and it works without them.
 │ Page text and markers (always apply, win over <preset>):  │
 │ - page_text: the whole page, original line order;         │
 │   tables as Markdown pipe tables                          │
+│ - record numbers stay in their table row, never in a list │
 │ - word(?) unsure · [?] illegible · [...] lost             │
 │ - markers apply in page_text and in record values         │
 │ - no other markers                                        │
