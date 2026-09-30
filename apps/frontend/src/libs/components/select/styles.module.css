@@ -24,6 +24,7 @@ select.tx-input {
 .label {
 	display: flex;
 	flex-direction: column;
+	min-width: 0;
 	line-height: var(--lh-tight);
 }
 
@@ -77,10 +78,12 @@ select.tx-input {
 }
 
 .helper-text {
+	min-width: 0;
 	margin-top: 6px;
 	font-family: var(--font-ui);
 	font-size: var(--fs-xs);
 	font-weight: 400;
 	line-height: 1.4;
 	color: var(--text-3);
+	overflow-wrap: anywhere;
 }
