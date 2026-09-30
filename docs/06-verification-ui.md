@@ -66,6 +66,19 @@ skimmed.
 The data arrives in the `contextWords` field from the API
 ([05-api.md](05-api.md#get-apiv1documentsidpagesfrom47limit5)).
 
+**How the marks are drawn.** The frontend uses the server offsets as they are
+and never searches the text for the words itself. Each mark is a `<span>`
+around the existing characters, and the tooltip comes from CSS, so the copied
+text is the same with or without marks.
+
+- A range is skipped if it falls outside the text or no longer matches its
+  word (stale offsets after a correction, until the page is reloaded).
+  Skipping one range never moves the others.
+- When two lexicon words overlap (`Anna` inside `Annabelle`), the longer one
+  wins.
+- The model's own markers win over lexicon marks: `Bount(?)` shows only the
+  uncertain mark.
+
 ---
 
 ## The amount a cached page saved

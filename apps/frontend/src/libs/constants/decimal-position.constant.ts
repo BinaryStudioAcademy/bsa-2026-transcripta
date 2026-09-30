@@ -1,0 +1,3 @@
+const DECIMAL_POSITION = 1;
+
+export { DECIMAL_POSITION };

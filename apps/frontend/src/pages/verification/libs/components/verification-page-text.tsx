@@ -1,16 +1,29 @@
 import { FIRST_INDEX } from "~/libs/constants/constants.js";
 import { useMemo } from "~/libs/hooks/hooks.js";
 
-import { markUnreadable } from "../helpers/mark-unreadable.helper.js";
+import { markText } from "../helpers/mark-text.helper.js";
+import { normalizeContextWords } from "../helpers/normalize-context-words.helper.js";
 import { splitPageBlocks } from "../helpers/split-page-blocks.helper.js";
-import { type PageBlock } from "../types/types.js";
+import {
+	type DocumentGetPagesContextWordResponseDto,
+	type PageBlock,
+	type PageCell,
+} from "../types/types.js";
 
 type Properties = {
+	contextWords: DocumentGetPagesContextWordResponseDto[];
 	text: string;
 };
 
-const VerificationPageText: React.FC<Properties> = ({ text }: Properties) => {
+const VerificationPageText: React.FC<Properties> = ({
+	contextWords,
+	text,
+}: Properties) => {
 	const blocks = useMemo(() => splitPageBlocks(text), [text]);
+	const lexiconWords = useMemo(
+		() => normalizeContextWords({ contextWords, text }),
+		[contextWords, text],
+	);
 
 	return (
 		<div className="verification-transcription__text">
@@ -26,16 +39,28 @@ const VerificationPageText: React.FC<Properties> = ({ text }: Properties) => {
 							<table className="verification-transcription__table">
 								<thead>
 									<tr>
-										{(head ?? []).map((cell: string, cellIndex: number) => (
-											<th key={cellIndex}>{markUnreadable(cell)}</th>
+										{(head ?? []).map((cell: PageCell, cellIndex: number) => (
+											<th key={cellIndex}>
+												{markText({
+													contextWords: lexiconWords,
+													segment: cell.text,
+													segmentStart: cell.start,
+												})}
+											</th>
 										))}
 									</tr>
 								</thead>
 								<tbody>
-									{body.map((row: string[], rowIndex: number) => (
+									{body.map((row: PageCell[], rowIndex: number) => (
 										<tr key={rowIndex}>
-											{row.map((cell: string, cellIndex: number) => (
-												<td key={cellIndex}>{markUnreadable(cell)}</td>
+											{row.map((cell: PageCell, cellIndex: number) => (
+												<td key={cellIndex}>
+													{markText({
+														contextWords: lexiconWords,
+														segment: cell.text,
+														segmentStart: cell.start,
+													})}
+												</td>
 											))}
 										</tr>
 									))}
@@ -47,14 +72,16 @@ const VerificationPageText: React.FC<Properties> = ({ text }: Properties) => {
 
 				return (
 					<p className="verification-transcription__paragraph" key={blockIndex}>
-						{markUnreadable(block.text)}
+						{markText({
+							contextWords: lexiconWords,
+							segment: block.text,
+							segmentStart: block.start,
+						})}
 					</p>
 				);
 			})}
 			{blocks.length === FIRST_INDEX && (
-				<p className="verification-transcription__paragraph">
-					{markUnreadable(text)}
-				</p>
+				<p className="verification-transcription__paragraph">{text}</p>
 			)}
 		</div>
 	);

@@ -215,6 +215,14 @@
 	margin-top: var(--sp-3);
 }
 
+.verification-transcription__lexicon {
+	padding: 0 2px;
+	cursor: help;
+	background: var(--mark-bg);
+	border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+	border-radius: var(--r-xs);
+}
+
 .verification-transcription__uncertain {
 	padding: 0 2px;
 	cursor: help;
@@ -233,6 +241,7 @@
 	border-radius: var(--r-xs);
 }
 
+.verification-transcription__lexicon::after,
 .verification-transcription__uncertain::after,
 .verification-transcription__unreadable::after {
 	width: max-content;
@@ -281,6 +290,10 @@
 	display: flex;
 	gap: var(--sp-2);
 	align-items: center;
+}
+
+.verification-blank-state {
+	margin: auto;
 }
 
 .verification-failed-state {

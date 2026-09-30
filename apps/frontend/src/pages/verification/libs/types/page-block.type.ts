@@ -1,5 +1,7 @@
+import { PageCell } from "./page-cell.type.js";
+
 type PageBlock =
-	| { rows: string[][]; type: "table" }
-	| { text: string; type: "text" };
+	| { rows: PageCell[][]; type: "table" }
+	| { start: number; text: string; type: "text" };
 
 export { type PageBlock };

@@ -222,8 +222,8 @@ Without them the first page window is returned; pass both to page further.
 					{
 						"word": "Dykanka",
 						"lexiconId": 2,
-						"start": 52,
-						"end": 60,
+						"start": 54,
+						"end": 61,
 						"seenOnPages": 7,
 					},
 				],
