@@ -76,8 +76,13 @@
 	border-top: 1px solid var(--hairline);
 }
 
-.preset-editor__instructions {
+textarea.preset-editor__instructions {
 	min-height: 72px;
+	resize: vertical;
+}
+
+textarea.preset-editor__description {
+	min-height: 35px;
 	resize: vertical;
 }
 

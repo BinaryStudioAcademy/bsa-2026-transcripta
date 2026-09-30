@@ -93,9 +93,13 @@
 
 .presets-page__description-cell {
 	min-width: 0;
+	color: var(--text-2);
+}
+
+.presets-page__description-text {
+	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	color: var(--text-2);
 	white-space: nowrap;
 }
 
