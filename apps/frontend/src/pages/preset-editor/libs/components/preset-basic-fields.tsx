@@ -11,7 +11,7 @@ type Properties = {
 	isDisabled: boolean;
 	name: string;
 	onBasePresetChange: (event: ChangeEvent<HTMLSelectElement>) => void;
-	onDescriptionChange: (event: ChangeEvent<HTMLInputElement>) => void;
+	onDescriptionChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
 	onInstructionsChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
 	onNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
 	presets: PresetGetAllItemResponseDto[];
@@ -78,12 +78,13 @@ const PresetBasicFields: React.FC<Properties> = ({
 					Description <span className="preset-editor__hint">(optional)</span>
 				</label>
 
-				<input
-					className="tx-input"
+				<textarea
+					className="tx-input preset-editor__description"
 					disabled={isDisabled}
 					id="preset-description"
 					onChange={onDescriptionChange}
 					placeholder="Shown under the name in the presets list"
+					rows={1}
 					value={description}
 				/>
 			</div>
