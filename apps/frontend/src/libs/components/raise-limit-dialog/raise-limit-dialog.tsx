@@ -4,22 +4,27 @@ import { Button } from "~/libs/components/components.js";
 import {
 	BUDGET_FIELD_NAME,
 	CURRENCY_DECIMAL_PLACES,
+	DECIMAL_POINT,
+	DECIMAL_POSITION,
+	EMPTY_STRING,
 	GET_BUDGET_LIMIT_ERROR_MESSAGE,
+	NO_MORE_THAN_TWO_DECIMALS_BUDGET,
 	SUGGESTED_LIMIT_INCREMENT,
 } from "~/libs/constants/constants.js";
+import { DocumentValidationRule } from "~/libs/enums/enums.js";
 import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppForm,
 	useCallback,
 	useFormController,
 } from "~/libs/hooks/hooks.js";
-import { DocumentBudgetUpdateValidationSchema } from "~/libs/validation-schemas/validation-schemas.js";
 
 import styles from "./styles.module.css";
 import {
 	type FormValuesRaiseBudgetLimit,
 	type Properties,
 } from "./types/types.js";
+import { DocumentBudgetUpdateValidationSchema } from "./validation-schemas/validation-schemas.js";
 
 const RaiseLimitDialog: React.FC<
 	Properties & { serverError?: null | string }
@@ -37,10 +42,11 @@ const RaiseLimitDialog: React.FC<
 		setActiveServerError(serverError);
 	}, [serverError]);
 
-	const { control, handleSubmit } = useAppForm<FormValuesRaiseBudgetLimit>({
-		defaultValues: { limitUsd: suggestedLimit },
-		validationSchema: DocumentBudgetUpdateValidationSchema,
-	});
+	const { control, errors, handleSubmit } =
+		useAppForm<FormValuesRaiseBudgetLimit>({
+			defaultValues: { limitUsd: suggestedLimit },
+			validationSchema: DocumentBudgetUpdateValidationSchema,
+		});
 
 	const { field } = useFormController({
 		control,
@@ -49,7 +55,22 @@ const RaiseLimitDialog: React.FC<
 
 	const handleInputChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>): void => {
-			if (validationError) {
+			const value = event.target.value.trim();
+
+			if (
+				value !== EMPTY_STRING &&
+				!DocumentValidationRule.LIMIT_USD_REGEX.test(value)
+			) {
+				const parts = value.split(DECIMAL_POINT);
+				if (
+					parts[DECIMAL_POSITION] &&
+					parts[DECIMAL_POSITION].length > CURRENCY_DECIMAL_PLACES
+				) {
+					setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
+				} else {
+					setValidationError(null);
+				}
+			} else {
 				setValidationError(null);
 			}
 			if (activeServerError) {
@@ -57,13 +78,20 @@ const RaiseLimitDialog: React.FC<
 			}
 			field.onChange(event);
 		},
-		[field, validationError, activeServerError],
+		[field, activeServerError],
 	);
 
 	const handleFormSubmit = useCallback(
 		(event_: React.BaseSyntheticEvent): void => {
 			void handleSubmit((data) => {
-				const enteredLimit = Number(data.limitUsd);
+				const rawLimit = data.limitUsd.trim();
+
+				if (!DocumentValidationRule.LIMIT_USD_REGEX.test(rawLimit)) {
+					setValidationError(NO_MORE_THAN_TWO_DECIMALS_BUDGET);
+					return;
+				}
+
+				const enteredLimit = Number(rawLimit);
 				const currentSpent = Number(spentUsd);
 				const formattedSpent = formatMoney(spentUsd);
 
@@ -78,7 +106,8 @@ const RaiseLimitDialog: React.FC<
 		[handleSubmit, spentUsd, onSubmit],
 	);
 
-	const displayError = validationError || activeServerError;
+	const displayError =
+		errors.limitUsd?.message || validationError || activeServerError;
 
 	return (
 		<div className={styles["scrim"]}>
