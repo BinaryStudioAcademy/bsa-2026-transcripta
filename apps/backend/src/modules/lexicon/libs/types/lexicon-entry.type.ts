@@ -1,4 +1,7 @@
-import { type LexiconEntryKindValue } from "@transcripta/shared";
+import {
+	type LexiconEntryKindValue,
+	type LexiconEntrySourceValue,
+} from "@transcripta/shared";
 
 type LexiconEntryType = {
 	createdAt: string;
@@ -11,6 +14,7 @@ type LexiconEntryType = {
 	kind: LexiconEntryKindValue;
 	lastPageNo: number;
 	pageCount: number;
+	source: LexiconEntrySourceValue;
 	updatedAt: string;
 	valueDisplay: string;
 	valueNormalized: string;

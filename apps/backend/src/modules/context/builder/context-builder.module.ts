@@ -1,3 +1,5 @@
+import { LexiconEntrySource } from "@transcripta/shared";
+
 import {
 	estimateTokens,
 	fitToBudget,
@@ -124,7 +126,18 @@ class ContextBuilder implements IContextBuilder {
 				.select("id", "valueDisplay", "pageCount")
 				.where("documentId", documentId)
 				.whereNull("invalidatedAt")
-				.where("distinctPages", ">=", minDistinctPages)
+				// A word a person corrected is trusted at once: the threshold is
+				// there to filter model noise, not verified user input.
+				.where((builder) => {
+					void builder
+						.where("distinctPages", ">=", minDistinctPages)
+						.orWhere("source", LexiconEntrySource.HUMAN);
+				})
+				// Corrections come first so that lexiconTopK trims model noise
+				// rather than the words a person fixed by hand.
+				.orderByRaw("case when source = ? then 0 else 1 end", [
+					LexiconEntrySource.HUMAN,
+				])
 				.orderBy([
 					{ column: "distinctPages", order: "desc" },
 					{ column: "pageCount", order: "desc" },

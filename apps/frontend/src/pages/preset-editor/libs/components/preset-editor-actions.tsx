@@ -4,6 +4,7 @@ import { Button } from "~/libs/components/components.js";
 
 type Properties = {
 	isDisabled: boolean;
+	isFormChanged: boolean;
 	isSaving: boolean;
 	onCancel: () => void;
 	onSubmit: () => void;
@@ -11,6 +12,7 @@ type Properties = {
 
 const PresetEditorActions: React.FC<Properties> = ({
 	isDisabled,
+	isFormChanged,
 	isSaving,
 	onCancel,
 	onSubmit,
@@ -26,7 +28,7 @@ const PresetEditorActions: React.FC<Properties> = ({
 				<Button isDisabled={isDisabled} label="Cancel" onClick={onCancel} />
 
 				<Button
-					isDisabled={isDisabled}
+					isDisabled={isDisabled || !isFormChanged}
 					isPrimary
 					label={isSaving ? "Saving..." : "Save preset"}
 					onClick={onSubmit}
