@@ -6,6 +6,7 @@ import {
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
 import { getIsMacOs } from "~/libs/helpers/helpers.js";
+import { useOverflowTooltip } from "~/libs/hooks/hooks.js";
 
 import { DEFAULT_BUDGET, ZERO_BUDGET } from "../constants/budget.constants.js";
 
@@ -24,6 +25,9 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 	pageCount,
 	pageNo,
 }) => {
+	const { checkTruncation, elementReference, isTruncated } =
+		useOverflowTooltip(documentTitle);
+
 	const budgetPercentage =
 		budgetLimit === ZERO_BUDGET
 			? Number(ZERO_BUDGET)
@@ -41,7 +45,20 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			</Link>
 
 			{documentTitle && (
-				<strong className="verification-header__title">{documentTitle}</strong>
+				<span
+					className={[
+						"verification-header__title-wrapper",
+						isTruncated && "tx-tip",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					data-tip={isTruncated ? documentTitle : undefined}
+					onMouseEnter={checkTruncation}
+				>
+					<strong className="verification-header__title" ref={elementReference}>
+						{documentTitle}
+					</strong>
+				</span>
 			)}
 
 			{pageNo !== undefined && pageCount !== undefined && (

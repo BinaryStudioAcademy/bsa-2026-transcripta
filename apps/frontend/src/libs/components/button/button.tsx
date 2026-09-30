@@ -19,6 +19,7 @@ type Properties = {
 	isSmall?: boolean;
 	label?: string;
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
+	onMouseDown?: React.MouseEventHandler<HTMLButtonElement>;
 	role?: React.AriaRole;
 	type?: "button" | "submit";
 };
@@ -55,6 +56,7 @@ const Button: React.FC<Properties> = ({
 	isSmall = false,
 	label,
 	onClick,
+	onMouseDown,
 	role,
 	type = "button",
 }: Properties) => {
@@ -81,6 +83,7 @@ const Button: React.FC<Properties> = ({
 			data-kind={dataKind}
 			disabled={isDisabled}
 			onClick={onClick}
+			onMouseDown={onMouseDown}
 			role={role}
 			type={type}
 		>

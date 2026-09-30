@@ -68,6 +68,13 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 		}
 	}, [isDisabled, onSave, value]);
 
+	const handleSaveMouseDown = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			event.preventDefault();
+		},
+		[],
+	);
+
 	return (
 		<div className="verification-edit">
 			<textarea
@@ -85,6 +92,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 					isPrimary={true}
 					label="Save and next"
 					onClick={handleSave}
+					onMouseDown={handleSaveMouseDown}
 					type="button"
 				/>
 
