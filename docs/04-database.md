@@ -302,6 +302,24 @@ not the application.
      2 |       0.043200 |         7300 |          25450 |          0
 ```
 
+`total_cost_usd` and the token columns sum every charge that
+`document.spent_usd` counts:
+
+| Source                                                   | What it holds                                              |
+| -------------------------------------------------------- | ---------------------------------------------------------- |
+| `transcription`                                          | every finished call, successful or finally failed          |
+| `page_event` `transcribe_rate_limited`, no transcription | tokens spent before a repair call was rate-limited         |
+| `page_event` `transcribe_failed`, no transcription       | tokens spent on a retryable failure sent back to the queue |
+
+In both `page_event` cases the worker charges `spent_usd` but writes no
+`transcription` row, because the page goes back to the queue: without them the
+view reported less than the document had spent, or no cost at all for a
+document stopped by its budget on such calls. Events that point at a
+`transcription` row (`transcription_id` set) are skipped, since that row already
+holds the cost. `calls`, `avg_latency_ms` and `cache_hits` still describe
+`transcription` rows only, so a document with only such charges shows
+`calls = 0` and `avg_latency_ms = null`.
+
 ### `verification_speed`
 
 ```

@@ -1,4 +1,7 @@
-import { type LexiconEntryKindValue } from "@transcripta/shared";
+import {
+	type LexiconEntryKindValue,
+	type LexiconEntrySourceValue,
+} from "@transcripta/shared";
 
 import {
 	AbstractModel,
@@ -21,6 +24,8 @@ class LexiconEntryModel extends AbstractModel {
 	public lastPageNo!: number;
 
 	public pageCount!: number;
+
+	public source!: LexiconEntrySourceValue;
 
 	public valueDisplay!: string;
 
