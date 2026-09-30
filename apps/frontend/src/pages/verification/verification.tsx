@@ -52,6 +52,7 @@ import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
 	type EditConflictDraft,
 	type PageVerificationActionValue,
@@ -61,10 +62,11 @@ const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { id } = useParams();
+	const { handleCloseShortcuts, handleToggleShortcuts, isShortcutsOpen } =
+		useVerificationShortcuts();
 
 	const [isEditing, setIsEditing] = useState(false);
 	const { isZoomed, scanRef, toggleZoom, zoom } = useScanZoom();
-	const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 	const [editConflictDraft, setEditConflictDraft] =
 		useState<EditConflictDraft | null>(null);
 
@@ -240,7 +242,6 @@ const Verification: React.FC = () => {
 			}
 
 			const { completedDocumentId, failed } = result.payload;
-
 			const isTrulyCompleted =
 				document !== null &&
 				document.pageCount > INITIAL_COUNT &&
@@ -271,7 +272,6 @@ const Verification: React.FC = () => {
 
 			const { transcription } = currentPage;
 			const durationMs = Date.now() - pageStartedAtReference.current;
-
 			let payload: VerifyPageRequestDto;
 
 			if (transcription) {
@@ -333,7 +333,6 @@ const Verification: React.FC = () => {
 	const handleUndo = useCallback((): void => {
 		if (isVerificationQueueBusy && !isEditing) {
 			notification.info("Wait until the queued actions are saved, then undo");
-
 			return;
 		}
 
@@ -358,6 +357,11 @@ const Verification: React.FC = () => {
 
 	const handleSaveEdit = useCallback(
 		(text: string): void => {
+			if (text.trim() === "") {
+				notification.info("Type the page text before saving");
+				return;
+			}
+
 			const isQueued = handleVerify(PageVerificationAction.CORRECT, text);
 
 			if (isQueued) {
@@ -387,10 +391,6 @@ const Verification: React.FC = () => {
 		setIsEditing((value) => !value);
 	}, [currentPage, isReprocessing]);
 
-	const handleToggleShortcuts = useCallback((): void => {
-		setIsShortcutsOpen((value) => !value);
-	}, []);
-
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
 			if (isEditing) {
@@ -419,6 +419,7 @@ const Verification: React.FC = () => {
 	}, [cursorPageNo, handlePageSelect, document]);
 
 	useVerificationKeyboard({
+		onCloseShortcuts: handleCloseShortcuts,
 		onConfirm: handleConfirm,
 		onEdit: handleToggleEdit,
 		onPrevious: handlePrevious,
@@ -476,7 +477,7 @@ const Verification: React.FC = () => {
 				pages={pagesForStrip}
 			/>
 			{isShortcutsOpen && (
-				<VerificationShortcutsDialog onClose={handleToggleShortcuts} />
+				<VerificationShortcutsDialog onClose={handleCloseShortcuts} />
 			)}
 		</div>
 	);
