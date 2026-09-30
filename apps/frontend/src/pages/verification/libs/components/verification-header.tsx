@@ -14,6 +14,7 @@ type VerificationHeaderProperties = {
 	budgetLimit?: string;
 	budgetSpent?: string;
 	documentTitle?: string;
+	isBudgetStopped: boolean;
 	pageCount?: number;
 	pageNo?: number | undefined;
 };
@@ -22,6 +23,7 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 	budgetLimit = DEFAULT_BUDGET,
 	budgetSpent = DEFAULT_BUDGET,
 	documentTitle,
+	isBudgetStopped,
 	pageCount,
 	pageNo,
 }) => {
@@ -100,7 +102,11 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			</div>
 
 			<div className="verification-header__budget">
-				<span className="tx-budget">
+				<span
+					className={["tx-budget", isBudgetStopped && "tx-budget--warn"]
+						.filter(Boolean)
+						.join(" ")}
+				>
 					<span className="tx-budget-bar">
 						<i
 							className="tx-budget-bar__fill"
