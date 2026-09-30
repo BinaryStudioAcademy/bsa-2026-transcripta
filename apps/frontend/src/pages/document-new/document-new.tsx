@@ -1,4 +1,9 @@
-import { EMPTY_LENGTH, HTTPCode } from "@transcripta/shared";
+import {
+	DocumentValidationMessage,
+	DocumentValidationRule,
+	EMPTY_LENGTH,
+	HTTPCode,
+} from "@transcripta/shared";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router-dom";
 
@@ -22,6 +27,7 @@ import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as documentActions,
 	type DocumentCreateRequestDto,
+	type DocumentGetByIdResponseDto,
 } from "~/modules/documents/documents.js";
 import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { actions as presetsActions } from "~/modules/presets/presets.js";
@@ -258,6 +264,38 @@ const useIngestPolling = ({
 	]);
 };
 
+const useScreenState = ({
+	ingestingDocumentId,
+	isUploading,
+	isZipProcessing,
+	resumedDocument,
+	selectedFile,
+}: {
+	ingestingDocumentId: null | number;
+	isUploading: boolean;
+	isZipProcessing: boolean;
+	resumedDocument: DocumentGetByIdResponseDto | null;
+	selectedFile: File | null;
+}): ScreenStateType => {
+	if (ingestingDocumentId) {
+		return ScreenState.INGESTING;
+	}
+	if (resumedDocument?.status === DocumentStatus.INGESTING) {
+		return ScreenState.INGESTING;
+	}
+	if (isZipProcessing) {
+		return ScreenState.PROCESSING;
+	}
+	if (isUploading) {
+		return ScreenState.UPLOADING;
+	}
+	if (selectedFile) {
+		return ScreenState.SELECTED;
+	}
+
+	return ScreenState.REST;
+};
+
 const DocumentNew: React.FC = () => {
 	const { presets } = useAppSelector(({ presets }) => ({
 		presets: presets.presets,
@@ -293,6 +331,13 @@ const DocumentNew: React.FC = () => {
 
 	const handleZipComplete = useCallback((pdfFile: File): void => {
 		setSelectedArchive(null);
+
+		if (pdfFile.name.length > DocumentValidationRule.MAX_FILE_NAME_LENGTH) {
+			setRejection(DocumentValidationMessage.FILE_NAME_MAX_LENGTH);
+
+			return;
+		}
+
 		setSelectedFile(pdfFile);
 	}, []);
 
@@ -372,6 +417,14 @@ const DocumentNew: React.FC = () => {
 	const handleUpload = useCallback(
 		(values: UploadFormValues) => {
 			if (!selectedFile) {
+				return;
+			}
+
+			if (
+				selectedFile.name.length > DocumentValidationRule.MAX_FILE_NAME_LENGTH
+			) {
+				setRejection(DocumentValidationMessage.FILE_NAME_MAX_LENGTH);
+
 				return;
 			}
 
@@ -517,10 +570,19 @@ const DocumentNew: React.FC = () => {
 
 	const acceptFile = useCallback(
 		(file: File): void => {
+			if (file.name.length > DocumentValidationRule.MAX_FILE_NAME_LENGTH) {
+				setSelectedFile(null);
+				setSelectedArchive(null);
+				setRejection(DocumentValidationMessage.FILE_NAME_MAX_LENGTH);
+
+				return;
+			}
+
 			if (ZIP_FILE_REGEX.test(file.name)) {
 				setSelectedArchive(file);
 				setRejection(null);
 				processZip(file);
+
 				return;
 			}
 
@@ -553,27 +615,13 @@ const DocumentNew: React.FC = () => {
 		setRejection,
 	});
 
-	const getScreenState = (): ScreenStateType => {
-		if (ingestingDocumentId) {
-			return ScreenState.INGESTING;
-		}
-		if (resumedDocument?.status === DocumentStatus.INGESTING) {
-			return ScreenState.INGESTING;
-		}
-		if (isZipProcessing) {
-			return ScreenState.PROCESSING;
-		}
-		if (isUploading) {
-			return ScreenState.UPLOADING;
-		}
-		if (selectedFile) {
-			return ScreenState.SELECTED;
-		}
-
-		return ScreenState.REST;
-	};
-
-	const screenState = getScreenState();
+	const screenState = useScreenState({
+		ingestingDocumentId,
+		isUploading,
+		isZipProcessing,
+		resumedDocument,
+		selectedFile,
+	});
 	const isSubmitting = isUploading;
 	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
