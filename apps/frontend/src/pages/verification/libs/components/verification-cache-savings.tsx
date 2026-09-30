@@ -4,10 +4,6 @@ type VerificationCacheSavingsProperties = {
 	savedUsd: null | string | undefined;
 };
 
-// Quiet, and part of the page rather than a transient event: the amount is a
-// property of this transcription, so it has to still be there when the human
-// comes back to the page. The tooltip is hover-only, like the context-word
-// marks — a focusable chip would steal `Enter` from the confirm shortcut.
 const VerificationCacheSavings: React.FC<
 	VerificationCacheSavingsProperties
 > = ({ savedUsd }) => {
