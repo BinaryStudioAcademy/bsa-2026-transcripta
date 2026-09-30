@@ -470,18 +470,48 @@ GROUP BY d.id;
 
 
 -- What the document cost and how much of it the context ate.
+-- Two sources of charges, so the view matches document.spent_usd:
+--   transcription - every finished call (success or final failure)
+--   page_event    - charges with no transcription row (transcription_id IS NULL):
+--                   transcribe_rate_limited - tokens spent before a repair call
+--                                             was rate-limited, page deferred
+--                   transcribe_failed       - a retryable failure, page sent
+--                                             back to the queue
+-- Events linked to a transcription row are skipped: that row holds the cost.
+-- calls, avg_latency_ms and cache_hits describe transcription rows only.
 CREATE VIEW document_cost AS
 SELECT
   document_id,
-  count(*)::int                     AS calls,
+  count(*) FILTER (WHERE is_transcription)::int AS calls,
   sum(cost_usd)                     AS total_cost_usd,  -- numeric: stays a string, it is money
   sum(input_tokens)::int            AS input_tokens,
   sum(output_tokens)::int           AS output_tokens,
-  round(avg(latency_ms))::int       AS avg_latency_ms,
+  round(avg(latency_ms))::int       AS avg_latency_ms,  -- NULL latency of event rows is ignored
   count(*) FILTER (WHERE from_cache)::int AS cache_hits
-FROM transcription
-GROUP BY document_id;
+FROM (
+  SELECT document_id, cost_usd, input_tokens, output_tokens, latency_ms, from_cache,
+         true AS is_transcription
+  FROM transcription
 
+  UNION ALL
+
+  -- numeric(12,6) rounds the JS float the same way spent_usd does.
+  -- Rate-limited events written before TSA-495 carry no token counts, hence coalesce.
+  -- Failures with no charge (budget_exceeded, preset_not_found, ...) have no
+  -- costUsd and are dropped by the > 0 check.
+  SELECT document_id,
+         (details ->> 'costUsd')::numeric(12,6),
+         coalesce((details ->> 'inputTokens')::int, 0),
+         coalesce((details ->> 'outputTokens')::int, 0),
+         NULL::int,
+         false,
+         false
+  FROM page_event
+  WHERE event IN ('transcribe_rate_limited', 'transcribe_failed')
+    AND transcription_id IS NULL
+    AND (details ->> 'costUsd')::numeric > 0
+) AS charge
+GROUP BY document_id;
 
 -- Verification speed - the headline product metric.
 CREATE VIEW verification_speed AS
