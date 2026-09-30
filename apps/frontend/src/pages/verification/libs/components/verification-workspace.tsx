@@ -106,6 +106,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						</span>
 
 						<VerificationEdit
+							contextWords={[]}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text=""
@@ -137,6 +138,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					{isEditing ? (
 						<VerificationEdit
+							contextWords={currentPage.transcription.contextWords}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
