@@ -217,6 +217,7 @@ Without them the first page window is returned; pass both to page further.
 				"id": 312,
 				"text": "No. 15. Born on 11 January, Anna. Parents: peasant of Dykanka village...",
 				"structured": { "records": [] },
+				"savedUsd": "0.012600", // "0.000000" unless it came from the cache
 				"contextWords": [
 					{
 						"word": "Dykanka",
@@ -231,6 +232,17 @@ Without them the first page window is returned; pass both to page further.
 	],
 }
 ```
+
+`savedUsd` is the estimated cost of the model call this transcription
+avoided: a cache hit is stored with `cost_usd = 0` but keeps the token counts
+of the call that originally produced it, so the amount is that token count
+priced at the recorded model rate. It is `"0.000000"` on any page the model
+read normally. The same field travels in the `transcription` object of
+`next` below, so a cached page can be shown the moment it arrives.
+
+Only the amount is exposed. The cache is shared across accounts, and the
+response says nothing about whether the same document was processed before or
+by whom.
 
 `contextWords` are the words the context suggested. The frontend highlights
 exactly these, because they carry the highest risk of context poisoning. See
@@ -326,7 +338,7 @@ The product's headline metric depends on how fast this is.
     "pageId": 48,
     "pageNo": 48,
     "status": "transcribed",
-    "transcription": { "text": "...", "contextWords": [] }
+    "transcription": { "text": "...", "contextWords": [], "savedUsd": "0.000000" }
   }
 }
 ```
@@ -346,6 +358,11 @@ noticeable.
 **3. `lexiconAdded` with the `inContext` field.**
 Shows whether the word has already passed the two-page threshold and started
 influencing later transcriptions.
+
+**4. `savedUsd` on `next.transcription`.**
+The savings figure has to arrive with the page, not on a later poll: the
+verification screen stops polling as soon as the current page has a
+transcription, so a cached page fetched separately would never light up.
 
 ---
 

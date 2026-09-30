@@ -1,3 +1,5 @@
+export { type CacheSavings } from "./cache-savings.type.js";
+
 export { type EditConflictDraft } from "./edit-conflict-draft.type.js";
 
 export { type PageBlock } from "./page-block.type.js";
