@@ -354,8 +354,10 @@ when the file list is sorted, page 10 ends up between 1 and 2.
 
 ### Step 7. Queue the first 5 pages
 
-The worker sets `document.status = 'ready'` and pins **five**
-`page.transcribe` notes onto the board — for pages 1-5.
+The worker sets `document.status` to `processing` when the first pages were
+already queued and transcribed while the PDF was still splitting, `ready`
+otherwise — and pins **five** `page.transcribe` notes onto the board — for
+pages 1-5.
 
 **Why 5 and not 300.** This is the "sliding window", an idea worth
 understanding on its own:
@@ -370,8 +372,8 @@ Hence: keep **5 ready pages ahead of the human**. The human never waits (there
 is always something to check) and the hints stay fresh — they lag by 5 pages at
 most.
 
-> **In the database:** `document.status = 'ready'`, pages 1-5 in status
-> `queued`.
+> **In the database:** `document.status = 'ready'` (or `'processing'` when
+> transcription already started during ingest), pages 1-5 in status `queued`.
 
 ---
 
