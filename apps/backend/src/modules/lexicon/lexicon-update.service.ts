@@ -1,4 +1,8 @@
-import { EMPTY_LENGTH, VerifyPageLexiconItemDto } from "@transcripta/shared";
+import {
+	EMPTY_LENGTH,
+	LexiconEntrySource,
+	VerifyPageLexiconItemDto,
+} from "@transcripta/shared";
 
 import { lexiconExtractor } from "./lexicon-extractor/lexicon-extractor.js";
 import { type LexiconRepository } from "./lexicon.repository.js";
@@ -21,6 +25,7 @@ class LexiconUpdateService {
 		minDistinctPages,
 		outputSchema,
 		pageNo,
+		source,
 		structured,
 		text,
 		trx,
@@ -39,6 +44,7 @@ class LexiconUpdateService {
 			documentId,
 			kind: entity.kind,
 			pageNo,
+			source,
 			valueDisplay: entity.value,
 			valueNormalized: normalizeLexiconValue(entity.value),
 		}));
@@ -49,12 +55,19 @@ class LexiconUpdateService {
 		);
 
 		return entries.map((entry) => {
-			const { distinctPages, id, valueDisplay } = entry.toObject();
+			const {
+				distinctPages,
+				id,
+				source: entrySource,
+				valueDisplay,
+			} = entry.toObject();
 
 			return {
 				distinctPages,
 				id,
-				inContext: distinctPages >= minDistinctPages,
+				inContext:
+					entrySource === LexiconEntrySource.HUMAN ||
+					distinctPages >= minDistinctPages,
 				word: valueDisplay,
 			};
 		});
