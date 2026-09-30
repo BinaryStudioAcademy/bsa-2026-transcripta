@@ -4,6 +4,10 @@ import {
 	rederiveStructuredQueue,
 } from "~/libs/modules/queue/queue.js";
 
+import {
+	correctionRuleRepository,
+	CorrectionService,
+} from "../corrections/corrections.js";
 import { DocumentModel } from "../documents/document.model.js";
 import { DocumentRepository } from "../documents/document.repository.js";
 import { LexiconEntryModel } from "../lexicon/lexicon-entry.model.js";
@@ -25,7 +29,13 @@ const pageRepository = new PageRepository(PageModel);
 const lexiconRepository = new LexiconRepository(LexiconEntryModel);
 const lexiconUpdateService = new LexiconUpdateService({ lexiconRepository });
 
+const correctionService = new CorrectionService({
+	correctionRuleRepository,
+	transcriptionRepository,
+});
+
 const pageService = new PageService({
+	correctionService,
 	documentRepository,
 	lexiconUpdateService,
 	logger,
