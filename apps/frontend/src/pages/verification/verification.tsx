@@ -241,13 +241,25 @@ const Verification: React.FC = () => {
 
 			const { completedDocumentId, failed } = result.payload;
 
+			const hasProgress = document?.progress !== undefined;
+			const totalClosed = hasProgress
+				? document.progress.pagesVerified +
+					document.progress.pagesSkipped +
+					document.progress.pagesBlank +
+					document.progress.pagesFailed
+				: INITIAL_COUNT;
+
 			const isTrulyCompleted =
 				document !== null &&
 				document.pageCount > INITIAL_COUNT &&
-				cursorPageNo >= document.pageCount;
+				hasProgress &&
+				totalClosed >= document.progress.pagesTotal;
 
-			if (completedDocumentId !== null && isTrulyCompleted) {
-				goToCompletedDocument(completedDocumentId);
+			if (
+				(completedDocumentId !== null || isTrulyCompleted) &&
+				document !== null
+			) {
+				goToCompletedDocument(document.id);
 				return;
 			}
 
@@ -261,7 +273,7 @@ const Verification: React.FC = () => {
 				});
 			}
 		});
-	}, [dispatch, goToCompletedDocument, document, cursorPageNo]);
+	}, [dispatch, goToCompletedDocument, document]);
 
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {

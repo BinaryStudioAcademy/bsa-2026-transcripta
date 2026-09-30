@@ -21,6 +21,7 @@ import {
 import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
 
 import { VerificationQueueMessage } from "../libs/constants/constants.js";
+import { PageStatus } from "../libs/enums/enums.js";
 import { getDiscardedVerificationsMessage } from "../libs/helpers/helpers.js";
 import {
 	type VerificationQueueItem,
@@ -160,13 +161,40 @@ const checkDocumentCompletion = ({
 	getState: () => RootState;
 	item: VerificationQueueItem;
 }): boolean => {
-	const currentDocument = getState().documents.document;
-	return (
-		currentDocument !== null &&
-		currentDocument.id === item.documentId &&
-		currentDocument.pageCount > INITIAL_COUNT &&
-		item.pageNo >= currentDocument.pageCount
+	const state = getState();
+	const currentDocument = state.documents.document;
+	const pagesById = state.pages.byId;
+
+	if (!currentDocument || currentDocument.id !== item.documentId) {
+		return false;
+	}
+
+	const { pagesTotal } = currentDocument.progress;
+
+	if (pagesTotal <= INITIAL_COUNT) {
+		return false;
+	}
+
+	const allPages = Object.values(pagesById);
+
+	if (allPages.length < currentDocument.pageCount) {
+		return false;
+	}
+
+	const hasUnreviewedPages = allPages.some(
+		(page) => page.status === PageStatus.TRANSCRIBED,
 	);
+
+	const totalClosed = allPages.filter(
+		(page) =>
+			page.status === PageStatus.CONFIRMED ||
+			page.status === PageStatus.CORRECTED ||
+			page.status === PageStatus.SKIPPED ||
+			page.status === PageStatus.BLANK ||
+			page.status === PageStatus.FAILED,
+	).length;
+
+	return totalClosed >= pagesTotal && !hasUnreviewedPages;
 };
 
 // Sends queued verifications one at a time: the next action leaves the queue
@@ -212,14 +240,13 @@ const processVerificationQueue = createAsyncThunk<
 				});
 			}
 
-			// The backend has no page after this one, so it has just closed the
-			// document: the caller leaves verification when it sees the id back.
+			if (checkDocumentCompletion({ getState, item })) {
+				completedDocumentId = item.documentId;
+				break;
+			}
+
 			if (result.payload.next === null) {
-				if (checkDocumentCompletion({ getState, item })) {
-					completedDocumentId = item.documentId;
-				} else {
-					reloadPage(item);
-				}
+				reloadPage(item);
 			}
 
 			const wasManualTranscription = payload.transcriptionId === undefined;
