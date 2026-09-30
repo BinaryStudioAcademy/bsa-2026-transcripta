@@ -143,7 +143,10 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						/>
 					) : (
 						<>
-							<VerificationPageText text={currentPage.transcription.text} />
+							<VerificationPageText
+								contextWords={currentPage.transcription.contextWords}
+								text={currentPage.transcription.text}
+							/>
 
 							<div className="verification-actions">
 								<Button

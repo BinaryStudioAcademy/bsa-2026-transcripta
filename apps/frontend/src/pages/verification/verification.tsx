@@ -52,6 +52,7 @@ import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
@@ -73,10 +74,11 @@ const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { id } = useParams();
+	const { handleCloseShortcuts, handleToggleShortcuts, isShortcutsOpen } =
+		useVerificationShortcuts();
 
 	const [isEditing, setIsEditing] = useState(false);
 	const { isZoomed, scanRef, toggleZoom, zoom } = useScanZoom();
-	const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 	const [editConflictDraft, setEditConflictDraft] =
 		useState<EditConflictDraft | null>(null);
 
@@ -348,7 +350,6 @@ const Verification: React.FC = () => {
 		(text: string): void => {
 			if (text.trim() === "") {
 				notification.info("Type the page text before saving");
-
 				return;
 			}
 
@@ -376,10 +377,6 @@ const Verification: React.FC = () => {
 			setIsEditing((value) => !value);
 		}
 	}, [currentPage, isReprocessing]);
-
-	const handleToggleShortcuts = useCallback((): void => {
-		setIsShortcutsOpen((value) => !value);
-	}, []);
 
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
@@ -411,6 +408,7 @@ const Verification: React.FC = () => {
 	}, [currentPage, dispatch]);
 
 	useVerificationKeyboard({
+		onCloseShortcuts: handleCloseShortcuts,
 		onConfirm: handleConfirm,
 		onEdit: handleToggleEdit,
 		onPrevious: handlePrevious,
@@ -469,7 +467,7 @@ const Verification: React.FC = () => {
 				pages={pagesForStrip}
 			/>
 			{isShortcutsOpen && (
-				<VerificationShortcutsDialog onClose={handleToggleShortcuts} />
+				<VerificationShortcutsDialog onClose={handleCloseShortcuts} />
 			)}
 		</div>
 	);

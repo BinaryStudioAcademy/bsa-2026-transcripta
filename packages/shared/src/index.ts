@@ -79,7 +79,9 @@ export {
 } from "./modules/documents/documents.js";
 export {
 	type LexiconEntryKindValue,
+	type LexiconEntrySourceValue,
 	LexiconEntryKind,
+	LexiconEntrySource,
 } from "./modules/lexicon/lexicon-entry.js";
 export {
 	type LexiconIdRequestDto,

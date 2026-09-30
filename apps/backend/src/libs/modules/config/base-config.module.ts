@@ -8,6 +8,7 @@ import {
 	DEVELOPMENT_JWT_SECRET,
 	DevelopmentJwtSecretMessage,
 } from "./libs/constants/constants.js";
+import { assertWorkerConcurrency } from "./libs/helpers/helpers.js";
 import { type Config, type EnvironmentSchema } from "./libs/types/types.js";
 
 class BaseConfig implements Config {
@@ -110,7 +111,7 @@ class BaseConfig implements Config {
 					default: 3,
 					doc: "Max page.transcribe jobs processed in parallel",
 					env: "PAGE_TRANSCRIBE_CONCURRENCY",
-					format: Number,
+					format: assertWorkerConcurrency,
 				},
 			},
 			QUEUE_BOARD: {

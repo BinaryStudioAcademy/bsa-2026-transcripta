@@ -60,6 +60,19 @@ class BaseQueue<TData> implements QueueLifecycle {
 			throw new Error(QueueErrorMessage.QUEUE_NOT_CREATED);
 		}
 
+		// Finished jobs are kept for a while so they stay visible on the board,
+		// and BullMQ ignores an add whose jobId still exists. Drop the previous
+		// run first so re-queuing the same page is not silently skipped.
+		if (options.jobId) {
+			const previous = await this.queue.getJob(options.jobId);
+			const isFinished = await previous?.isCompleted();
+			const hasFailed = await previous?.isFailed();
+
+			if (isFinished === true || hasFailed === true) {
+				await previous?.remove();
+			}
+		}
+
 		await this.queue.add(this.name, data, options);
 	}
 
