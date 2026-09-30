@@ -346,7 +346,15 @@ const Verification: React.FC = () => {
 
 	const handleSaveEdit = useCallback(
 		(text: string): void => {
-			if (handleVerify(PageVerificationAction.CORRECT, text)) {
+			if (text.trim() === "") {
+				notification.info("Type the page text before saving");
+
+				return;
+			}
+
+			const isQueued = handleVerify(PageVerificationAction.CORRECT, text);
+
+			if (isQueued) {
 				setEditConflictDraft(null);
 			}
 		},
