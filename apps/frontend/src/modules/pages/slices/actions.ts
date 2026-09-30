@@ -30,6 +30,7 @@ import { name as sliceName } from "./pages.slice.js";
 
 type LoadPagesParameters = {
 	documentId: number;
+	isBackground?: boolean;
 	query: DocumentGetPagesQueryDto;
 };
 
