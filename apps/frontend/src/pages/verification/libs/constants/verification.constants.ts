@@ -1,3 +1,6 @@
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
+import { PageStatus } from "~/modules/pages/libs/enums/enums.js";
+
 const PAGE_STEP = 1;
 const MIN_NUMBER_OF_PAGES = 1;
 const MAX_LOADED_PAGES = 5;
@@ -37,6 +40,27 @@ const PAGE_STRIP_LEGEND = [
 	{ label: "skipped", symbol: PAGE_STATUS_SYMBOL["skipped"] },
 	{ label: "failed", symbol: PAGE_STATUS_SYMBOL["error"] },
 ] as const;
+// A page in one of these statuses will not change on its own, so polling it
+// brings nothing back.
+const SETTLED_PAGE_STATUSES: string[] = [
+	PageStatus.BLANK,
+	PageStatus.CONFIRMED,
+	PageStatus.CORRECTED,
+	PageStatus.FAILED,
+	PageStatus.SKIPPED,
+	PageStatus.TRANSCRIBED,
+];
+
+// While the document sits in one of these statuses no worker is running, so a
+// pending page stays pending until the user resumes it.
+const IDLE_DOCUMENT_STATUSES: string[] = [
+	DocumentStatus.BUDGET_STOP,
+	DocumentStatus.DONE,
+	DocumentStatus.DRAFT,
+	DocumentStatus.FAILED,
+	DocumentStatus.PAUSED,
+];
+
 const UNREADABLE_TIP = {
 	ILLEGIBLE: "could not be read",
 	LOST: "missing on the page",
@@ -45,6 +69,7 @@ const UNREADABLE_TIP = {
 
 export {
 	CURSOR_SYMBOL,
+	IDLE_DOCUMENT_STATUSES,
 	ILLEGIBLE_MARKER,
 	INITIAL_SPLIT_POSITION,
 	INITIAL_ZOOM,
@@ -58,6 +83,7 @@ export {
 	PAGE_STATUS_SYMBOL,
 	PAGE_STEP,
 	PAGE_STRIP_LEGEND,
+	SETTLED_PAGE_STATUSES,
 	TABLE_CELL_SEPARATOR,
 	TOGGLE_ZOOM_LEVEL,
 	UNREADABLE_TIP,

@@ -216,7 +216,13 @@ const { actions, name, reducer } = createSlice({
 			}
 		});
 
-		builder.addCase(loadPages.pending, (state) => {
+		// Background polling must not raise the navigation loader: the page
+		// strip stays visible and usable while the poll is in flight.
+		builder.addCase(loadPages.pending, (state, action) => {
+			if (action.meta.arg.isBackground) {
+				return;
+			}
+
 			state.dataStatus = DataStatus.PENDING;
 		});
 
@@ -231,10 +237,19 @@ const { actions, name, reducer } = createSlice({
 				state.byId[page.id] = page;
 				state.idsByPageNo[page.pageNo] = page.id;
 			}
+
+			if (action.meta.arg.isBackground) {
+				return;
+			}
+
 			state.dataStatus = DataStatus.FULFILLED;
 		});
 
-		builder.addCase(loadPages.rejected, (state) => {
+		builder.addCase(loadPages.rejected, (state, action) => {
+			if (action.meta.arg.isBackground) {
+				return;
+			}
+
 			state.dataStatus = DataStatus.REJECTED;
 		});
 	},

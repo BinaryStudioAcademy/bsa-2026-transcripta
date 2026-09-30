@@ -7,6 +7,8 @@ import { DocumentsApiPath } from "./libs/enums/enums.js";
 import {
 	type DocumentCreateRequestDto,
 	type DocumentCreateResponseDto,
+	type DocumentExportCreateRequestDto,
+	type DocumentExportCreateResponseDto,
 	type DocumentGetAllResponseDto,
 	type DocumentGetByIdBudgetResponseDto,
 	type DocumentGetByIdResponseDto,
@@ -43,6 +45,23 @@ class DocumentApi extends BaseHTTPApi {
 		);
 
 		return await response.json<DocumentCreateResponseDto>();
+	}
+
+	public async createExport(
+		id: number,
+		payload: DocumentExportCreateRequestDto,
+	): Promise<DocumentExportCreateResponseDto> {
+		const response = await this.load(
+			this.getFullEndpoint(DocumentsApiPath.EXPORT, { id: String(id) }),
+			{
+				contentType: ContentType.JSON,
+				hasAuth: true,
+				method: HTTPMethod.POST,
+				payload: JSON.stringify(payload),
+			},
+		);
+
+		return await response.json<DocumentExportCreateResponseDto>();
 	}
 
 	public async getAll(): Promise<DocumentGetAllResponseDto> {
