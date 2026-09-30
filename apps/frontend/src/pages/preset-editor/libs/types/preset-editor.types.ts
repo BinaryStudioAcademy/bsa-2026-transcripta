@@ -9,6 +9,13 @@ type GlossaryEntry = {
 
 type GlossaryType = (typeof LexiconEntryKind)[keyof typeof LexiconEntryKind];
 
+type PresetFormErrors = {
+	description: null | string;
+	glossary: Record<string, string>;
+	instructions: null | string;
+	name: null | string;
+};
+
 type PresetFormState = {
 	basePresetId: null | number;
 	description: string;
@@ -17,4 +24,9 @@ type PresetFormState = {
 	name: string;
 };
 
-export { type GlossaryEntry, type GlossaryType, type PresetFormState };
+export {
+	type GlossaryEntry,
+	type GlossaryType,
+	type PresetFormErrors,
+	type PresetFormState,
+};
