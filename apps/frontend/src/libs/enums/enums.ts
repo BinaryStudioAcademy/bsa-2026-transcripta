@@ -8,6 +8,7 @@ export {
 	APIPath,
 	AppEnvironment,
 	ContentType,
+	DocumentValidationRule,
 	HTTPCode,
 	HTTPMethod,
 	PageVerificationAction,

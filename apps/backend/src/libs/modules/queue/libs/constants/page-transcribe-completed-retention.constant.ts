@@ -1,0 +1,6 @@
+const PAGE_TRANSCRIBE_COMPLETED_RETENTION = {
+	age: 3600,
+	count: 100,
+} as const;
+
+export { PAGE_TRANSCRIBE_COMPLETED_RETENTION };

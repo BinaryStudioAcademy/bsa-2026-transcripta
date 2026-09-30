@@ -1,6 +1,6 @@
 import { LexiconEntryKind } from "@transcripta/shared";
 
-import type { GlossaryType } from "../types/preset-editor.types.js";
+import { type GlossaryType } from "../types/preset-editor.types.js";
 
 const GLOSSARY_TYPES: GlossaryType[] = [
 	LexiconEntryKind.PERSON_NAME,

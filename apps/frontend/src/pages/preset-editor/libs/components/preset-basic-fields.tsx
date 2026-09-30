@@ -7,6 +7,11 @@ import { EMPTY_LENGTH } from "~/libs/constants/constants.js";
 type Properties = {
 	basePresetId: null | number;
 	description: string;
+	errors: {
+		description: null | string;
+		instructions: null | string;
+		name: null | string;
+	};
 	instructions: string;
 	isDisabled: boolean;
 	name: string;
@@ -20,6 +25,7 @@ type Properties = {
 const PresetBasicFields: React.FC<Properties> = ({
 	basePresetId,
 	description,
+	errors,
 	instructions,
 	isDisabled,
 	name,
@@ -64,12 +70,16 @@ const PresetBasicFields: React.FC<Properties> = ({
 					</label>
 
 					<input
-						className="tx-input"
+						className={`tx-input ${errors.name ? "preset-editor__input-error" : ""}`}
 						disabled={isDisabled}
 						id="preset-name"
 						onChange={onNameChange}
 						value={name}
 					/>
+
+					{errors.name && (
+						<span className="preset-editor__error-text">{errors.name}</span>
+					)}
 				</div>
 			</div>
 
@@ -79,7 +89,9 @@ const PresetBasicFields: React.FC<Properties> = ({
 				</label>
 
 				<textarea
-					className="tx-input preset-editor__description"
+					className={`tx-input preset-editor__description ${
+						errors.description ? "preset-editor__input-error" : ""
+					}`}
 					disabled={isDisabled}
 					id="preset-description"
 					onChange={onDescriptionChange}
@@ -87,6 +99,12 @@ const PresetBasicFields: React.FC<Properties> = ({
 					rows={1}
 					value={description}
 				/>
+
+				{errors.description && (
+					<span className="preset-editor__error-text">
+						{errors.description}
+					</span>
+				)}
 			</div>
 
 			<div className="preset-editor__section">
@@ -95,13 +113,21 @@ const PresetBasicFields: React.FC<Properties> = ({
 				</label>
 
 				<textarea
-					className="tx-input preset-editor__instructions"
+					className={`tx-input preset-editor__instructions ${
+						errors.instructions ? "preset-editor__input-error" : ""
+					}`}
 					disabled={isDisabled}
 					id="instructions"
 					onChange={onInstructionsChange}
 					rows={3}
 					value={instructions}
 				/>
+
+				{errors.instructions && (
+					<span className="preset-editor__error-text">
+						{errors.instructions}
+					</span>
+				)}
 			</div>
 		</>
 	);

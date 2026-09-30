@@ -1,4 +1,7 @@
-import { type LexiconEntryKindValue } from "@transcripta/shared";
+import {
+	type LexiconEntryKindValue,
+	type LexiconEntrySourceValue,
+} from "@transcripta/shared";
 
 import { type LexiconEntryType } from "./libs/types/types.js";
 
@@ -23,6 +26,8 @@ class LexiconEntryEntity {
 
 	private pageCount: number;
 
+	private source: LexiconEntrySourceValue;
+
 	private updatedAt: string;
 
 	private valueDisplay: string;
@@ -40,6 +45,7 @@ class LexiconEntryEntity {
 		kind,
 		lastPageNo,
 		pageCount,
+		source,
 		updatedAt,
 		valueDisplay,
 		valueNormalized,
@@ -54,6 +60,7 @@ class LexiconEntryEntity {
 		this.invalidReason = invalidReason;
 		this.kind = kind;
 		this.lastPageNo = lastPageNo;
+		this.source = source;
 		this.updatedAt = updatedAt;
 		this.valueDisplay = valueDisplay;
 		this.valueNormalized = valueNormalized;
@@ -75,6 +82,7 @@ class LexiconEntryEntity {
 			kind: this.kind,
 			lastPageNo: this.lastPageNo,
 			pageCount: this.pageCount,
+			source: this.source,
 			updatedAt: this.updatedAt,
 			valueDisplay: this.valueDisplay,
 			valueNormalized: this.valueNormalized,

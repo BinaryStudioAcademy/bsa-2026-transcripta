@@ -667,7 +667,12 @@ const deferRateLimitedPage = async ({
 
 		await trx.from(DatabaseTableName.PAGE_EVENT).insert({
 			actorId: null,
-			details: { costUsd, retryAfterMs },
+			details: {
+				costUsd,
+				inputTokens: error.inputTokens,
+				outputTokens: error.outputTokens,
+				retryAfterMs,
+			},
 			documentId,
 			durationMs: EMPTY_LENGTH,
 			event: PageEventName.TRANSCRIBE_RATE_LIMITED,
