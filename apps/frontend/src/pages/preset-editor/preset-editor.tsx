@@ -11,6 +11,9 @@ import {
 	GO_BACK,
 } from "~/libs/constants/constants.js";
 import { AppRoute, DataStatus } from "~/libs/enums/enums.js";
+
+import "./preset-editor.css";
+
 import {
 	useAppDispatch,
 	useAppSelector,
@@ -20,10 +23,6 @@ import {
 	useParams,
 	useState,
 } from "~/libs/hooks/hooks.js";
-
-import "./preset-editor.css";
-
-import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as presetsActions,
 	selectCreateStatus,
@@ -33,11 +32,6 @@ import {
 	selectSelectedPresetStatus,
 } from "~/modules/presets/presets.js";
 
-import type {
-	GlossaryEntry,
-	GlossaryType,
-} from "./libs/types/preset-editor.types.js";
-
 import {
 	PresetBasicFields,
 	PresetEditorActions,
@@ -46,10 +40,17 @@ import {
 } from "./libs/components/components.js";
 import {
 	createEntry,
+	getInitialErrors,
 	getOutputFields,
 	isGlossaryType,
 	mapSeedGlossary,
+	mapValidationErrors,
 } from "./libs/helpers/helpers.js";
+import {
+	type GlossaryEntry,
+	type GlossaryType,
+	type PresetFormErrors,
+} from "./libs/types/preset-editor.types.js";
 import { PresetCreateValidationSchema } from "./libs/validation-schemas/validation-schemas.js";
 
 const PresetEditor: React.FC = () => {
@@ -77,6 +78,7 @@ const PresetEditor: React.FC = () => {
 	const [instructions, setInstructions] = useState("");
 	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
 	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
+	const [errors, setErrors] = useState<PresetFormErrors>(getInitialErrors());
 
 	const isLoading =
 		selectedPresetStatus === DataStatus.PENDING ||
@@ -153,12 +155,12 @@ const PresetEditor: React.FC = () => {
 		});
 
 		if (!result.success) {
-			const [firstError] = result.error.issues;
-
-			notification.error(firstError?.message ?? "Invalid preset data");
+			setErrors(mapValidationErrors(result.error.issues, entries));
 
 			return;
 		}
+
+		setErrors(getInitialErrors());
 
 		void dispatch(presetsActions.create(result.data))
 			.unwrap()
@@ -220,6 +222,8 @@ const PresetEditor: React.FC = () => {
 			const presetId = Number(event.target.value);
 
 			setBasePresetId(presetId === EMPTY_LENGTH ? null : presetId);
+
+			setErrors(getInitialErrors());
 		},
 		[],
 	);
@@ -227,6 +231,11 @@ const PresetEditor: React.FC = () => {
 	const handleDescriptionChange = useCallback(
 		(event: ChangeEvent<HTMLTextAreaElement>): void => {
 			setDescription(event.target.value);
+
+			setErrors((current) => ({
+				...current,
+				description: null,
+			}));
 		},
 		[],
 	);
@@ -234,6 +243,11 @@ const PresetEditor: React.FC = () => {
 	const handleNameChange = useCallback(
 		(event: ChangeEvent<HTMLInputElement>): void => {
 			setName(event.target.value);
+
+			setErrors((current) => ({
+				...current,
+				name: null,
+			}));
 		},
 		[],
 	);
@@ -241,6 +255,11 @@ const PresetEditor: React.FC = () => {
 	const handleInstructionsChange = useCallback(
 		(event: ChangeEvent<HTMLTextAreaElement>): void => {
 			setInstructions(event.target.value);
+
+			setErrors((current) => ({
+				...current,
+				instructions: null,
+			}));
 		},
 		[],
 	);
@@ -281,6 +300,17 @@ const PresetEditor: React.FC = () => {
 			}
 
 			handleValueChange(id, event.target.value);
+
+			setErrors((current) => {
+				const glossary = Object.fromEntries(
+					Object.entries(current.glossary).filter(([key]) => key !== id),
+				);
+
+				return {
+					...current,
+					glossary,
+				};
+			});
 		},
 		[handleValueChange],
 	);
@@ -337,6 +367,7 @@ const PresetEditor: React.FC = () => {
 							<PresetBasicFields
 								basePresetId={basePresetId}
 								description={description}
+								errors={errors}
 								instructions={instructions}
 								isDisabled={isFormDisabled}
 								name={name}
@@ -349,6 +380,7 @@ const PresetEditor: React.FC = () => {
 
 							<PresetGlossary
 								entries={entries}
+								errors={errors.glossary}
 								isDisabled={isFormDisabled}
 								onAddEntry={handleAddEntry}
 								onCloseTypeSelector={handleCloseTypeSelector}
