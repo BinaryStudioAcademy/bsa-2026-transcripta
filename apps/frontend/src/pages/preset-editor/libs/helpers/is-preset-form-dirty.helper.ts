@@ -1,6 +1,6 @@
-import type {
-	GlossaryEntry,
-	PresetFormState,
+import {
+	type GlossaryEntry,
+	type PresetFormState,
 } from "../types/preset-editor.types.js";
 
 const areStringsEqual = (first: string, second: string): boolean =>

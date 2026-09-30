@@ -17,4 +17,4 @@ type PresetFormState = {
 	name: string;
 };
 
-export type { GlossaryEntry, GlossaryType, PresetFormState };
+export { type GlossaryEntry, type GlossaryType, type PresetFormState };
