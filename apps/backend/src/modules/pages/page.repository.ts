@@ -4,7 +4,10 @@ import { type Transaction } from "objection";
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
 import { PAGES_TO_QUEUE } from "~/modules/documents/libs/constants/constants.js";
 
-import { REPROCESSABLE_PAGE_STATUSES } from "./libs/constants/constants.js";
+import {
+	REPROCESSABLE_PAGE_STATUSES,
+	TRANSCRIPTION_STARTED_PAGE_STATUSES,
+} from "./libs/constants/constants.js";
 import {
 	type PageWithText,
 	type PageWithTranscriptionRow,
@@ -177,6 +180,21 @@ class PageRepository {
 			.castTo<PageWithText[]>();
 
 		return pages;
+	}
+
+	public async hasStartedTranscription(
+		documentId: number,
+		trx?: Transaction,
+	): Promise<boolean> {
+		const startedPage = await this.pageModel
+			.query(trx)
+			.select("id")
+			.where({ documentId })
+			.whereIn("status", [...TRANSCRIPTION_STARTED_PAGE_STATUSES])
+			.first()
+			.execute();
+
+		return startedPage !== undefined;
 	}
 
 	public async resetPageForReprocess(
