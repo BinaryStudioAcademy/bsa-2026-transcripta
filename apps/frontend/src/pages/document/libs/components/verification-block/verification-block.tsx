@@ -10,18 +10,18 @@ import styles from "./styles.module.css";
 type Properties = {
 	cursorPageNo: number;
 	documentId: number;
+	pageCount: number;
 	pagesReadyToCheck: number;
 	pagesSkipped: number;
-	pagesTranscribed: number;
 	pagesVerified: number;
 };
 
 const VerificationBlock: React.FC<Properties> = ({
 	cursorPageNo,
 	documentId,
+	pageCount,
 	pagesReadyToCheck,
 	pagesSkipped,
-	pagesTranscribed,
 	pagesVerified,
 }: Properties) => {
 	const navigate = useNavigate();
@@ -68,7 +68,7 @@ const VerificationBlock: React.FC<Properties> = ({
 		<DocumentSection
 			count={
 				<>
-					{pagesVerified + pagesSkipped} of {pagesTranscribed} reviewed
+					{pagesVerified + pagesSkipped} of {pageCount} reviewed
 				</>
 			}
 			title="Verification"

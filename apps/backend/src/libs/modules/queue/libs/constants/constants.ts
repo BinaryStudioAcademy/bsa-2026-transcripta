@@ -3,6 +3,7 @@ export { ConnectionStatuses } from "./connection-status.constant.js";
 export { LoggerMessages } from "./logger-message.constant.js";
 export { PAGE_TRANSCRIBE_JOB_ATTEMPTS } from "./page-transcribe-job-attempts.constant.js";
 export { PAGE_TRANSCRIBE_JOB_ID_PREFIX } from "./page-transcribe-job-id-prefix.constant.js";
+export { QUEUE_BOARD_ROUTE } from "./queue-board-route.constant.js";
 export { QueueErrorMessage } from "./queue-error-message.constant.js";
 export { REDIS_CONNECT_TIMEOUT_MS } from "./redis-connect-timeout.constant.js";
 export { REDIS_RETRY_DELAY_STEP_MS } from "./redis-retry-delay-step.constant.js";

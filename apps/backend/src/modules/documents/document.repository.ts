@@ -1,4 +1,7 @@
-import { type DocumentGetLexiconItemResponseDto } from "@transcripta/shared";
+import {
+	type DocumentGetLexiconItemResponseDto,
+	EMPTY_LENGTH,
+} from "@transcripta/shared";
 import { raw, type Transaction } from "objection";
 
 import { LEXICON_CONTEXT_ORDER } from "~/context/context.js";
@@ -360,6 +363,27 @@ class DocumentRepository {
 		id: number,
 		trx: Transaction,
 	): Promise<void> {
+		const document = await this.documentModel
+			.query(trx)
+			.findById(id)
+			.select("pageCount")
+			.execute();
+
+		if (!document) {
+			return;
+		}
+
+		const pageCountResult = (await PageModel.query(trx)
+			.where({ documentId: id })
+			.count("id as count")
+			.first()) as unknown as undefined | { count: number | string };
+
+		const actualPageCount = Number(pageCountResult?.count ?? EMPTY_LENGTH);
+
+		if (actualPageCount < document.pageCount) {
+			return;
+		}
+
 		const openPages = PageModel.query(trx)
 			.select("id")
 			.where({ documentId: id })

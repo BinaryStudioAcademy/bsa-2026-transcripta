@@ -4,10 +4,11 @@ import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
 } from "~/libs/constants/common.constants.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { HTTPCode } from "~/libs/enums/enums.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
 import { notification } from "~/libs/modules/notification/notification.js";
-import { type AsyncThunkConfig } from "~/libs/types/types.js";
+import { type AsyncThunkConfig, type RootState } from "~/libs/types/types.js";
 import {
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
@@ -29,6 +30,7 @@ import { name as sliceName } from "./pages.slice.js";
 
 type LoadPagesParameters = {
 	documentId: number;
+	isBackground?: boolean;
 	query: DocumentGetPagesQueryDto;
 };
 
@@ -106,6 +108,67 @@ const discardVerificationQueue = createAction<{ documentId: number }>(
 	`${sliceName}/discard-verification-queue`,
 );
 
+const handleQueueRejection = ({
+	dispatch,
+	getState,
+	item,
+	resultError,
+}: {
+	dispatch: AsyncThunkConfig["dispatch"];
+	getState: () => RootState;
+	item: VerificationQueueItem;
+	resultError: unknown;
+}): VerificationQueueResult => {
+	const { documentId } = item;
+	const discarded = getState().pages.verificationQueue.filter(
+		(queued) => queued.documentId === documentId,
+	);
+
+	dispatch(discardVerificationQueue({ documentId }));
+
+	if (
+		"status" in (resultError as object) &&
+		(resultError as { status?: number }).status === HTTPCode.CONFLICT
+	) {
+		notification.error(VerificationQueueMessage.CONFLICT);
+		void dispatch(
+			loadPages({
+				documentId,
+				query: { from: item.pageNo, limit: MAX_LOADED_PAGES },
+			}),
+		);
+	}
+
+	if (discarded.length > EMPTY_LENGTH) {
+		notification.error(getDiscardedVerificationsMessage(discarded));
+	}
+
+	return {
+		completedDocumentId: null,
+		discarded,
+		failed: {
+			error: resultError as AsyncThunkConfig["serializedErrorType"],
+			item,
+		},
+	};
+};
+
+const checkDocumentCompletion = ({
+	getState,
+	item,
+}: {
+	getState: () => RootState;
+	item: VerificationQueueItem;
+}): boolean => {
+	const currentDocument = getState().documents.document;
+	return (
+		currentDocument !== null &&
+		currentDocument.id === item.documentId &&
+		currentDocument.pageCount > INITIAL_COUNT &&
+		item.pageNo >= currentDocument.pageCount
+	);
+};
+
 // Sends queued verifications one at a time: the next action leaves the queue
 // only after the previous response. `condition` keeps a single runner alive,
 // so every keypress can dispatch this and only the first one starts it.
@@ -141,36 +204,22 @@ const processVerificationQueue = createAsyncThunk<
 			const isRejected = verifyPage.rejected.match(result);
 
 			if (isRejected) {
-				const { documentId } = item;
-				const discarded = getState().pages.verificationQueue.filter(
-					(queued) => queued.documentId === documentId,
-				);
-
-				dispatch(discardVerificationQueue({ documentId }));
-
-				if (
-					"status" in result.error &&
-					result.error.status === HTTPCode.CONFLICT
-				) {
-					notification.error(VerificationQueueMessage.CONFLICT);
-					reloadPage(item);
-				}
-
-				if (discarded.length > EMPTY_LENGTH) {
-					notification.error(getDiscardedVerificationsMessage(discarded));
-				}
-
-				return {
-					completedDocumentId,
-					discarded,
-					failed: { error: result.error, item },
-				};
+				return handleQueueRejection({
+					dispatch,
+					getState,
+					item,
+					resultError: result.error,
+				});
 			}
 
 			// The backend has no page after this one, so it has just closed the
 			// document: the caller leaves verification when it sees the id back.
 			if (result.payload.next === null) {
-				completedDocumentId = item.documentId;
+				if (checkDocumentCompletion({ getState, item })) {
+					completedDocumentId = item.documentId;
+				} else {
+					reloadPage(item);
+				}
 			}
 
 			const wasManualTranscription = payload.transcriptionId === undefined;

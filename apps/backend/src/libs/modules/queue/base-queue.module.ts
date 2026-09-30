@@ -35,6 +35,8 @@ class BaseQueue<TData> implements QueueLifecycle {
 
 	private queue: null | Queue<Job<TData>> = null;
 
+	private resumeAtMs: null | number = null;
+
 	private resumeTimer: null | ReturnType<typeof setTimeout> = null;
 
 	private worker: null | Worker<TData, void> = null;
@@ -93,6 +95,7 @@ class BaseQueue<TData> implements QueueLifecycle {
 		// A pending resume would keep the event loop alive for the rest of the
 		// backoff, long after the worker it belongs to is gone.
 		this.clearResumeTimer();
+		this.resumeAtMs = null;
 
 		await this.worker?.close();
 		await this.queue?.close();
@@ -145,24 +148,47 @@ class BaseQueue<TData> implements QueueLifecycle {
 		}
 	}
 
+	public getQueue(): null | Queue<Job<TData>> {
+		return this.queue;
+	}
+
 	public async pauseWorkerFor(durationMs: number): Promise<void> {
-		if (!this.worker || this.worker.isPaused()) {
+		if (!this.worker) {
 			return;
 		}
 
-		await this.worker.pause(true);
+		const requestedResumeAtMs = Date.now() + durationMs;
+		const resumeAtMs = Math.max(
+			this.resumeAtMs ?? requestedResumeAtMs,
+			requestedResumeAtMs,
+		);
+
+		if (resumeAtMs === this.resumeAtMs) {
+			if (!this.worker.isPaused()) {
+				await this.worker.pause(true);
+			}
+
+			return;
+		}
+
+		this.resumeAtMs = resumeAtMs;
+
+		if (!this.worker.isPaused()) {
+			await this.worker.pause(true);
+		}
 
 		this.clearResumeTimer();
 
 		this.resumeTimer = setTimeout(() => {
 			this.resumeTimer = null;
+			this.resumeAtMs = null;
 
 			this.worker?.resume().catch((error: unknown) => {
 				this.logger.error(LoggerMessages.WORKER_RESUME_FAILED(this.name), {
 					error,
 				});
 			});
-		}, durationMs);
+		}, this.resumeAtMs - Date.now());
 
 		// The worker itself holds the loop while it is open, so the backoff
 		// timer must never be the reason a shutdown waits.
