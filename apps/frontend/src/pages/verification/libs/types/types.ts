@@ -16,6 +16,8 @@ export { type PageCell } from "./page-cell.type.js";
 
 export { type PageLine } from "./page-line.type.js";
 
+export { type ProcessQueuePayload } from "./process-queue-payload.type.js";
+
 export { type UseResizableSplitReturn } from "./use-resizable-split-return.type.js";
 
 export { type UseScanZoomReturn } from "./use-scan-zoom-return.type.js";
