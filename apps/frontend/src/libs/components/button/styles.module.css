@@ -1,8 +1,8 @@
 :where(.button) {
-	height: var(--ctl-lg);
-	padding: 0 var(--fs-md);
+	height: var(--ctl-md);
+	padding: 0 14px;
 	font-family: var(--font-ui);
-	font-size: var(--fs-md);
+	font-size: var(--fs-sm);
 	font-weight: 500;
 	line-height: var(--lh-tight);
 	cursor: pointer;

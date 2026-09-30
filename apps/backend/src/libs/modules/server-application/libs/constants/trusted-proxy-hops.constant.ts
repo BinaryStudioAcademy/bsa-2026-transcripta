@@ -1,0 +1,3 @@
+const TRUSTED_PROXY_HOPS = 1;
+
+export { TRUSTED_PROXY_HOPS };
