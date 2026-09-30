@@ -1,0 +1,3 @@
+const MIN_ALLOWED_EDITS = 1;
+
+export { MIN_ALLOWED_EDITS };

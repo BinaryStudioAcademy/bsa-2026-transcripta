@@ -15,6 +15,7 @@ import { type Transaction, UniqueViolationError } from "objection";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
+import { type CorrectionService } from "~/modules/corrections/corrections.js";
 import {
 	buildContextWords,
 	extractLexiconIds,
@@ -52,6 +53,8 @@ import { type PageModel } from "./page.model.js";
 import { type PageRepository } from "./page.repository.js";
 
 class PageService {
+	private correctionService: CorrectionService;
+
 	private documentRepository: DocumentRepository;
 
 	private lexiconUpdateService: LexiconUpdateService;
@@ -69,6 +72,7 @@ class PageService {
 	private transcriptionRepository: TranscriptionRepository;
 
 	public constructor({
+		correctionService,
 		documentRepository,
 		lexiconUpdateService,
 		logger,
@@ -85,6 +89,7 @@ class PageService {
 		this.rederiveStructuredQueue = rederiveStructuredQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
+		this.correctionService = correctionService;
 		this.documentRepository = documentRepository;
 	}
 
@@ -274,6 +279,14 @@ class PageService {
 				text,
 				trx,
 			);
+
+			await this.correctionService.learnFromCorrection({
+				corrected: text,
+				documentId: documentObject.id,
+				original: transcriptionText,
+				pageId: transcription.pageId,
+				trx,
+			});
 		}
 
 		return true;

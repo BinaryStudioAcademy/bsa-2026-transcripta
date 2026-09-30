@@ -1,0 +1,3 @@
+const MIN_LETTERS_IN_RULE = 3;
+
+export { MIN_LETTERS_IN_RULE };
