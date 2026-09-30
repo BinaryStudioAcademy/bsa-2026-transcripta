@@ -49,6 +49,7 @@ type Properties<T extends FieldValues> = {
 	errors: FieldErrors<T>;
 	helperText?: string;
 	label: string;
+	maxLength?: number;
 	name: FieldPath<T>;
 	placeholder?: string;
 	type?: "email" | "password" | "text";
@@ -59,6 +60,7 @@ const Input = <T extends FieldValues>({
 	errors,
 	helperText,
 	label,
+	maxLength,
 	name,
 	placeholder = "",
 	type = "text",
@@ -107,6 +109,7 @@ const Input = <T extends FieldValues>({
 				<input
 					{...field}
 					className={inputClassName}
+					maxLength={maxLength}
 					onChange={handleChange}
 					placeholder={placeholder}
 					type={isPassword && showPassword ? "text" : type}
