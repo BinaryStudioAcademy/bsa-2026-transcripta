@@ -5,6 +5,7 @@ import {
 } from "~/libs/constants/common.constants.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { AppRoute } from "~/libs/enums/enums.js";
+import { getIsMacOs } from "~/libs/helpers/helpers.js";
 import { useOverflowTooltip } from "~/libs/hooks/hooks.js";
 
 import { DEFAULT_BUDGET, ZERO_BUDGET } from "../constants/budget.constants.js";
@@ -34,6 +35,8 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 					(Number(budgetSpent) / Number(budgetLimit)) * PERCENTAGE_MULTIPLIER,
 					MAX_PERCENTAGE,
 				);
+
+	const isMacOs = getIsMacOs();
 
 	return (
 		<header className="verification-header">
@@ -80,7 +83,8 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 						<kbd className="tx-kbd">S</kbd>Skip
 					</span>
 					<span>
-						<kbd className="tx-kbd">Ctrl+Z</kbd>Undo
+						<kbd className="tx-kbd">{isMacOs ? "⌘+Z" : "Ctrl+Z"}</kbd>
+						Undo
 					</span>
 					<span>
 						<kbd className="tx-kbd">?</kbd>Shortcuts
