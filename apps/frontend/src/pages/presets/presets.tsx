@@ -146,7 +146,11 @@ const Presets: React.FC = () => {
 												.join(" ")}
 											role="cell"
 										>
-											{preset.description}
+											<span
+												className={styles["presets-page__description-text"]}
+											>
+												{preset.description}
+											</span>
 										</span>
 									</div>
 
