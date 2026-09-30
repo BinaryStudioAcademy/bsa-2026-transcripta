@@ -241,9 +241,13 @@ const Verification: React.FC = () => {
 
 			const { completedDocumentId, failed } = result.payload;
 
-			if (completedDocumentId !== null) {
-				goToCompletedDocument(completedDocumentId);
+			const isTrulyCompleted =
+				document !== null &&
+				document.pageCount > INITIAL_COUNT &&
+				cursorPageNo >= document.pageCount;
 
+			if (completedDocumentId !== null && isTrulyCompleted) {
+				goToCompletedDocument(completedDocumentId);
 				return;
 			}
 
@@ -257,7 +261,7 @@ const Verification: React.FC = () => {
 				});
 			}
 		});
-	}, [dispatch, goToCompletedDocument]);
+	}, [dispatch, goToCompletedDocument, document, cursorPageNo]);
 
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {
