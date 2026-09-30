@@ -24,6 +24,7 @@ import {
 	type FormValuesRaiseBudgetLimit,
 	type Properties,
 } from "./types/types.js";
+import { DocumentBudgetUpdateValidationSchema } from "./validation-schemas/validation-schemas.js";
 
 const RaiseLimitDialog: React.FC<
 	Properties & { serverError?: null | string }
@@ -41,9 +42,11 @@ const RaiseLimitDialog: React.FC<
 		setActiveServerError(serverError);
 	}, [serverError]);
 
-	const { control, handleSubmit } = useAppForm<FormValuesRaiseBudgetLimit>({
-		defaultValues: { limitUsd: suggestedLimit },
-	});
+	const { control, errors, handleSubmit } =
+		useAppForm<FormValuesRaiseBudgetLimit>({
+			defaultValues: { limitUsd: suggestedLimit },
+			validationSchema: DocumentBudgetUpdateValidationSchema,
+		});
 
 	const { field } = useFormController({
 		control,
@@ -103,7 +106,8 @@ const RaiseLimitDialog: React.FC<
 		[handleSubmit, spentUsd, onSubmit],
 	);
 
-	const displayError = validationError || activeServerError;
+	const displayError =
+		errors.limitUsd?.message || validationError || activeServerError;
 
 	return (
 		<div className={styles["scrim"]}>
