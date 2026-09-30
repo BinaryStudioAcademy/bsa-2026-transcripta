@@ -17,7 +17,16 @@ const documentRepository = new DocumentRepository(DocumentModel);
 const transcriptionRepository = new TranscriptionRepository(TranscriptionModel);
 const transcriptionService = new TranscriptionService(config, secrets);
 const lexiconRepository = new LexiconRepository(LexiconEntryModel);
-const lexiconUpdateService = new LexiconUpdateService({ lexiconRepository });
+// Imported lazily: queue.ts builds the transcribe queue and imports this file,
+// so a top-level import here would close the cycle.
+const lexiconUpdateService = new LexiconUpdateService({
+	enqueuePageTranscribe: async (payload) => {
+		const { pageTranscribeQueue } = await import("../queue.js");
+
+		await pageTranscribeQueue.add(payload);
+	},
+	lexiconRepository,
+});
 
 const rederiveStructuredQueue = new RederiveStructuredQueue({
 	logger,

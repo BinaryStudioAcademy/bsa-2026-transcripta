@@ -128,6 +128,13 @@ const createRederiveStructuredHandler =
 						trx,
 					});
 				});
+
+				// The correction is in the lexicon now, so the pages already
+				// transcribed after this one were built without it.
+				await lexiconUpdateService.reprocessStalePagesAhead({
+					documentId,
+					pageNo,
+				});
 			}
 		} catch (error) {
 			logger.error(ErrorMessage.REDERIVE_FAILED(pageId), { error });

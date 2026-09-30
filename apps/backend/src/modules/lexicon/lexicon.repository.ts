@@ -65,6 +65,33 @@ class LexiconRepository {
 			.castTo<OwnedLexiconEntry | undefined>();
 	}
 
+	// Pages that are already transcribed but not yet verified, sitting ahead of
+	// the page the correction came from. They were produced without the new
+	// word, so they are the ones worth transcribing again.
+	public async findStaleTranscribedPagesAhead(
+		documentId: number,
+		pageNo: number,
+		trx?: Transaction,
+	): Promise<AffectedPageRow[]> {
+		return await PageModel.query(trx)
+			.alias("p")
+			.select(
+				"p.id",
+				"p.documentId",
+				"p.pageNo",
+				"p.status",
+				"t.id as transcriptionId",
+			)
+			.join(`${DatabaseTableName.TRANSCRIPTION} as t`, (builder) => {
+				builder.on("t.pageId", "p.id").andOnVal("t.isCurrent", true);
+			})
+			.where("p.documentId", documentId)
+			.where("p.pageNo", ">", pageNo)
+			.where("p.status", PageStatus.TRANSCRIBED)
+			.orderBy("p.pageNo", "asc")
+			.castTo<AffectedPageRow[]>();
+	}
+
 	public async flagVerifiedPages(
 		pages: AffectedPageRow[],
 		lexiconId: number,

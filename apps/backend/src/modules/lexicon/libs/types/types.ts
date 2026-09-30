@@ -1,4 +1,5 @@
 export { type AffectedPageRow } from "./affected-page-row.type.js";
+export { type EnqueuePageTranscribe } from "./enqueue-page-transcribe.type.js";
 export { type LexiconEntryType } from "./lexicon-entry.type.js";
 export { type LexiconServiceDependencies } from "./lexicon-service-dependencies.type.js";
 export { type UpdateLexiconFromVerified } from "./lexicon-update-from-verified.type.js";

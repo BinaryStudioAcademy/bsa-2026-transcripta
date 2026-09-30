@@ -23,7 +23,10 @@ const transcriptionRepository = new TranscriptionRepository(TranscriptionModel);
 const pageEventRepository = new PageEventRepository(PageEventModel);
 const pageRepository = new PageRepository(PageModel);
 const lexiconRepository = new LexiconRepository(LexiconEntryModel);
-const lexiconUpdateService = new LexiconUpdateService({ lexiconRepository });
+const lexiconUpdateService = new LexiconUpdateService({
+	enqueuePageTranscribe: (payload) => pageTranscribeQueue.add(payload),
+	lexiconRepository,
+});
 
 const pageService = new PageService({
 	documentRepository,
