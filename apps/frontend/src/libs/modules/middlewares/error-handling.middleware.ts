@@ -8,13 +8,34 @@ import { actions as documentActions } from "~/modules/documents/documents.js";
 import { actions as pageActions } from "~/modules/pages/pages.js";
 
 import { storage, StorageKey } from "../storage/storage.js";
-import { DEFAULT_ERROR_MESSAGE } from "./libs/constants/constants.js";
+import {
+	DEFAULT_ERROR_MESSAGE,
+	SESSION_EXPIRED_MESSAGE,
+} from "./libs/constants/constants.js";
 
 const errorHandlingMiddleware = createListenerMiddleware();
 
 errorHandlingMiddleware.startListening({
 	effect: async (action, listenerApi) => {
 		if (action.meta.aborted || action.meta.condition) {
+			return;
+		}
+
+		const error = action.error as SerializedAppError;
+
+		const isAuthCredentialRejection =
+			action.type === authActions.signIn.rejected.type ||
+			action.type === authActions.signUp.rejected.type;
+
+		if (
+			!isAuthCredentialRejection &&
+			"status" in error &&
+			error.status === HTTPCode.UNAUTHORIZED
+		) {
+			await storage.drop(StorageKey.TOKEN);
+			listenerApi.dispatch(authActions.logout());
+			notification.error(SESSION_EXPIRED_MESSAGE);
+
 			return;
 		}
 
@@ -34,19 +55,6 @@ errorHandlingMiddleware.startListening({
 			action.type === documentActions.ingest.rejected.type ||
 			action.type === documentActions.watchExport.rejected.type
 		) {
-			return;
-		}
-
-		const error = action.error as SerializedAppError;
-
-		if (
-			action.type === authActions.restoreSession.rejected.type &&
-			"status" in error &&
-			error.status === HTTPCode.UNAUTHORIZED
-		) {
-			await storage.drop(StorageKey.TOKEN);
-			listenerApi.dispatch(authActions.logout());
-
 			return;
 		}
 
