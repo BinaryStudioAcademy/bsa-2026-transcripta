@@ -562,13 +562,7 @@ class PageService {
 			userId,
 		});
 
-		const nextPageNo = page.pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
-
-		await this.documentRepository.updateCursorPageNo(
-			page.documentId,
-			nextPageNo,
-			trx,
-		);
+		await this.documentRepository.recalculateCursorPageNo(page.documentId, trx);
 
 		if (!CLOSED_PAGE_STATUSES.has(page.status)) {
 			await this.refillWindowIfAdvanced({
@@ -690,6 +684,10 @@ class PageService {
 				});
 			}
 
+			await this.documentRepository.recalculateCursorPageNo(
+				page.documentId,
+				trx,
+			);
 			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
 		});
 
@@ -709,6 +707,10 @@ class PageService {
 					trx,
 				});
 
+				await this.documentRepository.recalculateCursorPageNo(
+					page.documentId,
+					trx,
+				);
 				await this.documentRepository.markDoneIfAllPagesClosed(
 					page.documentId,
 					trx,
@@ -806,9 +808,8 @@ class PageService {
 				trx,
 			);
 
-			await this.documentRepository.setCursorPageNo(
+			await this.documentRepository.recalculateCursorPageNo(
 				page.documentId,
-				page.pageNo,
 				trx,
 			);
 			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
