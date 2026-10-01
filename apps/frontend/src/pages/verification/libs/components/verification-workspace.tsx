@@ -20,6 +20,7 @@ import {
 } from "../types/types.js";
 import {
 	BlankStateCard,
+	VerificationCacheSavings,
 	VerificationEdit,
 	VerificationPageText,
 } from "./components.js";
@@ -132,10 +133,16 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		if (currentPage?.transcription && !isPageBeingRead(currentPage)) {
 			return (
 				<>
-					<span className="verification-transcription__page">
-						page {currentPage.pageNo} of {pageCount}
-						{isEditing && " · editing"} {isCompleted && "(last page)"}
-					</span>
+					<div className="verification-transcription__meta">
+						<span className="verification-transcription__page">
+							page {currentPage.pageNo} of {pageCount}
+							{isEditing && " · editing"} {isCompleted && "(last page)"}
+						</span>
+
+						<VerificationCacheSavings
+							savedUsd={currentPage.transcription.savedUsd}
+						/>
+					</div>
 
 					{isEditing ? (
 						<VerificationEdit

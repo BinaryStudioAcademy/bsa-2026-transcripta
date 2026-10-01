@@ -18,6 +18,7 @@ import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
 import { type CorrectionService } from "~/modules/corrections/corrections.js";
 import {
 	buildContextWords,
+	calculateSavedUsd,
 	extractLexiconIds,
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
@@ -202,6 +203,12 @@ class PageService {
 							contextWords: buildContextWords({
 								lexiconById: pageLexiconById,
 								text,
+							}),
+							savedUsd: calculateSavedUsd({
+								fromCache: nextTranscription.fromCache,
+								inputTokens: nextTranscription.inputTokens,
+								model: nextTranscription.model,
+								outputTokens: nextTranscription.outputTokens,
 							}),
 							text,
 						}
@@ -849,6 +856,12 @@ class PageService {
 						text,
 					}),
 					id: transcription.id,
+					savedUsd: calculateSavedUsd({
+						fromCache: transcription.fromCache,
+						inputTokens: transcription.inputTokens,
+						model: transcription.model,
+						outputTokens: transcription.outputTokens,
+					}),
 					structured:
 						transcription.editedStructured ?? transcription.structured,
 					text,

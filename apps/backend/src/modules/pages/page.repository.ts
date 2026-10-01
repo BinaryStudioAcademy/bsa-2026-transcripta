@@ -104,6 +104,10 @@ class PageRepository {
 					"transcriptionStructured",
 				]),
 				"t.contextUsed as transcriptionContextUsed",
+				"t.fromCache as transcriptionFromCache",
+				"t.inputTokens as transcriptionInputTokens",
+				"t.model as transcriptionModel",
+				"t.outputTokens as transcriptionOutputTokens",
 			])
 			.from(`${DatabaseTableName.PAGE} as p`)
 			.leftJoin(`${DatabaseTableName.TRANSCRIPTION} as t`, (builder) => {
