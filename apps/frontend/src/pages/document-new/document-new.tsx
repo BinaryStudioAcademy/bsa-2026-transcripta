@@ -192,6 +192,7 @@ const useIngestPolling = ({
 	setRejection,
 }: UseIngestPollingParameters): void => {
 	const resumedDocumentReference = useRef(resumedDocument);
+	const isRedirectingReference = useRef(false);
 
 	useEffect(() => {
 		resumedDocumentReference.current = resumedDocument;
@@ -254,8 +255,11 @@ const useIngestPolling = ({
 			return;
 		}
 
-		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
-			setIngestingDocumentId(null);
+		if (
+			progress.pagesReadyToCheck > EMPTY_COUNT &&
+			!isRedirectingReference.current
+		) {
+			isRedirectingReference.current = true;
 			void (async (): Promise<void> => {
 				await navigate(
 					configureString(AppRoute.VERIFICATION, {
@@ -559,7 +563,6 @@ const DocumentNew: React.FC = () => {
 
 	const handleOpenDocument = useCallback((): void => {
 		if (ingestingDocumentId) {
-			setIngestingDocumentId(null);
 			goToDocument(ingestingDocumentId);
 		}
 	}, [goToDocument, ingestingDocumentId]);
