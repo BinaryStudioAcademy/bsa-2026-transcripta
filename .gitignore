@@ -29,3 +29,4 @@ docs/demo/.cache
 !.codex/config.toml
 !.codex/agents/
 !.codex/agents/code-review.toml
+.playwright-mcp/

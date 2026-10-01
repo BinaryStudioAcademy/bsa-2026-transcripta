@@ -111,6 +111,11 @@ const Verification: React.FC = () => {
 		useProcessingToggle(document);
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
+	const isDocumentDone = Boolean(
+		document &&
+			document.progress.pagesPending === INITIAL_COUNT &&
+			document.progress.pagesInWork === INITIAL_COUNT,
+	);
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -126,19 +131,17 @@ const Verification: React.FC = () => {
 
 	useEffect(() => {
 		const documentId = Number(id);
-		if (
-			!Number.isFinite(documentId) ||
-			!document ||
-			currentPage?.transcription
-		) {
+
+		if (!Number.isFinite(documentId) || !document) {
 			return;
 		}
 
 		const isPageSettled =
 			currentPage !== undefined &&
 			SETTLED_PAGE_STATUSES.includes(currentPage.status);
+		const isDocumentIdle = IDLE_DOCUMENT_STATUSES.includes(document.status);
 
-		if (isPageSettled || IDLE_DOCUMENT_STATUSES.includes(document.status)) {
+		if (isDocumentIdle || (isPageSettled && isDocumentDone)) {
 			return;
 		}
 
@@ -147,15 +150,16 @@ const Verification: React.FC = () => {
 				pageActions.loadPages({
 					documentId,
 					isBackground: true,
-					query: { from: cursorPageNo, limit: MAX_LOADED_PAGES },
+					query: { from: getPagesFrom(cursorPageNo), limit: MAX_LOADED_PAGES },
 				}),
 			);
+			void dispatch(documentActions.pollDocumentById(documentId));
 		}, PollingIntervalsMS.DEFAULT);
 
 		return () => {
 			clearInterval(timeoutId);
 		};
-	}, [id, dispatch, currentPage, cursorPageNo, document]);
+	}, [id, dispatch, currentPage, cursorPageNo, document, isDocumentDone]);
 
 	useEffect(() => {
 		if (
