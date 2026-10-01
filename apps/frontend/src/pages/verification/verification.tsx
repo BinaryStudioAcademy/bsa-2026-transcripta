@@ -373,12 +373,6 @@ const Verification: React.FC = () => {
 		[handleVerify],
 	);
 
-	const handleReRead = useCallback((): void => {
-		if (currentPage) {
-			void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
-		}
-	}, [currentPage, dispatch]);
-
 	const handleToggleEdit = useCallback((): void => {
 		const canEdit =
 			Boolean(currentPage?.transcription) ||
@@ -463,7 +457,7 @@ const Verification: React.FC = () => {
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
 				onReprocess={handleReprocess}
-				onReRead={handleReRead}
+				onReRead={handleReprocess}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
