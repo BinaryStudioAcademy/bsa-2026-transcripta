@@ -1,0 +1,3 @@
+const SAVED_USD_DECIMALS = 6;
+
+export { SAVED_USD_DECIMALS };
