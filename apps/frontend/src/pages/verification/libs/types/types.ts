@@ -9,7 +9,10 @@ export { type MarkKind } from "./mark-kind.type.js";
 
 export { type MarkRange } from "./mark-range.type.js";
 
-export { type MarkTextPayload } from "./mark-text-payload.js";
+export {
+	type MarkRangesPayload,
+	type MarkTextPayload,
+} from "./mark-text-payload.js";
 
 export { type MarkTooltipPosition } from "./mark-tooltip-position.type.js";
 

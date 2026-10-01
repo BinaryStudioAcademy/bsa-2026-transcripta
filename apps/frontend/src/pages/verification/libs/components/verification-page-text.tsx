@@ -21,7 +21,8 @@ const VerificationPageText: React.FC<Properties> = ({
 	contextWords,
 	text,
 }: Properties) => {
-	const { hideMarkTooltip, markTooltip, showMarkTooltip } = useMarkTooltip();
+	const { hideMarkTooltip, markTooltip, showMarkTooltip } =
+		useMarkTooltip(text);
 	const blocks = useMemo(() => splitPageBlocks(text), [text]);
 	const lexiconWords = useMemo(
 		() => normalizeContextWords({ contextWords, text }),

@@ -6,7 +6,7 @@ import {
 	type UseMarkTooltipReturn,
 } from "../types/types.js";
 
-const useMarkTooltip = (): UseMarkTooltipReturn => {
+const useMarkTooltip = (resetKey: string): UseMarkTooltipReturn => {
 	const [markTooltip, setMarkTooltip] = useState<MarkTooltipState | null>(null);
 
 	const showMarkTooltip = useCallback(
@@ -26,6 +26,10 @@ const useMarkTooltip = (): UseMarkTooltipReturn => {
 	const hideMarkTooltip = useCallback((): void => {
 		setMarkTooltip(null);
 	}, []);
+
+	useEffect(() => {
+		hideMarkTooltip();
+	}, [hideMarkTooltip, resetKey]);
 
 	useEffect(() => {
 		window.addEventListener("scroll", hideMarkTooltip, true);
