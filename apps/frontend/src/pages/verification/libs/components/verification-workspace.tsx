@@ -1,9 +1,22 @@
 import {
+	BudgetStopState,
 	Button,
 	FailedStateCard,
 	PreparingStateCard,
+	RaiseLimitDialog,
 } from "~/libs/components/components.js";
-import { useRef } from "~/libs/hooks/hooks.js";
+import {
+	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INITIAL_COUNT,
+} from "~/libs/constants/constants.js";
+import {
+	useAppDispatch,
+	useCallback,
+	useRef,
+	useState,
+} from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
+import { actions as documentActions } from "~/modules/documents/documents.js";
 
 import {
 	EVERYTHING_VERIFIED,
@@ -24,9 +37,13 @@ import {
 } from "./components.js";
 
 type VerificationWorkspaceProperties = {
+	budgetLimit: string;
+	budgetSpent: string;
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	documentId: number;
 	editConflictDraft: EditConflictDraft | null;
 	hasVerifiedPages: boolean;
+	isBudgetStopped: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPaused: boolean;
@@ -46,9 +63,13 @@ type VerificationWorkspaceProperties = {
 };
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
+	budgetLimit,
+	budgetSpent,
 	currentPage,
+	documentId,
 	editConflictDraft,
 	hasVerifiedPages,
+	isBudgetStopped,
 	isCompleted,
 	isEditing,
 	isPaused,
@@ -67,6 +88,13 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	zoom,
 }) => {
 	const viewportReference = useRef<HTMLDivElement>(null);
+	const [isRaiseLimitDialogOpen, setIsRaiseLimitDialogOpen] = useState(false);
+	const [serverValidationError, setServerValidationError] = useState<
+		null | string
+	>(null);
+
+	const dispatch = useAppDispatch();
+
 	const {
 		handlePointerCancel,
 		handlePointerDown,
@@ -85,7 +113,75 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		splitPosition,
 	} = useResizableSplit();
 
+	const handleRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
+		setIsRaiseLimitDialogOpen(true);
+	}, []);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
+		setIsRaiseLimitDialogOpen(false);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			setServerValidationError(null);
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: documentId,
+					payload: { limitUsd },
+				}),
+			)
+				.unwrap()
+				.then(() => {
+					setIsRaiseLimitDialogOpen(false);
+				})
+				.catch((error: unknown) => {
+					const typedError = error as {
+						details?: { message: string }[];
+						message?: string;
+					};
+
+					const firstDetail = typedError.details?.[INITIAL_COUNT];
+					const errorMessage = firstDetail?.message ?? typedError.message ?? "";
+
+					if (errorMessage) {
+						setServerValidationError(errorMessage);
+						return;
+					}
+
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+				});
+		},
+		[dispatch, documentId],
+	);
+
 	const workspaceContent = (() => {
+		if (isBudgetStopped) {
+			return (
+				<>
+					<div className="verification-failed-state">
+						<BudgetStopState
+							limitUsd={budgetLimit}
+							onRaiseLimit={handleRaiseLimit}
+							spentUsd={budgetSpent}
+						/>
+					</div>
+
+					{isRaiseLimitDialogOpen && (
+						<RaiseLimitDialog
+							currentLimitUsd={budgetLimit}
+							onCancel={handleCancelRaiseLimit}
+							onSubmit={handleUpdateBudget}
+							serverError={serverValidationError}
+							spentUsd={budgetSpent}
+						/>
+					)}
+				</>
+			);
+		}
+
 		if (currentPage?.status === PageStatus.BLANK) {
 			return (
 				<div className="verification-blank-state">
