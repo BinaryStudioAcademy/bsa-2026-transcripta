@@ -77,6 +77,25 @@ const Document: React.FC = () => {
 		};
 	}, [documentId, isValidId, dispatch]);
 
+	useEffect(() => {
+		if (
+			!currentDocument ||
+			currentDocument.id !== documentId ||
+			currentDocument.status !== DocumentStatus.DRAFT
+		) {
+			return;
+		}
+
+		const documentIdToResume = currentDocument.id;
+
+		void (async (): Promise<void> => {
+			await navigate(AppRoute.DOCUMENTS_NEW, {
+				replace: true,
+				state: { documentId: documentIdToResume },
+			});
+		})();
+	}, [currentDocument, documentId, navigate]);
+
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const previousStatusReference = useRef<null | string>(null);
 	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
