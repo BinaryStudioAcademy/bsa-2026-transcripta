@@ -23,7 +23,11 @@ const createOutputValidator = (
 		return cached;
 	}
 
-	const ajv = new Ajv({ allErrors: true, strict: false });
+	const ajv = new Ajv({
+		allErrors: true,
+		removeAdditional: "all",
+		strict: false,
+	});
 	(addFormats as unknown as FormatInstaller)(ajv);
 
 	const validate = ajv.compile(schema);
