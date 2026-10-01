@@ -241,12 +241,20 @@
 	border-radius: var(--r-xs);
 }
 
-.verification-transcription__lexicon::after,
-.verification-transcription__uncertain::after,
-.verification-transcription__unreadable::after {
+.verification-mark-tooltip {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 60;
 	width: max-content;
 	max-width: 220px;
-	white-space: normal;
+	padding: 5px 8px;
+	font: 400 var(--fs-xs) / 1.35 var(--font-ui);
+	color: var(--tip-text);
+	pointer-events: none;
+	background: var(--tip-bg);
+	border-radius: var(--r-sm);
+	box-shadow: var(--shadow-pop);
 }
 
 .verification-transcription__table-scroll {

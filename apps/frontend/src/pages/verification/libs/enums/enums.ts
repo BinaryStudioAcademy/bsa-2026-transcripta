@@ -1,1 +1,1 @@
-export { PageStatus } from "@transcripta/shared";
+export { DocumentStatus, PageStatus } from "@transcripta/shared";
