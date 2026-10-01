@@ -327,7 +327,7 @@
 
 .verification-edit__layer,
 .verification-edit__field .verification-edit__textarea {
-	font: 400 16px / var(--lh-ui) var(--font-ui);
+	font: 400 16px/1.65 var(--font-ui);
 	overflow-wrap: break-word;
 }
 
@@ -336,7 +336,7 @@
 	inset: 0;
 	box-sizing: border-box;
 	padding: 8px 10px;
-	overflow: hidden scroll;
+	overflow: hidden;
 	scrollbar-gutter: stable;
 	color: var(--text);
 	white-space: pre-wrap;
@@ -346,6 +346,18 @@
 
 .verification-edit__layer--disabled {
 	color: var(--text-3);
+}
+
+.verification-edit__mark {
+	outline: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+	outline-offset: -1px;
+	background: var(--mark-bg);
+	border-radius: var(--r-xs);
+}
+
+.verification-edit__mark--unreadable {
+	color: var(--accent);
+	outline: 1px dashed var(--mark-underline);
 }
 
 .verification-edit__field .verification-edit__textarea {

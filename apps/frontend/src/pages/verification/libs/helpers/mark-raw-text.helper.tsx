@@ -1,7 +1,14 @@
 import { EMPTY_LENGTH } from "@transcripta/shared";
 
-import { type MarkRange } from "../types/types.js";
-import { MARK_CLASS_NAME } from "./mark-text.helper.js";
+import { type MarkKind, type MarkRange } from "../types/types.js";
+
+// Must not change glyph width: the layer is drawn under a transparent textarea.
+const EDIT_MARK_CLASS_NAME: Record<MarkKind, string> = {
+	illegible: "verification-edit__mark verification-edit__mark--unreadable",
+	lexicon: "verification-edit__mark",
+	lost: "verification-edit__mark verification-edit__mark--unreadable",
+	uncertain: "verification-edit__mark",
+};
 
 const markRawText = (ranges: MarkRange[], text: string): React.ReactNode[] => {
 	const nodes: React.ReactNode[] = [];
@@ -14,7 +21,7 @@ const markRawText = (ranges: MarkRange[], text: string): React.ReactNode[] => {
 
 		nodes.push(
 			<span
-				className={MARK_CLASS_NAME[range.kind]}
+				className={EDIT_MARK_CLASS_NAME[range.kind]}
 				key={`${range.kind}-${String(range.start)}`}
 			>
 				{text.slice(range.start, range.end)}

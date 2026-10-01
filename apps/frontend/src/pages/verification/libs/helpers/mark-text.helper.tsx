@@ -1,8 +1,8 @@
 import { EMPTY_LENGTH } from "@transcripta/shared";
 
-import { UNCERTAIN_SUFFIX } from "../constants/verification.constants.js";
 import { type MarkKind, type MarkTextPayload } from "../types/types.js";
 import { collectMarkRanges } from "./collect-mark-ranges.helper.js";
+import { getMarkLabel } from "./get-mark-label.helper.js";
 import { getMarkTip } from "./get-mark-tip.helper.js";
 
 const MARK_CLASS_NAME: Record<MarkKind, string> = {
@@ -22,17 +22,13 @@ const markText = (payload: MarkTextPayload): React.ReactNode[] => {
 			nodes.push(segment.slice(lastIndex, range.start));
 		}
 
-		const content = segment.slice(range.start, range.end);
-
 		nodes.push(
 			<span
 				className={MARK_CLASS_NAME[range.kind]}
 				data-tip={getMarkTip(range)}
 				key={`${range.kind}-${String(segmentStart + range.start)}`}
 			>
-				{range.kind === "uncertain"
-					? content.slice(EMPTY_LENGTH, -UNCERTAIN_SUFFIX.length)
-					: content}
+				{getMarkLabel(range, segment)}
 			</span>,
 		);
 
@@ -46,4 +42,4 @@ const markText = (payload: MarkTextPayload): React.ReactNode[] => {
 	return nodes;
 };
 
-export { MARK_CLASS_NAME, markText };
+export { markText };

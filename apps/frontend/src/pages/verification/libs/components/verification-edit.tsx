@@ -1,6 +1,7 @@
 import { EMPTY_LENGTH } from "@transcripta/shared";
 
 import { Button } from "~/libs/components/components.js";
+import { getIsMacOs } from "~/libs/helpers/helpers.js";
 import {
 	useCallback,
 	useEffect,
@@ -41,6 +42,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 	const [value, setValue] = useState(text);
 	const layerReference = useRef<HTMLDivElement>(null);
 	const textareaReference = useRef<HTMLTextAreaElement>(null);
+	const isMacOs = getIsMacOs();
 
 	const ranges = useMemo(() => {
 		const normalized = normalizeContextWords({ contextWords, text: value });
@@ -52,8 +54,16 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 		});
 	}, [contextWords, value]);
 
-	const markedRanges = ranges.filter((range: MarkRange) =>
-		ACTIONABLE_KINDS.has(range.kind),
+	const markedItems = useMemo(
+		() =>
+			ranges
+				.filter((range: MarkRange) => ACTIONABLE_KINDS.has(range.kind))
+				.map((range: MarkRange) => ({
+					label: getMarkLabel(range, value),
+					range,
+					tip: getMarkTip(range),
+				})),
+		[ranges, value],
 	);
 
 	useEffect(() => {
@@ -90,7 +100,11 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				return;
 			}
 
-			if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+			const isSaveShortcut = isMacOs
+				? event.metaKey && !event.ctrlKey
+				: event.ctrlKey && !event.metaKey;
+
+			if (event.key === "Enter" && isSaveShortcut) {
 				event.preventDefault();
 
 				if (!isDisabled) {
@@ -98,7 +112,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				}
 			}
 		},
-		[isDisabled, onCancel, onSave, value],
+		[isDisabled, onCancel, onSave, value, isMacOs],
 	);
 
 	const handleMarkClick = useCallback(
@@ -156,15 +170,15 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				/>
 			</div>
 
-			{markedRanges.length > EMPTY_LENGTH && (
+			{markedItems.length > EMPTY_LENGTH && (
 				<div className="verification-edit__marked">
 					<span className="verification-edit__marked-title">
 						{MARKED_WORDS_LABEL}
 					</span>
 
-					{markedRanges.map((range: MarkRange) => (
+					{markedItems.map(({ label, range, tip }) => (
 						<button
-							aria-label={`${getMarkTip(range)}: ${getMarkLabel(range, value)}`}
+							aria-label={`${tip}: ${label}`}
 							className={[
 								"tx-chip",
 								"tx-tip",
@@ -177,12 +191,12 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 								.join(" ")}
 							data-end={String(range.end)}
 							data-start={String(range.start)}
-							data-tip={getMarkTip(range)}
+							data-tip={tip}
 							key={range.start}
 							onClick={handleMarkClick}
 							type="button"
 						>
-							{getMarkLabel(range, value)}
+							{label}
 						</button>
 					))}
 				</div>
@@ -200,7 +214,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 
 				<span className="tx-kbdrow">
 					<span>
-						<kbd className="tx-kbd">Ctrl/⌘+Enter</kbd>
+						<kbd className="tx-kbd">{isMacOs ? "⌘+Enter" : "Ctrl+Enter"}</kbd>
 						{" — Save and next"}
 					</span>
 
