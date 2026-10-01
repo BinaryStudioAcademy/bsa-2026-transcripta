@@ -7,6 +7,7 @@ import { normalizeLexiconValue } from "../libs/helpers/normalize-lexicon.helper.
 import {
 	CAPITALISED_REGEX,
 	IGNORED_ABBREVIATIONS,
+	MINIMUM_LEXICON_LETTERS,
 	ONE,
 	SINGLE_LETTER_REGEX,
 	TOKEN_CHARACTER_REGEX,
@@ -17,6 +18,18 @@ import { OutputSchemaFields } from "./libs/enums/enums.js";
 import { type Entity, type EntityFieldSpec } from "./libs/types/types.js";
 
 class LexiconExtractor {
+	private countLetters(value: string): number {
+		let letters = ZERO;
+
+		for (const character of value) {
+			if (SINGLE_LETTER_REGEX.test(character)) {
+				letters += ONE;
+			}
+		}
+
+		return letters;
+	}
+
 	private dedupe(entities: Entity[]): Entity[] {
 		const typedValues = new Set(
 			entities
@@ -30,7 +43,7 @@ class LexiconExtractor {
 		for (const entity of entities) {
 			const normalizedValue = normalizeLexiconValue(entity.value);
 
-			if (!normalizedValue) {
+			if (!normalizedValue || this.isTooShort(normalizedValue)) {
 				continue;
 			}
 
@@ -257,6 +270,10 @@ class LexiconExtractor {
 
 		return !isInitial && !IGNORED_ABBREVIATIONS.has(previousToken);
 	}
+	private isTooShort(value: string): boolean {
+		return this.countLetters(value) < MINIMUM_LEXICON_LETTERS;
+	}
+
 	private shouldIgnoreTextCandidate(
 		text: string,
 		value: string,
