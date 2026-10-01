@@ -133,6 +133,7 @@ const finalizePageFailure = async (
 		quantity: PAGES_TO_QUEUE,
 		trx,
 	});
+	await documentRepository.recalculateCursorPageNo(documentId, trx);
 	await documentRepository.markDoneIfAllPagesClosed(documentId, trx);
 
 	return pages;
