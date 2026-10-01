@@ -49,6 +49,7 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
+import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
@@ -111,11 +112,7 @@ const Verification: React.FC = () => {
 		useProcessingToggle(document);
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
-	const isDocumentDone = Boolean(
-		document &&
-			document.progress.pagesPending === INITIAL_COUNT &&
-			document.progress.pagesInWork === INITIAL_COUNT,
-	);
+	const isDocumentDone = isDocumentFullyRead(document);
 
 	useEffect(() => {
 		const documentId = Number(id);
