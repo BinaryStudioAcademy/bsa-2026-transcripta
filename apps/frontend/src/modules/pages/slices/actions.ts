@@ -18,10 +18,13 @@ import {
 	type VerifyPageRequestDto,
 	type VerifyPageResponseDto,
 } from "~/modules/pages/pages.js";
-import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
+import {
+	MAX_LOADED_PAGES,
+	PAGE_STEP,
+} from "~/pages/verification/libs/constants/verification.constants.js";
 
 import { VerificationQueueMessage } from "../libs/constants/constants.js";
-import { PageStatus } from "../libs/enums/enums.js";
+import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
 import { getDiscardedVerificationsMessage } from "../libs/helpers/helpers.js";
 import {
 	type VerificationQueueItem,
@@ -253,6 +256,19 @@ const processVerificationQueue = createAsyncThunk<
 
 			if (wasManualTranscription) {
 				reloadPage(item);
+			}
+
+			// A correction also rewrites the pages nobody has checked yet. They
+			// keep their ids, so fetching them again quietly is enough for the
+			// ones already on screen to show the reader's reading too.
+			if (payload.action === PageVerificationAction.CORRECT) {
+				void dispatch(
+					loadPages({
+						documentId: item.documentId,
+						isBackground: true,
+						query: { from: item.pageNo + PAGE_STEP, limit: MAX_LOADED_PAGES },
+					}),
+				);
 			}
 
 			item = getNextItem();

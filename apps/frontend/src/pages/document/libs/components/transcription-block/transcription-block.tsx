@@ -5,6 +5,7 @@ import {
 } from "~/libs/components/components.js";
 import {
 	EMPTY_LENGTH,
+	ONE_QUANTITY,
 	PERCENTAGE_MULTIPLIER,
 } from "~/libs/constants/common.constants.js";
 import { type ValueOf } from "~/libs/types/types.js";
@@ -36,15 +37,26 @@ const TranscriptionBlock: React.FC<Properties> = ({
 	pagesTranscribed,
 	status,
 }: Properties) => {
-	const transcribedPct =
-		(pagesTranscribed / pagesTotal) * PERCENTAGE_MULTIPLIER;
+	const isAllBlank = pagesTotal > EMPTY_LENGTH && pagesBlank === pagesTotal;
+	const transcribedPct = isAllBlank
+		? PERCENTAGE_MULTIPLIER
+		: (pagesTranscribed / pagesTotal) * PERCENTAGE_MULTIPLIER;
 
 	return (
 		<DocumentSection
 			count={
-				<>
-					{pagesTranscribed} of {pagesTotal} pages transcribed
-				</>
+				isAllBlank ? (
+					<>
+						{pagesTotal === ONE_QUANTITY
+							? "Unique page identified as blank"
+							: `All ${String(pagesTotal)} pages identified as blank`}
+					</>
+				) : (
+					<>
+						{pagesTranscribed} of {pagesTotal}{" "}
+						{pagesTotal === ONE_QUANTITY ? "page" : "pages"} transcribed
+					</>
+				)
 			}
 			title="Transcription"
 		>
@@ -68,7 +80,10 @@ const TranscriptionBlock: React.FC<Properties> = ({
 			</div>
 			<div className={styles["stats-row"]}>
 				{pagesBlank > EMPTY_LENGTH && (
-					<span>{pagesBlank} blank pages never sent to the model</span>
+					<span>
+						{pagesBlank} blank {pagesBlank === ONE_QUANTITY ? "page" : "pages"}{" "}
+						never sent to the model
+					</span>
 				)}
 				{pagesFailed > EMPTY_LENGTH && (
 					<span className={styles["stats-row__failed"]}>

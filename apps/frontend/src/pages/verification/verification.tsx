@@ -18,7 +18,6 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
-import { PollingIntervalsMS } from "~/modules/documents/libs/enums/polling-intervals-ms.enums.js";
 import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import {
 	actions as pageActions,
@@ -41,17 +40,19 @@ import {
 	VerificationWorkspace,
 } from "./libs/components/components.js";
 import {
-	IDLE_DOCUMENT_STATUSES,
 	MAX_LOADED_PAGES,
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
-	SETTLED_PAGE_STATUSES,
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
+import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
+import { isPageBeingRead } from "./libs/helpers/is-page-being-read.helper.js";
+import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { useVerificationPolling } from "./libs/hooks/use-verification-polling.hook.js";
 import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
 	type DocumentGetPagesItemResponseDto,
@@ -107,10 +108,12 @@ const Verification: React.FC = () => {
 	const isDocumentLoading = documentDataStatus === DataStatus.PENDING;
 	const isPagesLoading = pagesDataStatus === DataStatus.PENDING;
 
-	const { isPaused, isToggleDisabled, onToggleProcessing } =
+	const { isPaused, isToggleDisabled, isToggleVisible, onToggleProcessing } =
 		useProcessingToggle(document);
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
+	const isDocumentDone = isDocumentFullyRead(document);
+	const isBeingRead = isPageBeingRead(currentPage);
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -124,38 +127,15 @@ const Verification: React.FC = () => {
 		void dispatch(documentActions.loadById(documentId));
 	}, [id, dispatch]);
 
-	useEffect(() => {
-		const documentId = Number(id);
-		if (
-			!Number.isFinite(documentId) ||
-			!document ||
-			currentPage?.transcription
-		) {
-			return;
-		}
+	useDraftRedirect(document, Number(id));
 
-		const isPageSettled =
-			currentPage !== undefined &&
-			SETTLED_PAGE_STATUSES.includes(currentPage.status);
-
-		if (isPageSettled || IDLE_DOCUMENT_STATUSES.includes(document.status)) {
-			return;
-		}
-
-		const timeoutId = setInterval(() => {
-			void dispatch(
-				pageActions.loadPages({
-					documentId,
-					isBackground: true,
-					query: { from: cursorPageNo, limit: MAX_LOADED_PAGES },
-				}),
-			);
-		}, PollingIntervalsMS.DEFAULT);
-
-		return () => {
-			clearInterval(timeoutId);
-		};
-	}, [id, dispatch, currentPage, cursorPageNo, document]);
+	useVerificationPolling({
+		currentPage,
+		cursorPageNo,
+		document,
+		documentId: Number(id),
+		isDocumentDone,
+	});
 
 	useEffect(() => {
 		if (
@@ -268,7 +248,7 @@ const Verification: React.FC = () => {
 
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {
-			if (!currentPage || !document) {
+			if (!currentPage || !document || isBeingRead) {
 				return false;
 			}
 
@@ -313,7 +293,7 @@ const Verification: React.FC = () => {
 			runVerificationQueue();
 			return true;
 		},
-		[currentPage, dispatch, document, runVerificationQueue],
+		[currentPage, dispatch, document, isBeingRead, runVerificationQueue],
 	);
 
 	const handleConfirm = useCallback(() => {
@@ -363,20 +343,28 @@ const Verification: React.FC = () => {
 	);
 
 	const handleReRead = useCallback((): void => {
-		if (currentPage) {
-			void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
+		if (!currentPage || !document) {
+			return;
 		}
-	}, [currentPage, dispatch]);
+
+		const documentId = document.id;
+
+		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }))
+			.unwrap()
+			.then(() => dispatch(documentActions.pollDocumentById(documentId)))
+			.catch(() => null);
+	}, [currentPage, dispatch, document]);
 
 	const handleToggleEdit = useCallback((): void => {
 		const canEdit =
-			Boolean(currentPage?.transcription) ||
-			currentPage?.status === PageStatus.FAILED;
+			!isBeingRead &&
+			(Boolean(currentPage?.transcription) ||
+				currentPage?.status === PageStatus.FAILED);
 
 		if (canEdit && !isReprocessing) {
 			setIsEditing((value) => !value);
 		}
-	}, [currentPage, isReprocessing]);
+	}, [currentPage, isBeingRead, isReprocessing]);
 
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
@@ -400,12 +388,6 @@ const Verification: React.FC = () => {
 			handlePageSelect(cursorPageNo + PAGE_STEP);
 		}
 	}, [cursorPageNo, handlePageSelect, document]);
-
-	const handleReprocess = useCallback((): void => {
-		if (currentPage) {
-			void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
-		}
-	}, [currentPage, dispatch]);
 
 	useVerificationKeyboard({
 		onCloseShortcuts: handleCloseShortcuts,
@@ -437,16 +419,17 @@ const Verification: React.FC = () => {
 			/>
 			<VerificationWorkspace
 				currentPage={currentPage}
+				documentProgress={document.progress}
 				editConflictDraft={editConflictDraft}
-				hasVerifiedPages={document.progress.pagesVerified > INITIAL_COUNT}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isPaused={isPaused}
 				isReprocessing={isReprocessing}
 				isToggleDisabled={isToggleDisabled}
+				isToggleVisible={isToggleVisible}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
-				onReprocess={handleReprocess}
+				onReprocess={handleReRead}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}

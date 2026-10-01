@@ -1,7 +1,10 @@
 export { CAPITALISED_REGEX } from "./capitalised-regex.constant.js";
 export { IGNORED_ABBREVIATIONS } from "./ignored-abbreviations.constant.js";
+export { MINIMUM_LEXICON_LETTERS } from "./minimum-lexicon-letters.constant.js";
 export { ONE } from "./one.constant.js";
 export { SINGLE_LETTER_REGEX } from "./single-letter-regex.constant.js";
 export { TOKEN_CHARACTER_REGEX } from "./token-character-regex.constant.js";
+export { UNCERTAIN_MARK_REGEX } from "./uncertain-mark-regex.constant.js";
 export { WHITESPACE_REGEX } from "./whitespace-regex.constant.js";
+export { WORD_SEPARATOR_REGEX } from "./word-separator-regex.constant.js";
 export { ZERO } from "./zero.constant.js";

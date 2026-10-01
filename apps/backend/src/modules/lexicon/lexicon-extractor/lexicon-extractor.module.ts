@@ -7,16 +7,31 @@ import { normalizeLexiconValue } from "../libs/helpers/normalize-lexicon.helper.
 import {
 	CAPITALISED_REGEX,
 	IGNORED_ABBREVIATIONS,
+	MINIMUM_LEXICON_LETTERS,
 	ONE,
 	SINGLE_LETTER_REGEX,
 	TOKEN_CHARACTER_REGEX,
+	UNCERTAIN_MARK_REGEX,
 	WHITESPACE_REGEX,
+	WORD_SEPARATOR_REGEX,
 	ZERO,
 } from "./libs/constants/constants.js";
 import { OutputSchemaFields } from "./libs/enums/enums.js";
 import { type Entity, type EntityFieldSpec } from "./libs/types/types.js";
 
 class LexiconExtractor {
+	private countLetters(value: string): number {
+		let letters = ZERO;
+
+		for (const character of value) {
+			if (SINGLE_LETTER_REGEX.test(character)) {
+				letters += ONE;
+			}
+		}
+
+		return letters;
+	}
+
 	private dedupe(entities: Entity[]): Entity[] {
 		const typedValues = new Set(
 			entities
@@ -30,7 +45,7 @@ class LexiconExtractor {
 		for (const entity of entities) {
 			const normalizedValue = normalizeLexiconValue(entity.value);
 
-			if (!normalizedValue) {
+			if (!normalizedValue || this.isTooShort(normalizedValue)) {
 				continue;
 			}
 
@@ -99,6 +114,10 @@ class LexiconExtractor {
 			const values = this.extractValuesByPath(structured, field.path);
 
 			for (const value of values) {
+				if (this.hasUncertainMark(value)) {
+					continue;
+				}
+
 				entities.push({
 					kind: field.kind,
 					value,
@@ -223,6 +242,31 @@ class LexiconExtractor {
 		return text.slice(tokenStart + ONE, index);
 	}
 
+	private getWordAround(text: string, value: string, index: number): string {
+		let wordStart = index;
+		let wordEnd = index + value.length;
+
+		while (
+			wordStart > ZERO &&
+			!WORD_SEPARATOR_REGEX.test(text[wordStart - ONE] ?? "")
+		) {
+			wordStart--;
+		}
+
+		while (
+			wordEnd < text.length &&
+			!WORD_SEPARATOR_REGEX.test(text[wordEnd] ?? "")
+		) {
+			wordEnd++;
+		}
+
+		return text.slice(wordStart, wordEnd);
+	}
+
+	private hasUncertainMark(value: string): boolean {
+		return UNCERTAIN_MARK_REGEX.test(value);
+	}
+
 	private isAbbreviationOrInitial(
 		text: string,
 		value: string,
@@ -257,12 +301,17 @@ class LexiconExtractor {
 
 		return !isInitial && !IGNORED_ABBREVIATIONS.has(previousToken);
 	}
+	private isTooShort(value: string): boolean {
+		return this.countLetters(value) < MINIMUM_LEXICON_LETTERS;
+	}
+
 	private shouldIgnoreTextCandidate(
 		text: string,
 		value: string,
 		index: number,
 	): boolean {
 		return (
+			this.hasUncertainMark(this.getWordAround(text, value, index)) ||
 			this.isAbbreviationOrInitial(text, value, index) ||
 			this.isSentenceStart(text, index)
 		);

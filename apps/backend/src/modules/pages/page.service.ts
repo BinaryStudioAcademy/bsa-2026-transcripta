@@ -15,8 +15,10 @@ import { type Transaction, UniqueViolationError } from "objection";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 import { type PageTranscribeQueue } from "~/libs/modules/queue/page-transcribe-queue.module.js";
 import { RederiveStructuredQueue } from "~/libs/modules/queue/queue.js";
+import { type CorrectionService } from "~/modules/corrections/corrections.js";
 import {
 	buildContextWords,
+	calculateSavedUsd,
 	extractLexiconIds,
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
@@ -52,6 +54,8 @@ import { type PageModel } from "./page.model.js";
 import { type PageRepository } from "./page.repository.js";
 
 class PageService {
+	private correctionService: CorrectionService;
+
 	private documentRepository: DocumentRepository;
 
 	private lexiconUpdateService: LexiconUpdateService;
@@ -69,6 +73,7 @@ class PageService {
 	private transcriptionRepository: TranscriptionRepository;
 
 	public constructor({
+		correctionService,
 		documentRepository,
 		lexiconUpdateService,
 		logger,
@@ -85,6 +90,7 @@ class PageService {
 		this.rederiveStructuredQueue = rederiveStructuredQueue;
 		this.transcriptionRepository = transcriptionRepository;
 		this.pageEventRepository = pageEventRepository;
+		this.correctionService = correctionService;
 		this.documentRepository = documentRepository;
 	}
 
@@ -198,6 +204,12 @@ class PageService {
 								lexiconById: pageLexiconById,
 								text,
 							}),
+							savedUsd: calculateSavedUsd({
+								fromCache: nextTranscription.fromCache,
+								inputTokens: nextTranscription.inputTokens,
+								model: nextTranscription.model,
+								outputTokens: nextTranscription.outputTokens,
+							}),
 							text,
 						}
 					: null,
@@ -274,6 +286,14 @@ class PageService {
 				text,
 				trx,
 			);
+
+			await this.correctionService.learnFromCorrection({
+				corrected: text,
+				documentId: documentObject.id,
+				original: transcriptionText,
+				pageId: transcription.pageId,
+				trx,
+			});
 		}
 
 		return true;
@@ -564,13 +584,7 @@ class PageService {
 			userId,
 		});
 
-		const nextPageNo = page.pageNo + NUMBER_OF_PAGES_TO_INCREMENT;
-
-		await this.documentRepository.updateCursorPageNo(
-			page.documentId,
-			nextPageNo,
-			trx,
-		);
+		await this.documentRepository.recalculateCursorPageNo(page.documentId, trx);
 
 		if (!CLOSED_PAGE_STATUSES.has(page.status)) {
 			await this.refillWindowIfAdvanced({
@@ -692,6 +706,10 @@ class PageService {
 				});
 			}
 
+			await this.documentRepository.recalculateCursorPageNo(
+				page.documentId,
+				trx,
+			);
 			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
 		});
 
@@ -711,6 +729,10 @@ class PageService {
 					trx,
 				});
 
+				await this.documentRepository.recalculateCursorPageNo(
+					page.documentId,
+					trx,
+				);
 				await this.documentRepository.markDoneIfAllPagesClosed(
 					page.documentId,
 					trx,
@@ -808,9 +830,8 @@ class PageService {
 				trx,
 			);
 
-			await this.documentRepository.setCursorPageNo(
+			await this.documentRepository.recalculateCursorPageNo(
 				page.documentId,
-				page.pageNo,
 				trx,
 			);
 			await this.documentRepository.markProcessingIfDone(page.documentId, trx);
@@ -835,6 +856,12 @@ class PageService {
 						text,
 					}),
 					id: transcription.id,
+					savedUsd: calculateSavedUsd({
+						fromCache: transcription.fromCache,
+						inputTokens: transcription.inputTokens,
+						model: transcription.model,
+						outputTokens: transcription.outputTokens,
+					}),
 					structured:
 						transcription.editedStructured ?? transcription.structured,
 					text,

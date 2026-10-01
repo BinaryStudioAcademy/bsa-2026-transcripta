@@ -412,6 +412,41 @@ class DocumentRepository {
 			.execute();
 	}
 
+	public async recalculateCursorPageNo(
+		documentId: number,
+		trx?: Transaction,
+	): Promise<void> {
+		const closedStatuses = [...CLOSED_PAGE_STATUSES];
+		const closedStatusPlaceholders = closedStatuses.map(() => "?").join(", ");
+
+		await this.documentModel
+			.query(trx)
+			.patch({
+				cursorPageNo: raw(
+					`coalesce(
+						(
+							select min(p.page_no) from ?? p
+							where p.document_id = ?
+								and p.status not in (${closedStatusPlaceholders})
+						),
+						(
+							select coalesce(max(p.page_no), 0) + 1 from ?? p
+							where p.document_id = ?
+						)
+					)`,
+					[
+						DatabaseTableName.PAGE,
+						documentId,
+						...closedStatuses,
+						DatabaseTableName.PAGE,
+						documentId,
+					],
+				),
+			})
+			.where({ id: documentId })
+			.execute();
+	}
+
 	public async resumeFromBudgetStop(
 		id: number,
 		trx: Transaction,
@@ -421,18 +456,6 @@ class DocumentRepository {
 			.patch({ status: DocumentStatus.PROCESSING })
 			.where({ id, status: DocumentStatus.BUDGET_STOP })
 			.whereColumn("budgetUsd", ">", "spentUsd")
-			.execute();
-	}
-
-	public async setCursorPageNo(
-		documentId: number,
-		cursorPageNo: number,
-		trx: Transaction,
-	): Promise<void> {
-		await this.documentModel
-			.query(trx)
-			.patch({ cursorPageNo })
-			.where({ id: documentId })
 			.execute();
 	}
 
@@ -463,20 +486,6 @@ class DocumentRepository {
 			.query(trx)
 			.patch({ budgetUsd: limitUsd })
 			.where({ id, ownerId })
-			.execute();
-	}
-
-	public async updateCursorPageNo(
-		documentId: number,
-		cursorPageNo: number,
-		trx?: Transaction,
-	): Promise<void> {
-		await this.documentModel
-			.query(trx)
-			.patch({
-				cursorPageNo: raw("GREATEST(??, ?)", ["cursor_page_no", cursorPageNo]),
-			})
-			.where({ id: documentId })
 			.execute();
 	}
 

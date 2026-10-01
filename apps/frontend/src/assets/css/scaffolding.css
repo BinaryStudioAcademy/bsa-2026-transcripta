@@ -51,6 +51,7 @@ samp {
 :focus-visible {
 	outline: var(--ring-w) solid var(--ring);
 	outline-offset: 1px;
+	border-radius: var(--r-md);
 }
 
 ::selection {

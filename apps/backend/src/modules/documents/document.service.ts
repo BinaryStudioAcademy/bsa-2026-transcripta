@@ -29,6 +29,7 @@ import { StorageBucket } from "~/libs/modules/storage/storage.js";
 import { type PageWithTranscriptionRow } from "~/modules/pages/libs/types/types.js";
 import {
 	buildContextWords,
+	calculateSavedUsd,
 	extractLexiconIds,
 	mapPageLexicons,
 } from "~/modules/transcription/libs/helpers/helpers.js";
@@ -256,6 +257,8 @@ class DocumentService {
 					trx,
 				);
 			}
+
+			await this.documentRepository.markDoneIfAllPagesClosed(documentId, trx);
 		});
 	}
 
@@ -413,6 +416,8 @@ class DocumentService {
 			const pageData = createdPage.toObject();
 
 			if (pageData.status === PageStatus.BLANK) {
+				await this.documentRepository.recalculateCursorPageNo(documentId);
+
 				continue;
 			}
 
@@ -828,6 +833,13 @@ class DocumentService {
 										text,
 									}),
 									id: page.transcriptionId,
+									savedUsd: calculateSavedUsd({
+										fromCache: page.transcriptionFromCache === true,
+										inputTokens: page.transcriptionInputTokens ?? EMPTY_LENGTH,
+										model: page.transcriptionModel,
+										outputTokens:
+											page.transcriptionOutputTokens ?? EMPTY_LENGTH,
+									}),
 									structured: page.transcriptionStructured,
 									text,
 								},
