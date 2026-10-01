@@ -555,6 +555,7 @@ const DocumentNew: React.FC = () => {
 			void (async (): Promise<void> => {
 				await navigate(
 					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+					{ state: { isIngestStarted: true } },
 				);
 			})();
 		},

@@ -74,6 +74,7 @@
 	z-index: 1;
 	outline: var(--ring-w) solid var(--ring);
 	outline-offset: -2px;
+	border-radius: var(--r-md);
 }
 
 .presets-page__name-cell,

@@ -14,6 +14,7 @@ import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 type UseProcessingToggleReturn = {
 	isPaused: boolean;
 	isToggleDisabled: boolean;
+	isToggleVisible: boolean;
 	onToggleProcessing: () => void;
 };
 
@@ -30,14 +31,13 @@ const useProcessingToggle = (
 	);
 
 	const isPaused = document?.status === DocumentStatus.PAUSED;
-	const isProcessingToggleAvailable =
+	const isToggleVisible =
 		document?.status === DocumentStatus.PROCESSING || isPaused;
 	const isToggleDisabled =
-		pauseResumeDataStatus === DataStatus.PENDING ||
-		!isProcessingToggleAvailable;
+		pauseResumeDataStatus === DataStatus.PENDING || !isToggleVisible;
 
 	const onToggleProcessing = useCallback((): void => {
-		if (!document) {
+		if (!document || !isToggleVisible) {
 			return;
 		}
 
@@ -48,9 +48,9 @@ const useProcessingToggle = (
 		}
 
 		void dispatch(documentActions.pause(document.id));
-	}, [dispatch, document, isPaused]);
+	}, [dispatch, document, isPaused, isToggleVisible]);
 
-	return { isPaused, isToggleDisabled, onToggleProcessing };
+	return { isPaused, isToggleDisabled, isToggleVisible, onToggleProcessing };
 };
 
 export { useProcessingToggle };
