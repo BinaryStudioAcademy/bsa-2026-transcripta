@@ -47,7 +47,7 @@ import {
 	PAGE_STEP,
 	SETTLED_PAGE_STATUSES,
 } from "./libs/constants/verification.constants.js";
-import { PageStatus } from "./libs/enums/enums.js";
+import { DocumentStatus, PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
 import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
@@ -115,6 +115,8 @@ const Verification: React.FC = () => {
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 	const isDocumentDone = isDocumentFullyRead(document);
 
+	const isBudgetStopped = document?.status === DocumentStatus.BUDGET_STOP;
+
 	useEffect(() => {
 		const documentId = Number(id);
 		if (!Number.isFinite(documentId)) {
@@ -125,6 +127,11 @@ const Verification: React.FC = () => {
 		isCompletionHandledReference.current = false;
 		dispatch(pageActions.reset());
 		void dispatch(documentActions.loadById(documentId));
+		void dispatch(documentActions.startPolling(documentId));
+
+		return () => {
+			dispatch(documentActions.stopPolling());
+		};
 	}, [id, dispatch]);
 
 	useDraftRedirect(document, Number(id));
@@ -436,13 +443,18 @@ const Verification: React.FC = () => {
 				budgetLimit={document.budget.limitUsd}
 				budgetSpent={document.budget.spentUsd}
 				documentTitle={document.title}
+				isBudgetStopped={isBudgetStopped}
 				pageCount={document.pageCount}
 				pageNo={currentPage?.pageNo}
 			/>
 			<VerificationWorkspace
+				budgetLimit={document.budget.limitUsd}
+				budgetSpent={document.budget.spentUsd}
 				currentPage={currentPage}
+				documentId={document.id}
 				editConflictDraft={editConflictDraft}
 				hasVerifiedPages={document.progress.pagesVerified > INITIAL_COUNT}
+				isBudgetStopped={isBudgetStopped}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isPaused={isPaused}
