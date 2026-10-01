@@ -44,7 +44,7 @@ import {
 	MIN_NUMBER_OF_PAGES,
 	PAGE_STEP,
 } from "./libs/constants/verification.constants.js";
-import { PageStatus } from "./libs/enums/enums.js";
+import { DocumentStatus, PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
 import { isPageBeingRead } from "./libs/helpers/is-page-being-read.helper.js";
@@ -114,6 +114,7 @@ const Verification: React.FC = () => {
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 	const isDocumentDone = isDocumentFullyRead(document);
 	const isBeingRead = isPageBeingRead(currentPage);
+	const isBudgetStopped = document?.status === DocumentStatus.BUDGET_STOP;
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -125,6 +126,11 @@ const Verification: React.FC = () => {
 		isCompletionHandledReference.current = false;
 		dispatch(pageActions.reset());
 		void dispatch(documentActions.loadById(documentId));
+		void dispatch(documentActions.startPolling(documentId));
+
+		return () => {
+			dispatch(documentActions.stopPolling());
+		};
 	}, [id, dispatch]);
 
 	useDraftRedirect(document, Number(id));
@@ -400,27 +406,22 @@ const Verification: React.FC = () => {
 		onUndo: handleUndo,
 	});
 
-	if (isDocumentLoading) {
+	if (isDocumentLoading || !document) {
 		return <LoaderOverlay label="Loading verification" />;
-	}
-
-	if (!document) {
-		return null;
 	}
 
 	return (
 		<div className="verification">
 			<VerificationHeader
-				budgetLimit={document.budget.limitUsd}
-				budgetSpent={document.budget.spentUsd}
-				documentTitle={document.title}
-				pageCount={document.pageCount}
+				document={document}
+				isBudgetStopped={isBudgetStopped}
 				pageNo={currentPage?.pageNo}
 			/>
 			<VerificationWorkspace
 				currentPage={currentPage}
-				documentProgress={document.progress}
+				document={document}
 				editConflictDraft={editConflictDraft}
+				isBudgetStopped={isBudgetStopped}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
 				isPaused={isPaused}
@@ -435,7 +436,6 @@ const Verification: React.FC = () => {
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
 				onToggleProcessing={onToggleProcessing}
-				pageCount={document.pageCount}
 				scanRef={scanRef}
 				zoom={zoom}
 			/>
