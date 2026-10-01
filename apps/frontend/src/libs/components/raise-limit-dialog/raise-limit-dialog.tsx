@@ -16,6 +16,7 @@ import { formatMoney } from "~/libs/helpers/helpers.js";
 import {
 	useAppForm,
 	useCallback,
+	useFocusTrap,
 	useFormController,
 } from "~/libs/hooks/hooks.js";
 
@@ -33,6 +34,7 @@ const RaiseLimitDialog: React.FC<
 		Number(currentLimitUsd) + SUGGESTED_LIMIT_INCREMENT
 	).toFixed(CURRENCY_DECIMAL_PLACES);
 
+	const dialogReference = useFocusTrap<HTMLDivElement>();
 	const [validationError, setValidationError] = useState<null | string>(null);
 	const [activeServerError, setActiveServerError] = useState<
 		null | string | undefined
@@ -117,7 +119,12 @@ const RaiseLimitDialog: React.FC<
 				onClick={onCancel}
 				type="button"
 			/>
-			<div aria-modal="true" className={styles["dialog"]} role="dialog">
+			<div
+				aria-modal="true"
+				className={styles["dialog"]}
+				ref={dialogReference}
+				role="dialog"
+			>
 				<h2 className={styles["title"]}>Raise the limit</h2>
 				<p className={styles["description"]}>
 					Transcription stopped at{" "}
