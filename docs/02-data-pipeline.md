@@ -449,18 +449,23 @@ C = concurrent page.transcribe jobs
 H = human seconds per page         (target < 10)
 ```
 
-So `C ≥ L / H`. With `L = 30` and `H = 10` that is **C = 3**; at the pessimistic
-`L = 40` it is 4.
+So `C ≥ L / H`, rounded up. `H = 10` is the ceiling of the target, not the
+pace to plan for: a verifier who is under target at `H = 9` needs
+`30 / 9 = 3.3`, so **C = 4**. Three workers produce one page per 10 seconds and
+fall behind exactly that verifier — the ready-ahead buffer reaches zero every
+few pages and the human waits about 3 seconds for the next one (#550). At the
+pessimistic `L = 40` the same verifier needs 5.
 
 Two ceilings cap it:
 
 - **`C ≤ N`.** More concurrent jobs than the window holds is pointless — there
   is nothing for the extra workers to take. With `N = 5`, `C` above 5 idles.
-- **The provider's rate limit.** If the account allows fewer requests per
-  minute than `C` would generate, the limit wins and `C` has to come down; the
-  human waits, and that is a fact to state in the UI rather than hide.
+  The window has its own throughput condition: a page enters it when the
+  human confirms the page five places behind, so it must be ready within the
+  next four verifications — `L ≤ (N − 1) · H`. With `N = 5` and `H = 9` that is
+  36 s, enough for `L = 30` but not for `L = 40`.
 
-**Start at `C = 3`** and correct it after the first full document, when the
+**Start at `C = 4`** and correct it after the first full document, when the
 real `L` is known from `document_cost.avg_latency_ms` and the real `H` from
 `verification_speed.avg_ms`. Both views exist for exactly this
 ([04-database.md](04-database.md#ready-made-queries-as-views)).
