@@ -39,7 +39,7 @@ flowchart TB
         C4 -->|"next Enter"| C1
     end
 
-    NOTE["<b>WHY EXACTLY 5</b><br/>1 - the human waits for the model<br/>20+ - the context lags and money burns on pages<br/>the human may never even see<br/>5 - the worker is always a step ahead,<br/>and the context lags by just 5 pages<br/><i>settings: lookahead = 5</i><br/>&nbsp;<br/><b>THE WINDOW IS NOT ENOUGH</b><br/>if the human is faster than the worker,<br/>the buffer drains. Second parameter:<br/>concurrent jobs C ≥ latency / human seconds<br/><i>30 s / 10 s -> C = 3, capped by the window</i>"]
+    NOTE["<b>WHY EXACTLY 5</b><br/>1 - the human waits for the model<br/>20+ - the context lags and money burns on pages<br/>the human may never even see<br/>5 - the worker is always a step ahead,<br/>and the context lags by just 5 pages<br/><i>settings: lookahead = 5</i><br/>&nbsp;<br/><b>THE WINDOW IS NOT ENOUGH</b><br/>if the human is faster than the worker,<br/>the buffer drains. Second parameter:<br/>concurrent jobs C ≥ latency / human seconds<br/><i>30 s / 9 s -> C = 4, capped by the window</i>"]
 
     CYCLE ~~~ NOTE
 
