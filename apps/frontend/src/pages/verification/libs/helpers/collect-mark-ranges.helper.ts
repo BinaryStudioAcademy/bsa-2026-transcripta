@@ -7,7 +7,7 @@ import {
 import {
 	type MarkKind,
 	type MarkRange,
-	type MarkTextPayload,
+	type MarkRangesPayload,
 } from "../types/types.js";
 
 const MARKER_PATTERN = /[^\s|()]{1,64}\(\?\)|\[\?\]|\[\.\.\.\]/g;
@@ -24,7 +24,7 @@ const collectMarkRanges = ({
 	contextWords,
 	segment,
 	segmentStart,
-}: MarkTextPayload): MarkRange[] => {
+}: MarkRangesPayload): MarkRange[] => {
 	const markerRanges: MarkRange[] = [];
 
 	for (const match of segment.matchAll(MARKER_PATTERN)) {

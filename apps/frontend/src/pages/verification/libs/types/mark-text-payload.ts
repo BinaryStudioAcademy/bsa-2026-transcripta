@@ -1,9 +1,14 @@
 import { type ContextWord } from "./context-word.type.js";
 
-type MarkTextPayload = {
+type MarkRangesPayload = {
 	contextWords: ContextWord[];
 	segment: string;
 	segmentStart: number;
 };
 
-export { type MarkTextPayload };
+type MarkTextPayload = MarkRangesPayload & {
+	onMarkEnter: (event: React.PointerEvent<HTMLElement>) => void;
+	onMarkLeave: () => void;
+};
+
+export { type MarkRangesPayload, type MarkTextPayload };
