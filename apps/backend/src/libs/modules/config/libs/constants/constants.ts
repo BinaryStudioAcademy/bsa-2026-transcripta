@@ -1,3 +1,4 @@
+export { DEFAULT_WORKER_CONCURRENCY } from "./default-worker-concurrency.constant.js";
 export { DevelopmentJwtSecretMessage } from "./development-jwt-secret-message.constant.js";
 export { DEVELOPMENT_JWT_SECRET } from "./development-jwt-secret.constant.js";
 export { MIN_WORKER_CONCURRENCY } from "./min-worker-concurrency.constant.js";

@@ -56,9 +56,10 @@ a plan whose premise is unverified.
 
 ### Model call concurrency is not calibrated
 
-The starting value is derived rather than guessed: `C ≥ L / H` gives **C = 3**
-for a 30-second transcription and a 10-second verification, capped by the
-window size and the provider's rate limit
+The starting value is derived rather than guessed: `C ≥ L / H`, rounded up,
+gives **C = 4** for a 30-second transcription and a 9-second verification
+(three workers fall behind a verifier who beats the 10-second target), capped
+by the window size and the provider's rate limit
 ([02-data-pipeline.md](02-data-pipeline.md#the-window-alone-is-not-enough--concurrency-is-the-second-parameter)).
 
 What is missing is the real `L` and `H`. Both come from the views that already
