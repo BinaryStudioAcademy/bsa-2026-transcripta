@@ -4,17 +4,23 @@ import { useEffect } from "~/libs/hooks/hooks.js";
 import styles from "./confirm-dialog.module.css";
 
 type Properties = {
+	checkboxLabel?: string;
 	confirmLabel?: string;
 	description: string;
+	isCheckboxChecked?: boolean;
 	onCancel: () => void;
+	onCheckboxChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 	onConfirm: () => void;
 	title: string;
 };
 
 const ConfirmDialog: React.FC<Properties> = ({
+	checkboxLabel,
 	confirmLabel = "Delete",
 	description,
+	isCheckboxChecked = false,
 	onCancel,
+	onCheckboxChange,
 	onConfirm,
 	title,
 }: Properties) => {
@@ -43,6 +49,17 @@ const ConfirmDialog: React.FC<Properties> = ({
 			<div aria-modal="true" className={styles["dialog"]} role="dialog">
 				<h2 className={styles["title"]}>{title}</h2>
 				<p className={styles["description"]}>{description}</p>
+
+				{checkboxLabel && onCheckboxChange && (
+					<label className={styles["checkbox"]}>
+						<input
+							checked={isCheckboxChecked}
+							onChange={onCheckboxChange}
+							type="checkbox"
+						/>
+						<span>{checkboxLabel}</span>
+					</label>
+				)}
 
 				<div className={styles["actions"]}>
 					<Button label="Cancel" onClick={onCancel} />

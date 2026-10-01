@@ -65,6 +65,7 @@ const PresetEditor: React.FC = () => {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 	const [entryToDelete, setEntryToDelete] = useState<null | string>(null);
+	const [skipDeleteConfirmation, setSkipDeleteConfirmation] = useState(false);
 	const [newEntryId, setNewEntryId] = useState<null | string>(null);
 
 	const createStatus = useAppSelector(selectCreateStatus);
@@ -389,7 +390,7 @@ const PresetEditor: React.FC = () => {
 				return;
 			}
 
-			if (!entry.value.trim()) {
+			if (!entry.value.trim() || skipDeleteConfirmation) {
 				handleRemoveEntry(id);
 
 				return;
@@ -398,7 +399,7 @@ const PresetEditor: React.FC = () => {
 			setEntryToDelete(id);
 			setIsDeleteDialogOpen(true);
 		},
-		[entries, handleRemoveEntry],
+		[entries, handleRemoveEntry, skipDeleteConfirmation],
 	);
 
 	const handleCancelDelete = useCallback((): void => {
@@ -419,6 +420,13 @@ const PresetEditor: React.FC = () => {
 	const handleCloseTypeSelector = useCallback((): void => {
 		setOpenTypeId(null);
 	}, []);
+
+	const handleSkipDeleteConfirmation = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => {
+			setSkipDeleteConfirmation(event.target.checked);
+		},
+		[],
+	);
 
 	if (isNotFound) {
 		return (
@@ -495,8 +503,11 @@ const PresetEditor: React.FC = () => {
 			)}
 			{isDeleteDialogOpen && (
 				<ConfirmDialog
+					checkboxLabel="Don't show this again"
 					description="Are you sure you want to delete this term?"
+					isCheckboxChecked={skipDeleteConfirmation}
 					onCancel={handleCancelDelete}
+					onCheckboxChange={handleSkipDeleteConfirmation}
 					onConfirm={handleConfirmDelete}
 					title="Delete a term"
 				/>
