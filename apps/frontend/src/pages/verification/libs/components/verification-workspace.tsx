@@ -24,6 +24,7 @@ import {
 } from "../constants/constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { isPageBeingRead } from "../helpers/is-page-being-read.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import {
@@ -224,7 +225,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
-		if (currentPage?.transcription) {
+		if (currentPage?.transcription && !isPageBeingRead(currentPage)) {
 			return (
 				<>
 					<span className="verification-transcription__page">
