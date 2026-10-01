@@ -60,6 +60,7 @@ const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { id } = useParams<{ id?: string }>();
+	const [newEntryId, setNewEntryId] = useState<null | string>(null);
 
 	const createStatus = useAppSelector(selectCreateStatus);
 	const presets = useAppSelector(selectPresets);
@@ -220,7 +221,10 @@ const PresetEditor: React.FC = () => {
 	}, [navigate]);
 
 	const handleAddEntry = useCallback((): void => {
-		setEntries((currentEntries) => [...currentEntries, createEntry()]);
+		const newEntry = createEntry();
+
+		setEntries((currentEntries) => [...currentEntries, newEntry]);
+		setNewEntryId(newEntry.id);
 	}, []);
 
 	const handleRemoveEntry = useCallback((id: string): void => {
@@ -413,6 +417,7 @@ const PresetEditor: React.FC = () => {
 								entries={entries}
 								errors={errors.glossary}
 								isDisabled={isFormDisabled}
+								newEntryId={newEntryId}
 								onAddEntry={handleAddEntry}
 								onCloseTypeSelector={handleCloseTypeSelector}
 								onKindOptionClick={handleKindOptionClick}
