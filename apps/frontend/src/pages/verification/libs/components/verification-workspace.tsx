@@ -5,7 +5,6 @@ import {
 	PreparingStateCard,
 	RaiseLimitDialog,
 } from "~/libs/components/components.js";
-
 import {
 	BUDGET_UPLOAD_FAILED_MESSAGE,
 	INITIAL_COUNT,
@@ -18,6 +17,7 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
+
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
 import { getPreparingMessage } from "../helpers/get-preparing-message.helper.js";
@@ -25,8 +25,8 @@ import { isPageBeingRead } from "../helpers/is-page-being-read.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import {
-	type DocumentGetByIdResponseDto,
 	type ContextWord,
+	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
@@ -90,7 +90,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		pageCount,
 		progress: documentProgress,
 	} = document;
-	const hasVerifiedPages = document.progress.pagesVerified > INITIAL_COUNT;
 	const viewportReference = useRef<HTMLDivElement>(null);
 	const [isRaiseLimitDialogOpen, setIsRaiseLimitDialogOpen] = useState(false);
 	const [serverValidationError, setServerValidationError] = useState<
