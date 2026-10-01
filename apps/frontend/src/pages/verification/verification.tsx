@@ -50,6 +50,7 @@ import {
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
 import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
+import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
@@ -125,6 +126,8 @@ const Verification: React.FC = () => {
 		dispatch(pageActions.reset());
 		void dispatch(documentActions.loadById(documentId));
 	}, [id, dispatch]);
+
+	useDraftRedirect(document, Number(id));
 
 	useEffect(() => {
 		const documentId = Number(id);
