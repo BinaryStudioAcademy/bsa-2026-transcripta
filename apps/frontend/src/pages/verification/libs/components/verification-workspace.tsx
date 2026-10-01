@@ -26,6 +26,7 @@ import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import {
 	type DocumentGetByIdResponseDto,
+	type ContextWord,
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
@@ -35,6 +36,8 @@ import {
 	VerificationEdit,
 	VerificationPageText,
 } from "./components.js";
+
+const EMPTY_CONTEXT_WORDS: ContextWord[] = [];
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
@@ -180,6 +183,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						</span>
 
 						<VerificationEdit
+							contextWords={EMPTY_CONTEXT_WORDS}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text=""
@@ -217,6 +221,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 
 					{isEditing ? (
 						<VerificationEdit
+							contextWords={currentPage.transcription.contextWords}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
