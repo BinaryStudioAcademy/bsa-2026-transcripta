@@ -39,7 +39,10 @@ import {
 	TranscriptionBlock,
 	VerificationBlock,
 } from "./libs/components/components.js";
+import { ALL_PAGES_BLANK_MESSAGE } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
+
+const notifiedBlankIds = new Set<number | string>();
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -47,6 +50,7 @@ const Document: React.FC = () => {
 	const location = useLocation();
 	const locationState = location.state as null | {
 		errorMessage?: string;
+		isAllBlank?: boolean;
 		isIngestStarted?: boolean;
 	};
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
@@ -162,6 +166,32 @@ const Document: React.FC = () => {
 		locationState?.errorMessage,
 	]);
 
+	const pagesTranscribed = currentDocument
+		? currentDocument.progress.pagesVerified +
+			currentDocument.progress.pagesReadyToCheck +
+			currentDocument.progress.pagesSkipped
+		: INITIAL_COUNT;
+
+	useEffect(() => {
+		const isReallyAllBlank =
+			currentDocument &&
+			currentDocument.pageCount > INITIAL_COUNT &&
+			currentDocument.progress.pagesBlank === currentDocument.pageCount &&
+			pagesTranscribed === INITIAL_COUNT &&
+			currentDocument.progress.pagesVerified === INITIAL_COUNT;
+
+		const shouldNotify = locationState?.isAllBlank || isReallyAllBlank;
+
+		if (
+			shouldNotify &&
+			currentDocument &&
+			!notifiedBlankIds.has(currentDocument.id)
+		) {
+			notifiedBlankIds.add(currentDocument.id);
+			notification.info(ALL_PAGES_BLANK_MESSAGE);
+		}
+	}, [locationState?.isAllBlank, currentDocument, pagesTranscribed]);
+
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
 	const hasError =
@@ -254,12 +284,6 @@ const Document: React.FC = () => {
 				void dispatch(documentActions.startPolling(retryDocumentId));
 			});
 	}, [currentDocument, dispatch]);
-
-	const pagesTranscribed = currentDocument
-		? currentDocument.progress.pagesVerified +
-			currentDocument.progress.pagesReadyToCheck +
-			currentDocument.progress.pagesSkipped
-		: INITIAL_COUNT;
 
 	const errorMessageToDisplay =
 		currentDocument?.errorMessage ||

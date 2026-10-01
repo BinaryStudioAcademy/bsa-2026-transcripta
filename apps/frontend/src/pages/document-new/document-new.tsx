@@ -208,6 +208,14 @@ const useIngestPolling = ({
 		void dispatch(documentActions.loadById(ingestingDocumentId));
 
 		const poll = (): void => {
+			const currentStatus = resumedDocumentReference.current?.status;
+			if (
+				currentStatus === DocumentStatus.DONE ||
+				currentStatus === DocumentStatus.FAILED
+			) {
+				return;
+			}
+
 			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
 				setIngestingDocumentId(null);
 				const timeoutMessage =
@@ -242,6 +250,8 @@ const useIngestPolling = ({
 		const { progress, status } = resumedDocument;
 
 		if (status === DocumentStatus.FAILED) {
+			setIngestingDocumentId(null);
+			setRejection(resumedDocument.errorMessage || INGESTION_FAILED_MESSAGE);
 			return;
 		}
 
@@ -257,6 +267,41 @@ const useIngestPolling = ({
 					}),
 				);
 			})();
+			return;
+		}
+
+		const isFullyDone = status === DocumentStatus.DONE;
+		const isIngestionFinished =
+			status !== DocumentStatus.INGESTING &&
+			progress.pagesTotal > EMPTY_COUNT &&
+			progress.pagesPending === EMPTY_COUNT &&
+			progress.pagesInWork === EMPTY_COUNT &&
+			progress.pagesBlank +
+				progress.pagesVerified +
+				progress.pagesReadyToCheck +
+				progress.pagesFailed ===
+				progress.pagesTotal;
+
+		if (isFullyDone || isIngestionFinished) {
+			setIngestingDocumentId(null);
+
+			const areAllPagesBlank =
+				isFullyDone &&
+				progress.pagesTotal > EMPTY_COUNT &&
+				progress.pagesBlank === progress.pagesTotal;
+
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, {
+						id: String(ingestingDocumentId),
+					}),
+					{
+						state: {
+							isAllBlank: areAllPagesBlank,
+						},
+					},
+				);
+			})();
 		}
 	}, [
 		ingestingDocumentId,
@@ -266,6 +311,13 @@ const useIngestPolling = ({
 		setRejection,
 		setIsStartingProcessing,
 	]);
+
+	useEffect(() => {
+		return (): void => {
+			setIngestingDocumentId(null);
+			setIsStartingProcessing(false);
+		};
+	}, [setIngestingDocumentId, setIsStartingProcessing]);
 };
 
 const useScreenState = ({
