@@ -42,17 +42,14 @@ import {
 	PresetOutputFields,
 } from "./libs/components/components.js";
 import {
-	createEntry,
 	getInitialErrors,
 	getOutputFields,
-	isGlossaryType,
 	isPresetFormDirty,
 	mapSeedGlossary,
 	mapValidationErrors,
 } from "./libs/helpers/helpers.js";
+import { usePresetGlossary } from "./libs/hooks/use-preset-glossary.js";
 import {
-	type GlossaryEntry,
-	type GlossaryType,
 	type PresetFormErrors,
 	type PresetFormState,
 } from "./libs/types/preset-editor.types.js";
@@ -62,11 +59,7 @@ const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { id } = useParams<{ id?: string }>();
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-	const [entryToDelete, setEntryToDelete] = useState<null | string>(null);
-	const [skipDeleteConfirmation, setSkipDeleteConfirmation] = useState(false);
-	const [newEntryId, setNewEntryId] = useState<null | string>(null);
 
 	const createStatus = useAppSelector(selectCreateStatus);
 	const presets = useAppSelector(selectPresets);
@@ -86,9 +79,30 @@ const PresetEditor: React.FC = () => {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [instructions, setInstructions] = useState("");
-	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
-	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
+
 	const [errors, setErrors] = useState<PresetFormErrors>(getInitialErrors());
+
+	const {
+		entries,
+		handleAddEntry,
+		handleCancelDelete,
+		handleCloseTypeSelector,
+		handleConfirmDelete,
+		handleGlossaryValueChange,
+		handleKindOptionClick,
+		handleRemoveButtonClick,
+		handleSkipDeleteConfirmation,
+		handleTypeButtonClick,
+		isDeleteDialogOpen,
+		newEntryId,
+		openTypeId,
+		setEntries,
+		setOpenTypeId,
+		skipDeleteConfirmation,
+	} = usePresetGlossary({
+		setErrors,
+	});
+
 	const [initialFormState, setInitialFormState] =
 		useState<null | PresetFormState>(null);
 
@@ -172,7 +186,7 @@ const PresetEditor: React.FC = () => {
 
 			initialStateInitialized.current = true;
 		}
-	}, [selectedPreset, basePresetId]);
+	}, [selectedPreset, basePresetId, setEntries, setOpenTypeId]);
 
 	const handleSubmit = useCallback((): void => {
 		if (!selectedPreset || !isDirty) {
@@ -246,38 +260,6 @@ const PresetEditor: React.FC = () => {
 		})();
 	}, [navigate]);
 
-	const handleAddEntry = useCallback((): void => {
-		const newEntry = createEntry();
-
-		setEntries((currentEntries) => [...currentEntries, newEntry]);
-		setNewEntryId(newEntry.id);
-	}, []);
-
-	const handleRemoveEntry = useCallback((id: string): void => {
-		setEntries((currentEntries) =>
-			currentEntries.filter((entry) => entry.id !== id),
-		);
-	}, []);
-
-	const handleKindChange = useCallback(
-		(id: string, kind: GlossaryType): void => {
-			setEntries((currentEntries) =>
-				currentEntries.map((entry) =>
-					entry.id === id ? { ...entry, kind } : entry,
-				),
-			);
-		},
-		[],
-	);
-
-	const handleValueChange = useCallback((id: string, value: string): void => {
-		setEntries((currentEntries) =>
-			currentEntries.map((entry) =>
-				entry.id === id ? { ...entry, value } : entry,
-			),
-		);
-	}, []);
-
 	const handleBasePresetChange = useCallback(
 		(event: ChangeEvent<HTMLSelectElement>): void => {
 			const presetId = Number(event.target.value);
@@ -321,109 +303,6 @@ const PresetEditor: React.FC = () => {
 				...current,
 				instructions: null,
 			}));
-		},
-		[],
-	);
-
-	const handleTypeButtonClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const { id } = event.currentTarget.dataset;
-
-			if (!id) {
-				return;
-			}
-
-			setOpenTypeId((currentId) => (currentId === id ? null : id));
-		},
-		[],
-	);
-
-	const handleKindOptionClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const { id, kind } = event.currentTarget.dataset;
-
-			if (!id || !kind || !isGlossaryType(kind)) {
-				return;
-			}
-
-			handleKindChange(id, kind);
-			setOpenTypeId(null);
-		},
-		[handleKindChange],
-	);
-
-	const handleGlossaryValueChange = useCallback(
-		(event: ChangeEvent<HTMLInputElement>): void => {
-			const { id } = event.currentTarget.dataset;
-
-			if (!id) {
-				return;
-			}
-
-			handleValueChange(id, event.target.value);
-
-			setErrors((current) => {
-				const glossary = Object.fromEntries(
-					Object.entries(current.glossary).filter(([key]) => key !== id),
-				);
-
-				return {
-					...current,
-					glossary,
-				};
-			});
-		},
-		[handleValueChange],
-	);
-
-	const handleRemoveButtonClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const { id } = event.currentTarget.dataset;
-
-			if (!id) {
-				return;
-			}
-
-			const entry = entries.find((item) => item.id === id);
-
-			if (!entry) {
-				return;
-			}
-
-			if (!entry.value.trim() || skipDeleteConfirmation) {
-				handleRemoveEntry(id);
-
-				return;
-			}
-
-			setEntryToDelete(id);
-			setIsDeleteDialogOpen(true);
-		},
-		[entries, handleRemoveEntry, skipDeleteConfirmation],
-	);
-
-	const handleCancelDelete = useCallback((): void => {
-		setIsDeleteDialogOpen(false);
-		setEntryToDelete(null);
-	}, []);
-
-	const handleConfirmDelete = useCallback((): void => {
-		if (!entryToDelete) {
-			return;
-		}
-
-		handleRemoveEntry(entryToDelete);
-		setIsDeleteDialogOpen(false);
-		setEntryToDelete(null);
-	}, [entryToDelete, handleRemoveEntry]);
-
-	const handleCloseTypeSelector = useCallback((): void => {
-		setOpenTypeId(null);
-	}, []);
-
-	const handleSkipDeleteConfirmation = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>): void => {
-			setSkipDeleteConfirmation(event.target.checked);
 		},
 		[],
 	);
