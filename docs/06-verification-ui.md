@@ -447,13 +447,25 @@ States that must be distinguished:
 | `✓`  | Confirmed        |
 | `✎`  | Corrected        |
 | `↷`  | Skipped          |
-| `●`  | Current          |
+| `●`  | Saved cursor     |
 | `▓`  | Ready to check   |
 | `░`  | Being recognised |
 | `·`  | Queued           |
 | `!`  | Error            |
+| pill | Page opened      |
 
 Hovering shows a thumbnail, clicking jumps to the page.
+
+The pill and the `●` are two different positions. The pill marks the page that is
+open right now, which any click or <kbd>←</kbd> <kbd>→</kbd> can move anywhere.
+The `●` marks the saved cursor — the page the next <kbd>Enter</kbd> will work
+on — and it only moves when a page is actually closed. Opening an earlier page
+therefore moves the pill and leaves `●` where it is; on a failed page the pill
+sits on the red error cell and the `●` stays on the cursor.
+
+A failed page is closed, not pending: the model gave up after three attempts, so
+it cannot hold the cursor. Only a page still waiting on the machine or the human
+can.
 
 ---
 
