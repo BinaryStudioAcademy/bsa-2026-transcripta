@@ -257,6 +257,8 @@ class DocumentService {
 					trx,
 				);
 			}
+
+			await this.documentRepository.markDoneIfAllPagesClosed(documentId, trx);
 		});
 	}
 
