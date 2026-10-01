@@ -49,14 +49,28 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
+import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
+import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
 import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
 import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
+	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 	type PageVerificationActionValue,
+	type ProcessQueuePayload,
 } from "./libs/types/types.js";
+
+const countClosedPages = (
+	pages: (DocumentGetPagesItemResponseDto | undefined)[],
+): number =>
+	pages.filter(
+		(page) =>
+			page &&
+			page.status !== PageStatus.TRANSCRIBED &&
+			page.status !== PageStatus.PENDING,
+	).length;
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -75,7 +89,6 @@ const Verification: React.FC = () => {
 	const cursorInitializedForReference = useRef<null | number>(null);
 
 	const document = useAppSelector(({ documents }) => documents.document);
-
 	const documentDataStatus = useAppSelector(
 		({ documents }) => documents.documentDataStatus,
 	);
@@ -100,10 +113,10 @@ const Verification: React.FC = () => {
 		useProcessingToggle(document);
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
+	const isDocumentDone = isDocumentFullyRead(document);
 
 	useEffect(() => {
 		const documentId = Number(id);
-
 		if (!Number.isFinite(documentId)) {
 			return;
 		}
@@ -114,6 +127,8 @@ const Verification: React.FC = () => {
 		void dispatch(documentActions.loadById(documentId));
 	}, [id, dispatch]);
 
+	useDraftRedirect(document, Number(id));
+
 	useEffect(() => {
 		const documentId = Number(id);
 
@@ -121,17 +136,12 @@ const Verification: React.FC = () => {
 			return;
 		}
 
-		if (currentPage?.transcription) {
-			return;
-		}
-
-		// Nothing will arrive for a page that has settled, or while the document
-		// is not being processed, so polling would repeat forever for nothing.
 		const isPageSettled =
 			currentPage !== undefined &&
 			SETTLED_PAGE_STATUSES.includes(currentPage.status);
+		const isDocumentIdle = IDLE_DOCUMENT_STATUSES.includes(document.status);
 
-		if (isPageSettled || IDLE_DOCUMENT_STATUSES.includes(document.status)) {
+		if (isDocumentIdle || (isPageSettled && isDocumentDone)) {
 			return;
 		}
 
@@ -140,18 +150,16 @@ const Verification: React.FC = () => {
 				pageActions.loadPages({
 					documentId,
 					isBackground: true,
-					query: {
-						from: cursorPageNo,
-						limit: MAX_LOADED_PAGES,
-					},
+					query: { from: getPagesFrom(cursorPageNo), limit: MAX_LOADED_PAGES },
 				}),
 			);
+			void dispatch(documentActions.pollDocumentById(documentId));
 		}, PollingIntervalsMS.DEFAULT);
 
 		return () => {
 			clearInterval(timeoutId);
 		};
-	}, [id, dispatch, currentPage, cursorPageNo, document]);
+	}, [id, dispatch, currentPage, cursorPageNo, document, isDocumentDone]);
 
 	useEffect(() => {
 		if (
@@ -163,7 +171,6 @@ const Verification: React.FC = () => {
 		}
 
 		cursorInitializedForReference.current = document.id;
-
 		const initialPageNo = Math.max(
 			MIN_NUMBER_OF_PAGES,
 			Math.min(
@@ -182,7 +189,6 @@ const Verification: React.FC = () => {
 		const isPageLoaded = pagesForStrip.some(
 			(page) => page?.pageNo === cursorPageNo,
 		);
-
 		if (isPageLoaded) {
 			return;
 		}
@@ -208,8 +214,6 @@ const Verification: React.FC = () => {
 		setIsEditing(false);
 	}, [cursorPageNo]);
 
-	// The backend answers `next: null` when the verified page was the last one
-	// and the document is done, so verification has nothing left to offer.
 	const goToCompletedDocument = useCallback(
 		(documentId: number): void => {
 			if (isCompletionHandledReference.current) {
@@ -217,9 +221,6 @@ const Verification: React.FC = () => {
 			}
 
 			isCompletionHandledReference.current = true;
-
-			// The toast container lives outside the router, so the message
-			// survives the navigation.
 			notification.success(VerificationQueueMessage.COMPLETED);
 
 			Promise.resolve(
@@ -227,28 +228,33 @@ const Verification: React.FC = () => {
 					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
 					{ replace: true },
 				),
-			).catch(() => null);
+			).catch(() => {
+				return null;
+			});
 		},
 		[navigate],
 	);
 
 	const runVerificationQueue = useCallback((): void => {
 		void dispatch(pageActions.processVerificationQueue()).then((result) => {
-			const isFulfilled =
-				pageActions.processVerificationQueue.fulfilled.match(result);
-
-			if (!isFulfilled) {
+			if (result.type !== pageActions.processVerificationQueue.fulfilled.type) {
 				return;
 			}
 
-			const { completedDocumentId, failed } = result.payload;
+			const payload = result.payload as ProcessQueuePayload;
+			const { completedDocumentId, failed } = payload;
+			const totalClosed = countClosedPages(pagesForStrip);
+
 			const isTrulyCompleted =
 				document !== null &&
 				document.pageCount > INITIAL_COUNT &&
-				cursorPageNo >= document.pageCount;
+				totalClosed >= document.pageCount;
 
-			if (completedDocumentId !== null && isTrulyCompleted) {
-				goToCompletedDocument(completedDocumentId);
+			if (
+				(completedDocumentId !== null || isTrulyCompleted) &&
+				document !== null
+			) {
+				goToCompletedDocument(document.id);
 				return;
 			}
 
@@ -262,7 +268,7 @@ const Verification: React.FC = () => {
 				});
 			}
 		});
-	}, [dispatch, goToCompletedDocument, document, cursorPageNo]);
+	}, [dispatch, goToCompletedDocument, document, pagesForStrip]);
 
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {
@@ -270,37 +276,30 @@ const Verification: React.FC = () => {
 				return false;
 			}
 
-			const { transcription } = currentPage;
 			const durationMs = Date.now() - pageStartedAtReference.current;
 			let payload: VerifyPageRequestDto;
 
-			if (transcription) {
+			if (currentPage.transcription) {
 				payload = {
 					action,
 					durationMs,
-					text: text ?? transcription.text,
-					transcriptionId: transcription.id,
+					text: text ?? currentPage.transcription.text,
+					transcriptionId: currentPage.transcription.id,
 				};
 			} else {
-				const isManualTranscription =
-					currentPage.status === PageStatus.FAILED &&
-					action === PageVerificationAction.CORRECT;
-
-				if (!isManualTranscription) {
+				if (
+					currentPage.status !== PageStatus.FAILED ||
+					action !== PageVerificationAction.CORRECT
+				) {
 					return false;
 				}
 
-				if (text === undefined || text.trim() === "") {
+				if (!text || text.trim() === "") {
 					notification.info("Type the page text before saving");
-
 					return false;
 				}
 
-				payload = {
-					action,
-					durationMs,
-					text,
-				};
+				payload = { action, durationMs, text };
 			}
 
 			dispatch(
@@ -316,17 +315,16 @@ const Verification: React.FC = () => {
 			);
 
 			runVerificationQueue();
-
 			return true;
 		},
 		[currentPage, dispatch, document, runVerificationQueue],
 	);
 
-	const handleConfirm = useCallback((): void => {
+	const handleConfirm = useCallback(() => {
 		handleVerify(PageVerificationAction.CONFIRM);
 	}, [handleVerify]);
 
-	const handleSkip = useCallback((): void => {
+	const handleSkip = useCallback(() => {
 		handleVerify(PageVerificationAction.SKIP);
 	}, [handleVerify]);
 
@@ -341,12 +339,9 @@ const Verification: React.FC = () => {
 		}
 
 		dispatch(pageActions.undoOptimistic({ pageId: lastVerifiedPageId }));
-
 		void dispatch(pageActions.undoPage({ pageId: lastVerifiedPageId })).then(
 			(result) => {
-				const isRejected = pageActions.undoPage.rejected.match(result);
-
-				if (isRejected) {
+				if (result.type === pageActions.undoPage.rejected.type) {
 					notification.error(
 						"The undo could not be completed. The page state has been restored.",
 					);
@@ -372,11 +367,9 @@ const Verification: React.FC = () => {
 	);
 
 	const handleReRead = useCallback((): void => {
-		if (!currentPage) {
-			return;
+		if (currentPage) {
+			void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
 		}
-
-		void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
 	}, [currentPage, dispatch]);
 
 	const handleToggleEdit = useCallback((): void => {
@@ -384,11 +377,9 @@ const Verification: React.FC = () => {
 			Boolean(currentPage?.transcription) ||
 			currentPage?.status === PageStatus.FAILED;
 
-		if (!canEdit || isReprocessing) {
-			return;
+		if (canEdit && !isReprocessing) {
+			setIsEditing((value) => !value);
 		}
-
-		setIsEditing((value) => !value);
 	}, [currentPage, isReprocessing]);
 
 	const handlePageSelect = useCallback(
@@ -403,20 +394,22 @@ const Verification: React.FC = () => {
 	);
 
 	const handlePrevious = useCallback((): void => {
-		if (cursorPageNo <= MIN_NUMBER_OF_PAGES) {
-			return;
+		if (cursorPageNo > MIN_NUMBER_OF_PAGES) {
+			handlePageSelect(cursorPageNo - PAGE_STEP);
 		}
-
-		handlePageSelect(cursorPageNo - PAGE_STEP);
 	}, [cursorPageNo, handlePageSelect]);
 
 	const handleNext = useCallback((): void => {
-		if (!document || cursorPageNo >= document.pageCount) {
-			return;
+		if (document && cursorPageNo < document.pageCount) {
+			handlePageSelect(cursorPageNo + PAGE_STEP);
 		}
-
-		handlePageSelect(cursorPageNo + PAGE_STEP);
 	}, [cursorPageNo, handlePageSelect, document]);
+
+	const handleReprocess = useCallback((): void => {
+		if (currentPage) {
+			void dispatch(pageActions.reprocessPage({ pageId: currentPage.id }));
+		}
+	}, [currentPage, dispatch]);
 
 	useVerificationKeyboard({
 		onCloseShortcuts: handleCloseShortcuts,
@@ -457,6 +450,7 @@ const Verification: React.FC = () => {
 				isToggleDisabled={isToggleDisabled}
 				isZoomed={isZoomed}
 				onConfirm={handleConfirm}
+				onReprocess={handleReprocess}
 				onReRead={handleReRead}
 				onSaveEdit={handleSaveEdit}
 				onSkip={handleSkip}

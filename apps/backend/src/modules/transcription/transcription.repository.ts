@@ -1,3 +1,4 @@
+import { PageStatus } from "@transcripta/shared";
 import { type Transaction } from "objection";
 
 import { DatabaseTableName } from "~/libs/modules/database/database.js";
@@ -6,6 +7,7 @@ import { EMPTY_LENGTH } from "./libs/constants/constants.js";
 import {
 	type CreateManualTranscriptionPayload,
 	type TranscriptionDebugRow,
+	type UnreviewedTranscriptionRow,
 } from "./libs/types/types.js";
 import { TranscriptionModel } from "./transcription.model.js";
 
@@ -88,6 +90,25 @@ class TranscriptionRepository {
 			.first();
 	}
 
+	// Model output nobody has checked yet: the current transcription of every
+	// page still waiting for review, apart from the one being verified.
+	public async findCurrentOfUnreviewedPages(
+		documentId: number,
+		exceptPageId: number,
+		trx?: Transaction,
+	): Promise<UnreviewedTranscriptionRow[]> {
+		return await this.transcriptionModel
+			.query(trx)
+			.alias("t")
+			.select("t.id", "t.text", "t.structured")
+			.join(`${DatabaseTableName.PAGE} as p`, "p.id", "t.pageId")
+			.where("t.documentId", documentId)
+			.where("t.isCurrent", true)
+			.where("p.status", PageStatus.TRANSCRIBED)
+			.whereNot("p.id", exceptPageId)
+			.castTo<UnreviewedTranscriptionRow[]>();
+	}
+
 	public async updateEditedStructuredIfActual({
 		editedStructured,
 		id,
@@ -124,6 +145,23 @@ class TranscriptionRepository {
 		await this.transcriptionModel
 			.query(trx)
 			.patch({ editedText })
+			.where({ id })
+			.execute();
+	}
+
+	// Rewrites the model output in place, keeping the row and its id, so a page
+	// the reader already has open stays the one they will verify.
+	public async updateModelOutput(
+		id: number,
+		{
+			structured,
+			text,
+		}: Pick<UnreviewedTranscriptionRow, "structured" | "text">,
+		trx?: Transaction,
+	): Promise<void> {
+		await this.transcriptionModel
+			.query(trx)
+			.patch({ structured, text })
 			.where({ id })
 			.execute();
 	}

@@ -10,7 +10,7 @@ const MAX_FILE_BYTES =
 
 const PDF_FILE_REGEX = /^.+\.pdf$/i;
 
-const LIMIT_USD_REGEX = /^\d{1,6}(\.\d{1,4})?$/;
+const LIMIT_USD_REGEX = /^\d{1,6}(\.\d{1,2})?$/;
 
 const PAGE_FROM_DEFAULT = 1;
 const PAGE_LIMIT_DEFAULT = 20;
