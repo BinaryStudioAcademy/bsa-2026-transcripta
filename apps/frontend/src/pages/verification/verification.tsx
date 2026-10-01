@@ -116,7 +116,6 @@ const Verification: React.FC = () => {
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
 	const isDocumentDone = isDocumentFullyRead(document);
 	const isBeingRead = isPageBeingRead(currentPage);
-
 	const isBudgetStopped = document?.status === DocumentStatus.BUDGET_STOP;
 
 	useEffect(() => {
@@ -433,12 +432,8 @@ const Verification: React.FC = () => {
 		onUndo: handleUndo,
 	});
 
-	if (isDocumentLoading) {
+	if (isDocumentLoading || !document) {
 		return <LoaderOverlay label="Loading verification" />;
-	}
-
-	if (!document) {
-		return null;
 	}
 
 	return (
@@ -449,12 +444,9 @@ const Verification: React.FC = () => {
 				pageNo={currentPage?.pageNo}
 			/>
 			<VerificationWorkspace
-				budgetLimit={document.budget.limitUsd}
-				budgetSpent={document.budget.spentUsd}
 				currentPage={currentPage}
-				documentId={document.id}
+				document={document}
 				editConflictDraft={editConflictDraft}
-				hasVerifiedPages={document.progress.pagesVerified > INITIAL_COUNT}
 				isBudgetStopped={isBudgetStopped}
 				isCompleted={isLastPage}
 				isEditing={isEditing}
@@ -469,7 +461,6 @@ const Verification: React.FC = () => {
 				onSkip={handleSkip}
 				onToggleEdit={handleToggleEdit}
 				onToggleProcessing={onToggleProcessing}
-				pageCount={document.pageCount}
 				scanRef={scanRef}
 				zoom={zoom}
 			/>

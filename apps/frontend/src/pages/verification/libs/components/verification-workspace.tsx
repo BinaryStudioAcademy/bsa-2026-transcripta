@@ -28,6 +28,7 @@ import { isPageBeingRead } from "../helpers/is-page-being-read.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import {
+	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
@@ -38,12 +39,9 @@ import {
 } from "./components.js";
 
 type VerificationWorkspaceProperties = {
-	budgetLimit: string;
-	budgetSpent: string;
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
-	documentId: number;
+	document: DocumentGetByIdResponseDto;
 	editConflictDraft: EditConflictDraft | null;
-	hasVerifiedPages: boolean;
 	isBudgetStopped: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
@@ -58,18 +56,14 @@ type VerificationWorkspaceProperties = {
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	onToggleProcessing: () => void;
-	pageCount?: number | undefined;
 	scanRef: (node: HTMLDivElement | null) => void;
 	zoom: number;
 };
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
-	budgetLimit,
-	budgetSpent,
 	currentPage,
-	documentId,
+	document,
 	editConflictDraft,
-	hasVerifiedPages,
 	isBudgetStopped,
 	isCompleted,
 	isEditing,
@@ -84,10 +78,15 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onSkip,
 	onToggleEdit,
 	onToggleProcessing,
-	pageCount,
 	scanRef,
 	zoom,
 }) => {
+	const {
+		budget: { limitUsd: budgetLimit, spentUsd: budgetSpent },
+		id: documentId,
+		pageCount,
+	} = document;
+	const hasVerifiedPages = document.progress.pagesVerified > INITIAL_COUNT;
 	const viewportReference = useRef<HTMLDivElement>(null);
 	const [isRaiseLimitDialogOpen, setIsRaiseLimitDialogOpen] = useState(false);
 	const [serverValidationError, setServerValidationError] = useState<
