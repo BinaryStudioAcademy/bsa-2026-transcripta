@@ -18,7 +18,6 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
-import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import {
 	actions as pageActions,
@@ -211,12 +210,6 @@ const Verification: React.FC = () => {
 		},
 		[navigate],
 	);
-
-	useEffect(() => {
-		if (document?.status === DocumentStatus.DONE) {
-			goToCompletedDocument(document.id);
-		}
-	}, [document, goToCompletedDocument]);
 
 	const runVerificationQueue = useCallback((): void => {
 		void dispatch(pageActions.processVerificationQueue()).then((result) => {
