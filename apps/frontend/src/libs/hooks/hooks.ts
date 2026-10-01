@@ -8,6 +8,7 @@ export { useTheme } from "./use-theme/use-theme.hook.js";
 export {
 	useCallback,
 	/** @public */ useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,

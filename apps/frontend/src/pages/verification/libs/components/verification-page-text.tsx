@@ -4,11 +4,13 @@ import { useMemo } from "~/libs/hooks/hooks.js";
 import { markText } from "../helpers/mark-text.helper.js";
 import { normalizeContextWords } from "../helpers/normalize-context-words.helper.js";
 import { splitPageBlocks } from "../helpers/split-page-blocks.helper.js";
+import { useMarkTooltip } from "../hooks/use-mark-tooltip.hook.js";
 import {
 	type DocumentGetPagesContextWordResponseDto,
 	type PageBlock,
 	type PageCell,
 } from "../types/types.js";
+import { MarkTooltip } from "./components.js";
 
 type Properties = {
 	contextWords: DocumentGetPagesContextWordResponseDto[];
@@ -19,6 +21,7 @@ const VerificationPageText: React.FC<Properties> = ({
 	contextWords,
 	text,
 }: Properties) => {
+	const { hideMarkTooltip, markTooltip, showMarkTooltip } = useMarkTooltip();
 	const blocks = useMemo(() => splitPageBlocks(text), [text]);
 	const lexiconWords = useMemo(
 		() => normalizeContextWords({ contextWords, text }),
@@ -43,6 +46,8 @@ const VerificationPageText: React.FC<Properties> = ({
 											<th key={cellIndex}>
 												{markText({
 													contextWords: lexiconWords,
+													onMarkEnter: showMarkTooltip,
+													onMarkLeave: hideMarkTooltip,
 													segment: cell.text,
 													segmentStart: cell.start,
 												})}
@@ -57,6 +62,8 @@ const VerificationPageText: React.FC<Properties> = ({
 												<td key={cellIndex}>
 													{markText({
 														contextWords: lexiconWords,
+														onMarkEnter: showMarkTooltip,
+														onMarkLeave: hideMarkTooltip,
 														segment: cell.text,
 														segmentStart: cell.start,
 													})}
@@ -74,6 +81,8 @@ const VerificationPageText: React.FC<Properties> = ({
 					<p className="verification-transcription__paragraph" key={blockIndex}>
 						{markText({
 							contextWords: lexiconWords,
+							onMarkEnter: showMarkTooltip,
+							onMarkLeave: hideMarkTooltip,
 							segment: block.text,
 							segmentStart: block.start,
 						})}
@@ -83,6 +92,7 @@ const VerificationPageText: React.FC<Properties> = ({
 			{blocks.length === FIRST_INDEX && (
 				<p className="verification-transcription__paragraph">{text}</p>
 			)}
+			<MarkTooltip markTooltip={markTooltip} />
 		</div>
 	);
 };

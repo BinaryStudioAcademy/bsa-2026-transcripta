@@ -84,14 +84,14 @@ const getMarkTip = ({ kind, seenOnPages }: MarkRange): string => {
 };
 
 const MARK_CLASS_NAME: Record<MarkKind, string> = {
-	illegible: "tx-tip verification-transcription__unreadable",
-	lexicon: "tx-tip verification-transcription__lexicon",
-	lost: "tx-tip verification-transcription__unreadable",
-	uncertain: "tx-tip verification-transcription__uncertain",
+	illegible: "verification-transcription__unreadable",
+	lexicon: "verification-transcription__lexicon",
+	lost: "verification-transcription__unreadable",
+	uncertain: "verification-transcription__uncertain",
 };
 
 const markText = (payload: MarkTextPayload): React.ReactNode[] => {
-	const { segment, segmentStart } = payload;
+	const { onMarkEnter, onMarkLeave, segment, segmentStart } = payload;
 	const nodes: React.ReactNode[] = [];
 	let lastIndex = EMPTY_LENGTH;
 
@@ -107,6 +107,8 @@ const markText = (payload: MarkTextPayload): React.ReactNode[] => {
 				className={MARK_CLASS_NAME[range.kind]}
 				data-tip={getMarkTip(range)}
 				key={`${range.kind}-${String(segmentStart + range.start)}`}
+				onPointerEnter={onMarkEnter}
+				onPointerLeave={onMarkLeave}
 			>
 				{range.kind === "uncertain"
 					? content.slice(EMPTY_LENGTH, -UNCERTAIN_SUFFIX.length)
