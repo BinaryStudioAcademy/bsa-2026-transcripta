@@ -133,6 +133,7 @@ const { actions, name, reducer } = createSlice({
 				nextPage.transcription.contextWords =
 					payload.next.transcription.contextWords;
 
+				nextPage.transcription.savedUsd = payload.next.transcription.savedUsd;
 				nextPage.transcription.text = payload.next.transcription.text;
 			}
 		});

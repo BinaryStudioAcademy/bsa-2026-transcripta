@@ -1,5 +1,6 @@
 export { buildContextWords } from "./build-context-words.helper.js";
 export { buildRederiveStructuredPrompt } from "./build-rederive-structured-prompt.helper.js";
+export { calculateSavedUsd } from "./calculate-saved-usd.helper.js";
 export { extractLexiconIds } from "./extract-lexicon-ids.helper.js";
 export { mapPageLexicons } from "./map-page-lexicons.helper.js";
 export { createOutputValidator } from "./output-validator.helper.js";
