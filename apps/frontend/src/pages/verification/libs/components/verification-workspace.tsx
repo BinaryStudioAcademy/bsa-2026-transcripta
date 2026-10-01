@@ -159,30 +159,6 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	);
 
 	const workspaceContent = (() => {
-		if (isBudgetStopped) {
-			return (
-				<>
-					<div className="verification-failed-state">
-						<BudgetStopState
-							limitUsd={budgetLimit}
-							onRaiseLimit={handleRaiseLimit}
-							spentUsd={budgetSpent}
-						/>
-					</div>
-
-					{isRaiseLimitDialogOpen && (
-						<RaiseLimitDialog
-							currentLimitUsd={budgetLimit}
-							onCancel={handleCancelRaiseLimit}
-							onSubmit={handleUpdateBudget}
-							serverError={serverValidationError}
-							spentUsd={budgetSpent}
-						/>
-					)}
-				</>
-			);
-		}
-
 		if (currentPage?.status === PageStatus.BLANK) {
 			return (
 				<div className="verification-blank-state">
@@ -269,6 +245,30 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 							<strong>Your previous draft:</strong>
 							<p>{editConflictDraft.text}</p>
 						</div>
+					)}
+				</>
+			);
+		}
+
+		if (isBudgetStopped) {
+			return (
+				<>
+					<div className="verification-failed-state">
+						<BudgetStopState
+							limitUsd={budgetLimit}
+							onRaiseLimit={handleRaiseLimit}
+							spentUsd={budgetSpent}
+						/>
+					</div>
+
+					{isRaiseLimitDialogOpen && (
+						<RaiseLimitDialog
+							currentLimitUsd={budgetLimit}
+							onCancel={handleCancelRaiseLimit}
+							onSubmit={handleUpdateBudget}
+							serverError={serverValidationError}
+							spentUsd={budgetSpent}
+						/>
 					)}
 				</>
 			);
