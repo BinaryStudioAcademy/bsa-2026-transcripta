@@ -136,6 +136,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 				.unwrap()
 				.then(() => {
 					setIsRaiseLimitDialogOpen(false);
+					void dispatch(documentActions.startPolling(documentId));
 				})
 				.catch((error: unknown) => {
 					const typedError = error as {
