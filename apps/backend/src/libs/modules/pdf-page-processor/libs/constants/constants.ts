@@ -1,6 +1,8 @@
 export { BLANK_STDEV_THRESHOLD } from "./blank-stdev-threshold.constant.js";
 export { NORMALIZED_QUALITY } from "./normalized-quality.constant.js";
 export { NORMALIZED_WIDTH } from "./normalized-width.constant.js";
+export { PDF_HEADER_SEARCH_LIMIT } from "./pdf-header-search-limit.constant.js";
+export { PDF_HEADER } from "./pdf-header.constant.js";
 export { PDFTOPPM_TIMEOUT } from "./pdftoppm-timeout.constant.js";
 export { SIGTERM_SIGNAL } from "./sigterm-signal.constant.js";
 export { THUMBNAIL_QUALITY } from "./thumbnail-quality.constant.js";
