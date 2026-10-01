@@ -434,11 +434,8 @@ const Verification: React.FC = () => {
 	return (
 		<div className="verification">
 			<VerificationHeader
-				budgetLimit={document.budget.limitUsd}
-				budgetSpent={document.budget.spentUsd}
-				documentTitle={document.title}
+				document={document}
 				isBudgetStopped={isBudgetStopped}
-				pageCount={document.pageCount}
 				pageNo={currentPage?.pageNo}
 			/>
 			<VerificationWorkspace
