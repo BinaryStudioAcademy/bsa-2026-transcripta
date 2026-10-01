@@ -45,7 +45,10 @@ const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const locationState = location.state as null | { errorMessage?: string };
+	const locationState = location.state as null | {
+		errorMessage?: string;
+		isIngestStarted?: boolean;
+	};
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
@@ -81,7 +84,8 @@ const Document: React.FC = () => {
 		if (
 			!currentDocument ||
 			currentDocument.id !== documentId ||
-			currentDocument.status !== DocumentStatus.DRAFT
+			currentDocument.status !== DocumentStatus.DRAFT ||
+			locationState?.isIngestStarted
 		) {
 			return;
 		}
@@ -94,7 +98,7 @@ const Document: React.FC = () => {
 				state: { documentId: documentIdToResume },
 			});
 		})();
-	}, [currentDocument, documentId, navigate]);
+	}, [currentDocument, documentId, locationState?.isIngestStarted, navigate]);
 
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const previousStatusReference = useRef<null | string>(null);

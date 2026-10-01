@@ -5,6 +5,7 @@ import {
 	PreparingStateCard,
 	RaiseLimitDialog,
 } from "~/libs/components/components.js";
+
 import {
 	BUDGET_UPLOAD_FAILED_MESSAGE,
 	INITIAL_COUNT,
@@ -17,13 +18,9 @@ import {
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { actions as documentActions } from "~/modules/documents/documents.js";
-
-import {
-	EVERYTHING_VERIFIED,
-	PREPARING_DOCUMENTS,
-} from "../constants/constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { getPreparingMessage } from "../helpers/get-preparing-message.helper.js";
 import { isPageBeingRead } from "../helpers/is-page-being-read.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
@@ -49,6 +46,7 @@ type VerificationWorkspaceProperties = {
 	isPaused: boolean;
 	isReprocessing: boolean;
 	isToggleDisabled: boolean;
+	isToggleVisible: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onReprocess: () => void;
@@ -71,6 +69,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	isPaused,
 	isReprocessing,
 	isToggleDisabled,
+	isToggleVisible,
 	isZoomed,
 	onConfirm,
 	onReprocess,
@@ -86,6 +85,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		budget: { limitUsd: budgetLimit, spentUsd: budgetSpent },
 		id: documentId,
 		pageCount,
+		progress: documentProgress,
 	} = document;
 	const hasVerifiedPages = document.progress.pagesVerified > INITIAL_COUNT;
 	const viewportReference = useRef<HTMLDivElement>(null);
@@ -281,16 +281,13 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
-		const preparingMessage = hasVerifiedPages
-			? EVERYTHING_VERIFIED
-			: PREPARING_DOCUMENTS;
-
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
 					isPaused={isPaused}
 					isToggleDisabled={isToggleDisabled}
-					message={preparingMessage}
+					isToggleVisible={isToggleVisible}
+					message={getPreparingMessage(documentProgress)}
 					onToggleProcessing={onToggleProcessing}
 				/>
 			</div>
