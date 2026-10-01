@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import {
+	LexiconEntryKind,
+	LexiconEntryKindValue,
+} from "../../../lexicon/libs/types/types.js";
+import {
 	PresetValidationMessage,
 	PresetValidationRule,
 } from "../enums/enums.js";
@@ -27,9 +31,17 @@ type PresetCreateRequestValidationDto = {
 
 const seedGlossaryEntrySchema = z.object({
 	kind: z
-		.string()
-		.trim()
-		.min(PresetValidationRule.GLOSSARY_ENTRY_MIN_LENGTH)
+		.enum(
+			Object.values(LexiconEntryKind) as [
+				LexiconEntryKindValue,
+				...LexiconEntryKindValue[],
+			],
+			{
+				errorMap: () => ({
+					message: PresetValidationMessage.GLOSSARY_ENTRY_KIND_INVALID,
+				}),
+			},
+		)
 		.optional(),
 	note: z.string().optional(),
 	value: z.string().trim().min(PresetValidationRule.GLOSSARY_ENTRY_MIN_LENGTH),
@@ -61,9 +73,6 @@ const PresetCreateValidationSchema = z.object<PresetCreateRequestValidationDto>(
 			.number()
 			.int()
 			.positive({ message: PresetValidationMessage.FAMILY_ID_REQUIRE })
-			// The column is a PostgreSQL `integer`, so anything above 2^31 - 1
-			// never gets as far as the database: it is rejected here instead of
-			// coming back as a raw "integer out of range" 500.
 			.max(PresetValidationRule.ID_MAXIMUM, {
 				message: PresetValidationMessage.FAMILY_ID_OUT_OF_RANGE,
 			}),
