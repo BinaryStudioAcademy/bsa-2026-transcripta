@@ -5,6 +5,7 @@ import { AppEnvironment, ModelId } from "~/libs/enums/enums.js";
 import { type Logger } from "~/libs/modules/logger/logger.js";
 
 import {
+	DEFAULT_WORKER_CONCURRENCY,
 	DEVELOPMENT_JWT_SECRET,
 	DevelopmentJwtSecretMessage,
 } from "./libs/constants/constants.js";
@@ -108,7 +109,7 @@ class BaseConfig implements Config {
 			},
 			QUEUE: {
 				PAGE_TRANSCRIBE_CONCURRENCY: {
-					default: 3,
+					default: DEFAULT_WORKER_CONCURRENCY,
 					doc: "Max page.transcribe jobs processed in parallel",
 					env: "PAGE_TRANSCRIBE_CONCURRENCY",
 					format: assertWorkerConcurrency,
