@@ -54,7 +54,7 @@ import { isPageBeingRead } from "./libs/helpers/is-page-being-read.helper.js";
 import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
-import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { useVerificationPageKeyboard } from "./libs/hooks/use-verification-page-keyboard.hook.js";
 import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
 	type DocumentGetPagesItemResponseDto,
@@ -322,14 +322,6 @@ const Verification: React.FC = () => {
 		[currentPage, dispatch, document, isBeingRead, runVerificationQueue],
 	);
 
-	const handleConfirm = useCallback(() => {
-		handleVerify(PageVerificationAction.CONFIRM);
-	}, [handleVerify]);
-
-	const handleSkip = useCallback(() => {
-		handleVerify(PageVerificationAction.SKIP);
-	}, [handleVerify]);
-
 	const handleUndo = useCallback((): void => {
 		if (isVerificationQueueBusy && !isEditing) {
 			notification.info("Wait until the queued actions are saved, then undo");
@@ -415,15 +407,17 @@ const Verification: React.FC = () => {
 		}
 	}, [cursorPageNo, handlePageSelect, document]);
 
-	useVerificationKeyboard({
+	const { handleConfirm, handleSkip } = useVerificationPageKeyboard({
+		isEditing,
+		isShortcutsOpen,
 		onCloseShortcuts: handleCloseShortcuts,
-		onConfirm: handleConfirm,
 		onEdit: handleToggleEdit,
 		onPrevious: handlePrevious,
-		onSkip: handleSkip,
+		onSetEditing: setIsEditing,
 		onToggleShortcuts: handleToggleShortcuts,
 		onToggleZoom: toggleZoom,
 		onUndo: handleUndo,
+		onVerify: handleVerify,
 	});
 
 	if (isDocumentLoading) {

@@ -32,6 +32,38 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 		textareaReference.current?.focus();
 	}, []);
 
+	useEffect(() => {
+		const handleWindowKeyDown = (event: KeyboardEvent): void => {
+			if (event.repeat || event.target === textareaReference.current) {
+				return;
+			}
+
+			if (event.key === "Escape") {
+				event.preventDefault();
+				onCancel();
+				return;
+			}
+
+			const isSaveShortcut = isMacOs
+				? event.metaKey && !event.ctrlKey
+				: event.ctrlKey && !event.metaKey;
+
+			if (event.key === "Enter" && isSaveShortcut) {
+				event.preventDefault();
+
+				if (!isDisabled) {
+					onSave(value);
+				}
+			}
+		};
+
+		globalThis.addEventListener("keydown", handleWindowKeyDown, true);
+
+		return () => {
+			globalThis.removeEventListener("keydown", handleWindowKeyDown, true);
+		};
+	}, [isDisabled, isMacOs, onCancel, onSave, value]);
+
 	const handleTextareaChange = useCallback(
 		(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
 			setValue(event.target.value);
