@@ -45,6 +45,12 @@ const PAGE_STRIP_LEGEND = [
 	{ label: "skipped", symbol: PAGE_STATUS_SYMBOL["skipped"] },
 	{ label: "failed", symbol: PAGE_STATUS_SYMBOL["error"] },
 ] as const;
+const READING_PAGE_STATUSES: string[] = [
+	PageStatus.PENDING,
+	PageStatus.QUEUED,
+	PageStatus.TRANSCRIBING,
+];
+
 // A page in one of these statuses will not change on its own, so polling it
 // brings nothing back.
 const SETTLED_PAGE_STATUSES: string[] = [
@@ -89,6 +95,7 @@ export {
 	PAGE_STATUS_SYMBOL,
 	PAGE_STEP,
 	PAGE_STRIP_LEGEND,
+	READING_PAGE_STATUSES,
 	SETTLED_PAGE_STATUSES,
 	TABLE_CELL_SEPARATOR,
 	TOGGLE_ZOOM_LEVEL,
