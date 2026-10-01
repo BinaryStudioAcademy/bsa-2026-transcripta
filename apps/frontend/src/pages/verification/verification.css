@@ -344,7 +344,12 @@
 	color: transparent;
 	caret-color: var(--text);
 	resize: none;
+	background: transparent;
 	field-sizing: content;
+}
+
+.verification-edit__field .verification-edit__textarea:disabled {
+	background: transparent;
 }
 
 .verification-edit__marked {
