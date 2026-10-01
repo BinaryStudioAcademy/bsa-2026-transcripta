@@ -1,3 +1,4 @@
+export { type CacheSavings } from "./cache-savings.type.js";
 export { type ContextWord } from "./context-word.type.js";
 
 export { type EditConflictDraft } from "./edit-conflict-draft.type.js";

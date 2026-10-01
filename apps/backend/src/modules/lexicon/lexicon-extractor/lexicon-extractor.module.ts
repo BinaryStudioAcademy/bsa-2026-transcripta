@@ -11,7 +11,9 @@ import {
 	ONE,
 	SINGLE_LETTER_REGEX,
 	TOKEN_CHARACTER_REGEX,
+	UNCERTAIN_MARK_REGEX,
 	WHITESPACE_REGEX,
+	WORD_SEPARATOR_REGEX,
 	ZERO,
 } from "./libs/constants/constants.js";
 import { OutputSchemaFields } from "./libs/enums/enums.js";
@@ -112,6 +114,10 @@ class LexiconExtractor {
 			const values = this.extractValuesByPath(structured, field.path);
 
 			for (const value of values) {
+				if (this.hasUncertainMark(value)) {
+					continue;
+				}
+
 				entities.push({
 					kind: field.kind,
 					value,
@@ -236,6 +242,31 @@ class LexiconExtractor {
 		return text.slice(tokenStart + ONE, index);
 	}
 
+	private getWordAround(text: string, value: string, index: number): string {
+		let wordStart = index;
+		let wordEnd = index + value.length;
+
+		while (
+			wordStart > ZERO &&
+			!WORD_SEPARATOR_REGEX.test(text[wordStart - ONE] ?? "")
+		) {
+			wordStart--;
+		}
+
+		while (
+			wordEnd < text.length &&
+			!WORD_SEPARATOR_REGEX.test(text[wordEnd] ?? "")
+		) {
+			wordEnd++;
+		}
+
+		return text.slice(wordStart, wordEnd);
+	}
+
+	private hasUncertainMark(value: string): boolean {
+		return UNCERTAIN_MARK_REGEX.test(value);
+	}
+
 	private isAbbreviationOrInitial(
 		text: string,
 		value: string,
@@ -280,6 +311,7 @@ class LexiconExtractor {
 		index: number,
 	): boolean {
 		return (
+			this.hasUncertainMark(this.getWordAround(text, value, index)) ||
 			this.isAbbreviationOrInitial(text, value, index) ||
 			this.isSentenceStart(text, index)
 		);
