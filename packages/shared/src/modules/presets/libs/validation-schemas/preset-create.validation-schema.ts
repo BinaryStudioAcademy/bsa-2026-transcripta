@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { LexiconEntryKind } from "../../../lexicon/libs/types/types.js";
+import {
+	LexiconEntryKind,
+	LexiconEntryKindValue,
+} from "../../../lexicon/libs/types/types.js";
 import {
 	PresetValidationMessage,
 	PresetValidationRule,
@@ -29,14 +32,9 @@ type PresetCreateRequestValidationDto = {
 const seedGlossaryEntrySchema = z.object({
 	kind: z
 		.enum(
-			[
-				LexiconEntryKind.ABBREVIATION,
-				LexiconEntryKind.FORMULA,
-				LexiconEntryKind.OTHER,
-				LexiconEntryKind.PERSON_NAME,
-				LexiconEntryKind.PLACE,
-				LexiconEntryKind.SURNAME,
-				LexiconEntryKind.TERM,
+			Object.values(LexiconEntryKind) as [
+				LexiconEntryKindValue,
+				...LexiconEntryKindValue[],
 			],
 			{
 				errorMap: () => ({
