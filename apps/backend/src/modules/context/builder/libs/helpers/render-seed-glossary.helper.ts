@@ -2,9 +2,12 @@ import { type SeedGlossary } from "~/modules/context/libs/types/types.js";
 
 import { EMPTY_LENGTH } from "../constants/constants.js";
 import { LeadInPhrase } from "../enums/enums.js";
+import { dedupeSeedGlossary } from "./dedupe-seed-glossary.helper.js";
 import { isValueOnlyGlossary, renderSeedGlossaryEntry } from "./helpers.js";
 
-const renderSeedGlossary = (seedGlossary: SeedGlossary): string => {
+const renderSeedGlossary = (rawSeedGlossary: SeedGlossary): string => {
+	const seedGlossary = dedupeSeedGlossary(rawSeedGlossary);
+
 	if (seedGlossary.length === EMPTY_LENGTH) {
 		return "";
 	}
