@@ -42,6 +42,8 @@ import {
 import { ALL_PAGES_BLANK_MESSAGE } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
 
+const notifiedBlankIds = new Set<number | string>();
+
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
@@ -84,7 +86,6 @@ const Document: React.FC = () => {
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const previousStatusReference = useRef<null | string>(null);
 	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
-	const blankNotifiedDocumentIdReference = useRef<null | number>(null);
 
 	useEffect(() => {
 		if (!currentDocument) {
@@ -144,22 +145,31 @@ const Document: React.FC = () => {
 		locationState?.errorMessage,
 	]);
 
+	const pagesTranscribed = currentDocument
+		? currentDocument.progress.pagesVerified +
+			currentDocument.progress.pagesReadyToCheck +
+			currentDocument.progress.pagesSkipped
+		: INITIAL_COUNT;
+
 	useEffect(() => {
-		const isAllBlank =
-			locationState?.isAllBlank ||
-			(currentDocument &&
-				currentDocument.pageCount > INITIAL_COUNT &&
-				currentDocument.progress.pagesBlank === currentDocument.pageCount);
+		const isReallyAllBlank =
+			currentDocument &&
+			currentDocument.pageCount > INITIAL_COUNT &&
+			currentDocument.progress.pagesBlank === currentDocument.pageCount &&
+			pagesTranscribed === INITIAL_COUNT &&
+			currentDocument.progress.pagesVerified === INITIAL_COUNT;
+
+		const shouldNotify = locationState?.isAllBlank || isReallyAllBlank;
 
 		if (
-			isAllBlank &&
+			shouldNotify &&
 			currentDocument &&
-			blankNotifiedDocumentIdReference.current !== currentDocument.id
+			!notifiedBlankIds.has(currentDocument.id)
 		) {
-			blankNotifiedDocumentIdReference.current = currentDocument.id;
+			notifiedBlankIds.add(currentDocument.id);
 			notification.info(ALL_PAGES_BLANK_MESSAGE);
 		}
-	}, [locationState?.isAllBlank, currentDocument]);
+	}, [locationState?.isAllBlank, currentDocument, pagesTranscribed]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -253,12 +263,6 @@ const Document: React.FC = () => {
 				void dispatch(documentActions.startPolling(retryDocumentId));
 			});
 	}, [currentDocument, dispatch]);
-
-	const pagesTranscribed = currentDocument
-		? currentDocument.progress.pagesVerified +
-			currentDocument.progress.pagesReadyToCheck +
-			currentDocument.progress.pagesSkipped
-		: INITIAL_COUNT;
 
 	const errorMessageToDisplay =
 		currentDocument?.errorMessage ||
