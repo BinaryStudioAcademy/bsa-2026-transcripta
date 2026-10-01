@@ -2,6 +2,7 @@ import React, { type ChangeEvent } from "react";
 
 import {
 	Button,
+	ConfirmDialog,
 	LoaderOverlay,
 	ThemeToggle,
 } from "~/libs/components/components.js";
@@ -61,6 +62,8 @@ const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { id } = useParams<{ id?: string }>();
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [entryToDelete, setEntryToDelete] = useState<null | string>(null);
 	const [newEntryId, setNewEntryId] = useState<null | string>(null);
 
 	const createStatus = useAppSelector(selectCreateStatus);
@@ -362,10 +365,38 @@ const PresetEditor: React.FC = () => {
 				return;
 			}
 
-			handleRemoveEntry(id);
+			const entry = entries.find((item) => item.id === id);
+
+			if (!entry) {
+				return;
+			}
+
+			if (!entry.value.trim()) {
+				handleRemoveEntry(id);
+
+				return;
+			}
+
+			setEntryToDelete(id);
+			setIsDeleteDialogOpen(true);
 		},
-		[handleRemoveEntry],
+		[entries, handleRemoveEntry],
 	);
+
+	const handleCancelDelete = useCallback((): void => {
+		setIsDeleteDialogOpen(false);
+		setEntryToDelete(null);
+	}, []);
+
+	const handleConfirmDelete = useCallback((): void => {
+		if (!entryToDelete) {
+			return;
+		}
+
+		handleRemoveEntry(entryToDelete);
+		setIsDeleteDialogOpen(false);
+		setEntryToDelete(null);
+	}, [entryToDelete, handleRemoveEntry]);
 
 	const handleCloseTypeSelector = useCallback((): void => {
 		setOpenTypeId(null);
@@ -443,6 +474,14 @@ const PresetEditor: React.FC = () => {
 						</section>
 					</div>
 				</main>
+			)}
+			{isDeleteDialogOpen && (
+				<ConfirmDialog
+					description="Are you sure you want to delete this term?"
+					onCancel={handleCancelDelete}
+					onConfirm={handleConfirmDelete}
+					title="Delete a term"
+				/>
 			)}
 		</div>
 	);
