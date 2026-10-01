@@ -563,7 +563,7 @@ flowchart TB
         C4 -->|"next Enter"| C1
     end
 
-    NOTE["<b>WHY EXACTLY 5</b><br/>1 - the human waits for the model<br/>20+ - the context lags and money burns on pages<br/>the human may never even see<br/>5 - the worker is always a step ahead,<br/>and the context lags by just 5 pages<br/><i>settings: lookahead = 5</i><br/>&nbsp;<br/><b>THE WINDOW IS NOT ENOUGH</b><br/>if the human is faster than the worker,<br/>the buffer drains. Second parameter:<br/>concurrent jobs C ≥ latency / human seconds<br/><i>30 s / 10 s -> C = 3, capped by the window</i>"]
+    NOTE["<b>WHY EXACTLY 5</b><br/>1 - the human waits for the model<br/>20+ - the context lags and money burns on pages<br/>the human may never even see<br/>5 - the worker is always a step ahead,<br/>and the context lags by just 5 pages<br/><i>settings: lookahead = 5</i><br/>&nbsp;<br/><b>THE WINDOW IS NOT ENOUGH</b><br/>if the human is faster than the worker,<br/>the buffer drains. Second parameter:<br/>concurrent jobs C ≥ latency / human seconds<br/><i>30 s / 9 s -> C = 4, capped by the window</i>"]
 
     CYCLE ~~~ NOTE
 
@@ -615,7 +615,7 @@ close the tab and nothing is lost.
 The window alone is not enough: if the human consumes pages faster than the
 worker produces them, the buffer empties. The second parameter is how many
 `page.transcribe` jobs run at once, and it is derived rather than guessed:
-`C ≥ latency / human-seconds-per-page`, which gives C = 3 for a 30-second
+`C ≥ latency / human-seconds-per-page`, which gives C = 4 for a 30-second
 transcription. It is capped by the window size — more workers than the window
 holds have nothing to take — and by the provider's rate limit
 ([02-data-pipeline.md](../02-data-pipeline.md#the-window-alone-is-not-enough--concurrency-is-the-second-parameter)).
