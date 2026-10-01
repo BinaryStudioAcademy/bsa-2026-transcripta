@@ -49,6 +49,7 @@ import {
 } from "./libs/constants/verification.constants.js";
 import { PageStatus } from "./libs/enums/enums.js";
 import { getPagesFrom } from "./libs/helpers/get-pages-from.helper.js";
+import { isDocumentFullyRead } from "./libs/helpers/is-document-fully-read.helper.js";
 import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
@@ -112,6 +113,7 @@ const Verification: React.FC = () => {
 		useProcessingToggle(document);
 
 	const isLastPage = Boolean(document && cursorPageNo >= document.pageCount);
+	const isDocumentDone = isDocumentFullyRead(document);
 
 	useEffect(() => {
 		const documentId = Number(id);
@@ -129,19 +131,17 @@ const Verification: React.FC = () => {
 
 	useEffect(() => {
 		const documentId = Number(id);
-		if (
-			!Number.isFinite(documentId) ||
-			!document ||
-			currentPage?.transcription
-		) {
+
+		if (!Number.isFinite(documentId) || !document) {
 			return;
 		}
 
 		const isPageSettled =
 			currentPage !== undefined &&
 			SETTLED_PAGE_STATUSES.includes(currentPage.status);
+		const isDocumentIdle = IDLE_DOCUMENT_STATUSES.includes(document.status);
 
-		if (isPageSettled || IDLE_DOCUMENT_STATUSES.includes(document.status)) {
+		if (isDocumentIdle || (isPageSettled && isDocumentDone)) {
 			return;
 		}
 
@@ -150,15 +150,16 @@ const Verification: React.FC = () => {
 				pageActions.loadPages({
 					documentId,
 					isBackground: true,
-					query: { from: cursorPageNo, limit: MAX_LOADED_PAGES },
+					query: { from: getPagesFrom(cursorPageNo), limit: MAX_LOADED_PAGES },
 				}),
 			);
+			void dispatch(documentActions.pollDocumentById(documentId));
 		}, PollingIntervalsMS.DEFAULT);
 
 		return () => {
 			clearInterval(timeoutId);
 		};
-	}, [id, dispatch, currentPage, cursorPageNo, document]);
+	}, [id, dispatch, currentPage, cursorPageNo, document, isDocumentDone]);
 
 	useEffect(() => {
 		if (
