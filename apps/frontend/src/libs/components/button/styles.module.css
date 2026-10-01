@@ -62,6 +62,8 @@
 :where(.button--disabled) {
 	pointer-events: none;
 	cursor: default;
+	opacity: 0.5;
+	filter: saturate(0.35);
 }
 
 :where(.button--danger) {
