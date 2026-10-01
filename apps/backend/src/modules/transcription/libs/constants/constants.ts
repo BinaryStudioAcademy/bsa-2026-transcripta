@@ -6,5 +6,6 @@ export { MODEL_RATES } from "./model-rates.constant.js";
 export { NOT_FOUND_INDEX } from "./not-found-index.constant.js";
 export { RETRY_AFTER_HEADER } from "./retry-after-header.constant.js";
 export { SYSTEM_PROMPT } from "./system-prompt.constant.js";
+export { WORD_CHARACTER_PATTERN } from "./word-character-pattern.constant.js";
 
 export { EMPTY_LENGTH } from "@transcripta/shared";
