@@ -1,15 +1,15 @@
 .state {
 	width: 440px;
+	padding: var(--sp-5);
+	background: var(--warn-tint);
 	border: 1px solid color-mix(in oklab, var(--warn) 55%, transparent);
 	border-radius: var(--r-lg);
-	background: var(--warn-tint);
-	padding: var(--sp-5);
 }
 
 .title {
+	margin: 0;
 	font: 600 var(--fs-lg) / var(--lh-tight) var(--font-display);
 	color: var(--text);
-	margin: 0;
 }
 
 .amount {
