@@ -1,38 +1,55 @@
 import {
+	BudgetStopState,
 	Button,
 	FailedStateCard,
 	PreparingStateCard,
+	RaiseLimitDialog,
 } from "~/libs/components/components.js";
-import { useRef } from "~/libs/hooks/hooks.js";
-
 import {
-	EVERYTHING_VERIFIED,
-	PREPARING_DOCUMENTS,
-} from "../constants/constants.js";
+	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INITIAL_COUNT,
+} from "~/libs/constants/constants.js";
+import {
+	useAppDispatch,
+	useCallback,
+	useRef,
+	useState,
+} from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
+import { actions as documentActions } from "~/modules/documents/documents.js";
+
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { getPreparingMessage } from "../helpers/get-preparing-message.helper.js";
 import { isPageBeingRead } from "../helpers/is-page-being-read.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import {
+	type ContextWord,
+	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
 import {
 	BlankStateCard,
+	VerificationCacheSavings,
 	VerificationEdit,
 	VerificationPageText,
 } from "./components.js";
 
+const EMPTY_CONTEXT_WORDS: ContextWord[] = [];
+
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	document: DocumentGetByIdResponseDto;
 	editConflictDraft: EditConflictDraft | null;
-	hasVerifiedPages: boolean;
+	isBudgetStopped: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPaused: boolean;
 	isReprocessing: boolean;
 	isToggleDisabled: boolean;
+	isToggleVisible: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onReprocess: () => void;
@@ -41,20 +58,21 @@ type VerificationWorkspaceProperties = {
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	onToggleProcessing: () => void;
-	pageCount?: number | undefined;
 	scanRef: (node: HTMLDivElement | null) => void;
 	zoom: number;
 };
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
+	document,
 	editConflictDraft,
-	hasVerifiedPages,
+	isBudgetStopped,
 	isCompleted,
 	isEditing,
 	isPaused,
 	isReprocessing,
 	isToggleDisabled,
+	isToggleVisible,
 	isZoomed,
 	onConfirm,
 	onReprocess,
@@ -63,11 +81,23 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onSkip,
 	onToggleEdit,
 	onToggleProcessing,
-	pageCount,
 	scanRef,
 	zoom,
 }) => {
+	const {
+		budget: { limitUsd: budgetLimit, spentUsd: budgetSpent },
+		id: documentId,
+		pageCount,
+		progress: documentProgress,
+	} = document;
 	const viewportReference = useRef<HTMLDivElement>(null);
+	const [isRaiseLimitDialogOpen, setIsRaiseLimitDialogOpen] = useState(false);
+	const [serverValidationError, setServerValidationError] = useState<
+		null | string
+	>(null);
+
+	const dispatch = useAppDispatch();
+
 	const {
 		handlePointerCancel,
 		handlePointerDown,
@@ -85,6 +115,51 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		isDragging: isDividerDragging,
 		splitPosition,
 	} = useResizableSplit();
+
+	const handleRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
+		setIsRaiseLimitDialogOpen(true);
+	}, []);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
+		setIsRaiseLimitDialogOpen(false);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			setServerValidationError(null);
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: documentId,
+					payload: { limitUsd },
+				}),
+			)
+				.unwrap()
+				.then(() => {
+					setIsRaiseLimitDialogOpen(false);
+					void dispatch(documentActions.startPolling(documentId));
+				})
+				.catch((error: unknown) => {
+					const typedError = error as {
+						details?: { message: string }[];
+						message?: string;
+					};
+
+					const firstDetail = typedError.details?.[INITIAL_COUNT];
+					const errorMessage = firstDetail?.message ?? typedError.message ?? "";
+
+					if (errorMessage) {
+						setServerValidationError(errorMessage);
+						return;
+					}
+
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+				});
+		},
+		[dispatch, documentId],
+	);
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.BLANK) {
@@ -107,6 +182,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 						</span>
 
 						<VerificationEdit
+							contextWords={EMPTY_CONTEXT_WORDS}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text=""
@@ -131,13 +207,20 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		if (currentPage?.transcription && !isPageBeingRead(currentPage)) {
 			return (
 				<>
-					<span className="verification-transcription__page">
-						page {currentPage.pageNo} of {pageCount}
-						{isEditing && " · editing"} {isCompleted && "(last page)"}
-					</span>
+					<div className="verification-transcription__meta">
+						<span className="verification-transcription__page">
+							page {currentPage.pageNo} of {pageCount}
+							{isEditing && " · editing"} {isCompleted && "(last page)"}
+						</span>
+
+						<VerificationCacheSavings
+							savedUsd={currentPage.transcription.savedUsd}
+						/>
+					</div>
 
 					{isEditing ? (
 						<VerificationEdit
+							contextWords={currentPage.transcription.contextWords}
 							onCancel={onToggleEdit}
 							onSave={onSaveEdit}
 							text={currentPage.transcription.text}
@@ -178,16 +261,37 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
-		const preparingMessage = hasVerifiedPages
-			? EVERYTHING_VERIFIED
-			: PREPARING_DOCUMENTS;
+		if (isBudgetStopped) {
+			return (
+				<>
+					<div className="verification-failed-state">
+						<BudgetStopState
+							limitUsd={budgetLimit}
+							onRaiseLimit={handleRaiseLimit}
+							spentUsd={budgetSpent}
+						/>
+					</div>
+
+					{isRaiseLimitDialogOpen && (
+						<RaiseLimitDialog
+							currentLimitUsd={budgetLimit}
+							onCancel={handleCancelRaiseLimit}
+							onSubmit={handleUpdateBudget}
+							serverError={serverValidationError}
+							spentUsd={budgetSpent}
+						/>
+					)}
+				</>
+			);
+		}
 
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
 					isPaused={isPaused}
 					isToggleDisabled={isToggleDisabled}
-					message={preparingMessage}
+					isToggleVisible={isToggleVisible}
+					message={getPreparingMessage(documentProgress)}
 					onToggleProcessing={onToggleProcessing}
 				/>
 			</div>

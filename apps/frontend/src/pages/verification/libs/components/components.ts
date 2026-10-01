@@ -1,5 +1,7 @@
 export { BlankStateCard } from "./blank-state-card.js";
+export { MarkTooltip } from "./mark-tooltip.js";
 export { PageButton } from "./page-button.js";
+export { VerificationCacheSavings } from "./verification-cache-savings.js";
 export { VerificationEdit } from "./verification-edit.js";
 export { VerificationFooter } from "./verification-footer.js";
 export { VerificationHeader } from "./verification-header.js";

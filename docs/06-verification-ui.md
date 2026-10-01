@@ -68,8 +68,15 @@ The data arrives in the `contextWords` field from the API
 
 **How the marks are drawn.** The frontend uses the server offsets as they are
 and never searches the text for the words itself. Each mark is a `<span>`
-around the existing characters, and the tooltip comes from CSS, so the copied
-text is the same with or without marks.
+around the existing characters, so the copied text is the same with or without
+marks.
+
+The hint is not drawn inside the pane. The mark carries its text in `data-tip`
+and the bubble is rendered at the end of `<body>`, in a fixed position measured
+from the mark, opening below it when there is no room above. Inside the pane it
+would be a box in a scroll container, and a word near the top of the page or
+against a table boundary would lose half of its hint — the one line the reader
+needs most would be the one they cannot read.
 
 - A range is skipped if it falls outside the text or no longer matches its
   word (stale offsets after a correction, until the page is reloaded).
@@ -78,6 +85,55 @@ text is the same with or without marks.
   wins.
 - The model's own markers win over lexicon marks: `Bount(?)` shows only the
   uncertain mark.
+
+---
+
+## The amount a cached page saved
+
+A page whose transcription came from the shared cache was not sent to the
+model, so it cost nothing. The transcription pane says so, quietly, next to
+the page counter:
+
+```
+┌────────────────────────────────────────────────────────┐
+│ page 47 of 300   [ saved $0.0126 ]                     │
+│                                                        │
+│  No. 15. Born on 11 January, Anna. Parents: …          │
+└────────────────────────────────────────────────────────┘
+```
+
+Hovering the chip explains it: _"This page came from the shared cache, so no
+model call was made for it."_ It is hover-only, like the context-word marks
+below: this pane is driven by <kbd>Enter</kbd>, and a chip that could take
+focus would compete for that key and cost the reader their place in the
+transcription.
+
+**The amount is the estimated cost of the avoided call**, not a discount and
+not a budget credit. A cache hit is stored with `cost_usd = 0` but keeps the
+token counts of the call that originally produced it, so the figure is those
+tokens priced at the recorded model rate
+([05-api.md](05-api.md#get-apiv1documentsidpagesfrom47limit5)). A cheap model
+gives a fraction of a cent, so the figure is shown to four decimals with the
+trailing zeros trimmed — a real saving must not render as `$0.0000`.
+
+**A chip, not a toast.** The header chrome already carries the budget meter
+and the queued-actions chip, and everything in it is _visible, quiet,
+non-blocking — never a modal or a toast_. A toast would also be wrong on the
+merits: during a burst of `Enter` the message appears on nearly every page and
+is gone by the time the human looks back. The saving is a property of this
+transcription, so it has to still be there when they return to the page.
+
+**The wording must not leak the shared cache.** The cache is shared across
+user accounts, so the chip never says who paid for the original call, that the
+same document was uploaded before, or that another account exists. It states
+what happened to _this_ page and nothing else. This is also why the API
+exposes the amount alone — no user, no document, no cache row.
+
+**Nothing is shown when the model runs normally**, which is the common case:
+`getCacheSavings` returns `null` for `"0.000000"` and the component renders
+nothing at all. A saving too small to state — under half a ten-thousandth —
+is dropped for the same reason, because a bare `$0` would claim the opposite
+of what happened.
 
 ---
 

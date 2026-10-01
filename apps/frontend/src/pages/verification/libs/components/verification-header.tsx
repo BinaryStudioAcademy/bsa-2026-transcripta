@@ -8,23 +8,24 @@ import { AppRoute } from "~/libs/enums/enums.js";
 import { getIsMacOs } from "~/libs/helpers/helpers.js";
 import { useOverflowTooltip } from "~/libs/hooks/hooks.js";
 
-import { DEFAULT_BUDGET, ZERO_BUDGET } from "../constants/budget.constants.js";
+import { ZERO_BUDGET } from "../constants/budget.constants.js";
+import { type DocumentGetByIdResponseDto } from "../types/types.js";
 
 type VerificationHeaderProperties = {
-	budgetLimit?: string;
-	budgetSpent?: string;
-	documentTitle?: string;
-	pageCount?: number;
+	document: DocumentGetByIdResponseDto;
+	isBudgetStopped: boolean;
+
 	pageNo?: number | undefined;
 };
 
 const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
-	budgetLimit = DEFAULT_BUDGET,
-	budgetSpent = DEFAULT_BUDGET,
-	documentTitle,
-	pageCount,
+	document,
+	isBudgetStopped,
+
 	pageNo,
 }) => {
+	const { budget, pageCount, title: documentTitle } = document;
+	const { limitUsd: budgetLimit, spentUsd: budgetSpent } = budget;
 	const { checkTruncation, elementReference, isTruncated } =
 		useOverflowTooltip(documentTitle);
 
@@ -61,7 +62,7 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 				</span>
 			)}
 
-			{pageNo !== undefined && pageCount !== undefined && (
+			{pageNo !== undefined && (
 				<span className="verification-header__page">
 					{pageCount > INITIAL_COUNT
 						? `page ${String(pageNo)} of ${String(pageCount)}`
@@ -100,7 +101,11 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 			</div>
 
 			<div className="verification-header__budget">
-				<span className="tx-budget">
+				<span
+					className={["tx-budget", isBudgetStopped && "tx-budget--warn"]
+						.filter(Boolean)
+						.join(" ")}
+				>
 					<span className="tx-budget-bar">
 						<i
 							className="tx-budget-bar__fill"
