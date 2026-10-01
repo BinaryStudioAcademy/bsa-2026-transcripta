@@ -24,6 +24,7 @@ import {
 	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as presetsActions,
 	selectCreateStatus,
@@ -195,6 +196,9 @@ const PresetEditor: React.FC = () => {
 
 		void dispatch(presetsActions.create(result.data))
 			.unwrap()
+			.then(() => {
+				notification.success("Preset created successfully.");
+			})
 			.then(() => navigate(GO_BACK))
 			.catch(() => null);
 	}, [
