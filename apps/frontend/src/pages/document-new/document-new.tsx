@@ -268,7 +268,6 @@ const useScreenState = ({
 	ingestingDocumentId,
 	isUploading,
 	isZipProcessing,
-	resumedDocument,
 	selectedFile,
 }: {
 	ingestingDocumentId: null | number;
@@ -278,9 +277,6 @@ const useScreenState = ({
 	selectedFile: File | null;
 }): ScreenStateType => {
 	if (ingestingDocumentId) {
-		return ScreenState.INGESTING;
-	}
-	if (resumedDocument?.status === DocumentStatus.INGESTING) {
 		return ScreenState.INGESTING;
 	}
 	if (isZipProcessing) {
