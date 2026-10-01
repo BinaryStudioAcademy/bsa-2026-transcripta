@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import fs, { stat } from "node:fs/promises";
+import fs, { type FileHandle, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import sharp, { type Sharp } from "sharp";
@@ -10,6 +10,8 @@ import {
 	BLANK_STDEV_THRESHOLD,
 	NORMALIZED_QUALITY,
 	NORMALIZED_WIDTH,
+	PDF_HEADER,
+	PDF_HEADER_SEARCH_LIMIT,
 	PDFTOPPM_TIMEOUT,
 	THUMBNAIL_QUALITY,
 	THUMBNAIL_WIDTH,
@@ -39,6 +41,22 @@ class PDFPageProcessor implements IPDFPageProcessor {
 			.toBuffer();
 
 		return thumbnail;
+	}
+
+	private async hasPDFHeader(filePath: string): Promise<boolean> {
+		let fileHandle: FileHandle | null = null;
+
+		try {
+			fileHandle = await fs.open(filePath, "r");
+			const buffer = Buffer.alloc(PDF_HEADER_SEARCH_LIMIT);
+			await fileHandle.read(buffer);
+
+			return buffer.includes(PDF_HEADER);
+		} catch {
+			return false;
+		} finally {
+			await fileHandle?.close();
+		}
 	}
 
 	private async isBlankPage(
@@ -104,6 +122,12 @@ class PDFPageProcessor implements IPDFPageProcessor {
 	}
 
 	public async getPageCount(filePath: string): Promise<number> {
+		const hasPDFHeader = await this.hasPDFHeader(filePath);
+
+		if (!hasPDFHeader) {
+			throw new Error(ErrorMessage.FAILED_TO_READ_PDF);
+		}
+
 		let stdout: string;
 		try {
 			({ stdout } = await execAsync("pdfinfo", [filePath]));
