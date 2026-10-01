@@ -3,11 +3,20 @@ export { type ContextWord } from "./context-word.type.js";
 
 export { type EditConflictDraft } from "./edit-conflict-draft.type.js";
 
+export { type GetMarkTooltipPositionPayload } from "./get-mark-tooltip-position-payload.type.js";
+
 export { type MarkKind } from "./mark-kind.type.js";
 
 export { type MarkRange } from "./mark-range.type.js";
 
-export { type MarkTextPayload } from "./mark-text-payload.js";
+export {
+	type MarkRangesPayload,
+	type MarkTextPayload,
+} from "./mark-text-payload.js";
+
+export { type MarkTooltipPosition } from "./mark-tooltip-position.type.js";
+
+export { type MarkTooltipState } from "./mark-tooltip-state.type.js";
 
 export { type NormalizeContextWordsPayload } from "./normalize-context-word.type.js";
 
@@ -19,11 +28,14 @@ export { type PageLine } from "./page-line.type.js";
 
 export { type ProcessQueuePayload } from "./process-queue-payload.type.js";
 
+export { type UseMarkTooltipReturn } from "./use-mark-tooltip-return.type.js";
+
 export { type UseResizableSplitReturn } from "./use-resizable-split-return.type.js";
 
 export { type UseScanZoomReturn } from "./use-scan-zoom-return.type.js";
 
 export {
+	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesContextWordResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type PageStatusValue,

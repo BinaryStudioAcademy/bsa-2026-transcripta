@@ -1,10 +1,22 @@
 import {
+	BudgetStopState,
 	Button,
 	FailedStateCard,
 	PreparingStateCard,
+	RaiseLimitDialog,
 } from "~/libs/components/components.js";
-import { useRef } from "~/libs/hooks/hooks.js";
-import { type DocumentGetByIdResponseDto } from "~/modules/documents/documents.js";
+import {
+	BUDGET_UPLOAD_FAILED_MESSAGE,
+	INITIAL_COUNT,
+} from "~/libs/constants/constants.js";
+import {
+	useAppDispatch,
+	useCallback,
+	useRef,
+	useState,
+} from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
+import { actions as documentActions } from "~/modules/documents/documents.js";
 
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
@@ -14,6 +26,7 @@ import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
 import {
 	type ContextWord,
+	type DocumentGetByIdResponseDto,
 	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 } from "../types/types.js";
@@ -28,8 +41,9 @@ const EMPTY_CONTEXT_WORDS: ContextWord[] = [];
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
-	documentProgress: DocumentGetByIdResponseDto["progress"];
+	document: DocumentGetByIdResponseDto;
 	editConflictDraft: EditConflictDraft | null;
+	isBudgetStopped: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPaused: boolean;
@@ -44,15 +58,15 @@ type VerificationWorkspaceProperties = {
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	onToggleProcessing: () => void;
-	pageCount: number;
 	scanRef: (node: HTMLDivElement | null) => void;
 	zoom: number;
 };
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
-	documentProgress,
+	document,
 	editConflictDraft,
+	isBudgetStopped,
 	isCompleted,
 	isEditing,
 	isPaused,
@@ -67,11 +81,23 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	onSkip,
 	onToggleEdit,
 	onToggleProcessing,
-	pageCount,
 	scanRef,
 	zoom,
 }) => {
+	const {
+		budget: { limitUsd: budgetLimit, spentUsd: budgetSpent },
+		id: documentId,
+		pageCount,
+		progress: documentProgress,
+	} = document;
 	const viewportReference = useRef<HTMLDivElement>(null);
+	const [isRaiseLimitDialogOpen, setIsRaiseLimitDialogOpen] = useState(false);
+	const [serverValidationError, setServerValidationError] = useState<
+		null | string
+	>(null);
+
+	const dispatch = useAppDispatch();
+
 	const {
 		handlePointerCancel,
 		handlePointerDown,
@@ -89,6 +115,51 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 		isDragging: isDividerDragging,
 		splitPosition,
 	} = useResizableSplit();
+
+	const handleRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
+		setIsRaiseLimitDialogOpen(true);
+	}, []);
+
+	const handleCancelRaiseLimit = useCallback((): void => {
+		setServerValidationError(null);
+		setIsRaiseLimitDialogOpen(false);
+	}, []);
+
+	const handleUpdateBudget = useCallback(
+		(limitUsd: string): void => {
+			setServerValidationError(null);
+
+			void dispatch(
+				documentActions.updateBudget({
+					id: documentId,
+					payload: { limitUsd },
+				}),
+			)
+				.unwrap()
+				.then(() => {
+					setIsRaiseLimitDialogOpen(false);
+					void dispatch(documentActions.startPolling(documentId));
+				})
+				.catch((error: unknown) => {
+					const typedError = error as {
+						details?: { message: string }[];
+						message?: string;
+					};
+
+					const firstDetail = typedError.details?.[INITIAL_COUNT];
+					const errorMessage = firstDetail?.message ?? typedError.message ?? "";
+
+					if (errorMessage) {
+						setServerValidationError(errorMessage);
+						return;
+					}
+
+					notification.error(BUDGET_UPLOAD_FAILED_MESSAGE);
+				});
+		},
+		[dispatch, documentId],
+	);
 
 	const workspaceContent = (() => {
 		if (currentPage?.status === PageStatus.BLANK) {
@@ -185,6 +256,30 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 							<strong>Your previous draft:</strong>
 							<p>{editConflictDraft.text}</p>
 						</div>
+					)}
+				</>
+			);
+		}
+
+		if (isBudgetStopped) {
+			return (
+				<>
+					<div className="verification-failed-state">
+						<BudgetStopState
+							limitUsd={budgetLimit}
+							onRaiseLimit={handleRaiseLimit}
+							spentUsd={budgetSpent}
+						/>
+					</div>
+
+					{isRaiseLimitDialogOpen && (
+						<RaiseLimitDialog
+							currentLimitUsd={budgetLimit}
+							onCancel={handleCancelRaiseLimit}
+							onSubmit={handleUpdateBudget}
+							serverError={serverValidationError}
+							spentUsd={budgetSpent}
+						/>
 					)}
 				</>
 			);

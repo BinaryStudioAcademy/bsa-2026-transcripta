@@ -540,6 +540,10 @@ const DocumentNew: React.FC = () => {
 	}, [resetZipProcessor]);
 
 	const handleCancelUpload = useCallback(() => {
+		if (isStartingProcessing) {
+			return;
+		}
+
 		if (abortControllerReference.current) {
 			abortControllerReference.current.abort();
 			abortControllerReference.current = null;
@@ -548,7 +552,7 @@ const DocumentNew: React.FC = () => {
 		setIsUploaded(false);
 		resetSelection();
 		notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
-	}, [resetSelection]);
+	}, [isStartingProcessing, resetSelection]);
 
 	const goToDocument = useCallback(
 		(documentId: number): void => {
@@ -675,7 +679,6 @@ const DocumentNew: React.FC = () => {
 		selectedFile,
 	});
 	const isSubmitting = isUploading;
-	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
 
 	const presetOptions =
@@ -735,7 +738,7 @@ const DocumentNew: React.FC = () => {
 								<UploadForm
 									fileName={displayTitle}
 									isStartingProcessing={isStartingProcessing}
-									isSubmitting={isFormDisabled}
+									isSubmitting={isSubmitting}
 									isUploaded={isUploaded}
 									isUploading={isUploading}
 									onCancelUpload={handleCancelUpload}
