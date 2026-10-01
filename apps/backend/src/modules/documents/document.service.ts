@@ -417,6 +417,8 @@ class DocumentService {
 			const pageData = createdPage.toObject();
 
 			if (pageData.status === PageStatus.BLANK) {
+				await this.documentRepository.recalculateCursorPageNo(documentId);
+
 				continue;
 			}
 
