@@ -4,13 +4,11 @@ import {
 	PreparingStateCard,
 } from "~/libs/components/components.js";
 import { useRef } from "~/libs/hooks/hooks.js";
+import { type DocumentGetByIdResponseDto } from "~/modules/documents/documents.js";
 
-import {
-	EVERYTHING_VERIFIED,
-	PREPARING_DOCUMENTS,
-} from "../constants/constants.js";
 import { PageStatus } from "../enums/enums.js";
 import { getFailedReason } from "../helpers/get-failed-reason.helper.js";
+import { getPreparingMessage } from "../helpers/get-preparing-message.helper.js";
 import { isPageBeingRead } from "../helpers/is-page-being-read.helper.js";
 import { useDragToPan } from "../hooks/use-drag-to-pan.hook.js";
 import { useResizableSplit } from "../hooks/use-resizable-split.js";
@@ -26,13 +24,14 @@ import {
 
 type VerificationWorkspaceProperties = {
 	currentPage: DocumentGetPagesItemResponseDto | undefined;
+	documentProgress: DocumentGetByIdResponseDto["progress"];
 	editConflictDraft: EditConflictDraft | null;
-	hasVerifiedPages: boolean;
 	isCompleted: boolean;
 	isEditing: boolean;
 	isPaused: boolean;
 	isReprocessing: boolean;
 	isToggleDisabled: boolean;
+	isToggleVisible: boolean;
 	isZoomed: boolean;
 	onConfirm: () => void;
 	onReprocess: () => void;
@@ -41,20 +40,21 @@ type VerificationWorkspaceProperties = {
 	onSkip: () => void;
 	onToggleEdit: () => void;
 	onToggleProcessing: () => void;
-	pageCount?: number | undefined;
+	pageCount: number;
 	scanRef: (node: HTMLDivElement | null) => void;
 	zoom: number;
 };
 
 const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 	currentPage,
+	documentProgress,
 	editConflictDraft,
-	hasVerifiedPages,
 	isCompleted,
 	isEditing,
 	isPaused,
 	isReprocessing,
 	isToggleDisabled,
+	isToggleVisible,
 	isZoomed,
 	onConfirm,
 	onReprocess,
@@ -178,16 +178,13 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 			);
 		}
 
-		const preparingMessage = hasVerifiedPages
-			? EVERYTHING_VERIFIED
-			: PREPARING_DOCUMENTS;
-
 		return (
 			<div className="verification-preparing-state">
 				<PreparingStateCard
 					isPaused={isPaused}
 					isToggleDisabled={isToggleDisabled}
-					message={preparingMessage}
+					isToggleVisible={isToggleVisible}
+					message={getPreparingMessage(documentProgress)}
 					onToggleProcessing={onToggleProcessing}
 				/>
 			</div>
