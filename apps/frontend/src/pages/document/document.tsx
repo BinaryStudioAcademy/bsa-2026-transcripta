@@ -39,13 +39,17 @@ import {
 	TranscriptionBlock,
 	VerificationBlock,
 } from "./libs/components/components.js";
+import { ALL_PAGES_BLANK_MESSAGE } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const locationState = location.state as null | { errorMessage?: string };
+	const locationState = location.state as null | {
+		errorMessage?: string;
+		isAllBlank?: boolean;
+	};
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
@@ -80,6 +84,7 @@ const Document: React.FC = () => {
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const previousStatusReference = useRef<null | string>(null);
 	const failedNotifiedDocumentsReference = useRef<Set<number>>(new Set());
+	const blankNotifiedDocumentIdReference = useRef<null | number>(null);
 
 	useEffect(() => {
 		if (!currentDocument) {
@@ -138,6 +143,23 @@ const Document: React.FC = () => {
 		id,
 		locationState?.errorMessage,
 	]);
+
+	useEffect(() => {
+		const isAllBlank =
+			locationState?.isAllBlank ||
+			(currentDocument &&
+				currentDocument.pageCount > INITIAL_COUNT &&
+				currentDocument.progress.pagesBlank === currentDocument.pageCount);
+
+		if (
+			isAllBlank &&
+			currentDocument &&
+			blankNotifiedDocumentIdReference.current !== currentDocument.id
+		) {
+			blankNotifiedDocumentIdReference.current = currentDocument.id;
+			notification.info(ALL_PAGES_BLANK_MESSAGE);
+		}
+	}, [locationState?.isAllBlank, currentDocument]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
