@@ -63,6 +63,7 @@ const PresetEditor: React.FC = () => {
 	const navigate = useNavigate();
 	const { id } = useParams<{ id?: string }>();
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 	const [entryToDelete, setEntryToDelete] = useState<null | string>(null);
 	const [newEntryId, setNewEntryId] = useState<null | string>(null);
 
@@ -216,6 +217,23 @@ const PresetEditor: React.FC = () => {
 	]);
 
 	const handleCancel = useCallback((): void => {
+		if (!isDirty) {
+			void (async (): Promise<void> => {
+				await navigate(GO_BACK);
+			})();
+
+			return;
+		}
+
+		setIsCancelDialogOpen(true);
+	}, [isDirty, navigate]);
+
+	const handleCancelDialog = useCallback((): void => {
+		setIsCancelDialogOpen(false);
+	}, []);
+
+	const handleConfirmCancel = useCallback((): void => {
+		setIsCancelDialogOpen(false);
 		void (async (): Promise<void> => {
 			await navigate(GO_BACK);
 		})();
@@ -481,6 +499,15 @@ const PresetEditor: React.FC = () => {
 					onCancel={handleCancelDelete}
 					onConfirm={handleConfirmDelete}
 					title="Delete a term"
+				/>
+			)}
+			{isCancelDialogOpen && (
+				<ConfirmDialog
+					confirmLabel="Yes"
+					description="Your unsaved changes will be lost."
+					onCancel={handleCancelDialog}
+					onConfirm={handleConfirmCancel}
+					title="Are you sure you want to exit?"
 				/>
 			)}
 		</div>
