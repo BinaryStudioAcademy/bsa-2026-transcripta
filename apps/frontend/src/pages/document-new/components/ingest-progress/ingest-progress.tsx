@@ -39,7 +39,7 @@ const IngestProgress: React.FC<Properties> = ({
 			<p className={styles["note"]}>
 				{isSplitting
 					? `${title} is being cut into pages, one at a time.`
-					: "Verification opens by itself as soon as the first page is read."}
+					: "Verification opens by itself as soon as the first transcribed page is ready."}
 			</p>
 
 			<div className={styles["grid"]}>

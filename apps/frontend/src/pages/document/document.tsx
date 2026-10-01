@@ -39,13 +39,20 @@ import {
 	TranscriptionBlock,
 	VerificationBlock,
 } from "./libs/components/components.js";
+import { ALL_PAGES_BLANK_MESSAGE } from "./libs/constants/constants.js";
 import styles from "./styles.module.css";
+
+const notifiedBlankIds = new Set<number | string>();
 
 const Document: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const locationState = location.state as null | { errorMessage?: string };
+	const locationState = location.state as null | {
+		errorMessage?: string;
+		isAllBlank?: boolean;
+		isIngestStarted?: boolean;
+	};
 	const { document: currentDocument, documentDataStatus } = useAppSelector(
 		({ documents }) => ({
 			document: documents.document,
@@ -81,7 +88,8 @@ const Document: React.FC = () => {
 		if (
 			!currentDocument ||
 			currentDocument.id !== documentId ||
-			currentDocument.status !== DocumentStatus.DRAFT
+			currentDocument.status !== DocumentStatus.DRAFT ||
+			locationState?.isIngestStarted
 		) {
 			return;
 		}
@@ -94,7 +102,7 @@ const Document: React.FC = () => {
 				state: { documentId: documentIdToResume },
 			});
 		})();
-	}, [currentDocument, documentId, navigate]);
+	}, [currentDocument, documentId, locationState?.isIngestStarted, navigate]);
 
 	const notifiedDocumentsReference = useRef<Set<number>>(new Set());
 	const previousStatusReference = useRef<null | string>(null);
@@ -157,6 +165,32 @@ const Document: React.FC = () => {
 		id,
 		locationState?.errorMessage,
 	]);
+
+	const pagesTranscribed = currentDocument
+		? currentDocument.progress.pagesVerified +
+			currentDocument.progress.pagesReadyToCheck +
+			currentDocument.progress.pagesSkipped
+		: INITIAL_COUNT;
+
+	useEffect(() => {
+		const isReallyAllBlank =
+			currentDocument &&
+			currentDocument.pageCount > INITIAL_COUNT &&
+			currentDocument.progress.pagesBlank === currentDocument.pageCount &&
+			pagesTranscribed === INITIAL_COUNT &&
+			currentDocument.progress.pagesVerified === INITIAL_COUNT;
+
+		const shouldNotify = locationState?.isAllBlank || isReallyAllBlank;
+
+		if (
+			shouldNotify &&
+			currentDocument &&
+			!notifiedBlankIds.has(currentDocument.id)
+		) {
+			notifiedBlankIds.add(currentDocument.id);
+			notification.info(ALL_PAGES_BLANK_MESSAGE);
+		}
+	}, [locationState?.isAllBlank, currentDocument, pagesTranscribed]);
 
 	const isLoading =
 		documentDataStatus === DataStatus.PENDING && !currentDocument;
@@ -250,12 +284,6 @@ const Document: React.FC = () => {
 				void dispatch(documentActions.startPolling(retryDocumentId));
 			});
 	}, [currentDocument, dispatch]);
-
-	const pagesTranscribed = currentDocument
-		? currentDocument.progress.pagesVerified +
-			currentDocument.progress.pagesReadyToCheck +
-			currentDocument.progress.pagesSkipped
-		: INITIAL_COUNT;
 
 	const errorMessageToDisplay =
 		currentDocument?.errorMessage ||

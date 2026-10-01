@@ -4,6 +4,7 @@ import { ToggleProcessingLabel } from "~/libs/enums/enums.js";
 type Properties = {
 	isPaused: boolean;
 	isToggleDisabled: boolean;
+	isToggleVisible: boolean;
 	message?: string;
 	onToggleProcessing: () => void;
 };
@@ -11,6 +12,7 @@ type Properties = {
 const PreparingStateCard: React.FC<Properties> = ({
 	isPaused,
 	isToggleDisabled,
+	isToggleVisible,
 	message,
 	onToggleProcessing,
 }: Properties) => {
@@ -18,19 +20,21 @@ const PreparingStateCard: React.FC<Properties> = ({
 		<div className="tx-state">
 			<h3 className="tx-state-h">Preparing pages</h3>
 			<p className="tx-state-reason">{message}</p>
-			<div className="tx-state-actions">
-				<Button
-					isDisabled={isToggleDisabled}
-					isPrimary={isPaused}
-					isSecondary={!isPaused}
-					label={
-						isPaused
-							? ToggleProcessingLabel.RESUME
-							: ToggleProcessingLabel.PAUSE
-					}
-					onClick={onToggleProcessing}
-				/>
-			</div>
+			{isToggleVisible && (
+				<div className="tx-state-actions">
+					<Button
+						isDisabled={isToggleDisabled}
+						isPrimary={isPaused}
+						isSecondary={!isPaused}
+						label={
+							isPaused
+								? ToggleProcessingLabel.RESUME
+								: ToggleProcessingLabel.PAUSE
+						}
+						onClick={onToggleProcessing}
+					/>
+				</div>
+			)}
 		</div>
 	);
 };
