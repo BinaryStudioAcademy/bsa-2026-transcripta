@@ -256,6 +256,8 @@ class DocumentService {
 					trx,
 				);
 			}
+
+			await this.documentRepository.markDoneIfAllPagesClosed(documentId, trx);
 		});
 	}
 
@@ -398,6 +400,8 @@ class DocumentService {
 			await this.pageRepository.findPageNumbersByDocumentId(documentId);
 		const seenPageNumbers = new Set<number>(existingPageNumbers);
 
+		let hasNonBlankPage = false;
+
 		for (let page = 1; page <= pageCount; page++) {
 			if (seenPageNumbers.has(page)) {
 				continue;
@@ -415,6 +419,8 @@ class DocumentService {
 			if (pageData.status === PageStatus.BLANK) {
 				continue;
 			}
+
+			hasNonBlankPage = true;
 
 			const documentRecord = await this.documentRepository.findById(documentId);
 			const currentStatus = documentRecord?.toObject().status;
@@ -449,6 +455,13 @@ class DocumentService {
 					}),
 				);
 			}
+		}
+
+		if (!hasNonBlankPage && pageCount > EMPTY_LENGTH) {
+			await this.documentRepository.updateStatus(
+				documentId,
+				DocumentStatus.DONE,
+			);
 		}
 
 		return pageCount;
