@@ -133,6 +133,7 @@ const usePresetGlossary = ({ setErrors }: Parameters) => {
 	const handleCancelDelete = useCallback((): void => {
 		setIsDeleteDialogOpen(false);
 		setEntryToDelete(null);
+		setSkipDeleteConfirmation(false);
 	}, []);
 
 	const handleConfirmDelete = useCallback((): void => {
