@@ -10,6 +10,7 @@ import {
 	useState,
 } from "~/libs/hooks/hooks.js";
 
+import { VerificationShortcutKey } from "../constants/constants.js";
 import { MARKED_WORDS_LABEL } from "../constants/verification.constants.js";
 import { collectMarkRanges } from "../helpers/collect-mark-ranges.helper.js";
 import { getMarkLabel } from "../helpers/get-mark-label.helper.js";
@@ -74,6 +75,32 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 		textareaReference.current?.focus();
 	}, []);
 
+	useEffect(() => {
+		const handleWindowKeyDown = (event: KeyboardEvent): void => {
+			if (event.repeat || event.target === textareaReference.current) {
+				return;
+			}
+
+			const isSaveShortcut = isMacOs
+				? event.metaKey && !event.ctrlKey
+				: event.ctrlKey && !event.metaKey;
+
+			if (event.key === VerificationShortcutKey.ENTER && isSaveShortcut) {
+				event.preventDefault();
+
+				if (!isDisabled) {
+					onSave(value);
+				}
+			}
+		};
+
+		globalThis.addEventListener("keydown", handleWindowKeyDown, true);
+
+		return () => {
+			globalThis.removeEventListener("keydown", handleWindowKeyDown, true);
+		};
+	}, [isDisabled, isMacOs, onSave, value]);
+
 	const handleTextareaChange = useCallback(
 		(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
 			setValue(event.target.value);
@@ -94,7 +121,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 
 	const handleKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-			if (event.key === "Escape") {
+			if (event.key === VerificationShortcutKey.ESCAPE) {
 				event.preventDefault();
 				onCancel();
 				return;
@@ -104,7 +131,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				? event.metaKey && !event.ctrlKey
 				: event.ctrlKey && !event.metaKey;
 
-			if (event.key === "Enter" && isSaveShortcut) {
+			if (event.key === VerificationShortcutKey.ENTER && isSaveShortcut) {
 				event.preventDefault();
 
 				if (!isDisabled) {
