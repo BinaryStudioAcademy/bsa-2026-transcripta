@@ -4,15 +4,16 @@ import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
 } from "~/libs/constants/common.constants.js";
-import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { HTTPCode } from "~/libs/enums/enums.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { type AsyncThunkConfig, type RootState } from "~/libs/types/types.js";
 import {
+	actions as documentActions,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import {
 	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
@@ -24,7 +25,7 @@ import {
 } from "~/pages/verification/libs/constants/verification.constants.js";
 
 import { VerificationQueueMessage } from "../libs/constants/constants.js";
-import { PageStatus, PageVerificationAction } from "../libs/enums/enums.js";
+import { PageVerificationAction } from "../libs/enums/enums.js";
 import { getDiscardedVerificationsMessage } from "../libs/helpers/helpers.js";
 import {
 	type VerificationQueueItem,
@@ -157,52 +158,23 @@ const handleQueueRejection = ({
 	};
 };
 
-const checkDocumentCompletion = ({
-	getState,
-	item,
+const verifyDocumentIsDone = async ({
+	dispatch,
+	documentId,
 }: {
-	getState: () => RootState;
-	item: VerificationQueueItem;
-}): boolean => {
-	const state = getState();
-	const currentDocument = state.documents.document;
-	const pagesById = state.pages.byId;
-
-	if (!currentDocument || currentDocument.id !== item.documentId) {
+	dispatch: AsyncThunkConfig["dispatch"];
+	documentId: number;
+}): Promise<boolean> => {
+	try {
+		const documentResulted = await dispatch(
+			documentActions.loadById(documentId),
+		).unwrap();
+		return documentResulted.status === DocumentStatus.DONE;
+	} catch {
 		return false;
 	}
-
-	const { pagesTotal } = currentDocument.progress;
-
-	if (pagesTotal <= INITIAL_COUNT) {
-		return false;
-	}
-
-	const allPages = Object.values(pagesById);
-
-	if (allPages.length < currentDocument.pageCount) {
-		return false;
-	}
-
-	const hasUnreviewedPages = allPages.some(
-		(page) => page.status === PageStatus.TRANSCRIBED,
-	);
-
-	const totalClosed = allPages.filter(
-		(page) =>
-			page.status === PageStatus.CONFIRMED ||
-			page.status === PageStatus.CORRECTED ||
-			page.status === PageStatus.SKIPPED ||
-			page.status === PageStatus.BLANK ||
-			page.status === PageStatus.FAILED,
-	).length;
-
-	return totalClosed >= pagesTotal && !hasUnreviewedPages;
 };
 
-// Sends queued verifications one at a time: the next action leaves the queue
-// only after the previous response. `condition` keeps a single runner alive,
-// so every keypress can dispatch this and only the first one starts it.
 const processVerificationQueue = createAsyncThunk<
 	VerificationQueueResult,
 	undefined,
@@ -243,7 +215,12 @@ const processVerificationQueue = createAsyncThunk<
 				});
 			}
 
-			if (checkDocumentCompletion({ getState, item })) {
+			const isDone = await verifyDocumentIsDone({
+				dispatch,
+				documentId: item.documentId,
+			});
+
+			if (isDone) {
 				completedDocumentId = item.documentId;
 				break;
 			}
@@ -258,9 +235,6 @@ const processVerificationQueue = createAsyncThunk<
 				reloadPage(item);
 			}
 
-			// A correction also rewrites the pages nobody has checked yet. They
-			// keep their ids, so fetching them again quietly is enough for the
-			// ones already on screen to show the reader's reading too.
 			if (payload.action === PageVerificationAction.CORRECT) {
 				void dispatch(
 					loadPages({

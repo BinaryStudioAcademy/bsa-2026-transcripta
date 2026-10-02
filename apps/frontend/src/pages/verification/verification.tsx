@@ -17,7 +17,11 @@ import {
 	useState,
 } from "~/libs/hooks/hooks.js";
 import { notification } from "~/libs/modules/notification/notification.js";
-import { actions as documentActions } from "~/modules/documents/documents.js";
+import {
+	actions as documentActions,
+	type DocumentGetByIdResponseDto,
+	type DocumentGetPagesItemResponseDto,
+} from "~/modules/documents/documents.js";
 import { VerificationQueueMessage } from "~/modules/pages/libs/constants/constants.js";
 import {
 	actions as pageActions,
@@ -55,7 +59,6 @@ import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.
 import { useVerificationPolling } from "./libs/hooks/use-verification-polling.hook.js";
 import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
-	type DocumentGetPagesItemResponseDto,
 	type EditConflictDraft,
 	type PageVerificationActionValue,
 	type ProcessQueuePayload,
@@ -70,6 +73,170 @@ const countClosedPages = (
 			page.status !== PageStatus.TRANSCRIBED &&
 			page.status !== PageStatus.PENDING,
 	).length;
+
+const executeGoToCompletedDocument = (
+	navigate: ReturnType<typeof useNavigate>,
+	isCompletionHandledReference: React.RefObject<boolean>,
+	documentId: number,
+): void => {
+	if (isCompletionHandledReference.current) {
+		return;
+	}
+
+	isCompletionHandledReference.current = true;
+	notification.success(VerificationQueueMessage.COMPLETED);
+
+	Promise.resolve(
+		navigate(configureString(AppRoute.DOCUMENT, { id: String(documentId) }), {
+			replace: true,
+		}),
+	).catch(() => {
+		return null;
+	});
+};
+
+type RunVerificationQueueArguments = {
+	dispatch: ReturnType<typeof useAppDispatch>;
+	document: DocumentGetByIdResponseDto | null;
+	goToCompletedDocument: (documentId: number) => void;
+	pagesForStrip: (DocumentGetPagesItemResponseDto | undefined)[];
+	setEditConflictDraft: React.Dispatch<
+		React.SetStateAction<EditConflictDraft | null>
+	>;
+};
+
+const executeRunVerificationQueue = (
+	arguments_: RunVerificationQueueArguments,
+): void => {
+	const {
+		dispatch,
+		document,
+		goToCompletedDocument,
+		pagesForStrip,
+		setEditConflictDraft,
+	} = arguments_;
+
+	if (!document) {
+		return;
+	}
+
+	if (document.status === DocumentStatus.DONE) {
+		goToCompletedDocument(document.id);
+		return;
+	}
+
+	void dispatch(pageActions.processVerificationQueue()).then((result) => {
+		if (result.type !== pageActions.processVerificationQueue.fulfilled.type) {
+			return;
+		}
+
+		const payload = result.payload as ProcessQueuePayload;
+		const { completedDocumentId, failed } = payload;
+		const totalClosed = countClosedPages(pagesForStrip);
+
+		const isTrulyCompleted =
+			document.pageCount > INITIAL_COUNT && totalClosed >= document.pageCount;
+
+		if (completedDocumentId !== null || isTrulyCompleted) {
+			goToCompletedDocument(document.id);
+			return;
+		}
+
+		if (
+			failed?.item.payload.action === PageVerificationAction.CORRECT &&
+			failed.item.payload.text !== undefined
+		) {
+			setEditConflictDraft({
+				pageNo: failed.item.pageNo,
+				text: failed.item.payload.text,
+			});
+		}
+	});
+};
+
+type HandleVerifyArguments = {
+	action: PageVerificationActionValue;
+	currentPage: ReturnType<typeof selectCurrentPage>;
+	dispatch: ReturnType<typeof useAppDispatch>;
+	document: DocumentGetByIdResponseDto | null;
+	goToCompletedDocument: (documentId: number) => void;
+	isBeingRead: boolean;
+	isLastPage: boolean;
+	pageStartedAtReference: React.RefObject<number>;
+	runVerificationQueue: () => void;
+	text?: string | undefined;
+};
+
+const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
+	const {
+		action,
+		currentPage,
+		dispatch,
+		document,
+		goToCompletedDocument,
+		isBeingRead,
+		isLastPage,
+		pageStartedAtReference,
+		runVerificationQueue,
+		text,
+	} = arguments_;
+
+	if (!document) {
+		return false;
+	}
+
+	if (document.status === DocumentStatus.DONE) {
+		if (isLastPage) {
+			goToCompletedDocument(document.id);
+		}
+		return false;
+	}
+
+	if (!currentPage || isBeingRead) {
+		return false;
+	}
+
+	const durationMs = Date.now() - pageStartedAtReference.current;
+	let payload: VerifyPageRequestDto;
+
+	if (currentPage.transcription) {
+		payload = {
+			action,
+			durationMs,
+			text: text ?? currentPage.transcription.text,
+			transcriptionId: currentPage.transcription.id,
+		};
+	} else {
+		if (
+			currentPage.status !== PageStatus.FAILED ||
+			action !== PageVerificationAction.CORRECT
+		) {
+			return false;
+		}
+
+		if (!text || text.trim() === "") {
+			notification.info("Type the page text before saving");
+			return false;
+		}
+
+		payload = { action, durationMs, text };
+	}
+
+	dispatch(
+		pageActions.enqueueVerification({
+			item: {
+				documentId: document.id,
+				pageId: currentPage.id,
+				pageNo: currentPage.pageNo,
+				payload,
+			},
+			pageCount: document.pageCount,
+		}),
+	);
+
+	runVerificationQueue();
+	return true;
+};
 
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
@@ -198,113 +365,50 @@ const Verification: React.FC = () => {
 
 	const goToCompletedDocument = useCallback(
 		(documentId: number): void => {
-			if (isCompletionHandledReference.current) {
-				return;
-			}
-
-			isCompletionHandledReference.current = true;
-			notification.success(VerificationQueueMessage.COMPLETED);
-
-			Promise.resolve(
-				navigate(
-					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
-					{ replace: true },
-				),
-			).catch(() => {
-				return null;
-			});
+			executeGoToCompletedDocument(
+				navigate,
+				isCompletionHandledReference,
+				documentId,
+			);
 		},
 		[navigate],
 	);
 
 	const runVerificationQueue = useCallback((): void => {
-		void dispatch(pageActions.processVerificationQueue()).then((result) => {
-			if (result.type !== pageActions.processVerificationQueue.fulfilled.type) {
-				return;
-			}
-
-			const payload = result.payload as ProcessQueuePayload;
-			const { completedDocumentId, failed } = payload;
-			const totalClosed = countClosedPages(pagesForStrip);
-
-			const isTrulyCompleted =
-				document !== null &&
-				document.pageCount > INITIAL_COUNT &&
-				totalClosed >= document.pageCount;
-
-			if (
-				(completedDocumentId !== null || isTrulyCompleted) &&
-				document !== null
-			) {
-				goToCompletedDocument(document.id);
-				return;
-			}
-
-			if (
-				failed?.item.payload.action === PageVerificationAction.CORRECT &&
-				failed.item.payload.text !== undefined
-			) {
-				setEditConflictDraft({
-					pageNo: failed.item.pageNo,
-					text: failed.item.payload.text,
-				});
-			}
+		executeRunVerificationQueue({
+			dispatch,
+			document,
+			goToCompletedDocument,
+			pagesForStrip,
+			setEditConflictDraft,
 		});
-	}, [dispatch, goToCompletedDocument, document, pagesForStrip]);
+	}, [dispatch, document, goToCompletedDocument, pagesForStrip]);
 
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {
-			if (!currentPage || !document || isBeingRead) {
-				return false;
-			}
-
-			const durationMs = Date.now() - pageStartedAtReference.current;
-			let payload: VerifyPageRequestDto;
-
-			if (currentPage.transcription) {
-				payload = {
-					action,
-					durationMs,
-					text: text ?? currentPage.transcription.text,
-					transcriptionId: currentPage.transcription.id,
-				};
-			} else {
-				if (
-					currentPage.status !== PageStatus.FAILED ||
-					action !== PageVerificationAction.CORRECT
-				) {
-					return false;
-				}
-
-				if (!text || text.trim() === "") {
-					notification.info("Type the page text before saving");
-					return false;
-				}
-
-				payload = { action, durationMs, text };
-			}
-
-			dispatch(
-				pageActions.enqueueVerification({
-					item: {
-						documentId: document.id,
-						pageId: currentPage.id,
-						pageNo: currentPage.pageNo,
-						payload,
-					},
-					pageCount: document.pageCount,
-				}),
-			);
-
-			runVerificationQueue();
-			return true;
+			return executeHandleVerify({
+				action,
+				currentPage,
+				dispatch,
+				document,
+				goToCompletedDocument,
+				isBeingRead,
+				isLastPage,
+				pageStartedAtReference,
+				runVerificationQueue,
+				text,
+			});
 		},
-		[currentPage, dispatch, document, isBeingRead, runVerificationQueue],
+		[
+			currentPage,
+			dispatch,
+			document,
+			goToCompletedDocument,
+			isBeingRead,
+			isLastPage,
+			runVerificationQueue,
+		],
 	);
-
-	const handleConfirm = useCallback(() => {
-		handleVerify(PageVerificationAction.CONFIRM);
-	}, [handleVerify]);
 
 	const handleSkip = useCallback(() => {
 		handleVerify(PageVerificationAction.SKIP);
@@ -374,13 +478,19 @@ const Verification: React.FC = () => {
 
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {
+			if (document?.status === DocumentStatus.DONE) {
+				dispatch(pageActions.setCursorPageNo(pageNo));
+				return;
+			}
+
 			if (isEditing) {
 				notification.info("Navigation is not available in edit mode");
 				return;
 			}
+
 			dispatch(pageActions.setCursorPageNo(pageNo));
 		},
-		[dispatch, isEditing],
+		[dispatch, isEditing, document?.status],
 	);
 
 	const handlePrevious = useCallback((): void => {
@@ -390,10 +500,25 @@ const Verification: React.FC = () => {
 	}, [cursorPageNo, handlePageSelect]);
 
 	const handleNext = useCallback((): void => {
-		if (document && cursorPageNo < document.pageCount) {
-			handlePageSelect(cursorPageNo + PAGE_STEP);
+		if (document) {
+			if (cursorPageNo < document.pageCount) {
+				handlePageSelect(cursorPageNo + PAGE_STEP);
+			} else if (
+				cursorPageNo >= document.pageCount &&
+				document.status === DocumentStatus.DONE
+			) {
+				goToCompletedDocument(document.id);
+			}
 		}
-	}, [cursorPageNo, handlePageSelect, document]);
+	}, [cursorPageNo, handlePageSelect, document, goToCompletedDocument]);
+
+	const handleConfirm = useCallback(() => {
+		if (document?.status === DocumentStatus.DONE) {
+			handleNext();
+			return;
+		}
+		handleVerify(PageVerificationAction.CONFIRM);
+	}, [handleVerify, document?.status, handleNext]);
 
 	useVerificationKeyboard({
 		onCloseShortcuts: handleCloseShortcuts,
