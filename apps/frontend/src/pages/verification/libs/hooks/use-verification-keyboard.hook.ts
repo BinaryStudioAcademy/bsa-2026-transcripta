@@ -1,5 +1,10 @@
 import { useEffect } from "~/libs/hooks/hooks.js";
 
+import {
+	VerificationShortcutCode,
+	VerificationShortcutKey,
+} from "../constants/constants.js";
+
 type UseVerificationKeyboardProperties = {
 	isEditing: boolean;
 	isShortcutsOpen: boolean;
@@ -27,10 +32,10 @@ const isUndoShortcut = (event: KeyboardEvent): boolean =>
 	(event.ctrlKey || event.metaKey) &&
 	!event.shiftKey &&
 	!event.altKey &&
-	event.code === "KeyZ";
+	event.code === VerificationShortcutCode.UNDO;
 
 const isSaveShortcut = (event: KeyboardEvent): boolean =>
-	event.key === "Enter" &&
+	event.key === VerificationShortcutKey.ENTER &&
 	(event.ctrlKey || event.metaKey) &&
 	!event.altKey &&
 	!event.shiftKey;
@@ -45,13 +50,13 @@ const isPageLevelShortcut = (event: KeyboardEvent): boolean => {
 	}
 
 	return (
-		event.key === "?" ||
-		event.key === "ArrowLeft" ||
-		event.key === "ArrowRight" ||
-		event.key === "Enter" ||
-		event.key === " " ||
-		event.code === "KeyE" ||
-		event.code === "KeyS"
+		event.key === VerificationShortcutKey.QUESTION ||
+		event.key === VerificationShortcutKey.ARROW_LEFT ||
+		event.key === VerificationShortcutKey.ARROW_RIGHT ||
+		event.key === VerificationShortcutKey.ENTER ||
+		event.key === VerificationShortcutKey.SPACE ||
+		event.code === VerificationShortcutCode.EDIT ||
+		event.code === VerificationShortcutCode.SKIP
 	);
 };
 
@@ -84,37 +89,40 @@ const handlePageShortcut = ({
 		return;
 	}
 
-	if (event.key === "?") {
+	if (event.key === VerificationShortcutKey.QUESTION) {
 		event.preventDefault();
 		onToggleShortcuts();
 		return;
 	}
 
-	if (event.key === "ArrowLeft") {
+	if (event.key === VerificationShortcutKey.ARROW_LEFT) {
 		event.preventDefault();
 		onPrevious();
 		return;
 	}
 
-	if (event.key === "Enter" || event.key === "ArrowRight") {
+	if (
+		event.key === VerificationShortcutKey.ENTER ||
+		event.key === VerificationShortcutKey.ARROW_RIGHT
+	) {
 		event.preventDefault();
 		onConfirm();
 		return;
 	}
 
-	if (event.code === "KeyE") {
+	if (event.code === VerificationShortcutCode.EDIT) {
 		event.preventDefault();
 		onEdit();
 		return;
 	}
 
-	if (event.code === "KeyS") {
+	if (event.code === VerificationShortcutCode.SKIP) {
 		event.preventDefault();
 		onSkip();
 		return;
 	}
 
-	if (event.key === " ") {
+	if (event.key === VerificationShortcutKey.SPACE) {
 		event.preventDefault();
 		onToggleZoom();
 	}
@@ -127,7 +135,7 @@ const handleShortcutsDialogKey = ({
 	event: KeyboardEvent;
 	onCloseShortcuts: () => void;
 }): void => {
-	if (event.key === "Escape") {
+	if (event.key === VerificationShortcutKey.ESCAPE) {
 		event.preventDefault();
 		onCloseShortcuts();
 		return;
@@ -149,7 +157,7 @@ const handleEditingShortcut = ({
 		return;
 	}
 
-	if (event.key === "Escape") {
+	if (event.key === VerificationShortcutKey.ESCAPE) {
 		event.preventDefault();
 		onCancelEdit();
 		return;
@@ -193,7 +201,7 @@ const useVerificationKeyboard = ({
 				return;
 			}
 
-			if (event.key === "Escape") {
+			if (event.key === VerificationShortcutKey.ESCAPE) {
 				onCloseShortcuts();
 				return;
 			}

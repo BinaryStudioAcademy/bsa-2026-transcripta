@@ -10,6 +10,7 @@ import {
 	useState,
 } from "~/libs/hooks/hooks.js";
 
+import { VerificationShortcutKey } from "../constants/constants.js";
 import { MARKED_WORDS_LABEL } from "../constants/verification.constants.js";
 import { collectMarkRanges } from "../helpers/collect-mark-ranges.helper.js";
 import { getMarkLabel } from "../helpers/get-mark-label.helper.js";
@@ -84,7 +85,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				? event.metaKey && !event.ctrlKey
 				: event.ctrlKey && !event.metaKey;
 
-			if (event.key === "Enter" && isSaveShortcut) {
+			if (event.key === VerificationShortcutKey.ENTER && isSaveShortcut) {
 				event.preventDefault();
 
 				if (!isDisabled) {
@@ -120,7 +121,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 
 	const handleKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-			if (event.key === "Escape") {
+			if (event.key === VerificationShortcutKey.ESCAPE) {
 				event.preventDefault();
 				onCancel();
 				return;
@@ -130,7 +131,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				? event.metaKey && !event.ctrlKey
 				: event.ctrlKey && !event.metaKey;
 
-			if (event.key === "Enter" && isSaveShortcut) {
+			if (event.key === VerificationShortcutKey.ENTER && isSaveShortcut) {
 				event.preventDefault();
 
 				if (!isDisabled) {
