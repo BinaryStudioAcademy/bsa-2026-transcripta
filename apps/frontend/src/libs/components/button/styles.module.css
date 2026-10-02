@@ -21,8 +21,8 @@
 	background-color: transparent;
 }
 
-:where(.button--basic):hover,
-:where(.button--basic):active {
+:where(.button--basic):not(.button--disabled):hover,
+:where(.button--basic):not(.button--disabled):active {
 	background-color: var(--surface-2);
 }
 
@@ -31,11 +31,11 @@
 	background-color: var(--accent);
 }
 
-:where(.button--primary):hover {
+:where(.button--primary):not(.button--disabled):hover {
 	background-color: var(--accent-hover);
 }
 
-:where(.button--primary):active {
+:where(.button--primary):not(.button--disabled):active {
 	background-color: var(--accent-active);
 }
 
@@ -45,7 +45,7 @@
 	border: 1px solid var(--hairline-strong);
 }
 
-:where(.button--secondary):active {
+:where(.button--secondary):not(.button--disabled):active {
 	background: var(--surface-2);
 }
 
@@ -60,10 +60,8 @@
 }
 
 :where(.button--disabled) {
-	pointer-events: none;
-	cursor: default;
-	opacity: 0.5;
-	filter: saturate(0.35);
+	cursor: not-allowed;
+	opacity: 0.6;
 }
 
 :where(.button--danger) {
@@ -71,10 +69,10 @@
 	background-color: var(--danger);
 }
 
-:where(.button--danger):hover {
+:where(.button--danger):not(.button--disabled):hover {
 	background-color: var(--danger-hover);
 }
 
-:where(.button--danger):active {
+:where(.button--danger):not(.button--disabled):active {
 	background-color: var(--danger-active);
 }
