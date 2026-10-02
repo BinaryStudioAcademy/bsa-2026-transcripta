@@ -6,13 +6,25 @@ import { EVERYTHING_VERIFIED } from "../constants/everything-verified.constant.j
 import { LAST_PAGE_AWAITING } from "../constants/last-page-awaiting.constant.js";
 import { PREPARING_DOCUMENTS } from "../constants/preparing-documents.constant.js";
 
-const getPreparingMessage = (
-	progress: DocumentGetByIdResponseDto["progress"],
-): string => {
+type GetPreparingMessageParameters = {
+	currentPageNo: number;
+	pageCount: number;
+	progress: DocumentGetByIdResponseDto["progress"];
+};
+
+const getPreparingMessage = ({
+	currentPageNo,
+	pageCount,
+	progress,
+}: GetPreparingMessageParameters): string => {
 	const pagesAwaiting =
 		progress.pagesPending + progress.pagesInWork + progress.pagesReadyToCheck;
 
-	if (pagesAwaiting === ONE_QUANTITY) {
+	if (
+		pagesAwaiting === ONE_QUANTITY &&
+		currentPageNo >= pageCount &&
+		pageCount > INITIAL_COUNT
+	) {
 		return LAST_PAGE_AWAITING;
 	}
 

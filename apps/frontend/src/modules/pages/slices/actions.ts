@@ -4,6 +4,7 @@ import {
 	EMPTY_LENGTH,
 	FIRST_INDEX,
 } from "~/libs/constants/common.constants.js";
+import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import { HTTPCode } from "~/libs/enums/enums.js";
 import { serializeError } from "~/libs/helpers/helpers.js";
 import { notification } from "~/libs/modules/notification/notification.js";
@@ -202,6 +203,11 @@ const processVerificationQueue = createAsyncThunk<
 
 		while (item) {
 			const { pageId, payload } = item;
+
+			const documentBeforeVerification = getState().documents.document;
+			const wasDocumentAlreadyDone =
+				documentBeforeVerification?.status === DocumentStatus.DONE;
+
 			const result = await dispatch(verifyPage({ pageId, payload }));
 
 			const isRejected = verifyPage.rejected.match(result);
@@ -220,7 +226,19 @@ const processVerificationQueue = createAsyncThunk<
 				documentId: item.documentId,
 			});
 
-			if (isDone) {
+			const currentDocument = getState().documents.document;
+			const isAtFinalPage =
+				currentDocument !== null && item.pageNo >= currentDocument.pageCount;
+
+			const isFullyCompleted = wasDocumentAlreadyDone
+				? isAtFinalPage
+				: isDone ||
+					(currentDocument !== null &&
+						currentDocument.progress.pagesReadyToCheck === INITIAL_COUNT &&
+						currentDocument.progress.pagesPending === INITIAL_COUNT &&
+						currentDocument.progress.pagesInWork === INITIAL_COUNT);
+
+			if (isFullyCompleted) {
 				completedDocumentId = item.documentId;
 				break;
 			}

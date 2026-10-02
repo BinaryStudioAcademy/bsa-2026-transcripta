@@ -1,5 +1,4 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
-import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import {
 	AppRoute,
@@ -121,11 +120,6 @@ const executeRunVerificationQueue = (
 		return;
 	}
 
-	if (document.status === DocumentStatus.DONE) {
-		goToCompletedDocument(document.id);
-		return;
-	}
-
 	void dispatch(pageActions.processVerificationQueue()).then((result) => {
 		if (result.type !== pageActions.processVerificationQueue.fulfilled.type) {
 			return;
@@ -135,10 +129,17 @@ const executeRunVerificationQueue = (
 		const { completedDocumentId, failed } = payload;
 		const totalClosed = countClosedPages(pagesForStrip);
 
-		const isTrulyCompleted =
-			document.pageCount > INITIAL_COUNT && totalClosed >= document.pageCount;
+		if (completedDocumentId !== null) {
+			goToCompletedDocument(document.id);
+			return;
+		}
 
-		if (completedDocumentId !== null || isTrulyCompleted) {
+		const isTrulyCompleted =
+			document.status !== DocumentStatus.DONE &&
+			document.pageCount > INITIAL_COUNT &&
+			totalClosed >= document.pageCount;
+
+		if (isTrulyCompleted) {
 			goToCompletedDocument(document.id);
 			return;
 		}
@@ -161,11 +162,56 @@ type HandleVerifyArguments = {
 	dispatch: ReturnType<typeof useAppDispatch>;
 	document: DocumentGetByIdResponseDto | null;
 	goToCompletedDocument: (documentId: number) => void;
+	handleNext: () => void;
 	isBeingRead: boolean;
 	isLastPage: boolean;
 	pageStartedAtReference: React.RefObject<number>;
 	runVerificationQueue: () => void;
 	text?: string | undefined;
+};
+
+const shouldBypassVerification = (
+	status: string | undefined,
+	documentStatus: string,
+): boolean => {
+	const isNonTranscribable =
+		status === PageStatus.BLANK || status === PageStatus.FAILED;
+	const isAlreadyReviewedDone =
+		documentStatus === DocumentStatus.DONE && status !== PageStatus.TRANSCRIBED;
+
+	return isNonTranscribable || isAlreadyReviewedDone;
+};
+
+const createVerifyPayload = ({
+	action,
+	currentPage,
+	durationMs,
+	text,
+}: {
+	action: PageVerificationActionValue;
+	currentPage: NonNullable<ReturnType<typeof selectCurrentPage>>;
+	durationMs: number;
+	text?: string | undefined;
+}): null | VerifyPageRequestDto => {
+	if (currentPage.transcription) {
+		return {
+			action,
+			durationMs,
+			text: text ?? currentPage.transcription.text,
+			transcriptionId: currentPage.transcription.id,
+		};
+	}
+
+	if (action !== PageVerificationAction.CORRECT) {
+		return null;
+	}
+
+	if (!text || text.trim() === "") {
+		notification.info("Type the page text before saving");
+		return null;
+	}
+
+	return { action, durationMs, text };
 };
 
 const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
@@ -175,6 +221,7 @@ const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
 		dispatch,
 		document,
 		goToCompletedDocument,
+		handleNext,
 		isBeingRead,
 		isLastPage,
 		pageStartedAtReference,
@@ -182,45 +229,29 @@ const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
 		text,
 	} = arguments_;
 
-	if (!document) {
+	if (!document || !currentPage || isBeingRead) {
 		return false;
 	}
 
-	if (document.status === DocumentStatus.DONE) {
-		if (isLastPage) {
+	if (shouldBypassVerification(currentPage.status, document.status)) {
+		if (document.status === DocumentStatus.DONE && isLastPage) {
 			goToCompletedDocument(document.id);
+		} else {
+			handleNext();
 		}
-		return false;
-	}
-
-	if (!currentPage || isBeingRead) {
 		return false;
 	}
 
 	const durationMs = Date.now() - pageStartedAtReference.current;
-	let payload: VerifyPageRequestDto;
+	const payload = createVerifyPayload({
+		action,
+		currentPage,
+		durationMs,
+		text,
+	});
 
-	if (currentPage.transcription) {
-		payload = {
-			action,
-			durationMs,
-			text: text ?? currentPage.transcription.text,
-			transcriptionId: currentPage.transcription.id,
-		};
-	} else {
-		if (
-			currentPage.status !== PageStatus.FAILED ||
-			action !== PageVerificationAction.CORRECT
-		) {
-			return false;
-		}
-
-		if (!text || text.trim() === "") {
-			notification.info("Type the page text before saving");
-			return false;
-		}
-
-		payload = { action, durationMs, text };
+	if (!payload) {
+		return false;
 	}
 
 	dispatch(
@@ -237,26 +268,6 @@ const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
 
 	runVerificationQueue();
 	return true;
-};
-
-const getNextValidPageNo = (
-	currentNo: number,
-	pages: (DocumentGetPagesItemResponseDto | undefined)[],
-	maxPages: number,
-): number => {
-	let nextNo = currentNo + ONE_QUANTITY;
-	while (nextNo <= maxPages) {
-		const page = pages.find((p) => p?.pageNo === nextNo);
-		if (
-			page &&
-			page.status !== PageStatus.PENDING &&
-			page.status !== PageStatus.TRANSCRIBED
-		) {
-			return nextNo;
-		}
-		nextNo++;
-	}
-	return currentNo;
 };
 
 const Verification: React.FC = () => {
@@ -343,8 +354,7 @@ const Verification: React.FC = () => {
 		cursorInitializedForReference.current = document.id;
 
 		const targetPageNo =
-			document.status === DocumentStatus.DONE ||
-			(document.cursorPageNo && document.cursorPageNo > document.pageCount)
+			document.status === DocumentStatus.DONE
 				? document.pageCount
 				: document.cursorPageNo || MIN_NUMBER_OF_PAGES;
 
@@ -409,6 +419,42 @@ const Verification: React.FC = () => {
 		});
 	}, [dispatch, document, goToCompletedDocument, pagesForStrip]);
 
+	const handlePageSelect = useCallback(
+		(pageNo: number): void => {
+			if (document?.status === DocumentStatus.DONE) {
+				dispatch(pageActions.setCursorPageNo(pageNo));
+				return;
+			}
+
+			if (isEditing) {
+				notification.info("Navigation is not available in edit mode");
+				return;
+			}
+
+			dispatch(pageActions.setCursorPageNo(pageNo));
+		},
+		[dispatch, isEditing, document?.status],
+	);
+
+	const handlePrevious = useCallback((): void => {
+		if (cursorPageNo > MIN_NUMBER_OF_PAGES) {
+			handlePageSelect(cursorPageNo - PAGE_STEP);
+		}
+	}, [cursorPageNo, handlePageSelect]);
+
+	const handleNext = useCallback((): void => {
+		if (document) {
+			if (cursorPageNo < document.pageCount) {
+				handlePageSelect(cursorPageNo + PAGE_STEP);
+			} else if (
+				cursorPageNo >= document.pageCount &&
+				document.status === DocumentStatus.DONE
+			) {
+				goToCompletedDocument(document.id);
+			}
+		}
+	}, [cursorPageNo, handlePageSelect, document, goToCompletedDocument]);
+
 	const handleVerify = useCallback(
 		(action: PageVerificationActionValue, text?: string): boolean => {
 			return executeHandleVerify({
@@ -417,6 +463,7 @@ const Verification: React.FC = () => {
 				dispatch,
 				document,
 				goToCompletedDocument,
+				handleNext,
 				isBeingRead,
 				isLastPage,
 				pageStartedAtReference,
@@ -429,6 +476,7 @@ const Verification: React.FC = () => {
 			dispatch,
 			document,
 			goToCompletedDocument,
+			handleNext,
 			isBeingRead,
 			isLastPage,
 			runVerificationQueue,
@@ -497,93 +545,18 @@ const Verification: React.FC = () => {
 		}
 	}, [currentPage, isBeingRead, isReprocessing]);
 
-	const handlePageSelect = useCallback(
-		(pageNo: number): void => {
-			if (document?.status === DocumentStatus.DONE) {
-				dispatch(pageActions.setCursorPageNo(pageNo));
-				return;
-			}
-
-			if (isEditing) {
-				notification.info("Navigation is not available in edit mode");
-				return;
-			}
-
-			dispatch(pageActions.setCursorPageNo(pageNo));
-		},
-		[dispatch, isEditing, document?.status],
-	);
-
-	const handlePrevious = useCallback((): void => {
-		if (cursorPageNo > MIN_NUMBER_OF_PAGES) {
-			handlePageSelect(cursorPageNo - PAGE_STEP);
-		}
-	}, [cursorPageNo, handlePageSelect]);
-
-	const handleNext = useCallback((): void => {
-		if (!document) {
-			return;
-		}
-
-		if (
-			cursorPageNo >= document.pageCount ||
-			document.status === DocumentStatus.DONE
-		) {
-			goToCompletedDocument(document.id);
-			return;
-		}
-
-		const nextValidPage = getNextValidPageNo(
-			cursorPageNo,
-			pagesForStrip,
-			document.pageCount,
-		);
-
-		if (nextValidPage > cursorPageNo && nextValidPage <= document.pageCount) {
-			handlePageSelect(nextValidPage);
-			return;
-		}
-
-		goToCompletedDocument(document.id);
-	}, [
-		cursorPageNo,
-		handlePageSelect,
-		document,
-		goToCompletedDocument,
-		pagesForStrip,
-	]);
-
-	const { handleConfirm: handleKeyboardConfirm, handleSkip } =
-		useVerificationPageKeyboard({
-			isEditing,
-			isShortcutsOpen,
-			onCloseShortcuts: handleCloseShortcuts,
-			onEdit: handleToggleEdit,
-			onPrevious: handlePrevious,
-			onSetEditing: setIsEditing,
-			onToggleShortcuts: handleToggleShortcuts,
-			onToggleZoom: toggleZoom,
-			onUndo: handleUndo,
-			onVerify: handleVerify,
-		});
-
-	const handleConfirm = useCallback(() => {
-		if (
-			document?.status === DocumentStatus.DONE ||
-			currentPage?.status === PageStatus.BLANK ||
-			currentPage?.status === PageStatus.FAILED
-		) {
-			handleNext();
-			return;
-		}
-
-		handleKeyboardConfirm();
-	}, [
-		document?.status,
-		currentPage?.status,
-		handleNext,
-		handleKeyboardConfirm,
-	]);
+	const { handleConfirm, handleSkip } = useVerificationPageKeyboard({
+		isEditing,
+		isShortcutsOpen,
+		onCloseShortcuts: handleCloseShortcuts,
+		onEdit: handleToggleEdit,
+		onPrevious: handlePrevious,
+		onSetEditing: setIsEditing,
+		onToggleShortcuts: handleToggleShortcuts,
+		onToggleZoom: toggleZoom,
+		onUndo: handleUndo,
+		onVerify: handleVerify,
+	});
 
 	if (isDocumentLoading || !document) {
 		return <LoaderOverlay label="Loading verification" />;
