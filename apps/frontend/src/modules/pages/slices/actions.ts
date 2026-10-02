@@ -168,7 +168,7 @@ const verifyDocumentIsDone = async ({
 }): Promise<boolean> => {
 	try {
 		const documentResulted = await dispatch(
-			documentActions.loadById(documentId),
+			documentActions.pollDocumentById(documentId),
 		).unwrap();
 		return documentResulted.status === DocumentStatus.DONE;
 	} catch {
