@@ -320,12 +320,15 @@ const Verification: React.FC = () => {
 		}
 
 		cursorInitializedForReference.current = document.id;
+
+		const targetPageNo =
+			document.status === DocumentStatus.DONE
+				? document.pageCount
+				: document.cursorPageNo || MIN_NUMBER_OF_PAGES;
+
 		const initialPageNo = Math.max(
 			MIN_NUMBER_OF_PAGES,
-			Math.min(
-				document.cursorPageNo || MIN_NUMBER_OF_PAGES,
-				document.pageCount || MIN_NUMBER_OF_PAGES,
-			),
+			Math.min(targetPageNo, document.pageCount || MIN_NUMBER_OF_PAGES),
 		);
 		dispatch(pageActions.setCursorPageNo(initialPageNo));
 	}, [document, dispatch, id]);
@@ -513,12 +516,16 @@ const Verification: React.FC = () => {
 	}, [cursorPageNo, handlePageSelect, document, goToCompletedDocument]);
 
 	const handleConfirm = useCallback(() => {
-		if (document?.status === DocumentStatus.DONE) {
+		if (
+			document?.status === DocumentStatus.DONE ||
+			currentPage?.status === PageStatus.BLANK ||
+			currentPage?.status === PageStatus.FAILED
+		) {
 			handleNext();
 			return;
 		}
 		handleVerify(PageVerificationAction.CONFIRM);
-	}, [handleVerify, document?.status, handleNext]);
+	}, [handleVerify, document?.status, currentPage?.status, handleNext]);
 
 	useVerificationKeyboard({
 		onCloseShortcuts: handleCloseShortcuts,
