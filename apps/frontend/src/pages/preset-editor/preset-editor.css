@@ -77,12 +77,16 @@
 }
 
 textarea.preset-editor__instructions {
-	min-height: 72px;
+	min-height: 130px;
+	padding: var(--sp-2) var(--sp-3);
+	line-height: var(--lh-body);
 	resize: vertical;
 }
 
 textarea.preset-editor__description {
-	min-height: 35px;
+	min-height: 90px;
+	padding: var(--sp-2) var(--sp-3);
+	line-height: var(--lh-body);
 	resize: vertical;
 }
 
