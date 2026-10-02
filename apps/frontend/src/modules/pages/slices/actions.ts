@@ -10,9 +10,11 @@ import { serializeError } from "~/libs/helpers/helpers.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { type AsyncThunkConfig, type RootState } from "~/libs/types/types.js";
 import {
+	actions as documentActions,
 	type DocumentGetPagesQueryDto,
 	type DocumentGetPagesResponseDto,
 } from "~/modules/documents/documents.js";
+import { DocumentStatus } from "~/modules/documents/libs/enums/enums.js";
 import {
 	type UndoPageResponseDto,
 	type VerifyPageRequestDto,
@@ -157,25 +159,23 @@ const handleQueueRejection = ({
 	};
 };
 
-const checkDocumentCompletion = ({
-	getState,
-	item,
+const verifyDocumentIsDone = async ({
+	dispatch,
+	documentId,
 }: {
-	getState: () => RootState;
-	item: VerificationQueueItem;
-}): boolean => {
-	const currentDocument = getState().documents.document;
-	return (
-		currentDocument !== null &&
-		currentDocument.id === item.documentId &&
-		currentDocument.pageCount > INITIAL_COUNT &&
-		item.pageNo >= currentDocument.pageCount
-	);
+	dispatch: AsyncThunkConfig["dispatch"];
+	documentId: number;
+}): Promise<boolean> => {
+	try {
+		const documentResulted = await dispatch(
+			documentActions.loadById(documentId),
+		).unwrap();
+		return documentResulted.status === DocumentStatus.DONE;
+	} catch {
+		return false;
+	}
 };
 
-// Sends queued verifications one at a time: the next action leaves the queue
-// only after the previous response. `condition` keeps a single runner alive,
-// so every keypress can dispatch this and only the first one starts it.
 const processVerificationQueue = createAsyncThunk<
 	VerificationQueueResult,
 	undefined,
@@ -203,6 +203,11 @@ const processVerificationQueue = createAsyncThunk<
 
 		while (item) {
 			const { pageId, payload } = item;
+
+			const documentBeforeVerification = getState().documents.document;
+			const wasDocumentAlreadyDone =
+				documentBeforeVerification?.status === DocumentStatus.DONE;
+
 			const result = await dispatch(verifyPage({ pageId, payload }));
 
 			const isRejected = verifyPage.rejected.match(result);
@@ -216,14 +221,31 @@ const processVerificationQueue = createAsyncThunk<
 				});
 			}
 
-			// The backend has no page after this one, so it has just closed the
-			// document: the caller leaves verification when it sees the id back.
+			const isDone = await verifyDocumentIsDone({
+				dispatch,
+				documentId: item.documentId,
+			});
+
+			const currentDocument = getState().documents.document;
+
+			const noMorePages =
+				result.payload.next === null &&
+				currentDocument !== null &&
+				currentDocument.progress.pagesReadyToCheck === INITIAL_COUNT &&
+				currentDocument.progress.pagesPending === INITIAL_COUNT &&
+				currentDocument.progress.pagesInWork === INITIAL_COUNT;
+
+			const isFullyCompleted = wasDocumentAlreadyDone
+				? result.payload.next === null
+				: isDone || noMorePages;
+
+			if (isFullyCompleted) {
+				completedDocumentId = item.documentId;
+				break;
+			}
+
 			if (result.payload.next === null) {
-				if (checkDocumentCompletion({ getState, item })) {
-					completedDocumentId = item.documentId;
-				} else {
-					reloadPage(item);
-				}
+				reloadPage(item);
 			}
 
 			const wasManualTranscription = payload.transcriptionId === undefined;
@@ -232,9 +254,6 @@ const processVerificationQueue = createAsyncThunk<
 				reloadPage(item);
 			}
 
-			// A correction also rewrites the pages nobody has checked yet. They
-			// keep their ids, so fetching them again quietly is enough for the
-			// ones already on screen to show the reader's reading too.
 			if (payload.action === PageVerificationAction.CORRECT) {
 				void dispatch(
 					loadPages({
