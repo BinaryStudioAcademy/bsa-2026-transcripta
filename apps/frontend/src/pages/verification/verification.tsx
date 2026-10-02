@@ -96,9 +96,11 @@ const executeGoToCompletedDocument = (
 };
 
 type RunVerificationQueueArguments = {
+	cursorPageNo: number;
 	dispatch: ReturnType<typeof useAppDispatch>;
 	document: DocumentGetByIdResponseDto | null;
 	goToCompletedDocument: (documentId: number) => void;
+	isDocumentAlreadyDone: boolean;
 	pagesForStrip: (DocumentGetPagesItemResponseDto | undefined)[];
 	setEditConflictDraft: React.Dispatch<
 		React.SetStateAction<EditConflictDraft | null>
@@ -109,9 +111,11 @@ const executeRunVerificationQueue = (
 	arguments_: RunVerificationQueueArguments,
 ): void => {
 	const {
+		cursorPageNo,
 		dispatch,
 		document,
 		goToCompletedDocument,
+		isDocumentAlreadyDone,
 		pagesForStrip,
 		setEditConflictDraft,
 	} = arguments_;
@@ -129,8 +133,13 @@ const executeRunVerificationQueue = (
 		const { completedDocumentId, failed } = payload;
 		const totalClosed = countClosedPages(pagesForStrip);
 
+		const shouldSuppressRedirect =
+			isDocumentAlreadyDone && cursorPageNo < document.pageCount;
+
 		if (completedDocumentId !== null) {
-			goToCompletedDocument(document.id);
+			if (!shouldSuppressRedirect) {
+				goToCompletedDocument(document.id);
+			}
 			return;
 		}
 
@@ -140,7 +149,9 @@ const executeRunVerificationQueue = (
 			totalClosed >= document.pageCount;
 
 		if (isTrulyCompleted) {
-			goToCompletedDocument(document.id);
+			if (!shouldSuppressRedirect) {
+				goToCompletedDocument(document.id);
+			}
 			return;
 		}
 
@@ -285,6 +296,7 @@ const Verification: React.FC = () => {
 	const pageStartedAtReference = useRef(Date.now());
 	const isCompletionHandledReference = useRef(false);
 	const cursorInitializedForReference = useRef<null | number>(null);
+	const documentInitialStatusReference = useRef<null | string>(null);
 
 	const document = useAppSelector(({ documents }) => documents.document);
 	const documentDataStatus = useAppSelector(
@@ -322,6 +334,7 @@ const Verification: React.FC = () => {
 		}
 
 		cursorInitializedForReference.current = null;
+		documentInitialStatusReference.current = null;
 		isCompletionHandledReference.current = false;
 		dispatch(pageActions.reset());
 		void dispatch(documentActions.loadById(documentId));
@@ -352,6 +365,7 @@ const Verification: React.FC = () => {
 		}
 
 		cursorInitializedForReference.current = document.id;
+		documentInitialStatusReference.current = document.status;
 
 		const targetPageNo =
 			document.status === DocumentStatus.DONE
@@ -410,14 +424,20 @@ const Verification: React.FC = () => {
 	);
 
 	const runVerificationQueue = useCallback((): void => {
+		const isDocumentAlreadyDone =
+			documentInitialStatusReference.current === DocumentStatus.DONE ||
+			document?.status === DocumentStatus.DONE;
+
 		executeRunVerificationQueue({
+			cursorPageNo,
 			dispatch,
 			document,
 			goToCompletedDocument,
+			isDocumentAlreadyDone,
 			pagesForStrip,
 			setEditConflictDraft,
 		});
-	}, [dispatch, document, goToCompletedDocument, pagesForStrip]);
+	}, [cursorPageNo, dispatch, document, goToCompletedDocument, pagesForStrip]);
 
 	const handlePageSelect = useCallback(
 		(pageNo: number): void => {

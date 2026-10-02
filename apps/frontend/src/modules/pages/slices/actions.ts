@@ -227,16 +227,17 @@ const processVerificationQueue = createAsyncThunk<
 			});
 
 			const currentDocument = getState().documents.document;
-			const isAtFinalPage =
-				currentDocument !== null && item.pageNo >= currentDocument.pageCount;
+
+			const noMorePages =
+				result.payload.next === null &&
+				currentDocument !== null &&
+				currentDocument.progress.pagesReadyToCheck === INITIAL_COUNT &&
+				currentDocument.progress.pagesPending === INITIAL_COUNT &&
+				currentDocument.progress.pagesInWork === INITIAL_COUNT;
 
 			const isFullyCompleted = wasDocumentAlreadyDone
-				? isAtFinalPage
-				: isDone ||
-					(currentDocument !== null &&
-						currentDocument.progress.pagesReadyToCheck === INITIAL_COUNT &&
-						currentDocument.progress.pagesPending === INITIAL_COUNT &&
-						currentDocument.progress.pagesInWork === INITIAL_COUNT);
+				? result.payload.next === null
+				: isDone || noMorePages;
 
 			if (isFullyCompleted) {
 				completedDocumentId = item.documentId;
