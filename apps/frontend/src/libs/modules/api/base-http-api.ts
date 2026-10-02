@@ -1,3 +1,4 @@
+import { DEFAULT_ERROR_MESSAGE } from "~/libs/constants/constants.js";
 import { type ContentType, ServerErrorType } from "~/libs/enums/enums.js";
 import { configureString } from "~/libs/helpers/helpers.js";
 import {
@@ -96,12 +97,15 @@ class BaseHTTPApi implements HTTPApi {
 
 		const isCustomException = Boolean(parsedException.errorType);
 
+		const trimmedMessage = parsedException.message.trim();
+		const message = trimmedMessage || DEFAULT_ERROR_MESSAGE;
+
 		throw new HTTPError({
 			details: "details" in parsedException ? parsedException.details : [],
 			errorType: isCustomException
 				? parsedException.errorType
 				: ServerErrorType.COMMON,
-			message: parsedException.message,
+			message,
 			status: response.status as ValueOf<typeof HTTPCode>,
 		});
 	}
