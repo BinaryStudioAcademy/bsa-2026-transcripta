@@ -19,6 +19,7 @@
 }
 
 .tx-chip__icon {
+	overflow: hidden;
 	font-family: var(--font-mono);
 	font-variant-numeric: tabular-nums;
 }
