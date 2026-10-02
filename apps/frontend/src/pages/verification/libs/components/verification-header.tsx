@@ -93,12 +93,12 @@ const VerificationHeader: React.FC<VerificationHeaderProperties> = ({
 				</span>
 			</div>
 
-			<div className="verification-header__queue">
+			{/* <div className="verification-header__queue">
 				<span className="tx-chip">
 					<span className="verification-header__queue-count">3</span>
 					unsaved actions
 				</span>
-			</div>
+			</div> */}
 
 			<div className="verification-header__budget">
 				<span
