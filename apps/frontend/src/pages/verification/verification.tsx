@@ -244,7 +244,13 @@ const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
 		return false;
 	}
 
-	if (shouldBypassVerification(currentPage.status, document.status)) {
+	const isManualSave =
+		action === PageVerificationAction.CORRECT && text !== undefined;
+
+	if (
+		!isManualSave &&
+		shouldBypassVerification(currentPage.status, document.status)
+	) {
 		if (document.status === DocumentStatus.DONE && isLastPage) {
 			goToCompletedDocument(document.id);
 		} else {
