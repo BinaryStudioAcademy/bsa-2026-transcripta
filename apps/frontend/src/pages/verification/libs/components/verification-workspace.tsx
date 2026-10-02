@@ -291,11 +291,7 @@ const VerificationWorkspace: React.FC<VerificationWorkspaceProperties> = ({
 					isPaused={isPaused}
 					isToggleDisabled={isToggleDisabled}
 					isToggleVisible={isToggleVisible}
-					message={getPreparingMessage({
-						currentPageNo: currentPage?.pageNo ?? INITIAL_COUNT,
-						pageCount,
-						progress: documentProgress,
-					})}
+					message={getPreparingMessage(documentProgress)}
 					onToggleProcessing={onToggleProcessing}
 				/>
 			</div>
