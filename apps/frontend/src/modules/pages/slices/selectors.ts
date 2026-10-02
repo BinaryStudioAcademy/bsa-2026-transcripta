@@ -9,7 +9,7 @@ import {
 import { type RootState } from "~/libs/types/types.js";
 import { MAX_LOADED_PAGES } from "~/pages/verification/libs/constants/verification.constants.js";
 
-import { COMPLETED_PAGE_STATUSES } from "../libs/constants/constants.js";
+import { CLOSED_PAGE_STATUSES } from "../libs/constants/constants.js";
 
 const selectPagesDataStatus = (state: RootState) => state.pages.dataStatus;
 
@@ -82,7 +82,7 @@ const selectVerificationCursorPageNo = createSelector(
 		const cursorPageNo = pageNumbers.find((pageNo) => {
 			const page = byId[idsByPageNo[pageNo] as number];
 
-			return page !== undefined && !COMPLETED_PAGE_STATUSES.has(page.status);
+			return page !== undefined && !CLOSED_PAGE_STATUSES.has(page.status);
 		});
 
 		return cursorPageNo ?? null;

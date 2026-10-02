@@ -117,16 +117,17 @@ const UploadForm: React.FC<Properties> = ({
 							onClick={handleProcessClick}
 							type="button"
 						/>
-						<Button
-							isDisabled={isStartingProcessing}
-							label="Change file"
-							onClick={onChangeFile}
-							type="button"
-						/>
+						{!isStartingProcessing && (
+							<Button
+								label="Change file"
+								onClick={onChangeFile}
+								type="button"
+							/>
+						)}
 					</>
 				)}
 
-				{(isUploading || isSubmitting) && (
+				{!isUploaded && (isUploading || isSubmitting) && (
 					<Button
 						label="Cancel Upload"
 						onClick={onCancelUpload}

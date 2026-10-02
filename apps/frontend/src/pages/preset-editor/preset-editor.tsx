@@ -2,6 +2,7 @@ import React, { type ChangeEvent } from "react";
 
 import {
 	Button,
+	ConfirmDialog,
 	LoaderOverlay,
 	ThemeToggle,
 } from "~/libs/components/components.js";
@@ -24,6 +25,7 @@ import {
 	useRef,
 	useState,
 } from "~/libs/hooks/hooks.js";
+import { notification } from "~/libs/modules/notification/notification.js";
 import {
 	actions as presetsActions,
 	selectCreateStatus,
@@ -40,17 +42,14 @@ import {
 	PresetOutputFields,
 } from "./libs/components/components.js";
 import {
-	createEntry,
 	getInitialErrors,
 	getOutputFields,
-	isGlossaryType,
 	isPresetFormDirty,
 	mapSeedGlossary,
 	mapValidationErrors,
 } from "./libs/helpers/helpers.js";
+import { usePresetGlossary } from "./libs/hooks/use-preset-glossary.js";
 import {
-	type GlossaryEntry,
-	type GlossaryType,
 	type PresetFormErrors,
 	type PresetFormState,
 } from "./libs/types/preset-editor.types.js";
@@ -60,6 +59,7 @@ const PresetEditor: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const { id } = useParams<{ id?: string }>();
+	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
 	const createStatus = useAppSelector(selectCreateStatus);
 	const presets = useAppSelector(selectPresets);
@@ -79,9 +79,30 @@ const PresetEditor: React.FC = () => {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [instructions, setInstructions] = useState("");
-	const [entries, setEntries] = useState<GlossaryEntry[]>([]);
-	const [openTypeId, setOpenTypeId] = useState<null | string>(null);
+
 	const [errors, setErrors] = useState<PresetFormErrors>(getInitialErrors());
+
+	const {
+		entries,
+		handleAddEntry,
+		handleCancelDelete,
+		handleCloseTypeSelector,
+		handleConfirmDelete,
+		handleGlossaryValueChange,
+		handleKindOptionClick,
+		handleRemoveButtonClick,
+		handleSkipDeleteConfirmation,
+		handleTypeButtonClick,
+		isDeleteDialogOpen,
+		newEntryId,
+		openTypeId,
+		setEntries,
+		setOpenTypeId,
+		skipDeleteConfirmation,
+	} = usePresetGlossary({
+		setErrors,
+	});
+
 	const [initialFormState, setInitialFormState] =
 		useState<null | PresetFormState>(null);
 
@@ -165,7 +186,7 @@ const PresetEditor: React.FC = () => {
 
 			initialStateInitialized.current = true;
 		}
-	}, [selectedPreset, basePresetId]);
+	}, [selectedPreset, basePresetId, setEntries, setOpenTypeId]);
 
 	const handleSubmit = useCallback((): void => {
 		if (!selectedPreset || !isDirty) {
@@ -194,6 +215,9 @@ const PresetEditor: React.FC = () => {
 
 		void dispatch(presetsActions.create(result.data))
 			.unwrap()
+			.then(() => {
+				notification.success("Preset created successfully.");
+			})
 			.then(() => navigate(GO_BACK))
 			.catch(() => null);
 	}, [
@@ -208,6 +232,23 @@ const PresetEditor: React.FC = () => {
 	]);
 
 	const handleCancel = useCallback((): void => {
+		if (!isDirty) {
+			void (async (): Promise<void> => {
+				await navigate(GO_BACK);
+			})();
+
+			return;
+		}
+
+		setIsCancelDialogOpen(true);
+	}, [isDirty, navigate]);
+
+	const handleCancelDialog = useCallback((): void => {
+		setIsCancelDialogOpen(false);
+	}, []);
+
+	const handleConfirmCancel = useCallback((): void => {
+		setIsCancelDialogOpen(false);
 		void (async (): Promise<void> => {
 			await navigate(GO_BACK);
 		})();
@@ -218,35 +259,6 @@ const PresetEditor: React.FC = () => {
 			await navigate(AppRoute.PRESETS);
 		})();
 	}, [navigate]);
-
-	const handleAddEntry = useCallback((): void => {
-		setEntries((currentEntries) => [...currentEntries, createEntry()]);
-	}, []);
-
-	const handleRemoveEntry = useCallback((id: string): void => {
-		setEntries((currentEntries) =>
-			currentEntries.filter((entry) => entry.id !== id),
-		);
-	}, []);
-
-	const handleKindChange = useCallback(
-		(id: string, kind: GlossaryType): void => {
-			setEntries((currentEntries) =>
-				currentEntries.map((entry) =>
-					entry.id === id ? { ...entry, kind } : entry,
-				),
-			);
-		},
-		[],
-	);
-
-	const handleValueChange = useCallback((id: string, value: string): void => {
-		setEntries((currentEntries) =>
-			currentEntries.map((entry) =>
-				entry.id === id ? { ...entry, value } : entry,
-			),
-		);
-	}, []);
 
 	const handleBasePresetChange = useCallback(
 		(event: ChangeEvent<HTMLSelectElement>): void => {
@@ -294,74 +306,6 @@ const PresetEditor: React.FC = () => {
 		},
 		[],
 	);
-
-	const handleTypeButtonClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const { id } = event.currentTarget.dataset;
-
-			if (!id) {
-				return;
-			}
-
-			setOpenTypeId((currentId) => (currentId === id ? null : id));
-		},
-		[],
-	);
-
-	const handleKindOptionClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const { id, kind } = event.currentTarget.dataset;
-
-			if (!id || !kind || !isGlossaryType(kind)) {
-				return;
-			}
-
-			handleKindChange(id, kind);
-			setOpenTypeId(null);
-		},
-		[handleKindChange],
-	);
-
-	const handleGlossaryValueChange = useCallback(
-		(event: ChangeEvent<HTMLInputElement>): void => {
-			const { id } = event.currentTarget.dataset;
-
-			if (!id) {
-				return;
-			}
-
-			handleValueChange(id, event.target.value);
-
-			setErrors((current) => {
-				const glossary = Object.fromEntries(
-					Object.entries(current.glossary).filter(([key]) => key !== id),
-				);
-
-				return {
-					...current,
-					glossary,
-				};
-			});
-		},
-		[handleValueChange],
-	);
-
-	const handleRemoveButtonClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const { id } = event.currentTarget.dataset;
-
-			if (!id) {
-				return;
-			}
-
-			handleRemoveEntry(id);
-		},
-		[handleRemoveEntry],
-	);
-
-	const handleCloseTypeSelector = useCallback((): void => {
-		setOpenTypeId(null);
-	}, []);
 
 	if (isNotFound) {
 		return (
@@ -413,6 +357,7 @@ const PresetEditor: React.FC = () => {
 								entries={entries}
 								errors={errors.glossary}
 								isDisabled={isFormDisabled}
+								newEntryId={newEntryId}
 								onAddEntry={handleAddEntry}
 								onCloseTypeSelector={handleCloseTypeSelector}
 								onKindOptionClick={handleKindOptionClick}
@@ -434,6 +379,26 @@ const PresetEditor: React.FC = () => {
 						</section>
 					</div>
 				</main>
+			)}
+			{isDeleteDialogOpen && (
+				<ConfirmDialog
+					checkboxLabel="Don't show this again"
+					description="Are you sure you want to delete this term?"
+					isCheckboxChecked={skipDeleteConfirmation}
+					onCancel={handleCancelDelete}
+					onCheckboxChange={handleSkipDeleteConfirmation}
+					onConfirm={handleConfirmDelete}
+					title="Delete a term"
+				/>
+			)}
+			{isCancelDialogOpen && (
+				<ConfirmDialog
+					confirmLabel="Yes"
+					description="Your unsaved changes will be lost."
+					onCancel={handleCancelDialog}
+					onConfirm={handleConfirmCancel}
+					title="Are you sure you want to exit?"
+				/>
 			)}
 		</div>
 	);

@@ -59,6 +59,7 @@ import {
 	type ScreenStateType,
 	type UploadTarget,
 	type UseIngestPollingParameters,
+	type UseProcessDocumentParameters,
 } from "./libs/types/types.js";
 import styles from "./styles.module.css";
 
@@ -192,6 +193,7 @@ const useIngestPolling = ({
 	setRejection,
 }: UseIngestPollingParameters): void => {
 	const resumedDocumentReference = useRef(resumedDocument);
+	const isRedirectingReference = useRef(false);
 
 	useEffect(() => {
 		resumedDocumentReference.current = resumedDocument;
@@ -207,6 +209,14 @@ const useIngestPolling = ({
 		void dispatch(documentActions.loadById(ingestingDocumentId));
 
 		const poll = (): void => {
+			const currentStatus = resumedDocumentReference.current?.status;
+			if (
+				currentStatus === DocumentStatus.DONE ||
+				currentStatus === DocumentStatus.FAILED
+			) {
+				return;
+			}
+
 			if (Date.now() - startedAt > INGEST_TIMEOUT_MS) {
 				setIngestingDocumentId(null);
 				const timeoutMessage =
@@ -241,16 +251,56 @@ const useIngestPolling = ({
 		const { progress, status } = resumedDocument;
 
 		if (status === DocumentStatus.FAILED) {
+			setIngestingDocumentId(null);
+			setRejection(resumedDocument.errorMessage || INGESTION_FAILED_MESSAGE);
 			return;
 		}
 
-		if (progress.pagesReadyToCheck > EMPTY_COUNT) {
-			setIngestingDocumentId(null);
+		if (
+			progress.pagesReadyToCheck > EMPTY_COUNT &&
+			!isRedirectingReference.current
+		) {
+			isRedirectingReference.current = true;
 			void (async (): Promise<void> => {
 				await navigate(
 					configureString(AppRoute.VERIFICATION, {
 						id: String(ingestingDocumentId),
 					}),
+				);
+			})();
+			return;
+		}
+
+		const isFullyDone = status === DocumentStatus.DONE;
+		const isIngestionFinished =
+			status !== DocumentStatus.INGESTING &&
+			progress.pagesTotal > EMPTY_COUNT &&
+			progress.pagesPending === EMPTY_COUNT &&
+			progress.pagesInWork === EMPTY_COUNT &&
+			progress.pagesBlank +
+				progress.pagesVerified +
+				progress.pagesReadyToCheck +
+				progress.pagesFailed ===
+				progress.pagesTotal;
+
+		if (isFullyDone || isIngestionFinished) {
+			setIngestingDocumentId(null);
+
+			const areAllPagesBlank =
+				isFullyDone &&
+				progress.pagesTotal > EMPTY_COUNT &&
+				progress.pagesBlank === progress.pagesTotal;
+
+			void (async (): Promise<void> => {
+				await navigate(
+					configureString(AppRoute.DOCUMENT, {
+						id: String(ingestingDocumentId),
+					}),
+					{
+						state: {
+							isAllBlank: areAllPagesBlank,
+						},
+					},
 				);
 			})();
 		}
@@ -262,6 +312,13 @@ const useIngestPolling = ({
 		setRejection,
 		setIsStartingProcessing,
 	]);
+
+	useEffect(() => {
+		return (): void => {
+			setIngestingDocumentId(null);
+			setIsStartingProcessing(false);
+		};
+	}, [setIngestingDocumentId, setIsStartingProcessing]);
 };
 
 const useScreenState = ({
@@ -290,6 +347,84 @@ const useScreenState = ({
 	}
 
 	return ScreenState.REST;
+};
+const useProcessDocument = ({
+	createdDocumentIdReference,
+	dispatch,
+	isStartingProcessing,
+	resumeDocumentId,
+	setIngestingDocumentId,
+	setIsStartingProcessing,
+	setRejection,
+}: UseProcessDocumentParameters): ((values: UploadFormValues) => void) => {
+	const failedDocumentIdReference = useRef<null | number>(null);
+
+	return useCallback(
+		(values: UploadFormValues): void => {
+			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
+
+			if (!targetId || isStartingProcessing) {
+				return;
+			}
+
+			const documentId = Number(targetId);
+
+			if (failedDocumentIdReference.current === documentId) {
+				notification.error(DocumentNotificationMessage.PROCESSING_FAILED);
+				setRejection(DocumentNotificationMessage.PROCESSING_FAILED);
+
+				return;
+			}
+
+			setRejection(null);
+			setIsStartingProcessing(true);
+
+			void (async (): Promise<void> => {
+				try {
+					await dispatch(
+						documentActions.getUploadUrl({
+							id: documentId,
+							payload: {
+								presetId: values.presetId,
+								title: values.title,
+							},
+						}),
+					).unwrap();
+				} catch {
+					setIsStartingProcessing(false);
+					return;
+				}
+
+				setIngestingDocumentId(documentId);
+
+				try {
+					await dispatch(documentActions.ingest(documentId)).unwrap();
+					createdDocumentIdReference.current = null;
+				} catch (error: unknown) {
+					failedDocumentIdReference.current = documentId;
+					setIngestingDocumentId(null);
+					const message =
+						error instanceof Error
+							? error.message
+							: ((error as { message?: string }).message ??
+								INGESTION_FAILED_MESSAGE);
+					notification.error(message);
+					setRejection(message);
+				} finally {
+					setIsStartingProcessing(false);
+				}
+			})();
+		},
+		[
+			createdDocumentIdReference,
+			dispatch,
+			isStartingProcessing,
+			resumeDocumentId,
+			setIngestingDocumentId,
+			setIsStartingProcessing,
+			setRejection,
+		],
+	);
 };
 
 const DocumentNew: React.FC = () => {
@@ -484,6 +619,10 @@ const DocumentNew: React.FC = () => {
 	}, [resetZipProcessor]);
 
 	const handleCancelUpload = useCallback(() => {
+		if (isStartingProcessing) {
+			return;
+		}
+
 		if (abortControllerReference.current) {
 			abortControllerReference.current.abort();
 			abortControllerReference.current = null;
@@ -492,13 +631,14 @@ const DocumentNew: React.FC = () => {
 		setIsUploaded(false);
 		resetSelection();
 		notification.info(DocumentNotificationMessage.UPLOAD_CANCELLED);
-	}, [resetSelection]);
+	}, [isStartingProcessing, resetSelection]);
 
 	const goToDocument = useCallback(
 		(documentId: number): void => {
 			void (async (): Promise<void> => {
 				await navigate(
 					configureString(AppRoute.DOCUMENT, { id: String(documentId) }),
+					{ state: { isIngestStarted: true } },
 				);
 			})();
 		},
@@ -507,62 +647,19 @@ const DocumentNew: React.FC = () => {
 
 	const handleOpenDocument = useCallback((): void => {
 		if (ingestingDocumentId) {
-			setIngestingDocumentId(null);
 			goToDocument(ingestingDocumentId);
 		}
 	}, [goToDocument, ingestingDocumentId]);
 
-	const handleProcessDocument = useCallback(
-		(values: UploadFormValues): void => {
-			const targetId = createdDocumentIdReference.current ?? resumeDocumentId;
-
-			if (!targetId || isStartingProcessing) {
-				return;
-			}
-
-			const documentId = Number(targetId);
-
-			setRejection(null);
-			setIsStartingProcessing(true);
-
-			void (async (): Promise<void> => {
-				try {
-					await dispatch(
-						documentActions.getUploadUrl({
-							id: documentId,
-							payload: {
-								presetId: values.presetId,
-								title: values.title,
-							},
-						}),
-					).unwrap();
-				} catch {
-					// The error notification is shown by errorHandlingMiddleware.
-					setIsStartingProcessing(false);
-					return;
-				}
-
-				setIngestingDocumentId(documentId);
-
-				try {
-					await dispatch(documentActions.ingest(documentId)).unwrap();
-					createdDocumentIdReference.current = null;
-				} catch (error: unknown) {
-					setIngestingDocumentId(null);
-					const message =
-						error instanceof Error
-							? error.message
-							: ((error as { message?: string }).message ??
-								INGESTION_FAILED_MESSAGE);
-					notification.error(message);
-					setRejection(message);
-				} finally {
-					setIsStartingProcessing(false);
-				}
-			})();
-		},
-		[dispatch, isStartingProcessing, resumeDocumentId],
-	);
+	const handleProcessDocument = useProcessDocument({
+		createdDocumentIdReference,
+		dispatch,
+		isStartingProcessing,
+		resumeDocumentId,
+		setIngestingDocumentId,
+		setIsStartingProcessing,
+		setRejection,
+	});
 
 	const acceptFile = useCallback(
 		(file: File): void => {
@@ -619,7 +716,6 @@ const DocumentNew: React.FC = () => {
 		selectedFile,
 	});
 	const isSubmitting = isUploading;
-	const isFormDisabled = isSubmitting || isStartingProcessing;
 	const displayTitle = selectedFile?.name ?? resumedDocument?.title ?? "";
 
 	const presetOptions =
@@ -679,7 +775,7 @@ const DocumentNew: React.FC = () => {
 								<UploadForm
 									fileName={displayTitle}
 									isStartingProcessing={isStartingProcessing}
-									isSubmitting={isFormDisabled}
+									isSubmitting={isSubmitting}
 									isUploaded={isUploaded}
 									isUploading={isUploading}
 									onCancelUpload={handleCancelUpload}

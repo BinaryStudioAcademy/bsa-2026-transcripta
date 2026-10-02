@@ -11,6 +11,7 @@ type Properties = {
 	entries: GlossaryEntry[];
 	errors: Record<string, string>;
 	isDisabled: boolean;
+	newEntryId: null | string;
 	onAddEntry: () => void;
 	onCloseTypeSelector: () => void;
 	onKindOptionClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -24,6 +25,7 @@ const PresetGlossary: React.FC<Properties> = ({
 	entries,
 	errors,
 	isDisabled,
+	newEntryId,
 	onAddEntry,
 	onCloseTypeSelector,
 	onKindOptionClick,
@@ -33,6 +35,15 @@ const PresetGlossary: React.FC<Properties> = ({
 	openTypeId,
 }) => {
 	const typeSelectorReference = useRef<HTMLDivElement>(null);
+	const newEntryInputReference = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if (!newEntryId) {
+			return;
+		}
+
+		newEntryInputReference.current?.focus();
+	}, [newEntryId]);
 
 	useEffect(() => {
 		const handleDocumentMouseDown = (event: MouseEvent): void => {
@@ -142,6 +153,8 @@ const PresetGlossary: React.FC<Properties> = ({
 								disabled={isDisabled}
 								id={`glossary-value-${entry.id}`}
 								onChange={onValueChange}
+								placeholder="Enter a term"
+								ref={entry.id === newEntryId ? newEntryInputReference : null}
 								value={entry.value}
 							/>
 

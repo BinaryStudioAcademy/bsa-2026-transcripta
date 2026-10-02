@@ -1,0 +1,28 @@
+.state {
+	width: 440px;
+	padding: var(--sp-5);
+	background: var(--warn-tint);
+	border: 1px solid color-mix(in oklab, var(--warn) 55%, transparent);
+	border-radius: var(--r-lg);
+}
+
+.title {
+	margin: 0;
+	font: 600 var(--fs-lg) / var(--lh-tight) var(--font-display);
+	color: var(--text);
+}
+
+.amount {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.reason {
+	margin: var(--sp-2) 0 0;
+	font: 400 var(--fs-sm) / var(--lh-ui) var(--font-ui);
+	color: var(--text-2);
+}
+
+.actions {
+	margin-top: var(--sp-4);
+}

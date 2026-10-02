@@ -68,8 +68,15 @@ The data arrives in the `contextWords` field from the API
 
 **How the marks are drawn.** The frontend uses the server offsets as they are
 and never searches the text for the words itself. Each mark is a `<span>`
-around the existing characters, and the tooltip comes from CSS, so the copied
-text is the same with or without marks.
+around the existing characters, so the copied text is the same with or without
+marks.
+
+The hint is not drawn inside the pane. The mark carries its text in `data-tip`
+and the bubble is rendered at the end of `<body>`, in a fixed position measured
+from the mark, opening below it when there is no room above. Inside the pane it
+would be a box in a scroll container, and a word near the top of the page or
+against a table boundary would lose half of its hint — the one line the reader
+needs most would be the one they cannot read.
 
 - A range is skipped if it falls outside the text or no longer matches its
   word (stale offsets after a correction, until the page is reloaded).
@@ -447,13 +454,25 @@ States that must be distinguished:
 | `✓`  | Confirmed        |
 | `✎`  | Corrected        |
 | `↷`  | Skipped          |
-| `●`  | Current          |
+| `●`  | Saved cursor     |
 | `▓`  | Ready to check   |
 | `░`  | Being recognised |
 | `·`  | Queued           |
 | `!`  | Error            |
+| pill | Page opened      |
 
 Hovering shows a thumbnail, clicking jumps to the page.
+
+The pill and the `●` are two different positions. The pill marks the page that is
+open right now, which any click or <kbd>←</kbd> <kbd>→</kbd> can move anywhere.
+The `●` marks the saved cursor — the page the next <kbd>Enter</kbd> will work
+on — and it only moves when a page is actually closed. Opening an earlier page
+therefore moves the pill and leaves `●` where it is; on a failed page the pill
+sits on the red error cell and the `●` stays on the cursor.
+
+A failed page is closed, not pending: the model gave up after three attempts, so
+it cannot hold the cursor. Only a page still waiting on the machine or the human
+can.
 
 ---
 
