@@ -201,6 +201,15 @@ class PageRepository {
 		return startedPage !== undefined;
 	}
 
+	public async releaseQueuedPages(pageIds: number[]): Promise<void> {
+		await this.pageModel
+			.query()
+			.patch({ status: PageStatus.PENDING })
+			.whereIn("id", pageIds)
+			.where({ "status": PageStatus.QUEUED })
+			.execute();
+	}
+
 	public async resetPageForReprocess(
 		pageId: number,
 		trx?: Transaction,
@@ -220,7 +229,6 @@ class PageRepository {
 
 		return updatedRows > EMPTY_LENGTH;
 	}
-
 	public async restorePage({
 		attempts,
 		lastError,

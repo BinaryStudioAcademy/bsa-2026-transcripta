@@ -1,4 +1,5 @@
 import {
+	EMPTY_LENGTH,
 	HTTPCode,
 	HTTPError,
 	LexiconEntrySource,
@@ -245,7 +246,7 @@ class PageService {
 	}
 
 	private async enqueuePages(pagesToQueue: PageEntity[]): Promise<void> {
-		await Promise.all(
+		const results = await Promise.allSettled(
 			pagesToQueue.map((page) => {
 				const { documentId, id, pageNo } = page.toObject();
 
@@ -256,6 +257,25 @@ class PageService {
 				});
 			}),
 		);
+
+		const failedPageIds: number[] = [];
+
+		for (const [index, result] of results.entries()) {
+			if (result.status === "rejected") {
+				const pageId = pagesToQueue[index]?.toObject().id;
+				if (pageId !== undefined) {
+					failedPageIds.push(pageId);
+
+					this.logger.error(
+						`Failed to enqueue transcription job for page ${String(pageId)}`,
+						{ error: result.reason },
+					);
+				}
+			}
+		}
+		if (failedPageIds.length > EMPTY_LENGTH) {
+			await this.pageRepository.releaseQueuedPages(failedPageIds);
+		}
 	}
 
 	private async handleCorrection({
@@ -895,18 +915,25 @@ class PageService {
 					}),
 			);
 
-			if (result.needRederiveStructured && payload.text) {
-				await this.rederiveStructuredQueue.add({
-					currentTranscriptionId: result.transcriptionId,
-					documentId: result.documentId,
-					jobCreatedAt: new Date().toISOString(),
-					pageId,
-					pageNo: result.pageNo,
-					text: payload.text,
-				});
-			}
-
 			await this.enqueuePages(result.pagesToQueue);
+
+			if (result.needRederiveStructured && payload.text) {
+				try {
+					await this.rederiveStructuredQueue.add({
+						currentTranscriptionId: result.transcriptionId,
+						documentId: result.documentId,
+						jobCreatedAt: new Date().toISOString(),
+						pageId,
+						pageNo: result.pageNo,
+						text: payload.text,
+					});
+				} catch (error) {
+					this.logger.error(
+						`Failed to enqueue re-derivation job for page ${String(pageId)}`,
+						{ error },
+					);
+				}
+			}
 
 			return result.response;
 		} catch (error) {
