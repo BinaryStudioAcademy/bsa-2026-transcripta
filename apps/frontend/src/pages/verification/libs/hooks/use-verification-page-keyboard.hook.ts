@@ -42,12 +42,14 @@ const useVerificationPageKeyboard = ({
 		onVerify(PageVerificationAction.SKIP);
 	}, [onVerify]);
 
+	const handleCancelEdit = useCallback((): void => {
+		onSetEditing(false);
+	}, [onSetEditing]);
+
 	useVerificationKeyboard({
 		isEditing,
 		isShortcutsOpen,
-		onCancelEdit: () => {
-			onSetEditing(false);
-		},
+		onCancelEdit: handleCancelEdit,
 		onCloseShortcuts,
 		onConfirm: handleConfirm,
 		onEdit,

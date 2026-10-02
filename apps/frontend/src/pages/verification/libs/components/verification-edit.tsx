@@ -80,12 +80,6 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 				return;
 			}
 
-			if (event.key === "Escape") {
-				event.preventDefault();
-				onCancel();
-				return;
-			}
-
 			const isSaveShortcut = isMacOs
 				? event.metaKey && !event.ctrlKey
 				: event.ctrlKey && !event.metaKey;
@@ -104,7 +98,7 @@ const VerificationEdit: React.FC<EditModeProperties> = ({
 		return () => {
 			globalThis.removeEventListener("keydown", handleWindowKeyDown, true);
 		};
-	}, [isDisabled, isMacOs, onCancel, onSave, value]);
+	}, [isDisabled, isMacOs, onSave, value]);
 
 	const handleTextareaChange = useCallback(
 		(event: React.ChangeEvent<HTMLTextAreaElement>): void => {

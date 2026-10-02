@@ -29,6 +29,32 @@ const isUndoShortcut = (event: KeyboardEvent): boolean =>
 	!event.altKey &&
 	event.code === "KeyZ";
 
+const isSaveShortcut = (event: KeyboardEvent): boolean =>
+	event.key === "Enter" &&
+	(event.ctrlKey || event.metaKey) &&
+	!event.altKey &&
+	!event.shiftKey;
+
+const isPageLevelShortcut = (event: KeyboardEvent): boolean => {
+	if (isUndoShortcut(event)) {
+		return true;
+	}
+
+	if (event.ctrlKey || event.metaKey || event.altKey) {
+		return false;
+	}
+
+	return (
+		event.key === "?" ||
+		event.key === "ArrowLeft" ||
+		event.key === "ArrowRight" ||
+		event.key === "Enter" ||
+		event.key === " " ||
+		event.code === "KeyE" ||
+		event.code === "KeyS"
+	);
+};
+
 const handlePageShortcut = ({
 	event,
 	onConfirm,
@@ -94,6 +120,46 @@ const handlePageShortcut = ({
 	}
 };
 
+const handleShortcutsDialogKey = ({
+	event,
+	onCloseShortcuts,
+}: {
+	event: KeyboardEvent;
+	onCloseShortcuts: () => void;
+}): void => {
+	if (event.key === "Escape") {
+		event.preventDefault();
+		onCloseShortcuts();
+		return;
+	}
+
+	if (isSaveShortcut(event) || isPageLevelShortcut(event)) {
+		event.preventDefault();
+	}
+};
+
+const handleEditingShortcut = ({
+	event,
+	onCancelEdit,
+}: {
+	event: KeyboardEvent;
+	onCancelEdit: () => void;
+}): void => {
+	if (!canHandleShortcut(event.target)) {
+		return;
+	}
+
+	if (event.key === "Escape") {
+		event.preventDefault();
+		onCancelEdit();
+		return;
+	}
+
+	if (isPageLevelShortcut(event)) {
+		event.preventDefault();
+	}
+};
+
 const useVerificationKeyboard = ({
 	isEditing,
 	isShortcutsOpen,
@@ -114,24 +180,12 @@ const useVerificationKeyboard = ({
 			}
 
 			if (isShortcutsOpen) {
-				if (event.key === "Escape") {
-					event.preventDefault();
-					onCloseShortcuts();
-				}
-
+				handleShortcutsDialogKey({ event, onCloseShortcuts });
 				return;
 			}
 
 			if (isEditing) {
-				if (!canHandleShortcut(event.target)) {
-					return;
-				}
-
-				if (event.key === "Escape") {
-					event.preventDefault();
-					onCancelEdit();
-				}
-
+				handleEditingShortcut({ event, onCancelEdit });
 				return;
 			}
 

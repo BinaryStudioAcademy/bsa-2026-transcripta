@@ -160,6 +160,11 @@ The mouse cannot reach the required speed. The keyboard is the primary mode.
 | `Ctrl+Enter` | Save and move on     |
 | `Esc`        | Leave without saving |
 
+Edit shortcuts apply while the editor is open, even if the textarea has lost
+focus. Other page-level shortcuts must not run in that state. While the
+shortcuts dialog is open, only `Esc` is handled; the rest must not reach the
+page behind the scrim.
+
 ### The trap everyone steps into
 
 The human is typing text, presses `s` — and the system skips the page instead
