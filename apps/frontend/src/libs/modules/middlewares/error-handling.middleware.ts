@@ -14,16 +14,8 @@ import { SESSION_EXPIRED_MESSAGE } from "./libs/constants/constants.js";
 const errorHandlingMiddleware = createListenerMiddleware();
 
 const getErrorMessage = (message?: string): string => {
-	if (!message) {
-		return DEFAULT_ERROR_MESSAGE;
-	}
-
-	const trimmedMessage = message.trim();
-	if (trimmedMessage.length === 0) {
-		return DEFAULT_ERROR_MESSAGE;
-	}
-
-	return trimmedMessage;
+	const trimmedMessage = message?.trim() ?? "";
+	return trimmedMessage || DEFAULT_ERROR_MESSAGE;
 };
 
 errorHandlingMiddleware.startListening({
