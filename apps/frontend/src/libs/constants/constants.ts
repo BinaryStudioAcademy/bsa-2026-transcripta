@@ -19,3 +19,4 @@ export { NO_MORE_THAN_TWO_DECIMALS_BUDGET } from "./no-more-than-two-decimals-bu
 export { SIGN_UP_FAILED } from "./sign-up-failed.constant.js";
 export { SUGGESTED_LIMIT_INCREMENT } from "./suggested-limit-increment.constant.js";
 export { UPLOAD_WARNING_MESSAGE } from "./upload-message.constant.js";
+export { DEFAULT_ERROR_MESSAGE } from "./default-error-message.constant.js";

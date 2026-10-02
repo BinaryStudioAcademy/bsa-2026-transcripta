@@ -1,6 +1,7 @@
 import { createListenerMiddleware, isRejected } from "@reduxjs/toolkit";
 import { HTTPCode, ServerErrorType } from "@transcripta/shared";
 
+import { DEFAULT_ERROR_MESSAGE } from "~/libs/constants/constants.js";
 import { notification } from "~/libs/modules/notification/notification.js";
 import { SerializedAppError } from "~/libs/types/serialized-app-error.type.js";
 import { actions as authActions } from "~/modules/auth/auth.js";
@@ -8,12 +9,22 @@ import { actions as documentActions } from "~/modules/documents/documents.js";
 import { actions as pageActions } from "~/modules/pages/pages.js";
 
 import { storage, StorageKey } from "../storage/storage.js";
-import {
-	DEFAULT_ERROR_MESSAGE,
-	SESSION_EXPIRED_MESSAGE,
-} from "./libs/constants/constants.js";
+import { SESSION_EXPIRED_MESSAGE } from "./libs/constants/constants.js";
 
 const errorHandlingMiddleware = createListenerMiddleware();
+
+const getErrorMessage = (message?: string): string => {
+	if (!message) {
+		return DEFAULT_ERROR_MESSAGE;
+	}
+
+	const trimmedMessage = message.trim();
+	if (trimmedMessage.length === 0) {
+		return DEFAULT_ERROR_MESSAGE;
+	}
+
+	return trimmedMessage;
+};
 
 errorHandlingMiddleware.startListening({
 	effect: async (action, listenerApi) => {
@@ -76,10 +87,11 @@ errorHandlingMiddleware.startListening({
 				.map((detail) => detail.message)
 				.join(". ");
 
-			notification.error(validationMessage);
+			const safeValidationMessage = getErrorMessage(validationMessage);
+			notification.error(safeValidationMessage);
 			return;
 		}
-		notification.error(error.message);
+		notification.error(getErrorMessage(error.message));
 	},
 	matcher: isRejected,
 });

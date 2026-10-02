@@ -403,13 +403,14 @@ const useProcessDocument = ({
 				} catch (error: unknown) {
 					failedDocumentIdReference.current = documentId;
 					setIngestingDocumentId(null);
-					const message =
+					const rawMessage =
 						error instanceof Error
 							? error.message
 							: ((error as { message?: string }).message ??
 								INGESTION_FAILED_MESSAGE);
-					notification.error(message);
-					setRejection(message);
+					const safeMessage = rawMessage?.trim() ? rawMessage : INGESTION_FAILED_MESSAGE;
+					notification.error(safeMessage);
+					setRejection(safeMessage);
 				} finally {
 					setIsStartingProcessing(false);
 				}

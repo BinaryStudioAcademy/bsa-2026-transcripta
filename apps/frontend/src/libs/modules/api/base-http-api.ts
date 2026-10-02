@@ -8,6 +8,7 @@ import {
 	type HTTPOptions,
 } from "~/libs/modules/http/http.js";
 import { type Storage, StorageKey } from "~/libs/modules/storage/storage.js";
+import { DEFAULT_ERROR_MESSAGE } from "~/libs/constants/constants.js";
 import { type ServerErrorResponse, type ValueOf } from "~/libs/types/types.js";
 
 import {
@@ -96,12 +97,17 @@ class BaseHTTPApi implements HTTPApi {
 
 		const isCustomException = Boolean(parsedException.errorType);
 
+		const message =
+			parsedException.message && parsedException.message.trim().length > 0
+				? parsedException.message
+				: DEFAULT_ERROR_MESSAGE;
+
 		throw new HTTPError({
 			details: "details" in parsedException ? parsedException.details : [],
 			errorType: isCustomException
 				? parsedException.errorType
 				: ServerErrorType.COMMON,
-			message: parsedException.message,
+			message,
 			status: response.status as ValueOf<typeof HTTPCode>,
 		});
 	}
