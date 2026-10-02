@@ -297,6 +297,11 @@ const Document: React.FC = () => {
 		return <NotFound />;
 	}
 
+	const effectiveCursorPageNo =
+		currentDocument?.status === DocumentStatus.DONE
+			? currentDocument.pageCount
+			: (currentDocument?.cursorPageNo ?? MINIMUM_VALID_DOCUMENT_ID);
+
 	return (
 		<div className={styles["document-page"]}>
 			{isLoading && <LoaderOverlay label="Loading document" />}
@@ -345,7 +350,7 @@ const Document: React.FC = () => {
 									<TranscriptionBlock
 										budgetLimitUsd={currentDocument.budget.limitUsd}
 										budgetSpentUsd={currentDocument.budget.spentUsd}
-										cursorPageNo={currentDocument.cursorPageNo}
+										cursorPageNo={effectiveCursorPageNo}
 										onRaiseLimitClick={handleOpenRaiseLimit}
 										pagesBlank={currentDocument.progress.pagesBlank}
 										pagesFailed={currentDocument.progress.pagesFailed}
@@ -355,7 +360,7 @@ const Document: React.FC = () => {
 									/>
 
 									<PagesBlock
-										cursorPageNo={currentDocument.cursorPageNo}
+										cursorPageNo={effectiveCursorPageNo}
 										pagesBlank={currentDocument.progress.pagesBlank}
 										pagesFailed={currentDocument.progress.pagesFailed}
 										pagesInWork={currentDocument.progress.pagesInWork}
@@ -370,7 +375,7 @@ const Document: React.FC = () => {
 									/>
 
 									<VerificationBlock
-										cursorPageNo={currentDocument.cursorPageNo}
+										cursorPageNo={effectiveCursorPageNo}
 										documentId={currentDocument.id}
 										pageCount={currentDocument.pageCount}
 										pagesReadyToCheck={
