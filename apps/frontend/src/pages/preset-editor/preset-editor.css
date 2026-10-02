@@ -167,6 +167,11 @@ textarea.preset-editor__description {
 	box-shadow: var(--shadow-pop);
 }
 
+.preset-editor__glossary-row:last-child .preset-editor__type-menu {
+	top: auto;
+	bottom: 36px;
+}
+
 .preset-editor__type-option {
 	display: flex;
 	gap: var(--sp-3);
