@@ -408,7 +408,7 @@ const useProcessDocument = ({
 							? error.message
 							: ((error as { message?: string }).message ??
 								INGESTION_FAILED_MESSAGE);
-					const safeMessage = rawMessage?.trim()
+					const safeMessage = rawMessage.trim()
 						? rawMessage
 						: INGESTION_FAILED_MESSAGE;
 					notification.error(safeMessage);

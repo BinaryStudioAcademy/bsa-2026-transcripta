@@ -154,7 +154,7 @@ const Document: React.FC = () => {
 				currentDocument.errorMessage ||
 				locationState?.errorMessage ||
 				INGESTION_FAILED_MESSAGE;
-			const safeErrorMessage = errorMessage?.trim()
+			const safeErrorMessage = errorMessage.trim()
 				? errorMessage
 				: INGESTION_FAILED_MESSAGE;
 
