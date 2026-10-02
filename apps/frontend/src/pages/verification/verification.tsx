@@ -1,4 +1,5 @@
 import { LoaderOverlay } from "~/libs/components/components.js";
+import { ONE_QUANTITY } from "~/libs/constants/common.constants.js";
 import { INITIAL_COUNT } from "~/libs/constants/constants.js";
 import {
 	AppRoute,
@@ -55,7 +56,7 @@ import { isPageBeingRead } from "./libs/helpers/is-page-being-read.helper.js";
 import { useDraftRedirect } from "./libs/hooks/use-draft-redirect.hook.js";
 import { useProcessingToggle } from "./libs/hooks/use-processing-toggle.hook.js";
 import { useScanZoom } from "./libs/hooks/use-scan-zoom.js";
-import { useVerificationKeyboard } from "./libs/hooks/use-verification-keyboard.hook.js";
+import { useVerificationPageKeyboard } from "./libs/hooks/use-verification-page-keyboard.hook.js";
 import { useVerificationPolling } from "./libs/hooks/use-verification-polling.hook.js";
 import { useVerificationShortcuts } from "./libs/hooks/use-verification-shortcuts.hook.js";
 import {
@@ -238,6 +239,26 @@ const executeHandleVerify = (arguments_: HandleVerifyArguments): boolean => {
 	return true;
 };
 
+const getNextValidPageNo = (
+	currentNo: number,
+	pages: (DocumentGetPagesItemResponseDto | undefined)[],
+	maxPages: number,
+): number => {
+	let nextNo = currentNo + ONE_QUANTITY;
+	while (nextNo <= maxPages) {
+		const page = pages.find((p) => p?.pageNo === nextNo);
+		if (
+			page &&
+			page.status !== PageStatus.PENDING &&
+			page.status !== PageStatus.TRANSCRIBED
+		) {
+			return nextNo;
+		}
+		nextNo++;
+	}
+	return currentNo;
+};
+
 const Verification: React.FC = () => {
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
@@ -322,7 +343,8 @@ const Verification: React.FC = () => {
 		cursorInitializedForReference.current = document.id;
 
 		const targetPageNo =
-			document.status === DocumentStatus.DONE
+			document.status === DocumentStatus.DONE ||
+			(document.cursorPageNo && document.cursorPageNo > document.pageCount)
 				? document.pageCount
 				: document.cursorPageNo || MIN_NUMBER_OF_PAGES;
 
@@ -413,10 +435,6 @@ const Verification: React.FC = () => {
 		],
 	);
 
-	const handleSkip = useCallback(() => {
-		handleVerify(PageVerificationAction.SKIP);
-	}, [handleVerify]);
-
 	const handleUndo = useCallback((): void => {
 		if (isVerificationQueueBusy && !isEditing) {
 			notification.info("Wait until the queued actions are saved, then undo");
@@ -503,17 +521,51 @@ const Verification: React.FC = () => {
 	}, [cursorPageNo, handlePageSelect]);
 
 	const handleNext = useCallback((): void => {
-		if (document) {
-			if (cursorPageNo < document.pageCount) {
-				handlePageSelect(cursorPageNo + PAGE_STEP);
-			} else if (
-				cursorPageNo >= document.pageCount &&
-				document.status === DocumentStatus.DONE
-			) {
-				goToCompletedDocument(document.id);
-			}
+		if (!document) {
+			return;
 		}
-	}, [cursorPageNo, handlePageSelect, document, goToCompletedDocument]);
+
+		if (
+			cursorPageNo >= document.pageCount ||
+			document.status === DocumentStatus.DONE
+		) {
+			goToCompletedDocument(document.id);
+			return;
+		}
+
+		const nextValidPage = getNextValidPageNo(
+			cursorPageNo,
+			pagesForStrip,
+			document.pageCount,
+		);
+
+		if (nextValidPage > cursorPageNo && nextValidPage <= document.pageCount) {
+			handlePageSelect(nextValidPage);
+			return;
+		}
+
+		goToCompletedDocument(document.id);
+	}, [
+		cursorPageNo,
+		handlePageSelect,
+		document,
+		goToCompletedDocument,
+		pagesForStrip,
+	]);
+
+	const { handleConfirm: handleKeyboardConfirm, handleSkip } =
+		useVerificationPageKeyboard({
+			isEditing,
+			isShortcutsOpen,
+			onCloseShortcuts: handleCloseShortcuts,
+			onEdit: handleToggleEdit,
+			onPrevious: handlePrevious,
+			onSetEditing: setIsEditing,
+			onToggleShortcuts: handleToggleShortcuts,
+			onToggleZoom: toggleZoom,
+			onUndo: handleUndo,
+			onVerify: handleVerify,
+		});
 
 	const handleConfirm = useCallback(() => {
 		if (
@@ -524,19 +576,14 @@ const Verification: React.FC = () => {
 			handleNext();
 			return;
 		}
-		handleVerify(PageVerificationAction.CONFIRM);
-	}, [handleVerify, document?.status, currentPage?.status, handleNext]);
 
-	useVerificationKeyboard({
-		onCloseShortcuts: handleCloseShortcuts,
-		onConfirm: handleConfirm,
-		onEdit: handleToggleEdit,
-		onPrevious: handlePrevious,
-		onSkip: handleSkip,
-		onToggleShortcuts: handleToggleShortcuts,
-		onToggleZoom: toggleZoom,
-		onUndo: handleUndo,
-	});
+		handleKeyboardConfirm();
+	}, [
+		document?.status,
+		currentPage?.status,
+		handleNext,
+		handleKeyboardConfirm,
+	]);
 
 	if (isDocumentLoading || !document) {
 		return <LoaderOverlay label="Loading verification" />;

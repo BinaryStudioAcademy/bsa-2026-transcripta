@@ -5,6 +5,7 @@ export { EMPTY_LENGTH, FIRST_INDEX } from "./common.constants.js";
 export { CURRENCY_DECIMAL_PLACES } from "./currency-decimal-places.constant.js";
 export { DECIMAL_POINT } from "./decimal-point.constant.js";
 export { DECIMAL_POSITION } from "./decimal-position.constant.js";
+export { DEFAULT_ERROR_MESSAGE } from "./default-error-message.constant.js";
 export { EMPTY_STRING } from "./empty-string.constant.js";
 export { EXPORT_FORMAT_OPTIONS } from "./export-format-options.constant.js";
 export { FOCUSABLE_SELECTOR } from "./focusable-selector.constant.js";
